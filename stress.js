@@ -10,7 +10,7 @@ export const options = {
     },
 };
 
-const BASE_URL = 'https://cognilink.niluferormanli.com/restart';
+const BASE_URL = 'http://localhost:8788/restart';
 
 function generateVipCookie() {
     const state = {

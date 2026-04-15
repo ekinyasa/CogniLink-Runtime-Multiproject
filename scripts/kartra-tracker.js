@@ -5,10 +5,10 @@
  * Fully compliant with Event Contract v3 (Security, Bounding, Semantic Sources).
  */
 (function() {
-  if (window.__cognilink_initialized) return;
-  window.__cognilink_initialized = true;
+  if (window.__cognilink_runtime_initialized) return;
+  window.__cognilink_runtime_initialized = true;
 
-  const COGNILINK_API = "https://your-cognilink-domain.com/api/decision/signal";
+  const COGNILINK_API = "https://your-runtime-domain.com/api/decision/signal";
   
   // ==========================================
   // 1. CORE UTILITIES & SECURITY

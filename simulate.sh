@@ -21,7 +21,7 @@ for ((i=1; i<=REQUESTS; i++)); do
   UA="SimBot-$ID"
 
   # 1. Exposure (Gösterim)
-  curl -s -A "$UA" -c $COOKIE "https://links.niluferormanli.studio/$ALIAS" > /dev/null
+  curl -s -A "$UA" -c $COOKIE "http://127.0.0.1:8788/$ALIAS" > /dev/null
   V=$(grep "exp_$ALIAS" $COOKIE | awk '{print $NF}')
 
   if [ -z "$V" ]; then
@@ -31,7 +31,7 @@ for ((i=1; i<=REQUESTS; i++)); do
   fi
 
   # 2. Click (Tıklama) - Always fire one click
-  curl -s -X POST "https://links.niluferormanli.studio/api/event" \
+  curl -s -X POST "http://127.0.0.1:8788/api/event" \
     -H "Content-Type: application/json" \
     -A "$UA" \
     -d "{
@@ -48,7 +48,7 @@ for ((i=1; i<=REQUESTS; i++)); do
     
     # 3. Conversion (Dönüşüm)
     if [ $((RANDOM % 100)) -lt $CONV_CHANCE_V1 ]; then
-      curl -s -X POST "https://links.niluferormanli.studio/api/convert" \
+      curl -s -X POST "http://127.0.0.1:8788/api/convert" \
         -H "Content-Type: application/json" \
         -d "{\"event\":\"sale\",\"experiment\":\"$ALIAS\",\"variant\":\"$V\"}" > /dev/null
       ((CONV_V1++))
@@ -59,7 +59,7 @@ for ((i=1; i<=REQUESTS; i++)); do
     
     # 3. Conversion (Dönüşüm)
     if [ $((RANDOM % 100)) -lt $CONV_CHANCE_V2 ]; then
-      curl -s -X POST "https://links.niluferormanli.studio/api/convert" \
+      curl -s -X POST "http://127.0.0.1:8788/api/convert" \
         -H "Content-Type: application/json" \
         -d "{\"event\":\"sale\",\"experiment\":\"$ALIAS\",\"variant\":\"$V\"}" > /dev/null
       ((CONV_V2++))

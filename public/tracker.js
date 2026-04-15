@@ -7,7 +7,7 @@
 
   // PRE-FLIGHT: Fetch Layer 2 (Central Map)
   try {
-    const res = await fetch("https://cognilink.niluferormanli.com/api/decision/routes");
+    const res = await fetch("https://your-runtime-domain.com/api/decision/routes");
     const json = await res.json();
     if (json) {
       if (json.routes) {
@@ -44,8 +44,8 @@
 
   const ENGINE = window.COGNILINK_ENGINE || {};
   const H_REDIRECTS = {
-    hot: (ENGINE.redirects && ENGINE.redirects.hot) ? ENGINE.redirects.hot : "https://pages.niluferormanli.com/checkout",
-    converted: (ENGINE.redirects && ENGINE.redirects.converted) ? ENGINE.redirects.converted : "https://pages.niluferormanli.com/tesekkurler"
+    hot: (ENGINE.redirects && ENGINE.redirects.hot) ? ENGINE.redirects.hot : "https://your-runtime-domain.com/checkout",
+    converted: (ENGINE.redirects && ENGINE.redirects.converted) ? ENGINE.redirects.converted : "https://your-runtime-domain.com/tesekkurler"
   };
 
   // ==========================================
@@ -76,7 +76,7 @@
     alias: override.alias || central.alias || "",
     engineMapId: override.engineMapId || central.engineMapId || new URLSearchParams(window.location.search).get("cos_emap") || "",
     addTag: override.addTag || central.addTag || "",
-    endpoints: override.endpoints || central.endpoints || { signal: "https://cognilink.niluferormanli.com/api/decision/signal" },
+    endpoints: override.endpoints || central.endpoints || { signal: "https://your-runtime-domain.com/api/decision/signal" },
     selectors: S,
     redirects: R
   };

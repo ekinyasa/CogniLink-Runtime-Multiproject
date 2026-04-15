@@ -1,13 +1,11 @@
 {
-  "name": "cognilink",
+  "name": "cognilink-runtime-pages",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev",
-    "deploy:dev": "wrangler pages deploy",
-    "deploy:nilufer": "cp wrangler-nilufer.toml wrangler.toml && wrangler pages deploy . --project-name links-niluferormanli-studio; git restore wrangler.toml",
-    "deploy:ekin": "cp wrangler-ekin.toml wrangler.toml && wrangler pages deploy . --project-name links-ekinyasa-online; git restore wrangler.toml"
+    "deploy": "wrangler pages deploy"
   },
   "devDependencies": {
     "wrangler": "^3.0.0"

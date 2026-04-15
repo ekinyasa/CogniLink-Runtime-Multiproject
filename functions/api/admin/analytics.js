@@ -74,8 +74,8 @@ async function fetchActiveExperiments(env, accountId, apiToken, interval, unit, 
 
   const envName = (env.ENV_NAME || "dev").toLowerCase();
   const isProd = envName === "production";
-  const datasetEvt = isProd ? "cognilink_conversion_prod" : `ae_conversion_${envName}`;
-  const datasetOps = isProd ? "cognilink_traffic_prod" : `ae_traffic_${envName}`;
+  const datasetEvt = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
+  const datasetOps = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
 
   const aliases = activeConfigs.map(c => `'${c.alias.replace(/'/g, "''")}'`).join(",");
   
@@ -220,8 +220,8 @@ async function handleGet(context) {
   const clickEvents = "'traffic_memory'";
   const envName = (env.ENV_NAME || "dev").toLowerCase();
   const isProd = envName === "production";
-  const DATASET_OPS = isProd ? "cognilink_traffic_prod" : `ae_traffic_${envName}`;
-  const DATASET_EVT = isProd ? "cognilink_conversion_prod" : `ae_conversion_${envName}`;
+  const DATASET_OPS = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  const DATASET_EVT = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
 
   try {
     const [
