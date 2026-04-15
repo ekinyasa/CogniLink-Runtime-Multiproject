@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "wrangler-pages-dev",
+      "runtimeExecutable": "/Users/ekinyasa/.nvm/versions/node/v22.15.0/bin/node",
+      "runtimeArgs": ["/Users/ekinyasa/.nvm/versions/node/v22.15.0/bin/wrangler", "pages", "dev", "./public", "--port", "8789"],
+      "port": 8789
+    }
+  ]
+}

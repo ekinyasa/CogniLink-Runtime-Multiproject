@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CogniLink Smart Test Rig</title>
+  <meta charset="UTF-8">
+  <style>
+    :root { --bg: #0f172a; --text: #e2e8f0; --accent: #3b82f6; --danger: #ef4444; --panel: #1e293b; }
+    body { font-family: 'Inter', system-ui, sans-serif; padding: 20px; background: var(--bg); color: var(--text); }
+    h1 { color: #f8fafc; font-size: 24px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .panel { background: var(--panel); padding: 15px; border-radius: 8px; border: 1px solid #334155; }
+    .panel h2 { margin-top: 0; font-size: 16px; color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: monospace; transition: auto; }
+    button:hover { filter: brightness(1.1); }
+    button.danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+    button.danger:hover { background: var(--danger); color: white; }
+    .debug-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;}
+    .stat { background: #0f172a; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #334155;}
+    .stat span { display: block; font-size: 24px; font-weight: bold; color: #38bdf8; }
+    .stat small { color: #64748b; font-size: 12px; text-transform: uppercase; }
+    #log { background: #000; color: #10b981; padding: 10px; font-family: monospace; white-space: pre-wrap; height: 300px; overflow-y: auto; border-radius: 6px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <h1>CogniLink Test Rig <button class="danger" onclick="resetState()">🗑 RESET STATE</button></h1>
+
+  <div class="layout">
+    
+    <div class="panel">
+      <h2>SEND EVENTS</h2>
+      <div class="buttons">
+        <button onclick="send('page_view')">page_view (0)</button>
+        <button onclick="send('time_on_page', {value: 30})">time_on_page (+2)</button>
+        <button onclick="send('scroll_depth', {value: 55})">scroll_depth (+5)</button>
+        <button onclick="send('video_played')">video_played (+10)</button>
+        <button onclick="send('click_soft')">click_soft (+2)</button>
+        <button onclick="send('newsletter_optin')">newsletter_optin</button>
+        <button onclick="send('click_hard')" style="background: #eab308; color: #000">click_hard (Smart Hot)</button>
+        <button onclick="send('checkout_start')" style="background: #f97316; color: white">checkout_start (Hot)</button>
+        <button onclick="send('conversion')" style="background: #22c55e; color: white">conversion (Convert)</button>
+        <button onclick="send('upsell_enter')" style="background: #8b5cf6; color: white">upsell_enter (Upsell)</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>CURRENT STATE (UI DEBUG)</h2>
+      <div class="debug-grid">
+        <div class="stat"><span id="st_e">0</span><small>Engegement</small></div>
+        <div class="stat"><span id="st_h">0</span><small>Hot Intent</small></div>
+        <div class="stat"><span id="st_c">0</span><small>Converted</small></div>
+        <div class="stat"><span id="st_u">0</span><small>Upsell</small></div>
+      </div>
+      <h2>EVENT LOG</h2>
+      <div id="log"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "/api/decision/signal";
+
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.textContent += "> " + msg + "\n";
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function updateDebugUI(state) {
+      if(!state) return;
+      document.getElementById("st_e").textContent = state.e || 0;
+      document.getElementById("st_h").textContent = state.h || 0;
+      document.getElementById("st_c").textContent = state.c || 0;
+      document.getElementById("st_u").textContent = state.u || 0;
+    }
+
+    // 1) RESET STATE
+    function resetState() {
+      document.cookie = "cos_state=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "cos_state=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/api/decision;";
+      window.location.href = window.location.pathname; // Reload clear
+    }
+
+    // 5) TEST HELPER
+    async function send(type, extraMeta = {}) {
+      try {
+        log("sending: " + type + " ...");
+        const res = await fetch(API, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            meta: { source: "test_rig", page_type: "test", ...extraMeta }
+          })
+        });
+
+        const data = await res.json();
+        
+        if (data.ok && data.state) {
+          log("✔ " + type + " \n  L " + JSON.stringify(data.state));
+          updateDebugUI(data.state);
+        } else {
+          log("✖ " + type + " \n  L ERROR: " + JSON.stringify(data));
+        }
+      } catch (e) {
+        log("✖ " + type + " \n  L FATAL: " + e.message);
+      }
+    }
+
+    // 2) AUTO CLEAN START (Eğer URL'de ?reset=1 varsa)
+    window.onload = () => {
+      if (window.location.search.includes("reset=1")) {
+        resetState();
+      } else {
+        log("=== TEST RIG READY ===");
+        // Parse mevcut cookie'yi parse edip UI'a koyalım
+        try {
+          const match = document.cookie.match(/cos_state=([^;]+)/);
+          if (match) updateDebugUI(JSON.parse(decodeURIComponent(match[1])));
+        } catch(e) {}
+      }
+    };
+  </script>
+</body>
+</html>

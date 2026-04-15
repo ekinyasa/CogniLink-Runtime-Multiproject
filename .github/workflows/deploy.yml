@@ -1,0 +1,50 @@
+name: Deploy Multi-Env Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+      - development
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node JS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy DEV (campaign-os)
+        run: |
+          git restore wrangler.toml || true
+          npx wrangler pages deploy public --project-name campaign-os --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy NILUFER (links-niluferormanli-studio)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp wrangler-nilufer.toml wrangler.toml
+          npx wrangler pages deploy public --project-name links-niluferormanli-studio --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy EKIN (links-ekinyasa-online)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp wrangler-ekin.toml wrangler.toml
+          npx wrangler pages deploy public --project-name links-ekinyasa-online --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

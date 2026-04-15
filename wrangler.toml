@@ -1,0 +1,78 @@
+name = "cognilink"
+pages_build_output_dir = "./public"
+compatibility_date = "2024-09-23"
+
+# ==============================================================================
+# DEV ENVIRONMENT : LOCAL & PREVIEW
+# ==============================================================================
+# NOTE: KV namespaces and Analytics Engine datasets have been commented out 
+# to fix Cloudflare Pages build errors ("unable to read the Wrangler configuration file").
+# Cloudflare requires valid 32-character 'id' fields for KV bindings in wrangler.toml.
+# 
+# 👉 SOLUTION:
+# 1. Let the deployment succeed.
+# 2. Go to your Cloudflare Dashboard -> Pages -> cognilink -> Settings -> Functions
+# 3. Add all your KV Namespace and Analytics Engine bindings directly through the UI.
+# (Or insert the real IDs here if you prefer to use wrangler.toml)
+
+[vars]
+ENV_NAME = "dev"
+GA4_ID = "G-K5RNWREM5K"
+META_PIXEL_ID = "1452820495739175"
+
+# ==============================================================================
+# PRODUCTION ENVIRONMENT
+# ==============================================================================
+[env.production]
+
+[[env.production.kv_namespaces]]
+binding = "SLUG_LINKS"
+id = "65867d3557764d538ecbd8c779e45162"
+
+[[env.production.kv_namespaces]]
+binding = "CAMPAIGN_INDEX"
+id = "78c6bc37472c40a28fdc927d2fe52cd1"
+
+[[env.production.kv_namespaces]]
+binding = "LANDING_CONFIG"
+id = "9d3721bdcdae4379b62f9ff89b674a3b"
+
+[[env.production.kv_namespaces]]
+binding = "CAMPAIGN_AB_ALIAS_INDEX"
+id = "d6f69f77e4374d3085918bf1cbc73143"
+
+[[env.production.kv_namespaces]]
+binding = "AB_INDEX"
+id = "03e579da6e814d28a5296b9048f168fc"
+
+[[env.production.kv_namespaces]]
+binding = "ROUTE_ALIAS"
+id = "f153c54f75224fe586d24212cbd05ae1"
+
+[[env.production.kv_namespaces]]
+binding = "APP_CONFIG"
+id = "08ecb4cf992d48878c7a61c0c4ad9ff4"
+
+[[env.production.kv_namespaces]]
+binding = "ANALYTICS_DATA"
+id = "178634840a24440ba626f6bffe761b12"
+
+[[env.production.kv_namespaces]]
+binding = "GUARD_CACHE"
+id = "220cedc163c141cfb8119f675b6a6dc8"
+[[env.production.analytics_engine_datasets]]
+binding = "AE_CONVERSION"
+dataset = "cognilink_conversion_prod"
+
+[[env.production.analytics_engine_datasets]]
+binding = "AE_TRAFFIC"
+dataset = "cognilink_traffic_prod"
+
+[[env.production.analytics_engine_datasets]]
+binding = "AE_EXPERIMENT"
+dataset = "cognilink_experiment_prod"
+
+[env.production.vars]
+ENV_NAME = "production"
+GA4_ID = "G-K5RNWREM5K"
+META_PIXEL_ID = "1452820495739175"

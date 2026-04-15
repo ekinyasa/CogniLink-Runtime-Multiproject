@@ -1,0 +1,704 @@
+Teste baamadan check:
+Analytics tab
+Show test campaigns off
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+new-beta	128
+—	13
+promt20md1	11
+hello-campaign	3
+md19	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+nb	115
+nbio	13
+hellokitty	13
+igp2m1	6
+p2m1	4
+hello	3
+m9bio	2
+2ndalias	1
+CLICKS BY SLUG
+
+Slug	Clicks
+new-beta-igbio	128
+hello-story-swipe	13
+promt20md1-igbio	10
+hello-campaign-igbio	3
+md19-igbio	2
+promt20md1-igstory	1
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/9/2026, 9:43:19 AM	nbio	new-beta-igbio	new-beta	—
+3/9/2026, 9:43:15 AM	hellokitty	hello-story-swipe	—	—
+3/9/2026, 9:40:43 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:40:28 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:39:53 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:39:16 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:36:46 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:35:23 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:29:55 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:29:19 AM	2ndalias	promt20md1-igstory	promt20md1	—
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	—
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	offer
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	vsl
+3/9/2026, 9:21:51 AM	nb	new-beta-igbio	new-beta	—
+3/9/2026, 9:11:52 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:08:44 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:05:05 AM	hello	hello-campaign-igbio	hello-campaign	vsl
+3/9/2026, 9:04:10 AM	hello	hello-campaign-igbio	hello-campaign	offer
+3/9/2026, 9:03:22 AM	hello	hello-campaign-igbio	hello-campaign	—
+3/9/2026, 9:00:14 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/8/2026, 4:14:53 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:14:21 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:12:53 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:12:03 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:11:38 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:09:57 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 4:09:01 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:06:45 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:40 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:38 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:37 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:01:14 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 3:54:38 PM	m9bio	md19-igbio	md19	—
+Generated at 3/9/2026, 2:06:58 PM · 306ms
+
+
+
+
+Show test campaigns on
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+test-1772985007226	4
+test-1772899349357	4
+test-1772924163818	4
+test-1772961958738	4
+test-1773048338306	4
+test-1773047882203	4
+test-1772898554747	3
+test-1773048111694	3
+test-1772922819336	3
+test-1772961280041	3
+test-1772922352129	3
+test-1772963162699	2
+test-1772923070259	2
+test-1772961633195	2
+test-1772923891030	2
+test-1772983708486	2
+test-1772983352209	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+test-2aab62	4
+test-dc4a2e	4
+test-b9f4ee	4
+test-af1b34	4
+test-deb573	4
+test-a93a11	4
+test-8d142b	3
+test-1fffe6	3
+test-0aeaa1	3
+test-c8dcb6	3
+test-ac060c	3
+test-fcc50f	2
+test-44d0dc	2
+test-1782fc	2
+test-19dbc4	2
+test-431828	2
+test-a09aa4	2
+CLICKS BY SLUG
+
+Slug	Clicks
+test-1773047882203-igbio	4
+test-1773048338306-igbio	4
+test-1772924163818-igbio	4
+test-1772961958738-igbio	4
+test-1772985007226-igbio	4
+test-1772899349357-igbio	4
+test-1772922352129-igbio	3
+test-1772961280041-igbio	3
+test-1772922819336-igbio	3
+test-1773048111694-igbio	3
+test-1772898554747-igbio	3
+test-1772983708486-igbio	2
+test-1772983352209-igbio	2
+test-1772961633195-igbio	2
+test-1772923891030-igbio	2
+test-1772963162699-igbio	2
+test-1772923070259-igbio	2
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/9/2026, 9:25:39 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	vsl
+3/9/2026, 9:25:38 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	—
+3/9/2026, 9:25:38 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	offer
+3/9/2026, 9:25:38 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	—
+3/9/2026, 9:21:52 AM	test-ac060c	test-1773048111694-igbio	test-1773048111694	—
+3/9/2026, 9:21:52 AM	test-ac060c	test-1773048111694-igbio	test-1773048111694	—
+3/9/2026, 9:21:52 AM	test-ac060c	test-1773048111694-igbio	test-1773048111694	vsl
+3/9/2026, 9:18:03 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	vsl
+3/9/2026, 9:18:02 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	—
+3/9/2026, 9:18:02 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	offer
+3/9/2026, 9:18:02 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	—
+3/8/2026, 3:50:08 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	vsl
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	offer
+Generated at 3/9/2026, 2:06:58 PM · 306ms
+
+
+# Prompt 21 — Test Protokolü
+
+Aşağıdaki testler uygulanarak Prompt 21'in gerçekten stabil çalıştığı doğrulanmalıdır.
+
+Test sonuçları bu dosyanın altına eklenmelidir.
+
+---
+
+## TEST 1 — Alias auto compile
+
+Yeni campaign oluşturdum promt-21-md
+
+Alias :alias:p21
+
+Compile butonuna basma.
+
+Test:
+
+Summary
+URL: https://links.niluferormanli.studio/p21
+Status: 404
+Source: Network
+Address: 172.67.129.175:443
+
+Request
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Cookie: _fbp=fb.1.1772882855253.226904263755154093; _ga=GA1.1.657844235.1772882855; _ga_DWCN82754X=GS2.1.s1773054620$o12$g0$t1773054620$j60$l0$h0; _ga_DWCN82754X=deleted
+Priority: u=0, i
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: none
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15
+
+Response
+Alt-Svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+cf-ray: 9d99a2ba9c09ea43-FCO
+Content-Length: 9
+Content-Type: text/plain;charset=UTF-8
+Date: Mon, 09 Mar 2026 11:10:52 GMT
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Priority: u=0,i
+Referrer-Policy: strict-origin-when-cross-origin
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=RGwB9f5LnM1AHssrh2FTHe5y1YiXZrc6mSESERUUOS4cttbb5B0SIYuFydkjfVsYU24dYU0twq0U1r6SuZ4n7mZSeekLVJ4y1cnE%2BPEZGQRsdodqkJa0Y1o%3D"}]}
+Server: cloudflare
+Server-Timing: cfCacheStatus;desc="DYNAMIC", cfEdge;dur=9,cfOrigin;dur=12, cfExtPri
+X-Content-Type-Options: nosniff
+x-robots-tag: noindex,nofollow
+
+---
+
+## TEST 2 — Campaign alias redirect
+
+launch-igbio https://links.niluferormanli.studio/c/promt-21-md-igbio
+launch-youtube (olusururken internet gitti UI: Request failed. Check connection.)
+(internet geri geldi.. tekrar deneme) launch-youtube https://links.niluferormanli.studio/c/promt-21-md-yt
+oluuruldu
+
+Admin panelde default slug seç. 
+Test:
+sluglara alias eklememiim ama campaign penceresinde 
+promt-21-md-yt defult sectim
+https://links.niluferormanli.studio/p21
+ilk buton https://niluferormanli.com/?utm_source=youtube&utm_medium=description&utm_campaign=promt-21-md&utm_content=primary_official
+
+Sonra default slug değiştir.
+*bug var.. yanlııkla sayfayı refresh ettim, campaign sayfasından defult slug alanları kayboldu. ne sekilde geri geldiklerini anlamaya calisiyorum ancak duzensiz - ayni hamleleri yapinca geri donmuyorlar:
+
+ilk denememde workspace'i all'dan defulta alinca defult slug optiponlari geri geldi. 
+
+yeniden F5 > defult slg kayboldu
+bu sefer workspace degisimi ile gelmedi. 
+f5 - worskspcae degistirmek - shof archived ya da show test campaigns filtreleriyle oynayinca bazen tekrar gorunur hale gelebiliyorlar
+
+simdi all workspace + show test on off ile geri geldi 
+ancak promt-21-md defult slug igbio secili gorunuyor, degisiklik yapmadan 
+https://links.niluferormanli.studio/p21 adresine gidiyorum ilk link:
+https://niluferormanli.com/?utm_source=youtube&utm_medium=description&utm_campaign=promt-21-md&utm_content=primary_official
+
+promt-21-md defult slug tekrar yt secip tekrar bakiyorum
+https://links.niluferormanli.studio/p21 > https://niluferormanli.com/?utm_source=youtube&utm_medium=description&utm_campaign=promt-21-md&utm_content=primary_official
+
+https://niluferormanli.com/?utm_source=youtube&utm_medium=description&utm_campaign=promt-21-md&utm_content=primary_official
+
+
+defult: igbio secili iken alias edit yapmayı deneyeceğim (alias pr21 yapıp kaydettim) 
+https://links.niluferormanli.studio/pr21 > https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=promt-21-md&utm_content=primary_official
+
+teori, Default slug option onchange save edilmiyor olabilir (save butonu yok, alias edit için aliasa tıklayinca açılan save butonu sanırım defult slug değisimini de kaydedebiliyor)
+
+
+cmd+r tekrart deniyorum: campaign tabina gidince gene ui'de defult slug seçenekleri kayboldu 
+
+
+---
+
+## TEST 3 — Background diagnostics
+
+Diagnostics panelden background test çalıştır.
+
+Lightweight autonomous test: creates a fixture, fires the click sequence, validates AE ingestion, then archives. Can be scheduled via Cron Trigger.
+
+✖ Background test failed · 98263ms · stage: analytics (AE timeout) · Mon, 09 Mar 2026 11:51:59 UTC
+Last automatic system test: Mon, 09 Mar 2026 11:51:59 UTC · ✖ Failed
+
+not bu test de üst üste düzgün kodlanamadı.. buna benzer sonuç alamadığımız tüm alanları bir önceki promtta slug test filter logicini sorup sebebini anlamaya calistigimiz gibi duzeltemedigimi diger alanlar icin de bilgi isteyelim.
+---
+
+## TEST 4 — Admin verify endpoint
+
+> fetch("/api/admin/verify?alias=p2m1", {
+  method: "GET",
+  headers: {
+    "Authorization": "Bearer xxxx"
+  }
+}).then(r => r.json()).then(console.log)
+< Promise {status: "pending"}
+[Log] {ok: true, alias: "p2m1", campaign: "promt20md1", slug: "promt20md1-igbio", defaultUtms: {utm_source: "instagram", utm_medium: "bio"}, …}
+
+---
+
+## TEST 5 — Stopwatch
+
+bu ok.. sorun yok, networkte hiç biry tetiklenmiyor
+---
+
+## TEST 6 — Fixture lifecycle doğrulaması
+
+System test çalıştı.. 
+
+Test sırasında admin panelde slug listesinde:
+ /c/test-1773057906330-igbio
+test-1773057906330 · — · — (test filter on çalıyor - filtrelenebiliyor)
+
+Router	✓ PASS
+Modifier routing	✓ PASS
+KV registry	✓ PASS
+Telemetry ingest	✓ PASS
+Analytics ingest	✓ PASS
+Consistency probe	✓ PASS
+Manual validation	⚠ DELAYED
+Hub integrity	✓ PASS
+All checks passed · 97511ms
+
+Test Fixture
+Campaign: test-1773057906330
+Alias: test-8c90be
+Slug: test-1773057906330-igbio
+Warnings
+Manual: Manual validation timeout. Events may appear after the retry window due to Analytics Engine ingestion delay.
+Manual validation delayed due to AE ingestion latency
+
+
+
+
+---
+
+## TEST 7 — Regression
+
+https://links.niluferormanli.studio/c/hello-campaign-yt > https://niluferormanli.com/?utm_source=youtube&utm_medium=description&utm_campaign=hello-campaign&utm_content=primary_official
+
+
+https://links.niluferormanli.studio/m9bio > 
+ - https://www.niluferormanli.com/programs?utm_source=instagram&utm_medium=bio&utm_campaign=md19&utm_content=primary_programs
+ - https://google.com/?utm_source=instagram&utm_medium=bio&utm_campaign=md19&utm_content=g
+
+
+https://links.niluferormanli.studio/m9bio/offer > 
+ - https://www.niluferormanli.com/programs?utm_source=instagram&utm_medium=bio&utm_campaign=md19&utm_content=primary_programs
+ - https://google.com/?utm_source=instagram&utm_medium=bio&utm_campaign=md19&utm_content=g
+
+analitics tab burada takıldı gibi görünüyor:
+
+3/9/2026, 12:09:31 PM	m9bio	md19-igbio	md19	offer
+3/9/2026, 12:08:47 PM	m9bio	md19-igbio	md19	—
+3/9/2026, 12:05:06 PM	nb	new-beta-igbio	new-beta	offer
+3/9/2026, 11:46:39 AM	pr21	promt-21-md-igbio	promt-21-md	—
+3/9/2026, 11:44:31 AM	p21	promt-21-md-yt	promt-21-md	—
+
+hello-campaign-yt baya zamandir yansimadi kontrol için  linkleri de açtım 
+https://links.niluferormanli.studio/hellokitty
+https://links.niluferormanli.studio/editalies
+https://links.niluferormanli.studio/c/hello-campaign-yt
+
+
+ok sanırım sorun yok.. delay var:
+	Slug	Campaign	Modifier
+3/9/2026, 12:13:43 PM	editalies	hello-campaign-yt	hello-campaign	—
+3/9/2026, 12:13:21 PM	hellokitty	hello-story-swipe	—	—
+3/9/2026, 12:09:31 PM	m9bio	md19-igbio	md19	offer
+3/9/2026, 12:08:47 PM	m9bio	md19-igbio	md19	—
+3/9/2026, 12:05:06 PM	nb	new-beta-igbio	new-beta	offer
+3/9/2026, 11:46:39 AM	pr21	promt-21-md-igbio	promt-21-md	—
+
+---
+
+
+
+
+# Prompt 22 Öncesi Yeni Test Protokolü
+
+Aşağıdaki testler Prompt 21 sonrası sistemin gerçekten production‑ready olup olmadığını anlamak için yapılmalıdır.
+
+---
+
+## TEST 8 — Default slug persistence
+
+Amaç  
+Default slug değişiminin gerçekten KV’ye yazılıp yazılmadığını doğrulamak.
+
+Adımlar
+
+1. campaign aç pre22-test \ p22t | slugs: /c/pre22-test-igbio p22tig ve /c/pre22-test-spbio p22tsp
+2. default slug = igbio seç -> https://links.niluferormanli.studio/p22t > https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=pre22-test&utm_content=primary_official
+
+edit değil sadece defult: spbio > https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=pre22-test&utm_content=primary_official
+
+3. save tetiklemek için alias edit yaptım 
+4. sayfayı refresh et > https://niluferormanli.com/?utm_campaign=pre22-test&utm_content=primary_official
+5. campaign paneline tekrar gir
+
+
+oldu gibi.. ama parametre eksiklikleri var ayrica ui da bi sorunlu.. kolayca kaydedilmesi lazim boyle refreashle fitlan olmaz.. ayrıca her refreshde defult slug optionlari gene kayboluyor gene kaybolduğu için tam çözemedim mdi bir daha deniyorum..
+
+tekrar optionları görünür hale getirmeyi basardım.
+
+su an Default slug: spsbio secili
+https://links.niluferormanli.studio/p22t sayfasi ilk link : https://niluferormanli.com/?utm_campaign=pre22-test&utm_content=primary_official
+
+Default slug degiiriyorum: artik Default slug: igbio (alias edit etmeden https://links.niluferormanli.studio/p22t  kontrol > https://niluferormanli.com/?utm_campaign=pre22-test&utm_content=primary_official)
+
+alias edit p22t değiirmeden save (https://links.niluferormanli.studio/p22t kontrol > https://niluferormanli.com/?utm_campaign=pre22-test&utm_content=primary_official)
+
+alias edit p22tt değiirip save (https://links.niluferormanli.studio/p22t kontrol > https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=pre22-test&utm_content=primary_official) -> değisti
+
+
+buggy.. kullanissiz.. 
+---
+
+## TEST 9 — Alias auto compile retry
+
+Amaç  
+Auto compile mekanizmasının gerçekten deterministic çalıştığını doğrulamak.
+
+Adımlar
+
+1. yeni campaign aç bpre22-testb
+2. alias ekle bpre22
+3. compile butonuna basma
+4. alias URL aç 404
+
+---
+
+## TEST 10 — AE ingestion latency ölçümü
+
+Amaç  
+Analytics Engine gecikmesini ölçmek.
+
+Adımlar
+
+1. alias linkine tıkla
+2. stopwatch başlat
+3. analytics tabda event görünene kadar bekle
+
+https://links.niluferormanli.studio/c/bpre22-testb-google tıkladım 
+8 dk geçti analitics tabda event yok
+ama linkhub_ops_events analitic engine tablosunda
+bu satır var 2026-03-09 15:34:03	linkhub_ops_events	route_fail_unknown_alias	bpre22					9d9b243cba08ea62-FCO
+
+
+bi kere daha bu sefer hem https://links.niluferormanli.studio/c/bpre22-testb-google hem de ilk butonuna tıkladım 2 dk bekledim gene analiticse gelmedi
+
+eski bir alias urline girdim 30 saniyede geldi.. tekrarlıyorum gene baska eski bir alias ile gene 30 35 saniyede geldi (yeniler compile dilmedigi için olabilir mi diye compile routes ardindan tekrar url ve analitics gozlem yapicam) -> evet bu sefer 30-40 sn arasinda geldi
+
+---
+
+## TEST 11 — Background diagnostics stability
+
+Diagnostics testini **3 kez arka arkaya çalıştır**.
+
+Background Self-Test:
+1: Lightweight autonomous test: creates a fixture, fires the click sequence, validates AE ingestion, then archives. Can be scheduled via Cron Trigger. Background test error: Load failed
+2:✖ Background test failed · 97730ms · stage: analytics (AE timeout) · Mon, 09 Mar 2026 16:02:42 UTC
+
+herhalde 3. ye gerek yok.. 
+---
+
+## TEST 12 — Admin verify endpoint consistency
+
+Aynı alias için verify endpoint'i 3 kez çağır.
+
+< Promise {status: "pending"}
+[Log] {ok: true, alias: "igp2m1", campaign: "promt20md1", slug: "promt20md1-igbio", defaultUtms: {utm_source: "instagram", utm_medium: "bio"}, …}
+
+< Promise {status: "pending"}
+[Log] {ok: true, alias: "igp2m1", campaign: "promt20md1", slug: "promt20md1-igbio", defaultUtms: {utm_source: "instagram", utm_medium: "bio"}, …}
+
+< Promise {status: "pending"}
+[Log] {ok: true, alias: "igp2m1", campaign: "promt20md1", slug: "promt20md1-igbio", defaultUtms: {utm_source: "instagram", utm_medium: "bio"}, …}
+---
+
+## TEST 13 — High‑frequency click test
+
+çok fena.. recentte tek kayıt 3/9/2026, 4:13:14 PM	hellokitty	hello-story-swipe	—	—
+clck by alias +1 arttı.. daha fenası analitics engine de 2 adet yansıdı.. bu ilkkez oluyor.. önceki versiyonlarda bu sorun yoktu
+
+
+NOT: önceki son notuma ekler.. timer start\stop but. toggle olarak calismali (durmuen kaçta duruyorsa starta basinca oldugu sayidan devam,  devam ederken tekrar basinca o sayida dur.) run ederken resete basinca 0 lanip 0dan saymaya devam etmeli, eger durmua resatra basinca 0lamali ama run etmemli
+---
+
+# Prompt 21 Durum Değerlendirmesi
+
+Şu anki testlere göre sistem durumu:
+
+routing: STABLE  
+slug registry: STABLE  
+telemetry: STABLE  
+analytics: STABLE (AE latency var)  
+admin UI: BUGGY (default slug persistence)
+
+Dolayısıyla nihai verdict şu an:
+
+```
+PARTIAL ACCEPT
+```
+
+Prompt 22 büyük ihtimalle şu üç konuya odaklanacak:
+
+1. admin panel defaultSlug persistence
+2. diagnostics AE timeout logic
+3. deployed version indicator
+
+
+
+
+# GPT Ek Değerlendirme — Test 8‑13 Sonuç Analizi
+
+Yeni eklenen test sonuçları Campaign OS çekirdeğinin çalıştığını fakat **admin panel state yönetimi ve bazı operasyonel mekanizmaların henüz production‑grade olmadığını** gösteriyor.
+
+Aşağıda testlere göre net durum değerlendirmesi:
+
+## Default slug persistence
+
+Sonuç: **FAIL (UI state bug)**
+
+Gözlemler:
+
+- Default slug değişimi yalnızca alias edit sonrası persist oluyor
+- Sayfa refresh sonrası default slug selector kayboluyor
+- Workspace / filter toggle sonrası tekrar görünebiliyor
+
+Bu davranış şu anlama geliyor:
+
+```
+defaultSlug
+→ UI state
+→ KV persist tetiklenmiyor
+```
+
+Büyük ihtimalle:
+
+- onchange handler KV write yapmıyor
+- yalnızca alias save endpoint KV persist tetikliyor
+
+Dolayısıyla bu **backend bug değil, admin panel state management bug**.
+
+---
+
+## Alias auto compile
+
+Sonuç: **FAIL (compile dependency var)**
+
+Yeni alias oluşturulduğunda:
+
+```
+/<alias>
+→ 404
+```
+
+Bu şu anlama geliyor:
+
+```
+alias write
+→ route compile tetiklenmiyor
+```
+
+Yani Prompt 21’de varsayılan kabul edilen **auto compile davranışı gerçekleşmemiş**.
+
+---
+
+## Analytics Engine ingestion
+
+Sonuç: **PASS (AE delay mevcut)**
+
+Ölçümler:
+
+- eski alias: ~30‑40 sn
+- yeni alias: compile sonrası aynı süre
+
+Dolayısıyla gecikme sistem hatası değil.
+
+```
+AE latency ≈ 30‑40 sec
+```
+
+Background diagnostics timeout’unun nedeni büyük ihtimalle bu.
+
+---
+
+## Background diagnostics
+
+Sonuç: **FAIL (timeout threshold yanlış)**
+
+Gözlem:
+
+```
+stage: analytics (AE timeout)
+```
+
+Ancak manuel testlerde eventler daha sonra geliyor.
+
+Yani test harness:
+
+```
+AE window < gerçek ingestion latency
+```
+
+Bu nedenle false negative üretiyor.
+
+---
+
+## Verify endpoint
+
+Sonuç: **PASS**
+
+Endpoint 3 kez çağrıldığında aynı JSON dönüyor.
+
+Bu registry consistency açısından iyi bir işaret.
+
+---
+
+## High‑frequency click test
+
+Sonuç: **FAIL (aggregation bug)**
+
+Gözlem:
+
+- analytics tab: +1
+- AE table: +2 event
+
+Bu iki ihtimali gösterir:
+
+```
+telemetry duplicate ingest
+veya
+analytics aggregation bug
+```
+
+Bu mutlaka incelenmeli çünkü kampanya verisini bozabilir.
+
+---
+
+# Güncel Sistem Durumu
+
+Son testlerden sonra sistemin gerçek durumu:
+
+```
+routing            ✓ STABLE
+slug registry      ✓ STABLE
+telemetry ingest   ✓ STABLE
+analytics ingest   ✓ STABLE (AE latency var)
+admin UI           ✖ BUGGY
+alias compile      ✖ BUGGY
+diagnostics        ✖ BUGGY
+analytics counter  ✖ BUGGY
+```
+
+Dolayısıyla nihai değerlendirme:
+
+```
+Prompt 21 Verdict
+PARTIAL ACCEPT
+```
+
+Ancak production’a geçmeden önce aşağıdaki konuların çözülmesi gerekir.
+
+---
+
+# Prompt 22 — Hedef Düzeltmeler
+
+Prompt 22 şu dört probleme odaklanmalıdır:
+
+1️⃣ **defaultSlug persistence**
+
+- defaultSlug değişimi anında KV’ye yazılmalı
+- alias edit'e bağlı olmamalı
+- refresh sonrası selector kaybolmamalı
+
+---
+
+2️⃣ **alias auto compile**
+
+Alias veya slug write sonrası:
+
+```
+compileRoutes()
+```
+
+otomatik tetiklenmeli.
+
+---
+
+3️⃣ **diagnostics AE timeout**
+
+Timeout window en az:
+
+```
+120 sec
+```
+
+olmalı veya retry logic eklenmeli.
+
+---
+
+4️⃣ **analytics duplicate events**
+
+High‑frequency click testte oluşan:
+
+```
+AE +2
+analytics +1
+```
+
+mismatch araştırılmalı.
+
+---
+
+# Prompt 22 Ön Taslak
+
+
+```
+
+---
+
+Bu noktadan sonra Prompt 22 ile sistem büyük ihtimalle **production‑ready çekirdeğe ulaşacaktır**.
+

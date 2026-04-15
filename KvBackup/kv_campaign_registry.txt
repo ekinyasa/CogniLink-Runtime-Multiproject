@@ -1,0 +1,140 @@
+[
+  {
+    "name": "ab_config:83bandit"
+  },
+  {
+    "name": "ab_config:86bandit"
+  },
+  {
+    "name": "ab_config:a65ab"
+  },
+  {
+    "name": "ab_config:bandit1"
+  },
+  {
+    "name": "ab_config:bandit2"
+  },
+  {
+    "name": "ab_config:bandit3"
+  },
+  {
+    "name": "ab_config:bandit4"
+  },
+  {
+    "name": "ab_config:bandit5"
+  },
+  {
+    "name": "ab_config:bandit7"
+  },
+  {
+    "name": "ab_config:bandit87"
+  },
+  {
+    "name": "ab_config:computeepsilon"
+  },
+  {
+    "name": "ab_config:p79test"
+  },
+  {
+    "name": "ab_config:p83test"
+  },
+  {
+    "name": "ab_config:prf"
+  },
+  {
+    "name": "ab_config:sim2"
+  },
+  {
+    "name": "ab_config:sim3ab"
+  },
+  {
+    "name": "ab_config:sim4ab"
+  },
+  {
+    "name": "conv:79igbio:p79testc-igbio"
+  },
+  {
+    "name": "conv:83bandit:83banditc-igbio"
+  },
+  {
+    "name": "conv:bandit1:bandit1-a"
+  },
+  {
+    "name": "conv:bandit1:bandit1-c1-igbio"
+  },
+  {
+    "name": "conv:bandit1:bandit1-campaign1-igbio"
+  },
+  {
+    "name": "conv:bandit1:bandit1-campaign1-yt"
+  },
+  {
+    "name": "conv:bandit2:<real_slug_a>"
+  },
+  {
+    "name": "conv:bandit2:bandit2-campaign-igbio"
+  },
+  {
+    "name": "conv:bandit3:bandit3-camp-igbio"
+  },
+  {
+    "name": "conv:bandit3:bandit3-camp-yt"
+  },
+  {
+    "name": "conv:bandit4:bandit4c-spbio"
+  },
+  {
+    "name": "conv:bandit4:bandit4c-yt"
+  },
+  {
+    "name": "conv:bandit5:bandit5-camp-igbio"
+  },
+  {
+    "name": "conv:bandit5:bandit5c-igstory"
+  },
+  {
+    "name": "conv:bandit6:bandit6-camp-igbio"
+  },
+  {
+    "name": "conv:bandit7:bandit7c-igstory"
+  },
+  {
+    "name": "conv:bandit7:bandit7c-ttbio"
+  },
+  {
+    "name": "conv:computeepsilon:computeepsilonc-igbio"
+  },
+  {
+    "name": "conv:computeepsilon:computeepsilonc-yt"
+  },
+  {
+    "name": "conv:p79test:p79test-ig"
+  },
+  {
+    "name": "conv:p79test:p79testc-igbio"
+  },
+  {
+    "name": "conv:p79test:p79testc-yt"
+  },
+  {
+    "name": "conv:p83test:p83test-ig"
+  },
+  {
+    "name": "conv:prf:proove-igbio"
+  },
+  {
+    "name": "conv:prf:proove-ttbio"
+  },
+  {
+    "name": "conv:sim4ab:sim-4-igbio"
+  },
+  {
+    "name": "conv:sim4ab:sim-4-yt"
+  },
+  {
+    "name": "conv:sim4ab:sim4igbio"
+  },
+  {
+    "name": "exp:83banditc"
+  }
+]

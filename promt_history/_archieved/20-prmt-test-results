@@ -1,0 +1,1117 @@
+Stop Watch (aka sw) 00:00,00 started 
+
+Analytics window UI copy
+Refresh
+Show test campaigns (OFF)
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+new-beta	123
+—	12
+md19	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+nb	111
+nbio	12
+hellokitty	12
+m9bio	2
+CLICKS BY SLUG
+
+Slug	Clicks
+new-beta-igbio	123
+hello-story-swipe	12
+md19-igbio	2
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/8/2026, 4:14:53 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:14:21 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:12:53 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:12:03 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:11:38 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:09:57 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 4:09:01 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:06:45 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:40 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:38 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:37 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:01:14 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 3:54:38 PM	m9bio	md19-igbio	md19	—
+3/8/2026, 3:22:32 PM	nb	new-beta-igbio	new-beta	vsl
+3/8/2026, 3:22:32 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 3:19:19 PM	m9bio	md19-igbio	md19	—
+3/8/2026, 2:55:23 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:55:18 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:55:11 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:55:05 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:52:45 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:49:44 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:49:38 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:48:30 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:48:20 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:48:11 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 1:09:27 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 1:08:06 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 10:41:27 AM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 9:20:33 AM	nb	new-beta-igbio	new-beta	—
+Generated at 3/9/2026, 11:41:37 AM · 280ms
+
+
+Analytics window 
+Refresh
+Show test campaigns (ON)
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+test-1772985007226	4
+test-1772899349357	4
+test-1772924163818	4
+test-1772961958738	4
+test-1772898554747	3
+test-1772922819336	3
+test-1772961280041	3
+test-1772922352129	3
+test-1772963162699	2
+test-1772923070259	2
+test-1772961633195	2
+test-1772923891030	2
+test-1772983352209	2
+test-1772983708486	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+test-af1b34	4
+test-2aab62	4
+test-a93a11	4
+test-deb573	4
+test-1fffe6	3
+test-0aeaa1	3
+test-c8dcb6	3
+test-8d142b	3
+test-a09aa4	2
+test-431828	2
+test-1782fc	2
+test-44d0dc	2
+test-19dbc4	2
+test-fcc50f	2
+CLICKS BY SLUG
+
+Slug	Clicks
+test-1772924163818-igbio	4
+test-1772961958738-igbio	4
+test-1772985007226-igbio	4
+test-1772899349357-igbio	4
+test-1772922352129-igbio	3
+test-1772961280041-igbio	3
+test-1772922819336-igbio	3
+test-1772898554747-igbio	3
+test-1772983708486-igbio	2
+test-1772983352209-igbio	2
+test-1772961633195-igbio	2
+test-1772923891030-igbio	2
+test-1772963162699-igbio	2
+test-1772923070259-igbio	2
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/8/2026, 3:50:08 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	vsl
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	offer
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	—
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	—
+3/8/2026, 3:28:28 PM	test-a09aa4	test-1772983708486-igbio	test-1772983708486	—
+3/8/2026, 3:28:28 PM	test-a09aa4	test-1772983708486-igbio	test-1772983708486	—
+3/8/2026, 3:22:32 PM	test-44d0dc	test-1772983352209-igbio	test-1772983352209	—
+3/8/2026, 3:22:32 PM	test-44d0dc	test-1772983352209-igbio	test-1772983352209	—
+3/8/2026, 9:46:02 AM	test-431828	test-1772963162699-igbio	test-1772963162699	—
+3/8/2026, 9:46:02 AM	test-431828	test-1772963162699-igbio	test-1772963162699	—
+3/8/2026, 9:25:59 AM	test-deb573	test-1772961958738-igbio	test-1772961958738	—
+3/8/2026, 9:25:59 AM	test-deb573	test-1772961958738-igbio	test-1772961958738	vsl
+3/8/2026, 9:25:59 AM	test-deb573	test-1772961958738-igbio	test-1772961958738	offer
+3/8/2026, 9:25:59 AM	test-deb573	test-1772961958738-igbio	test-1772961958738	—
+3/8/2026, 9:20:33 AM	test-fcc50f	test-1772961633195-igbio	test-1772961633195	—
+3/8/2026, 9:20:33 AM	test-fcc50f	test-1772961633195-igbio	test-1772961633195	vsl
+Generated at 3/9/2026, 11:41:37 AM · 280ms
+
+## TEST 1 Alias oluşturma sonrası otomatik routing
+Campaign promt20md1 aka p2m1 created
+https://links.niluferormanli.studio/p2m1 404
+
+slug: promt20md1-igbio aka igp2m1
+https://links.niluferormanli.studio/igp2m1 rendered
+inner buton link https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=promt20md1&utm_content=primary_official
+sw 03:41,00
+
+
+
+
+## TEST 2 Modifier routing
+
+fixture dediğin eskiden oluurulmudemek diye varsayıyorum.. bu durumda eski kampanya aliasi:
+https://links.niluferormanli.studio/hello rendered Status: 200
+inner button: https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=hello-campaign&utm_content=primary_official
+
+
+https://links.niluferormanli.studio/hello/offer 
+Status: 200
+
+inner https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=hello-campaign&utm_content=primary_official
+
+*sw 7:29
+
+https://links.niluferormanli.studio/hello/vsl 200
+https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=hello-campaign&utm_content=primary_official
+
+*sw 9:05
+Analytics
+Refresh
+Show test campaigns
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+new-beta	123
+—	12
+hello-campaign	3
+md19	2
+promt20md1	1
+CLICKS BY ALIAS
+
+Alias	Clicks
+nb	111
+nbio	12
+hellokitty	12
+hello	3
+m9bio	2
+igp2m1	1
+CLICKS BY SLUG
+
+Slug	Clicks
+new-beta-igbio	123
+hello-story-swipe	12
+hello-campaign-igbio	3
+md19-igbio	2
+promt20md1-igbio	1
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/9/2026, 9:05:05 AM	hello	hello-campaign-igbio	hello-campaign	vsl
+3/9/2026, 9:04:10 AM	hello	hello-campaign-igbio	hello-campaign	offer
+3/9/2026, 9:03:22 AM	hello	hello-campaign-igbio	hello-campaign	—
+3/9/2026, 9:00:14 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/8/2026, 4:14:53 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:14:21 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:12:53 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:12:03 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:11:38 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:09:57 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 4:09:01 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:06:45 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:40 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:38 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:37 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:01:14 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 3:54:38 PM	m9bio	md19-igbio	md19	—
+3/8/2026, 3:22:32 PM	nb	new-beta-igbio	new-beta	vsl
+3/8/2026, 3:22:32 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 3:19:19 PM	m9bio	md19-igbio	md19	—
+3/8/2026, 2:55:23 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:55:18 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:55:11 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:55:05 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:52:45 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:49:44 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:49:38 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:48:30 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:48:20 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 2:48:11 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 1:09:27 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 1:08:06 PM	hellokitty	hello-story-swipe	—	—
+3/8/2026, 10:41:27 AM	nb	new-beta-igbio	new-beta	—
+Generated at 3/9/2026, 12:06:18 PM · 436ms
+
+## TEST 3 Alias hub vs slug hub parity
+bunu bu testte yeni açtığım kampanya - slug üzerinden ve alias üzerinden
+doğrulamak daha doğru olur sanırım
+
+sw 10:58 https://links.niluferormanli.studio/c/promt20md1-igbio
+iki defa tıkladım yanlııkla
+inner https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=hello-campaign&utm_content=primary_official
+
+sw 11:29 https://links.niluferormanli.studio/igp2m1
+inner https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=promt20md1&utm_content=primary_official
+
+bu linke edit ile custom buton eklemeyi deneyeceğim çünkü önceden sorun yanmıı
+
+custoim buton label: P20 URL www.promt20.com
+
+sw 1440
+https://links.niluferormanli.studio/c/promt20md1-igbio
+https://www.promt20.com/?utm_source=instagram&utm_medium=bio&utm_campaign=promt20md1&utm_content=p20
+
+https://links.niluferormanli.studio/igp2m1
+https://www.promt20.com/?utm_source=instagram&utm_medium=bio&utm_campaign=promt20md1&utm_content=p20
+
+
+## TEST 4 Router auto compile doğrulaması
+current before test 4 
+
+Router Status
+Registry aliases	12
+Compiled routes	13
+Router active	YES
+Last compile	—
+
+
+aliası olmayan /c/hello-campaign-yt slugini edit edip alies ekliyorum sw 16:50
++
+
+promt20md1-igstory yeni slug alias (2ndalias) sw 18:27
+
+router st: 
+egistry aliases	14
+Compiled routes	15
+Router active	YES
+Last compile	—
+
+## TEST 5 Background self test diagnostics
+Lightweight autonomous test: creates a fixture, fires the click sequence, validates AE ingestion, then archives. Can be scheduled via Cron Trigger.
+
+Running background test… (allow up to ~2 minutes for AE ingestion)
+Last automatic system test: Sun, 08 Mar 2026 15:51:44 UTC · ✖ Failed
+sw 20:50 run clicked
+
+sw 22:30 result rendered
+Lightweight autonomous test: creates a fixture, fires the click sequence, validates AE ingestion, then archives. Can be scheduled via Cron Trigger.
+
+✖ Background test failed · 97613ms · Mon, 09 Mar 2026 09:19:39 UTC
+Last automatic system test: Mon, 09 Mar 2026 09:19:39 UTC · ✖ Failed
+
+
+network:
+Summary
+URL: https://links.niluferormanli.studio/api/admin/background-test
+Status: 200
+Source: Network
+Address: 104.21.1.179:443
+Initiator: 
+nilufer:940
+
+Request
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Authorization: Bearer xxxxxx
+Cache-Control: no-cache
+Content-Length: 0
+Content-Type: application/json
+Cookie: _fbp=fb.1.1772882855253.226904263755154093; _ga=GA1.1.657844235.1772882855; _ga_DWCN82754X=GS2.1.s1773046815$o11$g1$t1773047513$j60$l0$h0; _ga_DWCN82754X=deleted
+Origin: https://links.niluferormanli.studio
+Pragma: no-cache
+Priority: u=3, i
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15
+
+Response
+Alt-Svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+cf-ray: 9d98fd6fbec5bac7-MXP
+Content-Encoding: br
+Content-Type: application/json
+Date: Mon, 09 Mar 2026 09:19:39 GMT
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Priority: u=3,i
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=UKYzFz%2FvuI%2FPs17nwFBQmjt0QlT1fR3es7g1uYAOo7zYTE7oV5Si%2BGVB7e6JmC4JZ72rGtbccF3LEtWQX4hL6fUajQwRXbMa2VmY%2FtShBSQ0B20DvZBbzbU5qQ%3D%3D"}]}
+Server: cloudflare
+Server-Timing: cfExtPri
+Vary: accept-encoding
+X-Content-Type-Options: nosniff
+
+
+
+## ek test
+sw 24:45
+system-test run
+Runs all checks in parallel: smoke test, manual validation, and hub link integrity. One-click full system verification. Allow up to ~2 minutes for AE ingestion.
+
+Running system test… (may take up to ~2 minutes for AE ingestion)
+
+....
+sw 26:19 result rendered
+Check	Result
+Router	✓ PASS
+Modifier routing	✓ PASS
+KV registry	✓ PASS
+Telemetry ingest	✓ PASS
+Analytics ingest	✓ PASS
+Consistency probe	✓ PASS
+Manual validation	⚠ DELAYED
+Hub integrity	✓ PASS
+All checks passed · 97497ms
+
+Test Fixture
+Campaign: test-1773048111694
+Alias: test-ac060c
+Slug: test-1773048111694-igbio
+Warnings
+Manual: Manual validation timeout. Events may appear after the retry window due to Analytics Engine ingestion delay.
+Manual validation delayed due to AE ingestion latency
+
+Newtork:
+Summary
+URL: https://links.niluferormanli.studio/api/admin/system-test
+Status: 200
+Source: Network
+Address: 104.21.1.179:443
+Initiator: 
+nilufer:940
+
+Request
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Authorization: Bearer xxxxxx
+Cache-Control: no-cache
+Content-Length: 0
+Content-Type: application/json
+Cookie: _fbp=fb.1.1772882855253.226904263755154093; _ga=GA1.1.657844235.1772882855; _ga_DWCN82754X=GS2.1.s1773046815$o11$g1$t1773047513$j60$l0$h0; _ga_DWCN82754X=deleted
+Origin: https://links.niluferormanli.studio
+Pragma: no-cache
+Priority: u=3, i
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15
+
+Response
+Alt-Svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+cf-ray: 9d99030a0e40bac7-MXP
+Content-Encoding: br
+Content-Type: application/json
+Date: Mon, 09 Mar 2026 09:23:29 GMT
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Priority: u=3,i
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=th5Y6tCcBYvaO9aK%2BcpCqc%2BOr8amWhvgYFRuEAiGrLSZc7qhKPLGmZt4YU0VQZWWxvB0hMOgQciB9flFFlPvZ5InbpDtT2seoVk6kX3JgT0q1QHNg1%2Frujk44Q%3D%3D"}]}
+Server: cloudflare
+Server-Timing: cfExtPri
+Vary: accept-encoding
+X-Content-Type-Options: nosniff
+
+## ek test
+sw27:36
+Run Smoke Test
+Probes routing, KV health, and Analytics Engine pipeline. Read-only. AE retry takes up to ~63s.
+
+Check	Result
+Router	✓ PASS
+Modifier routing	✓ PASS
+KV registry	✓ PASS
+Telemetry ingest	✓ PASS
+Analytics ingest	✓ PASS
+Consistency probe	✓ PASS
+All checks passed · 1707ms
+
+network:
+Summary
+URL: https://links.niluferormanli.studio/api/admin/smoke-test
+Status: 200
+Source: Network
+Address: 104.21.1.179:443
+Initiator: 
+nilufer:940
+
+Request
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Authorization: Bearer xxxxxx
+Cache-Control: no-cache
+Content-Length: 0
+Content-Type: application/json
+Cookie: _fbp=fb.1.1772882855253.226904263755154093; _ga=GA1.1.657844235.1772882855; _ga_DWCN82754X=GS2.1.s1773046815$o11$g1$t1773047513$j60$l0$h0; _ga_DWCN82754X=deleted
+Origin: https://links.niluferormanli.studio
+Pragma: no-cache
+Priority: u=3, i
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15
+
+Response
+Alt-Svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+cf-ray: 9d990751eb9dbac7-MXP
+Content-Encoding: br
+Content-Type: application/json
+Date: Mon, 09 Mar 2026 09:24:48 GMT
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Priority: u=3,i
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=RXojAqZjAVgUnithOOki2gdsldFQGlQ%2FXFu8K%2F8r%2FaLxVe8G9O%2FSqLyaKrtfzEs8EFe7%2Bcf3zQNkVkg1iXQL0toyW%2FqUBp3pXP6xCt8e7HnLhlha4TnY4VmQDA%3D%3D"}]}
+Server: cloudflare
+Server-Timing: cfExtPri
+Vary: accept-encoding
+X-Content-Type-Options: nosniff
+
+## ek test 
+Manual Validation
+Run Manual Validation
+Generates an isolated fixture campaign, fires /{alias}×2, /{alias}/offer, /{alias}/vsl and validates analytics with fixture-scoped filters. Allow up to ~2 minutes for AE ingestion.
+sw 28:26
+
+.... 
+
+sw 30:05 result rendered
+
+
+Check	Expected	Observed	Result
+Alias delta (nb)	4	0	✖ FAIL
+Modifier offer (+1)	1	0	✖ FAIL
+Modifier vsl (+1)	1	0	✖ FAIL
+One or more checks failed · 98098ms
+
+Manual validation timeout. Events may appear after the retry window due to Analytics Engine ingestion delay.
+
+
+Summary
+URL: https://links.niluferormanli.studio/api/admin/manual-test
+Status: 200
+Source: Network
+Address: 104.21.1.179:443
+Initiator: 
+nilufer:940
+
+Request
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Authorization: Bearer xxxxxx
+Cache-Control: no-cache
+Content-Length: 0
+Content-Type: application/json
+Cookie: _fbp=fb.1.1772882855253.226904263755154093; _ga=GA1.1.657844235.1772882855; _ga_DWCN82754X=GS2.1.s1773046815$o11$g1$t1773047513$j60$l0$h0; _ga_DWCN82754X=deleted
+Origin: https://links.niluferormanli.studio
+Pragma: no-cache
+Priority: u=3, i
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15
+
+Response
+Alt-Svc: h3=":443"; ma=86400
+cf-cache-status: DYNAMIC
+cf-ray: 9d9908925ae8bac7-MXP
+Content-Encoding: br
+Content-Type: application/json
+Date: Mon, 09 Mar 2026 09:27:16 GMT
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Priority: u=3,i
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=OJhHOZNxcbz3nv0MUN%2BMaRPeiBW2N3zxiN76hlgU9gRG%2B1DGHIip2n5nWw6gmuA%2F%2BAVabRHZMt%2Fjr9d7VxO%2BlqdAPXvxIyAn60Eo2lJSgTXvofRnKRXojCfDaw%3D%3D"}]}
+Server: cloudflare
+Server-Timing: cfExtPri
+Vary: accept-encoding
+X-Content-Type-Options: nosniff
+
+
+## ek test
+
+Hub Link Integrity
+(Verify all external links on a hub page are reachable.)
+
+Check Links:
+2ndalias:
+✔ VALID HTTP 200 https://niluferormanli.com
+✔ VALID HTTP 200 https://www.niluferormanli.com/programs
+✔ VALID HTTP 200 https://open.spotify.com/artist/5W53sEO2jqnl1IwAvPrtqx
+✔ VALID HTTP 200 https://www.niluferormanli.com/newsletter
+✖ BROKEN HTTP 530 https://www.2ndalias.com -> bu custom link sorun yok hatta iyi sonuc
+
+p2m1:
+✔ VALID HTTP 200 https://niluferormanli.com
+✔ VALID HTTP 200 https://www.niluferormanli.com/programs
+✔ VALID HTTP 200 https://open.spotify.com/artist/5W53sEO2jqnl1IwAvPrtqx
+✔ VALID HTTP 200 https://www.niluferormanli.com/newsletter
+✖ BROKEN HTTP 530 https://www.promt20.com
+
+
+*test kampanya slug list hala bos
+sw 34:15
+Analytics
+Refresh
+Show test campaigns
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+new-beta	127
+—	12
+promt20md1	5
+hello-campaign	3
+md19	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+nb	115
+nbio	12
+hellokitty	12
+hello	3
+igp2m1	3
+m9bio	2
+p2m1	1
+2ndalias	1
+CLICKS BY SLUG
+
+Slug	Clicks
+new-beta-igbio	127
+hello-story-swipe	12
+promt20md1-igbio	4
+hello-campaign-igbio	3
+md19-igbio	2
+promt20md1-igstory	1
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/9/2026, 9:29:55 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:29:19 AM	2ndalias	promt20md1-igstory	promt20md1	—
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	—
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	offer
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	vsl
+3/9/2026, 9:21:51 AM	nb	new-beta-igbio	new-beta	—
+3/9/2026, 9:11:52 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:08:44 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:05:05 AM	hello	hello-campaign-igbio	hello-campaign	vsl
+3/9/2026, 9:04:10 AM	hello	hello-campaign-igbio	hello-campaign	offer
+3/9/2026, 9:03:22 AM	hello	hello-campaign-igbio	hello-campaign	—
+3/9/2026, 9:00:14 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/8/2026, 4:14:53 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:14:21 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:12:53 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:12:03 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:11:38 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:09:57 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 4:09:01 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:06:45 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:40 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:38 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:37 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:01:14 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 3:54:38 PM	m9bio	md19-igbio	md19	—
+3/8/2026, 3:22:32 PM	nb	new-beta-igbio	new-beta	vsl
+3/8/2026, 3:22:32 PM	nb	new-beta-igbio	new-beta	—
+Generated at 3/9/2026, 12:31:21 PM · 257ms
+
+Show test campaigns ON
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+test-1772985007226	4
+test-1772899349357	4
+test-1772924163818	4
+test-1772961958738	4
+test-1773048338306	4
+test-1773047882203	4
+test-1772898554747	3
+test-1773048111694	3
+test-1772922819336	3
+test-1772961280041	3
+test-1772922352129	3
+test-1772963162699	2
+test-1772923070259	2
+test-1772961633195	2
+test-1772923891030	2
+test-1772983708486	2
+test-1772983352209	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+test-2aab62	4
+test-dc4a2e	4
+test-b9f4ee	4
+test-af1b34	4
+test-deb573	4
+test-a93a11	4
+test-8d142b	3
+test-ac060c	3
+test-1fffe6	3
+test-0aeaa1	3
+test-c8dcb6	3
+test-fcc50f	2
+test-44d0dc	2
+test-1782fc	2
+test-431828	2
+test-19dbc4	2
+test-a09aa4	2
+CLICKS BY SLUG
+
+Slug	Clicks
+test-1773047882203-igbio	4
+test-1773048338306-igbio	4
+test-1772924163818-igbio	4
+test-1772961958738-igbio	4
+test-1772985007226-igbio	4
+test-1772899349357-igbio	4
+test-1772922352129-igbio	3
+test-1772961280041-igbio	3
+test-1772922819336-igbio	3
+test-1773048111694-igbio	3
+test-1772898554747-igbio	3
+test-1772983708486-igbio	2
+test-1772983352209-igbio	2
+test-1772961633195-igbio	2
+test-1772923891030-igbio	2
+test-1772963162699-igbio	2
+test-1772923070259-igbio	2
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/9/2026, 9:25:39 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	vsl
+3/9/2026, 9:25:38 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	—
+3/9/2026, 9:25:38 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	offer
+3/9/2026, 9:25:38 AM	test-dc4a2e	test-1773048338306-igbio	test-1773048338306	—
+3/9/2026, 9:21:52 AM	test-ac060c	test-1773048111694-igbio	test-1773048111694	—
+3/9/2026, 9:21:52 AM	test-ac060c	test-1773048111694-igbio	test-1773048111694	—
+3/9/2026, 9:21:52 AM	test-ac060c	test-1773048111694-igbio	test-1773048111694	vsl
+3/9/2026, 9:18:03 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	vsl
+3/9/2026, 9:18:02 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	—
+3/9/2026, 9:18:02 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	offer
+3/9/2026, 9:18:02 AM	test-b9f4ee	test-1773047882203-igbio	test-1773047882203	—
+3/8/2026, 3:50:08 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	vsl
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	offer
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	—
+3/8/2026, 3:50:07 PM	test-af1b34	test-1772985007226-igbio	test-1772985007226	—
+3/8/2026, 3:28:28 PM	test-a09aa4	test-1772983708486-igbio	test-1772983708486	—
+3/8/2026, 3:28:28 PM	test-a09aa4	test-1772983708486-igbio	test-1772983708486	—
+3/8/2026, 3:22:32 PM	test-44d0dc	test-1772983352209-igbio	test-1772983352209	—
+3/8/2026, 3:22:32 PM	test-44d0dc	test-1772983352209-igbio	test-1772983352209	—
+Generated at 3/9/2026, 12:31:21 PM · 257ms
+
+
+## TEST 6 Slug test filter
+Campaign Links on liste bos
+
+
+## TEST 7 Admin verify endpoint
+fetch("/api/admin/verify?alias=igp2m1", {
+  method: "GET",
+  headers: {
+    "Authorization": "Bearer xxxxxx"
+  }
+}).then(r => r.json()).then(console.log)
+
+
+fetch("/api/admin/verify?alias=p2m1", {
+  method: "GET",
+  headers: {
+    "Authorization": "Bearer xxxxxx"
+  }
+}).then(r => r.json()).then(console.log)
+
+
+bunları  iki urldeyken atmayı denedim ayrı ayrı:
+https://links.niluferormanli.studio/nilufer
+https://links.niluferormanli.studio
+
+her ikisinde de her iki alias için de ve her iki urlde de
+< Promise {status: "pending"}
+[Error] Unhandled Promise Rejection: SyntaxError: The string did not match the expected pattern.
+
+
+## TEST 8 Regression test
+
+pattern:
+test edilen url
+ilk buton linki
+varsa custom buton linki
+
+https://links.niluferormanli.studio/c/hello-campaign-igbio
+https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=hello-campaign&utm_content=primary_official
+
+https://links.niluferormanli.studio/c/hello-campaign-igstory
+https://niluferormanli.com/?utm_source=instagram&utm_medium=story&utm_campaign=hello-campaign&utm_content=primary_official
+
+https://links.niluferormanli.studio/c/hello-story-swipe
+https://niluferormanli.com/?utm_source=google&utm_medium=cpc&utm_campaign=hello-campaign&utm_content=primary_official
+https://open.spotify.com/artist/5W53sEO2jqnl1IwAvPrtqx?utm_source=google&utm_medium=cpc&utm_campaign=hello-campaign&utm_content=potify
+
+https://links.niluferormanli.studio/hellokitty
+https://niluferormanli.com/?utm_campaign=hello-campaign&utm_content=primary_official
+https://open.spotify.com/artist/5W53sEO2jqnl1IwAvPrtqx?utm_campaign=hello-campaign&utm_content=potify
+
+https://links.niluferormanli.studio/c/new-beta-igbio
+https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=new-beta&utm_content=primary_official
+https://hey.com/?utm_source=instagram&utm_medium=bio&utm_campaign=new-beta&utm_content=deneme
+
+https://links.niluferormanli.studio/nbio
+https://niluferormanli.com/?utm_source=instagram&utm_medium=bio&utm_campaign=new-beta&utm_content=primary_official
+https://hey.com/?utm_source=instagram&utm_medium=bio&utm_campaign=new-beta&utm_content=deneme
+
+## ek olarak 1dk kadar bekleyip analitics sonucu bakacağım
+
+Analytics
+Refresh
+Show test campaigns
+CLICKS BY CAMPAIGN
+
+Campaign	Clicks
+new-beta	128
+—	13
+promt20md1	11
+hello-campaign	3
+md19	2
+CLICKS BY ALIAS
+
+Alias	Clicks
+nb	115
+nbio	13
+hellokitty	13
+igp2m1	6
+p2m1	4
+hello	3
+m9bio	2
+2ndalias	1
+CLICKS BY SLUG
+
+Slug	Clicks
+new-beta-igbio	128
+hello-story-swipe	13
+promt20md1-igbio	10
+hello-campaign-igbio	3
+md19-igbio	2
+promt20md1-igstory	1
+RECENT EVENTS (LAST 50)
+
+Time	Alias	Slug	Campaign	Modifier
+3/9/2026, 9:43:19 AM	nbio	new-beta-igbio	new-beta	—
+3/9/2026, 9:43:15 AM	hellokitty	hello-story-swipe	—	—
+3/9/2026, 9:40:43 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:40:28 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:39:53 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:39:16 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:36:46 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:35:23 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:29:55 AM	p2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:29:19 AM	2ndalias	promt20md1-igstory	promt20md1	—
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	—
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	offer
+3/9/2026, 9:24:47 AM	nb	new-beta-igbio	new-beta	vsl
+3/9/2026, 9:21:51 AM	nb	new-beta-igbio	new-beta	—
+3/9/2026, 9:11:52 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:08:44 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/9/2026, 9:05:05 AM	hello	hello-campaign-igbio	hello-campaign	vsl
+3/9/2026, 9:04:10 AM	hello	hello-campaign-igbio	hello-campaign	offer
+3/9/2026, 9:03:22 AM	hello	hello-campaign-igbio	hello-campaign	—
+3/9/2026, 9:00:14 AM	igp2m1	promt20md1-igbio	promt20md1	—
+3/8/2026, 4:14:53 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:14:21 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:12:53 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:12:03 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:11:38 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:09:57 PM	nb	new-beta-igbio	new-beta	—
+3/8/2026, 4:09:01 PM	nb	new-beta-igbio	new-beta	nbio
+3/8/2026, 4:06:45 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:59 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:05:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:42 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:40 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:38 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:04:37 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 4:01:14 PM	nbio	new-beta-igbio	new-beta	—
+3/8/2026, 3:54:38 PM	m9bio	md19-igbio	md19	—
+Generated at 3/9/2026, 12:47:45 PM · 373ms
+ 
+
+
+# GPT Değerlendirme — Prompt 20 Test Sonuçları
+
+Test sonuçları dikkatlice incelendiğinde sistemin büyük kısmının artık stabil çalıştığı görülüyor. Ancak birkaç kritik operasyonel kusur hâlâ mevcut.
+
+Bu nedenle Prompt 20 için nihai karar aşağıdaki gibidir.
+
+## Prompt 20 Verdict
+
+**PARTIAL (kısmen başarılı)**
+
+Sistem artık genel olarak çalışır durumda ancak production güvenilirliği için çözülmesi gereken birkaç kritik nokta var.
+
+---
+
+# Test Sonuçlarının Teknik Yorumu
+
+## TEST 1 — Auto routing
+
+Sonuç:
+
+```
+https://links.niluferormanli.studio/p2m1 → 404
+```
+
+Ancak slug route çalışıyor:
+
+```
+https://links.niluferormanli.studio/igp2m1
+```
+
+Yorum:
+
+Alias route için otomatik compile mekanizması **tam olarak çalışmıyor**.
+
+Alias oluşturulduktan sonra route table güncellenmesi bekleniyordu.
+
+Bu test:
+
+```
+auto compile routing
+```
+
+özelliğinin eksik veya hatalı tetiklendiğini gösteriyor.
+
+Sonuç:
+
+**FAIL**
+
+---
+
+## TEST 2 — Modifier routing
+
+Sonuç:
+
+```
+/hello
+/hello/offer
+/hello/vsl
+```
+
+Analytics kayıtları:
+
+```
+offer
+vsl
+```
+
+ayrı event olarak görülüyor.
+
+Yorum:
+
+Modifier routing artık doğru çalışıyor.
+
+Sonuç:
+
+**PASS**
+
+---
+
+## TEST 3 — Alias hub vs slug hub parity
+
+Custom buton testi:
+
+```
+/c/promt20md1-igbio
+/igp2m1
+```
+
+Her iki hub da aynı custom linki render etti.
+
+Yorum:
+
+Alias hub artık slug hub konfigürasyonunu doğru kullanıyor.
+
+Sonuç:
+
+**PASS**
+
+---
+
+## TEST 4 — Router auto compile doğrulaması
+
+Router panel değerleri:
+
+```
+Registry aliases 12 → 14
+Compiled routes 13 → 15
+```
+
+Alias ve slug eklendikten sonra route sayısı arttı.
+
+Yorum:
+
+Router compile tetikleniyor gibi görünüyor ancak Test 1 ile çelişen bir durum var.
+
+Bu durum şu ihtimalleri gösteriyor:
+
+1) compile KV yazılıyor ama edge cache invalidation yapılmıyor
+
+veya
+
+2) alias route compile trigger her durumda çalışmıyor
+
+Sonuç:
+
+**PARTIAL**
+
+---
+
+## TEST 5 — Background self test diagnostics
+
+Sonuç:
+
+```
+✖ Background test failed
+```
+
+Hâlâ stage bilgisi dönmüyor.
+
+Yorum:
+
+Prompt 20 hedeflerinden biri olan **structured diagnostic output** görünmüyor.
+
+Backend JSON döndürüyor olabilir fakat UI bunu göstermiyor.
+
+Sonuç:
+
+**FAIL**
+
+---
+
+## TEST 6 — Slug test filter
+
+Campaign Links panelinde test slug listesi hâlâ boş.
+
+Yorum:
+
+Slug filtering problemi tamamen çözülmemiş.
+
+Sonuç:
+
+**FAIL**
+
+---
+
+## TEST 7 — Admin verify endpoint
+
+Console fetch sonucu:
+
+```
+Unhandled Promise Rejection
+SyntaxError: The string did not match the expected pattern
+```
+
+Yorum:
+
+Endpoint ya:
+
+- doğru response formatı döndürmüyor
+veya
+- endpoint route doğru deploy edilmemiş
+veya
+- JSON parse hatası var
+
+Sonuç:
+
+**FAIL**
+
+---
+
+## TEST 8 — Regression test
+
+Eski route'lar:
+
+```
+/c/... slug
+/alias
+```
+
+çalışmaya devam ediyor.
+
+Analytics event üretimi de devam ediyor.
+
+Yorum:
+
+Prompt 20 herhangi bir regresyon yaratmamış.
+
+Sonuç:
+
+**PASS**
+
+---
+
+# Genel Sistem Durumu
+
+Prompt 20 sonrası Campaign OS:
+
+✔ routing stabil
+✔ analytics pipeline çalışıyor
+✔ modifier routing stabil
+✔ hub rendering doğru
+
+Ancak operasyonel güvenilirliği etkileyen 4 sorun var:
+
+1️⃣ alias auto compile
+
+2️⃣ background diagnostics
+
+3️⃣ slug test filter
+
+4️⃣ admin verify endpoint
+
+Bu sorunlar çözülmeden sistem production operasyonu için "tam güvenilir" sayılmaz.
+
+Ancak sistem artık **mimari olarak doğru noktada**.
+
+Kalan işler düzeltme seviyesinde.
+
+---
+
+# Prompt 21 — Stabilization Patch
+
+Bir sonraki prompt yalnızca aşağıdaki sorunları çözmeye odaklanmalıdır.
+
+## Hedefler
+
+1️⃣ Alias auto compile gerçekten deterministik tetiklensin
+
+Alias creation → compileRoutes() → edge routing aktif
+
+2️⃣ Background test structured diagnostic dönsün
+
+```
+{
+ ok: false,
+ stage: "analytics",
+ reason: "AE timeout"
+}
+```
+
+3️⃣ Slug test filter tüm tablolarda çalışsın
+
+Campaign / Alias / Slug listeleri tutarlı filtre kullansın.
+
+4️⃣ Admin verify endpoint stabil hale getirilsin
+
+```
+/api/admin/verify?alias=<alias>
+```
+
+JSON response:
+
+```
+{
+ alias,
+ campaign,
+ slug,
+ links
+}
+```

@@ -1,0 +1,130 @@
+## Test 1 — Baseline Alias (No A/B Config)
+PASS
+---
+
+## Test 2 — Enable A/B Config
+
+fetch('/api/ab/launch', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer xxxx',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    variants: [
+      { slug: "launch-youtube", weight: 50 },
+      { slug: "launch-ig", weight: 50 }
+    ]
+  })
+}).then(r => r.json()).then(console.log)
+
+1. prtvt window
+
+1. < Promise {status: "pending"}
+[Log] {ok: true, alias: "launch", config: Object}
+2.< Promise {status: "pending"}
+[Log] {ok: true, alias: "launch", config: Object}
+
+2. prtwt windw:
+1. request < Promise {status: "pending"}
+[Log] {ok: true, alias: "launch", config: Object}
+2. < Promise {status: "pending"}
+[Log] {ok: true, alias: "launch", config: Object}
+3. < Promise {status: "pending"}
+[Log] {ok: true, alias: "launch", config: Object}
+
+4.< Promise {status: "pending"}
+[Log] {ok: true, alias: "launch", config: Object}
+
+ama bu sluglar urle yaz git diyince 404
+{ slug: "launch-youtube", weight: 50 },
+      { slug: "launch-ig", weight: 50 }
+---
+
+## Test 3 — Verify Traffic Memory Recording
+
+Open several `/launch` requests after A/B config is active. -> bu ne demek? ben ab yi aç demek istediysen henüz panelde öyle bi ozellik yok.. 
+
+• `traffic_memory` events exist PASS
+• `canonical_slug` equals the **variant actually served** PASS
+
+Example SQL check:
+
+```
+SELECT blob2 AS variant_slug, COUNT()
+FROM linkhub_ops_events
+WHERE index1 = 'traffic_memory'
+GROUP BY blob2
+```
+
+bu query sonucu bu:
+pre22-test-igbio	10
+deneme23-igbio	10
+deneme23-ttpaid	2
+
+---
+
+## Test 4 — A/B Event Distribution
+
+Check the distribution of the `AB_SELECTED` event: 
+
+```
+SELECT blob2 AS variant_slug, COUNT()
+FROM linkhub_ops_events
+WHERE index1 = 'ab_selected'
+GROUP BY blob2
+```
+
+AB henuz ayarlanmamıen bu sonuç biry ifade edecek mi? bos döndü
+
+---
+
+## Test 5 — Modifier Compatibility
+
+If the alias supports modifiers:
+
+```
+/launch/offer
+/launch/vsl
+```
+
+Verify:
+
+• `resolveAlias()` still resolves the modifier correctly. PASS
+• A/B routing then selects a variant. -> ? mümkün değil henüz uiye ab getir komutu vermedin ki
+• Both events appear:
+
+```
+ALIAS_CLICK
+TRAFFIC_MEMORY
+```
+
+• `canonical_slug` in telemetry reflects the chosen variant.
+
+
+ama analiticse bunlar düyor
+3/10/2026, 12:47:53 PM	nb	new-beta-igbio	new-beta	vsl
+3/10/2026, 12:47:46 PM	nb	new-beta-igbio	new-beta	offer
+---
+
+## Success Criteria
+
+Prompt 26 is considered successful if:
+
+• Aliases without A/B config behave exactly as before.
+• Aliases with A/B config distribute traffic deterministically.
+• `AB_SELECTED` and `TRAFFIC_MEMORY` telemetry events are recorded correctly.
+• Modifier routing continues to function normally.
+
+If all tests pass, Campaign OS routing engine now supports **controlled traffic experiments**, enabling the next layer:
+
+• channel weighting
+• adaptive routing
+• automated traffic redistribution
+
+
+
+
+hatalar:
+
+yeni deploy sonrası eski kampanyanın defult option deçeneği kayıtlı gelmiyor hangisi seçıldi hatırlanmıyor

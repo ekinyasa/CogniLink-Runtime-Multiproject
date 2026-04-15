@@ -1,0 +1,726 @@
+<html lang="tr"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nilüfer Ormanlı — Funnel Map</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f6f2; --surface: #ffffff; --surface2: #f1efe8;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+    --accent: #534ab7; --accent-bg: #eeedfe; --radius: 8px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#1a1a18; --surface:#242422; --surface2:#2c2c2a;
+      --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.2);
+      --text:#e8e6de; --text2:#b4b2a9; --text3:#888780;
+      --accent:#afa9ec; --accent-bg:#26215c;
+    }
+  }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe UI',sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
+
+  #header { display:flex; align-items:center; gap:8px; padding:8px 14px; background:var(--surface); border-bottom:0.5px solid var(--border); flex-shrink:0; flex-wrap:wrap; }
+  #header .logo { font-size:13px; font-weight:600; color:var(--text); letter-spacing:-0.3px; padding-right:12px; border-right:0.5px solid var(--border); margin-right:4px; white-space:nowrap; }
+  #header .logo span { color:var(--accent); }
+  .tool-group { display:flex; gap:3px; padding-right:10px; border-right:0.5px solid var(--border); }
+  .tool-group:last-child { border-right:none; }
+  button { font-size:11.5px; font-family:inherit; padding:5px 10px; border-radius:var(--radius); border:0.5px solid var(--border2); background:var(--surface); color:var(--text2); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  button:hover { background:var(--surface2); color:var(--text); }
+  button.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); }
+  button.danger { color:#a32d2d; border-color:#f09595; }
+  button.danger:hover { background:#fcebeb; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.primary:hover { opacity:0.9; }
+  button.dim { opacity:0.38; pointer-events:none; }
+  #mode-hint { font-size:10.5px; color:var(--text3); margin-left:auto; font-style:italic; }
+
+  #canvas-wrap { flex:1; overflow:hidden; position:relative; }
+  canvas { display:block; width:100%; height:100%; }
+
+  #legend { position:absolute; bottom:16px; left:16px; background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius); padding:9px 13px; display:flex; gap:12px; flex-wrap:wrap; font-size:10.5px; color:var(--text3); pointer-events:none; }
+  #legend span { display:flex; align-items:center; gap:5px; }
+  .dot { width:9px; height:9px; border-radius:3px; display:inline-block; flex-shrink:0; }
+
+  #zoom-bar { position:absolute; bottom:16px; right:16px; background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius); display:flex; align-items:center; gap:2px; padding:3px 6px; }
+  #zoom-bar button { border:none; background:none; padding:4px 8px; font-size:15px; color:var(--text2); }
+  #zoom-bar button:hover { background:var(--surface2); border-radius:4px; }
+  #zoom-label { font-size:11px; color:var(--text3); min-width:36px; text-align:center; }
+
+  #overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100; backdrop-filter:blur(2px); }
+  #overlay.open { display:block; }
+
+  .panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--surface); border:0.5px solid var(--border2); border-radius:var(--radius-lg); padding:22px; z-index:101; max-width:95vw; }
+  .panel.open { display:block; }
+  .panel h3 { font-size:14px; font-weight:600; margin-bottom:16px; color:var(--text); }
+  #edit-panel { width:360px; }
+  #edge-panel { width:280px; }
+  #shortcuts-panel { width:380px; }
+
+  .field { margin-bottom:11px; }
+  .field label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px; }
+  .field input,.field select,.field textarea { width:100%; font-size:13px; font-family:inherit; padding:7px 9px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--surface2); color:var(--text); outline:none; }
+  .field input:focus,.field select:focus,.field textarea:focus { border-color:var(--accent); background:var(--surface); }
+  .field textarea { resize:vertical; min-height:68px; line-height:1.5; }
+  .field select option { background:var(--surface); }
+  .btn-row { display:flex; gap:8px; margin-top:18px; }
+  .btn-row button { flex:1; padding:8px; font-size:13px; }
+
+  #shortcuts-panel table { width:100%; border-collapse:collapse; font-size:12px; }
+  #shortcuts-panel td { padding:6px 0; vertical-align:middle; }
+  #shortcuts-panel td:first-child { font-family:monospace; font-size:10.5px; background:var(--surface2); border-radius:4px; padding:3px 8px; color:var(--accent); white-space:nowrap; width:1%; }
+  #shortcuts-panel td+td { padding-left:12px; color:var(--text2); }
+  #shortcuts-panel tr { border-bottom:0.5px solid var(--border); }
+  #shortcuts-panel tr:last-child { border-bottom:none; }
+
+  #toast { position:fixed; bottom:56px; left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg); font-size:11.5px; padding:6px 15px; border-radius:20px; opacity:0; transition:opacity 0.25s; pointer-events:none; z-index:200; white-space:nowrap; }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="logo">Nilüfer Ormanlı <span>/ Funnel</span></div>
+  <div class="tool-group">
+    <button id="btn-select" class="active" onclick="setMode('select')">↖ Select <small style="opacity:0.45">V</small></button>
+    <button id="btn-connect" onclick="connectClick(event)">⤳ Connect</button>
+  </div>
+  <div class="tool-group">
+    <button id="btn-undo" class="" onclick="undo()">↩ Undo</button>
+    <button id="btn-redo" class="dim" onclick="redo()">↪ Redo</button>
+  </div>
+  <div class="tool-group">
+    <button onclick="addNodeCenter()">+ Add Page</button>
+    <button class="danger" onclick="deleteSelectedNodes()">🗑 Delete</button>
+  </div>
+  <div class="tool-group">
+    <button onclick="importJSON()">↑ Load JSON</button>
+    <button class="primary" onclick="saveVisualMap()">💾 Save Map</button>
+  </div>
+  <div class="tool-group">
+    <button onclick="openPanel('shortcuts-panel')">⌨ Keys</button>
+  </div>
+  <span id="mode-hint">Double-click = edit · Space = pan · Shift+click = multi-select</span>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="cv" width="4478" height="2803" style="width: 2239px; height: 1401.5px; cursor: default;"></canvas>
+  <div id="legend">
+    <span><span class="dot" style="background:#7f77dd"></span>Cold traffic</span>
+    <span><span class="dot" style="background:#1d9e75"></span>Warm / Nurture</span>
+    <span><span class="dot" style="background:#d85a30"></span>Conversion</span>
+    <span><span class="dot" style="background:#d4537e"></span>Post-conv / Upsell</span>
+    <span><span class="dot" style="background:#888780"></span>Support</span>
+  </div>
+  <div id="zoom-bar">
+    <button onclick="zoomBy(-0.15)">−</button>
+    <span id="zoom-label">100%</span>
+    <button onclick="zoomBy(0.15)">+</button>
+    <button onclick="resetView()" style="font-size:11px;padding:4px 8px">Reset</button>
+  </div>
+</div>
+
+<div id="overlay" onclick="closeAll()" class=""></div>
+
+<div id="edit-panel" class="panel">
+  <h3>Edit Page</h3>
+  <div class="field"><label>Page Name</label><input id="ep-name" type="text" placeholder="Main Landing"></div>
+  <div class="field"><label>URL</label><input id="ep-url" type="text" placeholder="/home"></div>
+  <div class="field">
+    <label>Type / Color</label>
+    <select id="ep-type">
+      <option value="cold">Cold traffic</option>
+      <option value="warm">Warm / Nurture</option>
+      <option value="hot">Hot Traffic</option>
+      <option value="conv">Conversion</option>
+      <option value="post">Post-conv / Upsell</option>
+      <option value="support">Support</option>
+    </select>
+  </div>
+  <div class="field"><label>Goal</label><textarea id="ep-goal" placeholder="What this page does..."></textarea></div>
+  <div class="btn-row">
+    <button onclick="closeAll()">Cancel</button>
+    <button class="primary" onclick="saveNode()">Save</button>
+  </div>
+</div>
+
+<div id="edge-panel" class="panel">
+  <h3>Connection Label</h3>
+  <div class="field"><label>Label (optional)</label><input id="edge-label-input" type="text" placeholder="e.g. Email funnel, CTA..."></div>
+  <div class="btn-row">
+    <button class="danger" onclick="deleteEdgeCurrent()">Delete</button>
+    <button onclick="closeAll()">Cancel</button>
+    <button class="primary" onclick="saveEdge()">Save</button>
+  </div>
+</div>
+
+<div id="shortcuts-panel" class="panel">
+  <h3>Keyboard Shortcuts</h3>
+  <table>
+    <tbody><tr><td>V</td><td>Select tool (default)</td></tr>
+    <tr><td>Space (hold)</td><td>Temporarily pan canvas</td></tr>
+    <tr><td>Shift + click node</td><td>Add / remove from multi-select</td></tr>
+    <tr><td>Connect btn</td><td>If 2+ selected: connect left → right (natural flow)</td></tr>
+    <tr><td>Shift + Connect btn</td><td>If 2+ selected: connect right → left (reverse)</td></tr>
+    <tr><td>Alt/Opt + Connect btn</td><td>If 2+ selected: remove edges between them</td></tr>
+    <tr><td>⌘/Ctrl + click (canvas)</td><td>Add new page at cursor</td></tr>
+    <tr><td>⌘/Ctrl + Shift + click (node)</td><td>Delete that node instantly</td></tr>
+    <tr><td>⌘/Ctrl + Shift + click (arrow)</td><td>Delete that connection instantly</td></tr>
+    <tr><td>Double-click node</td><td>Edit node details</td></tr>
+    <tr><td>Double-click arrow</td><td>Edit connection label</td></tr>
+    <tr><td>Delete / Backspace</td><td>Delete selected nodes</td></tr>
+    <tr><td>Esc</td><td>Deselect all / cancel</td></tr>
+    <tr><td>⌘Z / ⌘⇧Z</td><td>Undo / Redo</td></tr>
+  </tbody></table>
+  <div class="btn-row" style="margin-top:16px"><button onclick="closeAll()">Close</button></div>
+</div>
+
+<div id="toast" class="">Deleted 1 page</div>
+<input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileImport(event)">
+
+<script>
+const CV   = document.getElementById('cv');
+const ctx  = CV.getContext('2d');
+const WRAP = document.getElementById('canvas-wrap');
+
+const TYPES = {
+  cold:    {bg:'#eeedfe',stroke:'#7f77dd',header:'#7f77dd',text:'#3c3489'},
+  warm:    {bg:'#e1f5ee',stroke:'#1d9e75',header:'#1d9e75',text:'#085041'},
+  hot:     {bg:'#fff0e6',stroke:'#f97316',header:'#f97316',text:'#7c2d12'},
+  conv:    {bg:'#faece7',stroke:'#d85a30',header:'#d85a30',text:'#4a1b0c'},
+  post:    {bg:'#fbeaf0',stroke:'#d4537e',header:'#d4537e',text:'#4b1528'},
+  support: {bg:'#f1efe8',stroke:'#888780',header:'#888780',text:'#2c2c2a'}
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let mode       = 'select';
+let nodes      = [], edges = [];
+let selected   = new Set();
+let hoveredEdge = -1;
+let dragging   = null, dragOff = {x:0,y:0}, dragMoved = false;
+let dragGroupStart = {};     // id -> {x,y} snapshot when drag begins
+let connectFrom = null;
+let editId      = null, editEdgeIdx = null;
+let pan         = {x:40,y:40}, scale = 1;
+let W = 0, H = 0;
+let isPanning   = false, panStart = {x:0,y:0};
+let spaceDown   = false;
+let lastMouse   = {x:0,y:0};
+let idCounter   = 100;
+
+// ─── UNDO / REDO ─────────────────────────────────────────────────────────────
+let history = [], histIdx = -1;
+
+function snapshot() {
+  const s = JSON.stringify({nodes, edges});
+  if (history[histIdx] === s) return;
+  history = history.slice(0, histIdx+1);
+  history.push(s);
+  if (history.length > 80) history.shift(); else histIdx++;
+  updateUndoButtons();
+}
+function applySnapshot(s) {
+  const d = JSON.parse(s); nodes = d.nodes; edges = d.edges; selected.clear();
+}
+function undo() {
+  if (histIdx <= 0) return;
+  histIdx--;
+  applySnapshot(history[histIdx]);
+  draw(); updateUndoButtons(); toast('Undo');
+}
+function redo() {
+  if (histIdx >= history.length-1) return;
+  histIdx++;
+  applySnapshot(history[histIdx]);
+  draw(); updateUndoButtons(); toast('Redo');
+}
+function updateUndoButtons() {
+  document.getElementById('btn-undo').classList.toggle('dim', histIdx <= 0);
+  document.getElementById('btn-redo').classList.toggle('dim', histIdx >= history.length-1);
+}
+
+// ─── DEFAULT DATA ────────────────────────────────────────────────────────────
+function defaultData() { 
+  if (window.INJECTED_MAP_DATA) {
+    nodes = window.INJECTED_MAP_DATA.nodes || [];
+    edges = window.INJECTED_MAP_DATA.edges || [];
+    if (nodes.length) {
+      idCounter = Math.max(100, ...nodes.map(n => parseInt(n.id.replace(/\D/g,'')) || 0));
+      return;
+    }
+  }
+
+  idCounter = 100;
+  nodes = [
+    {id:'n1', name:'CogniLink Router',  url:'niluferormanli.com',  type:'cold',    goal:'Welcome cold visitors, tag by source, route to correct page',  x:30,  y:220, w:162, h:90},
+    {id:'n2', name:'Main Landing',      url:'/home',               type:'cold',    goal:'Brand intro, curiosity, soft waitlist entry',                  x:260, y:60,  w:155, h:85},
+    {id:'n3', name:'Product Page',      url:'/voice-architecture', type:'warm',    goal:'Explain product, build trust, warm with video, push to CTA',   x:478, y:60,  w:155, h:85},
+    {id:'n4', name:'Newsletter',        url:'/subscribe',          type:'warm',    goal:'Grow email list, deliver lead magnet, start long-term nurture', x:700, y:60,  w:148, h:85},
+    {id:'n5', name:'Blog / Content',    url:'/blog',               type:'warm',    goal:'Organic traffic, SEO, trust building, bridge to product page',  x:260, y:210, w:155, h:85},
+    {id:'n6', name:'FAQ / Support',     url:'/faq',                type:'support', goal:'Answer pre-sale questions, remove objections, support conv',    x:478, y:210, w:155, h:85},
+    {id:'n7', name:'Conversion Page',   url:'/join',               type:'conv',    goal:'Sell, take payment, remove doubt, send to checkout',            x:260, y:370, w:160, h:85},
+    {id:'n8', name:'Thank You',         url:'/welcome',            type:'post',    goal:'Confirm purchase, welcome to community, route to upsell',       x:478, y:370, w:152, h:85},
+    {id:'n9', name:'Upsell Page',       url:'/advanced',           type:'post',    goal:'Sell next product, increase ROI, move to advanced offer',       x:695, y:370, w:155, h:85},
+    {id:'n10',name:'Upsell Waitlist',   url:'/coming-soon',        type:'support', goal:'Keep buyer warm when product not ready, tease next offer',      x:695, y:210, w:155, h:85},
+  ];
+  edges = [
+    {from:'n1',to:'n2',label:'First visit'},
+    {from:'n1',to:'n3',label:'Warm traffic'},
+    {from:'n1',to:'n7',label:'Hot traffic'},
+    {from:'n2',to:'n3',label:''},
+    {from:'n2',to:'n5',label:''},
+    {from:'n3',to:'n4',label:''},
+    {from:'n3',to:'n7',label:'CTA'},
+    {from:'n5',to:'n6',label:''},
+    {from:'n5',to:'n7',label:''},
+    {from:'n6',to:'n7',label:''},
+    {from:'n4',to:'n7',label:'Email funnel'},
+    {from:'n7',to:'n8',label:''},
+    {from:'n8',to:'n9',label:''},
+    {from:'n8',to:'n10',label:'No product yet'},
+    {from:'n10',to:'n9',label:'Product ready'},
+    {from:'n9',to:'n4',label:'Re-engage'},
+  ];
+}
+
+// ─── RESIZE ──────────────────────────────────────────────────────────────────
+function resize() {
+  const r = WRAP.getBoundingClientRect();
+  CV.width  = r.width  * devicePixelRatio;
+  CV.height = r.height * devicePixelRatio;
+  CV.style.width  = r.width  + 'px';
+  CV.style.height = r.height + 'px';
+  W = r.width; H = r.height;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  draw();
+}
+
+// ─── DRAW ─────────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W*devicePixelRatio, H*devicePixelRatio);
+  ctx.save();
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  ctx.translate(pan.x, pan.y);
+  ctx.scale(scale, scale);
+
+  // Draw edges
+  edges.forEach((e, idx) => {
+    const a = nodes.find(n=>n.id===e.from), b = nodes.find(n=>n.id===e.to);
+    if (!a||!b) return;
+    const ax=a.x+a.w/2, ay=a.y+a.h/2, bx=b.x+b.w/2, by=b.y+b.h/2;
+    const dx=bx-ax, dy=by-ay, len=Math.sqrt(dx*dx+dy*dy);
+    if (!len) return;
+    const ux=dx/len, uy=dy/len;
+    const sx=ax+ux*(a.w/2+3), sy=ay+uy*(a.h/2+3);
+    const ex=bx-ux*(b.w/2+13), ey=by-uy*(b.h/2+13);
+    const isHov    = hoveredEdge===idx;
+    const bothSel  = selected.has(e.from) && selected.has(e.to);
+
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey);
+    ctx.strokeStyle = isHov ? '#534ab7' : bothSel ? '#7f77dd' : '#c4c2b8';
+    ctx.lineWidth   = (isHov||bothSel) ? 2 : 1.2;
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    const ang = Math.atan2(ey-sy, ex-sx);
+    ctx.save(); ctx.translate(ex,ey); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(-11,-5); ctx.lineTo(0,0); ctx.lineTo(-11,5);
+    ctx.strokeStyle = (isHov||bothSel) ? '#534ab7' : '#888780';
+    ctx.lineWidth   = (isHov||bothSel) ? 2 : 1.2;
+    ctx.stroke(); ctx.restore();
+
+    if (e.label) {
+      const mx=(sx+ex)/2, my=(sy+ey)/2;
+      ctx.font='10px -apple-system,sans-serif';
+      const tw=ctx.measureText(e.label).width+10;
+      ctx.fillStyle='rgba(247,246,242,0.92)';
+      ctx.beginPath(); ctx.roundRect(mx-tw/2,my-10,tw,16,4); ctx.fill();
+      ctx.fillStyle=(isHov||bothSel)?'#534ab7':'#888780';
+      ctx.textAlign='center'; ctx.fillText(e.label,mx,my+2);
+    }
+  });
+
+  // Connect preview
+  if (connectFrom) {
+    const a = nodes.find(n=>n.id===connectFrom);
+    if (a) {
+      ctx.beginPath(); ctx.moveTo(a.x+a.w/2,a.y+a.h/2); ctx.lineTo(lastMouse.x,lastMouse.y);
+      ctx.strokeStyle='#7f77dd'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const c=TYPES[n.type], isSel=selected.has(n.id), r=9;
+    if (isSel) {
+      ctx.beginPath(); roundRect(ctx,n.x-4,n.y-4,n.w+8,n.h+8,r+4);
+      ctx.fillStyle=c.stroke+'2a'; ctx.fill();
+      ctx.strokeStyle=c.stroke; ctx.lineWidth=1.8; ctx.stroke();
+    }
+    ctx.beginPath(); roundRect(ctx,n.x,n.y,n.w,n.h,r);
+    ctx.fillStyle=c.bg; ctx.fill();
+    ctx.strokeStyle=isSel?c.stroke:'rgba(0,0,0,0.1)'; ctx.lineWidth=isSel?1.8:0.7; ctx.stroke();
+
+    ctx.save(); ctx.beginPath(); roundRect(ctx,n.x,n.y,n.w,22,{tl:r,tr:r,br:0,bl:0});
+    ctx.fillStyle=c.header; ctx.fill(); ctx.restore();
+
+    ctx.font='500 10px -apple-system,sans-serif'; ctx.fillStyle='rgba(255,255,255,0.92)';
+    ctx.textAlign='center'; ctx.fillText(truncateUrl(n.url,n.w-14,ctx),n.x+n.w/2,n.y+15);
+
+    ctx.font='600 12px -apple-system,sans-serif'; ctx.fillStyle=c.text; ctx.textAlign='center';
+    const nl=wrapText(ctx,n.name,n.w-14,2);
+    nl.forEach((ln,i)=>ctx.fillText(ln,n.x+n.w/2,n.y+34+i*14));
+
+    ctx.font='10px -apple-system,sans-serif'; ctx.fillStyle=c.text; ctx.globalAlpha=0.65;
+    const gy=n.y+34+nl.length*14+2;
+    wrapText(ctx,n.goal,n.w-14,3).forEach((ln,i)=>ctx.fillText(ln,n.x+n.w/2,gy+i*11.5));
+    ctx.globalAlpha=1;
+  });
+  ctx.restore();
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function roundRect(c,x,y,w,h,r){
+  if(typeof r==='number') r={tl:r,tr:r,br:r,bl:r};
+  c.moveTo(x+r.tl,y); c.lineTo(x+w-r.tr,y); c.quadraticCurveTo(x+w,y,x+w,y+r.tr);
+  c.lineTo(x+w,y+h-r.br); c.quadraticCurveTo(x+w,y+h,x+w-r.br,y+h);
+  c.lineTo(x+r.bl,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r.bl);
+  c.lineTo(x,y+r.tl); c.quadraticCurveTo(x,y,x+r.tl,y); c.closePath();
+}
+function wrapText(c,text,maxW,maxLines){
+  if(!text) return [''];
+  const words=text.split(' '); let line='',lines=[];
+  for(let w of words){const t=line?line+' '+w:w;if(c.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;}
+  if(line) lines.push(line); return lines.slice(0,maxLines);
+}
+function truncate(text,maxW,c){
+  if(c.measureText(text).width<=maxW) return text;
+  let t=text; while(t.length>1&&c.measureText(t+'…').width>maxW) t=t.slice(0,-1); return t+'…';
+}
+function truncateUrl(text,maxW,c){
+  if(c.measureText(text).width<=maxW) return text;
+  try{ const u=new URL(text); text=u.hostname.replace('www.','') + u.pathname; }catch(e){}
+  if(c.measureText(text).width<=maxW) return text;
+  let t=text; while(t.length>1&&c.measureText('…'+t).width>maxW) t=t.slice(1); return '…'+t;
+}
+function worldPt(e){
+  const r=CV.getBoundingClientRect(), touch=e.touches?e.touches[0]:e;
+  return {x:(touch.clientX-r.left-pan.x)/scale, y:(touch.clientY-r.top-pan.y)/scale};
+}
+function hitNode(p){
+  return nodes.slice().reverse().find(n=>p.x>=n.x&&p.x<=n.x+n.w&&p.y>=n.y&&p.y<=n.y+n.h);
+}
+function hitEdge(p){
+  for(let i=edges.length-1;i>=0;i--){
+    const e=edges[i],a=nodes.find(n=>n.id===e.from),b=nodes.find(n=>n.id===e.to);
+    if(!a||!b) continue;
+    const mx=(a.x+a.w/2+b.x+b.w/2)/2,my=(a.y+a.h/2+b.y+b.h/2)/2;
+    if(Math.hypot(p.x-mx,p.y-my)<14) return i;
+  }
+  return -1;
+}
+function sortedByX(ids){
+  return [...ids].sort((a,b)=>{
+    const na=nodes.find(n=>n.id===a), nb=nodes.find(n=>n.id===b);
+    return (na?.x||0)-(nb?.x||0);
+  });
+}
+
+// ─── CONNECT BUTTON ──────────────────────────────────────────────────────────
+function connectClick(evt) {
+  const ids = [...selected];
+  if (ids.length >= 2) {
+    snapshot();
+    if (evt.altKey) {
+      // Alt+Connect → remove edges between selected
+      let removed=0;
+      edges = edges.filter(e=>{
+        if(selected.has(e.from)&&selected.has(e.to)){removed++;return false;}
+        return true;
+      });
+      toast(removed ? `Removed ${removed} connection${removed>1?'s':''}` : 'No connections between selected pages');
+    } else {
+      const sorted = evt.shiftKey ? sortedByX(ids).reverse() : sortedByX(ids);
+      let added=0;
+      for(let i=0;i<sorted.length-1;i++){
+        const from=sorted[i],to=sorted[i+1];
+        if(!edges.find(e=>e.from===from&&e.to===to)){edges.push({from,to,label:''});added++;}
+      }
+      toast(added ? `Connected ${added} pair${added>1?'s':''}${evt.shiftKey?' (reversed)':''}` : 'Already connected');
+    }
+    draw(); return;
+  }
+  // Fallback: 2-click connect
+  setMode('connect');
+  toast('Click first node, then second to connect');
+}
+
+// ─── MOUSE EVENTS ────────────────────────────────────────────────────────────
+CV.addEventListener('mousedown', e => {
+  const p = worldPt(e);
+  const hit = hitNode(p);
+  const isMeta = e.metaKey || e.ctrlKey;
+
+  // ⌘+Shift+click on node → instant delete
+  if (isMeta && e.shiftKey && hit) {
+    snapshot();
+    nodes = nodes.filter(n=>n.id!==hit.id);
+    edges = edges.filter(ed=>ed.from!==hit.id&&ed.to!==hit.id);
+    selected.delete(hit.id); draw(); toast('Page deleted'); return;
+  }
+  // ⌘+Shift+click on edge → instant delete
+  if (isMeta && e.shiftKey && !hit) {
+    const ei = hitEdge(p);
+    if (ei>=0){ snapshot(); edges.splice(ei,1); draw(); toast('Connection deleted'); return; }
+  }
+  // ⌘+click on empty canvas → add node
+  if (isMeta && !e.shiftKey && !hit) {
+    addNodeAt(p.x-77, p.y-42); return;
+  }
+
+  // Space held = pan
+  if (spaceDown) {
+    isPanning=true; panStart={x:e.clientX-pan.x,y:e.clientY-pan.y};
+    CV.style.cursor='grabbing'; return;
+  }
+
+  // Connect mode (2-click fallback)
+  if (mode==='connect') {
+    if (hit) {
+      if (!connectFrom) { connectFrom=hit.id; draw(); }
+      else if (hit.id!==connectFrom) {
+        snapshot(); edges.push({from:connectFrom,to:hit.id,label:''});
+        connectFrom=null; setMode('select'); draw(); toast('Connected');
+      }
+    } else { connectFrom=null; setMode('select'); draw(); }
+    return;
+  }
+
+  // Normal select mode
+  if (hit) {
+    if (e.shiftKey) {
+      if (selected.has(hit.id)) selected.delete(hit.id); else selected.add(hit.id);
+      draw(); return;
+    }
+    if (!selected.has(hit.id)) { selected.clear(); selected.add(hit.id); }
+    // Capture starting positions of all selected nodes for group drag
+    dragGroupStart = {};
+    selected.forEach(id=>{const n=nodes.find(n=>n.id===id);if(n)dragGroupStart[id]={x:n.x,y:n.y};});
+    dragging=hit; dragOff={x:p.x-hit.x,y:p.y-hit.y}; dragMoved=false;
+    draw();
+  } else {
+    const ei = hitEdge(p);
+    if (ei>=0) {
+      if (!e.shiftKey) selected.clear();
+      hoveredEdge=ei; draw();
+    } else {
+      if (!e.shiftKey) selected.clear();
+      isPanning=true; panStart={x:e.clientX-pan.x,y:e.clientY-pan.y};
+      draw();
+    }
+  }
+});
+
+CV.addEventListener('dblclick', e=>{
+  const p=worldPt(e), hit=hitNode(p);
+  if (hit) { openNodePanel(hit.id); return; }
+  const ei=hitEdge(p);
+  if (ei>=0) openEdgePanel(ei);
+});
+
+CV.addEventListener('mousemove', e=>{
+  const p=worldPt(e); lastMouse=p;
+  if (isPanning){
+    pan.x=e.clientX-panStart.x; pan.y=e.clientY-panStart.y; draw(); return;
+  }
+  if (dragging) {
+    const dx=p.x-dragOff.x-dragging.x, dy=p.y-dragOff.y-dragging.y;
+    if (Math.abs(dx)+Math.abs(dy)>2) dragMoved=true;
+    if (selected.size>1 && selected.has(dragging.id)) {
+      // Group move: offset all selected by delta from drag origin
+      const startDrag=dragGroupStart[dragging.id];
+      if (startDrag) {
+        const ox=p.x-dragOff.x-startDrag.x, oy=p.y-dragOff.y-startDrag.y;
+        selected.forEach(id=>{
+          const n=nodes.find(n=>n.id===id), s=dragGroupStart[id];
+          if(n&&s){n.x=s.x+ox;n.y=s.y+oy;}
+        });
+      }
+    } else {
+      dragging.x=p.x-dragOff.x; dragging.y=p.y-dragOff.y;
+    }
+    draw(); return;
+  }
+  if (mode==='connect'&&connectFrom){draw();return;}
+  const hit=hitNode(p), oldHov=hoveredEdge;
+  hoveredEdge=hit?-1:hitEdge(p);
+  CV.style.cursor=spaceDown?'grab':(hit?'grab':(hoveredEdge>=0?'pointer':'default'));
+  if(oldHov!==hoveredEdge) draw();
+});
+
+CV.addEventListener('mouseup', ()=>{
+  if(dragging&&dragMoved) snapshot();
+  dragging=null; dragMoved=false; dragGroupStart={};
+  isPanning=false;
+  if(!spaceDown) CV.style.cursor='default';
+});
+
+CV.addEventListener('wheel', e=>{
+  e.preventDefault();
+  zoomBy(e.deltaY>0?-0.1:0.1, e.clientX, e.clientY);
+},{passive:false});
+
+// ─── KEYBOARD ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  const tag=document.activeElement.tagName;
+  if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+
+  if(e.code==='Space'&&!spaceDown){
+    e.preventDefault(); spaceDown=true; CV.style.cursor='grab'; return;
+  }
+  if(e.key==='Escape'){closeAll();connectFrom=null;selected.clear();setMode('select');draw();return;}
+  if(e.key.toLowerCase()==='v'&&!e.metaKey&&!e.ctrlKey){setMode('select');return;}
+  if((e.key==='Delete'||e.key==='Backspace')&&selected.size){deleteSelectedNodes();return;}
+  if((e.metaKey||e.ctrlKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();return;}
+  if((e.metaKey||e.ctrlKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redo();return;}
+});
+
+document.addEventListener('keyup', e=>{
+  if(e.code==='Space'){
+    spaceDown=false;
+    if(!isPanning) CV.style.cursor='default';
+  }
+});
+
+// ─── MODE ────────────────────────────────────────────────────────────────────
+function setMode(m){
+  mode=m; connectFrom=null;
+  document.getElementById('btn-select').classList.toggle('active',m==='select');
+  document.getElementById('btn-connect').classList.toggle('active',m==='connect');
+  CV.style.cursor=m==='connect'?'crosshair':'default';
+  draw();
+}
+
+// ─── ZOOM ────────────────────────────────────────────────────────────────────
+function zoomBy(delta,cx,cy){
+  cx=cx??W/2; cy=cy??H/2;
+  const ns=Math.min(2.5,Math.max(0.25,scale+delta));
+  pan.x=cx-(cx-pan.x)*(ns/scale); pan.y=cy-(cy-pan.y)*(ns/scale);
+  scale=ns; document.getElementById('zoom-label').textContent=Math.round(scale*100)+'%'; draw();
+}
+function resetView(){pan={x:40,y:40};scale=1;document.getElementById('zoom-label').textContent='100%';draw();}
+
+// ─── ADD / DELETE ─────────────────────────────────────────────────────────────
+function addNodeAt(x,y){
+  const id='n'+(++idCounter);
+  nodes.push({id,name:'New Page',url:'/new',type:'cold',goal:'Describe what this page does',x,y,w:155,h:85});
+  selected.clear(); selected.add(id); snapshot(); draw(); openNodePanel(id);
+}
+function addNodeCenter(){
+  addNodeAt((W/2-pan.x)/scale-77,(H/2-pan.y)/scale-42);
+}
+function deleteSelectedNodes(){
+  if(!selected.size){toast('Select a page first');return;}
+  snapshot();
+  const ids=new Set(selected);
+  nodes=nodes.filter(n=>!ids.has(n.id));
+  edges=edges.filter(e=>!ids.has(e.from)&&!ids.has(e.to));
+  selected.clear(); draw(); toast(`Deleted ${ids.size} page${ids.size>1?'s':''}`);
+}
+
+// ─── PANELS ──────────────────────────────────────────────────────────────────
+function openPanel(id){
+  document.getElementById(id).classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function openNodePanel(id){
+  editId=id; const n=nodes.find(n=>n.id===id); if(!n) return;
+  document.getElementById('ep-name').value=n.name;
+  document.getElementById('ep-url').value=n.url;
+  document.getElementById('ep-type').value=n.type;
+  document.getElementById('ep-goal').value=n.goal;
+  openPanel('edit-panel');
+}
+function saveNode(){
+  const n=nodes.find(n=>n.id===editId); if(!n) return;
+  snapshot();
+  n.name=document.getElementById('ep-name').value.trim()||n.name;
+  n.url =document.getElementById('ep-url').value.trim() ||n.url;
+  n.type=document.getElementById('ep-type').value;
+  n.goal=document.getElementById('ep-goal').value.trim();
+  closeAll(); draw(); toast('Saved');
+}
+function openEdgePanel(idx){
+  editEdgeIdx=idx;
+  document.getElementById('edge-label-input').value=edges[idx]?.label||'';
+  openPanel('edge-panel');
+}
+function saveEdge(){
+  if(editEdgeIdx===null) return;
+  snapshot(); edges[editEdgeIdx].label=document.getElementById('edge-label-input').value.trim();
+  editEdgeIdx=null; closeAll(); draw(); toast('Label updated');
+}
+function deleteEdgeCurrent(){
+  if(editEdgeIdx===null) return;
+  snapshot(); edges.splice(editEdgeIdx,1); editEdgeIdx=null;
+  closeAll(); draw(); toast('Connection deleted');
+}
+function closeAll(){
+  ['edit-panel','edge-panel','shortcuts-panel'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ─── IMPORT / EXPORT ─────────────────────────────────────────────────────────
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({nodes,edges},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='nilufer-funnel.json'; a.click();
+  toast('JSON downloaded');
+}
+function importJSON(){document.getElementById('file-input').click();}
+function handleFileImport(evt){
+  const file=evt.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.nodes&&d.edges){
+        nodes=d.nodes; edges=d.edges; selected.clear();
+        idCounter=Math.max(100,...nodes.map(n=>parseInt(n.id.replace(/\D/g,''))||0));
+        snapshot(); draw(); toast('Loaded: '+file.name);
+      } else toast('Invalid JSON');
+    } catch{toast('JSON parse error');}
+  };
+  reader.readAsText(file); evt.target.value='';
+}
+function saveVisualMap(){
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: "SAVE_VISUAL_MAP", mapId: window.INJECTED_MAP_ID, data: { nodes, edges } }, "*");
+    toast('Saved to Admin Settings');
+  } else {
+    const dataStr=JSON.stringify({nodes,edges});
+    const injected=document.documentElement.outerHTML.replace(
+      '<script>',
+      `<script> window.INJECTED_MAP_DATA=${dataStr};\n`
+    );
+    const blob=new Blob([injected],{type:'text/html'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='nilufer-funnel-editor.html'; a.click();
+    toast('Saved locally as HTML');
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+defaultData();
+snapshot();
+window.addEventListener('resize',resize);
+resize();
+</script>
+
+
+</body></html>

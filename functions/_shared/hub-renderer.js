@@ -1,0 +1,532 @@
+/**
+ * Renders the complete hub page HTML — v6.
+ *
+ * @param {object}  opts
+ * @param {'route'|'campaign'} opts.contextType
+ * @param {string}  opts.contextId      – 'ig' | 'youtube' | 'spotify' | slug
+ * @param {string}  [opts.campaign]     – campaign name; sets utm_campaign and always wins
+ *                                        over inbound params. Empty for route pages.
+ * @param {object}  opts.defaultUtms    – route/campaign defaults (source + medium only)
+ * @param {Array}   opts.links          – resolved link objects from resolveLinks()
+ * @param {string}  [opts.ga4Id]
+ * @param {string}  [opts.metaPixelId]
+ * @param {boolean} [opts.notFound]
+ * @param {object}  [opts.config]       – LANDING_CONFIG: { themeCssUrl, headerHtml, footerHtml, customStyleCss, baseLinks }
+ * @param {string}  [opts.slug]         – slug name (for CSS scoping; empty for route pages)
+ * @param {object}  [opts.slugData]     – full slug record (for per-slug landing customization)
+ */
+export function renderHub({
+  contextType  = "route",
+  contextId    = "ig",
+  campaign     = "",          // drives utm_campaign, always wins
+  modifier     = "",          // public URL modifier segment (/alias/<modifier>) — available in client JS
+  defaultUtms  = {},          // utm_source + utm_medium only; no utm_campaign here
+  links        = [],
+  ga4Id        = "",
+  metaPixelId  = "",
+  notFound     = false,
+  config       = {},          // LANDING_CONFIG
+  slug         = "",          // slug name for CSS scoping
+  slugData     = null,        // full slug KV record
+  expToken     = "",          // A/B exposure token (Prompt 130)
+  utmVariant   = "",          // A/B selected variant slug
+} = {}) {
+  const cfg = config || {};
+
+  const utmsJson     = JSON.stringify(defaultUtms);
+  const campaignJson = JSON.stringify(campaign || "");
+  const modifierJson = JSON.stringify(modifier || "");
+  const linksJson   = JSON.stringify(
+    links.map((l) => ({
+      id:         l.id,
+      label:      l.label,
+      href:       l.href,
+      utmContent: l.utmContent,
+      noUtm:      !!l.noUtm,
+    }))
+  );
+  const ctxTypeEsc = JSON.stringify(contextType);
+  const ctxIdEsc   = JSON.stringify(contextId);
+  const engineMapIdEsc = JSON.stringify(slugData?.engineMapId || "");
+
+  // Config-driven extras
+  const themeCssLink = cfg.themeCssUrl
+    ? `<link rel="stylesheet" href="${escAttr(cfg.themeCssUrl)}">`
+    : "";
+
+  // Header / footer: per-slug overrides global config
+  // Backward-compat: read headerText/footerText if headerHtml/footerHtml missing
+  // Use ?? so empty string is preserved; undefined/null falls through
+  const globalHeader = cfg.headerHtml ?? cfg.headerText ?? null;
+  const globalFooter = cfg.footerHtml ?? cfg.footerText ?? null;
+  const headerRaw = (slugData?.customHeaderHtml ?? null) || globalHeader || "";
+  const footerRaw = (slugData?.customFooterHtml ?? null) || globalFooter || "";
+
+  // Raw HTML injection (no escaping)
+  const headerHtml = headerRaw
+    ? `<div class="hub-header">${headerRaw}</div>`
+    : "";
+  const footerHtml = footerRaw
+    ? `<div class="hub-footer">${footerRaw}</div>`
+    : "";
+
+  // Custom CSS: per-slug overrides global (undefined → null → fallback)
+  const customCssRaw = (slugData?.customStyleCss ?? null) || cfg.customStyleCss || "";
+
+  // Slug-scoped CSS isolation
+  const slugId = slug || "";
+  let customStyleBlock = "";
+  if (customCssRaw && slugId) {
+    const scoped = scopeCSS(customCssRaw, slugId);
+    customStyleBlock = `\n<style>\n#slug-${escAttr(slugId)} {}\n${scoped}\n</style>`;
+  } else if (customCssRaw) {
+    customStyleBlock = `\n<style>\n${customCssRaw}\n</style>`;
+  }
+
+  // Body tag: add id for CSS scoping on campaign pages
+  const bodyTag = slugId ? `<body id="slug-${escAttr(slugId)}">` : "<body>";
+
+  /* ── GA4 snippet ──────────────────────────────────────────────── */
+  const ga4Snippet = ga4Id ? `
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${ga4Id}"></script>
+  <script>
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js',new Date());
+    gtag('config','${ga4Id}',{send_page_view:true});
+  </script>` : "";
+
+  /* ── Meta Pixel snippet ───────────────────────────────────────── */
+  const pixelSnippet = metaPixelId ? `
+  <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
+    n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+    s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+    (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init','${metaPixelId}');
+    fbq('track','PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1"/></noscript>` : "";
+
+  /* ── 404 variant ──────────────────────────────────────────────── */
+  if (notFound) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>${escHtml(cfg.pageTitle || "Hub")}</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+${ga4Snippet}${pixelSnippet}
+<style>${HUB_CSS}</style>
+${themeCssLink}
+</head>
+<body>
+<div class="container">
+  <p class="not-found-msg">That link isn't active.</p>
+</div>
+</body>
+</html>`;
+  }
+
+  /* ── Normal hub ───────────────────────────────────────────────── */
+  const linkButtons = links
+    .map((l) => {
+      if (!l.href) {
+        return `<div class="link-text" id="link-${escAttr(l.id)}">${escHtml(l.label)}</div>`;
+      }
+      return (
+        `<a class="link-btn" id="link-${escAttr(l.id)}" ` +
+        `data-link-id="${escAttr(l.id)}" ` +
+        `data-utm-content="${escAttr(l.utmContent)}" ` +
+        `data-no-utm="${l.noUtm ? "1" : "0"}" ` +
+        `href="${escAttr(l.href)}"` +
+        (l.href.startsWith("mailto:") || l.href.startsWith("tel:")
+          ? ""
+          : ` rel="noopener noreferrer" target="_blank"`) +
+        `>${escHtml(l.label)}</a>`
+      );
+    })
+    .join("\n    ");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>${escHtml(cfg.pageTitle || "Hub")}</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
+<meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
+${ga4Snippet}${pixelSnippet}
+<style>${HUB_CSS}</style>
+${themeCssLink}${customStyleBlock}
+</head>
+${bodyTag}
+<div class="container">
+  ${headerHtml}
+  <div id="links-wrap">
+    ${linkButtons}
+  </div>
+  ${footerHtml}
+</div>
+<script>
+(function () {
+  "use strict";
+
+  /* ── Config injected server-side ──────────────────────── */
+  var ROUTE_DEFAULTS = JSON.parse('${escJsString(utmsJson)}');
+  var CAMPAIGN       = JSON.parse('${escJsString(campaignJson)}');
+  var MODIFIER       = JSON.parse('${escJsString(modifierJson)}');
+  var LINKS_META     = JSON.parse('${escJsString(linksJson)}');
+  var CONTEXT_TYPE   = JSON.parse('${escJsString(ctxTypeEsc)}');
+  var CONTEXT_ID     = JSON.parse('${escJsString(ctxIdEsc)}');
+  var ENGINE_MAP     = JSON.parse('${escJsString(engineMapIdEsc)}');
+  var EXP_TOKEN      = ${JSON.stringify(expToken || defaultUtms.exp_token || "")};
+  var UTM_VARIANT    = ${JSON.stringify(utmVariant || defaultUtms.utm_variant || "")};
+  var TRACKING_KEYS  = [
+    "utm_source","utm_medium","utm_campaign","utm_content","utm_term","utm_id",
+    "cid","gclid","fbclid","ttclid","msclkid"
+  ];
+
+  /* 1. Read inbound tracking params from URL */
+  var inbound = {};
+  try {
+    var sp = new URLSearchParams(window.location.search);
+    sp.forEach(function (val, key) {
+      if (TRACKING_KEYS.indexOf(key) !== -1 || key.indexOf("utm_") === 0) {
+        inbound[key] = val;
+      }
+    });
+  } catch (e) {}
+
+  /* 2. Persist inbound to sessionStorage */
+  try {
+    sessionStorage.setItem("tracking_context", JSON.stringify(inbound));
+  } catch (e) {}
+
+  /* 3. Build merged tracking context
+   *    Priority (highest → lowest):
+   *      a) CAMPAIGN (record.campaign) — always wins on campaign pages
+   *      b) inbound URL params          — win over route defaults
+   *      c) ROUTE_DEFAULTS              — fallback
+   *    utm_content is always overridden per-link below.
+   */
+  function getMerged() {
+    var stored = {};
+    try {
+      stored = JSON.parse(sessionStorage.getItem("tracking_context") || "{}");
+    } catch (e) {}
+    var merged = Object.assign({}, ROUTE_DEFAULTS, stored);
+    // Campaign pages: utm_campaign is authoritative from the record, not from URL
+    if (CAMPAIGN) merged.utm_campaign = CAMPAIGN;
+    return merged;
+  }
+
+  /* 4. Build final href with UTM params appended */
+  function buildHref(baseHref, utmContent, noUtm) {
+    if (noUtm || !baseHref || baseHref.indexOf("mailto:") === 0 || baseHref.indexOf("tel:") === 0) return baseHref;
+    try {
+      var url    = new URL(baseHref, "https://niluferormanli.studio");
+
+      /* ── Canonical UTM cleanup ───────────────────────────────
+       * Strip all utm_* params already on the destination URL so
+       * stale or conflicting attribution from the link href never
+       * leaks through.  Exception: if the destination already carries
+       * its own utm_source (e.g. affiliate / partner links), preserve
+       * it so we don't overwrite their source attribution — our merged
+       * utm_source will then be skipped by the has(k) guard below.
+       */
+      var preservedSource = url.searchParams.get("utm_source") || null;
+      var toDelete = [];
+      url.searchParams.forEach(function (val, key) {
+        if (key.indexOf("utm_") === 0) toDelete.push(key);
+      });
+      toDelete.forEach(function (k) { url.searchParams.delete(k); });
+      if (preservedSource) url.searchParams.set("utm_source", preservedSource);
+
+      var merged = getMerged();
+      // utm_content is always driven by the link's own ID
+      merged.utm_content = utmContent;
+      Object.keys(merged).forEach(function (k) {
+        var v = merged[k];
+        if (v && !url.searchParams.has(k)) {
+          url.searchParams.set(k, String(v));
+        }
+      });
+      return url.toString();
+    } catch (e) {
+      return baseHref;
+    }
+  }
+
+  /* 5. Fire analytics event */
+  function fireOutbound(linkId, resolvedHref) {
+    var host = "";
+    try { host = new URL(resolvedHref).hostname; } catch (e) {}
+    var payload = {
+      context_type:     CONTEXT_TYPE,
+      context_id:       CONTEXT_ID,
+      link_id:          linkId,
+      destination_host: host
+    };
+    try { if (typeof gtag === "function") gtag("event", "outbound_click", payload); } catch (e) {}
+    try { if (typeof fbq  === "function") fbq("trackCustom", "OutboundClick", payload); } catch (e) {}
+
+    /* ── Analytics Engine (server-side, fire-and-forget) ──────
+     * POST /api/event with non-sensitive click fields only.
+     * keepalive ensures the request survives page navigation.
+     * .catch() swallows any network error so navigation is never
+     * blocked and no console noise is produced on failure.
+     */
+    try {
+      var merged = getMerged();
+      fetch("/api/event", {
+        method:    "POST",
+        headers:   { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          slug:           CONTEXT_TYPE === "campaign" ? CONTEXT_ID : "",
+          link_id:        linkId,
+          utm_source:     merged.utm_source     || "",
+          utm_medium:     merged.utm_medium     || "",
+          utm_campaign:   CAMPAIGN || merged.utm_campaign || "",
+          utm_experiment: merged.utm_experiment || "",
+          utm_variant:    merged.utm_variant    || "",
+          dest_host:      host,
+        }),
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  /* 6. Experiment click telemetry beacon ──────────────────────────────────
+   * Fires GET /t?e=click&exp=<utm_experiment>&v=<utm_variant> on every
+   * outbound link click.  Uses navigator.sendBeacon when available so the
+   * ping survives page navigation.  Falls back to fetch + keepalive.
+   * Only fires when both utm_experiment and utm_variant are present in
+   * ROUTE_DEFAULTS (i.e. the hub page is part of a running experiment).
+   * Wrapped in try/catch — telemetry must never throw or block navigation.
+   */
+  function fireTelemetryClick() {
+    var exp = ROUTE_DEFAULTS.utm_experiment;
+    var v   = ROUTE_DEFAULTS.utm_variant;
+    if (!exp || !v) return;
+    var url = "/t?e=click"
+      + "&exp=" + encodeURIComponent(exp)
+      + "&v="   + encodeURIComponent(v);
+    try {
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+      } else {
+        fetch(url, { method: "GET", keepalive: true }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  /* 7. Wire up all links */
+  LINKS_META.forEach(function (meta) {
+    var el = document.getElementById("link-" + meta.id);
+    if (!el) return;
+    el.href = buildHref(meta.href, meta.utmContent, meta.noUtm);
+    el.addEventListener("click", function () {
+      var resolved = buildHref(meta.href, meta.utmContent, meta.noUtm);
+      el.href = resolved;
+      fireOutbound(meta.id, resolved);
+      fireTelemetryClick();
+
+      /* ── Decision Engine: Hard vs Soft Click ────────────────────────
+       * Identify "Hard" clicks (CTA/Buy) vs "Soft" clicks (Social/Explore).
+       * We use a case-insensitive match for common 'Buy' keywords or
+       * specific link IDs that start with 'cta-' or 'buy-'.
+       */
+      var label = String(meta.label || "").toLowerCase();
+      var isHard = /buy|get|join|subscribe|checkout|rezerv|al/.test(label) || meta.id.indexOf("cta") === 0;
+      
+      fetch("/api/decision/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ 
+          type: isHard ? "click_hard" : "click_soft", 
+          link_id: meta.id,
+          meta: {
+            source: CONTEXT_ID,
+            campaign: CAMPAIGN || getMerged().utm_campaign || "",
+            engineMapId: ENGINE_MAP
+          }
+        })
+      }).catch(function() {});
+    });
+  });
+
+  /* 8. Engagement & Scroll Tracking (Phase 3) ─────────────────────────
+   * Calculates a "Warmth" score based on scroll depth and time.
+   * Reports to /api/decision/signal.
+   */
+  var start = Date.now();
+  var maxScroll = 0;
+  var signalSent = false;
+
+  window.addEventListener("scroll", function() {
+    var h = document.documentElement, 
+        b = document.body,
+        st = 'scrollTop',
+        sh = 'scrollHeight';
+    var percent = (h[st]||b[st]) / ((h[sh]||b[sh]) - h.clientHeight) * 100;
+    if (percent > maxScroll) maxScroll = percent;
+  }, { passive: true });
+
+  // Periodically send engagement updates
+  var engagementInterval = setInterval(function() {
+    var elapsed = (Date.now() - start) / 1000;
+    // Score Formula: (Scroll % * 0.4) + (Min(Time, 60s) / 60 * 60)
+    // Simple but effective: caps at 100.
+    var score = Math.min(100, Math.floor((maxScroll * 0.4) + (Math.min(elapsed, 60))));
+    
+    if (score > 10) { // Only report if there is some activity
+      fetch("/api/decision/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ 
+          type: "engagement", 
+          score: score,
+          meta: {
+            source: CONTEXT_ID,
+            campaign: CAMPAIGN || getMerged().utm_campaign || "",
+            engineMapId: ENGINE_MAP
+          }
+        })
+      }).catch(function() {});
+    }
+    
+    // Stop reporting after 2 minutes or once maxed out
+    if (elapsed > 120 || score >= 100) clearInterval(engagementInterval);
+  }, 10000); // Every 10s
+
+}());
+</script>
+</body>
+</html>`;
+}
+
+/* ── CSS scoping helper ────────────────────────────────────────── */
+/**
+ * Prefix every CSS selector with #slug-{slugId} for isolation.
+ * Simple transformation: splits by } and prepends selectors.
+ * Skips @-rules (media, keyframes, etc.) and empty blocks.
+ */
+function scopeCSS(css, slugId) {
+  if (!css || !slugId) return css || "";
+  const prefix = `#slug-${slugId}`;
+  return css
+    .split("}")
+    .map((block) => {
+      const trimmed = block.trim();
+      if (!trimmed) return "";
+      const braceIdx = trimmed.indexOf("{");
+      if (braceIdx === -1) return trimmed;
+
+      const selector = trimmed.substring(0, braceIdx).trim();
+      const body     = trimmed.substring(braceIdx);
+
+      // Skip @-rules (media queries, keyframes, etc.)
+      if (selector.startsWith("@")) return selector + body + "}";
+
+      // Prefix each comma-separated selector
+      const prefixed = selector
+        .split(",")
+        .map((s) => {
+          s = s.trim();
+          if (!s) return s;
+          return `${prefix} ${s}`;
+        })
+        .join(", ");
+
+      return prefixed + " " + body + "}";
+    })
+    .join("\n");
+}
+
+/* ── Escape helpers ─────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+function escAttr(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+
+/**
+ * Escape a JSON string for safe embedding inside a JS single-quoted string literal.
+ * Prevents context-breaking injection when using JSON.parse('...') in <script> blocks.
+ *
+ * Escape order matters: backslashes must be escaped first.
+ *   1. \  → \\   (backslash — must come first)
+ *   2. '  → \'   (single-quote string delimiter)
+ *   3. \r → \r   (carriage return)
+ *   4. \n → \n   (newline)
+ *   5. </ → <\/  (prevents </script> from ending the script block)
+ */
+function escJsString(jsonStr) {
+  return String(jsonStr)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n")
+    .replace(/<\//g, "<\\/");
+}
+
+/* ── CSS ────────────────────────────────────────────────────────── */
+const HUB_CSS = `
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F8F8F6;--text:#111111;
+  --btn-bg:#111111;--btn-text:#F8F8F6;
+  --radius:.875rem;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#111111;--text:#F8F8F6;--btn-bg:#F8F8F6;--btn-text:#111111}
+}
+html{height:100%}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--font);
+  min-height:100dvh;display:flex;align-items:center;justify-content:center;
+  padding:2.5rem 1.25rem;-webkit-font-smoothing:antialiased;
+}
+.container{width:100%;max-width:420px;display:flex;flex-direction:column}
+.name{
+  text-align:center;font-size:1.0625rem;font-weight:600;
+  letter-spacing:.01em;margin-bottom:1.75rem;opacity:.9;
+}
+#links-wrap{display:flex;flex-direction:column;gap:.625rem}
+.link-btn{
+  display:block;width:100%;padding:1.0625rem 1.5rem;
+  background:var(--btn-bg);color:var(--btn-text);
+  border:none;border-radius:var(--radius);
+  font-family:var(--font);font-size:.9375rem;font-weight:500;
+  letter-spacing:.01em;text-align:center;text-decoration:none;
+  cursor:pointer;transition:opacity .12s ease;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.link-btn:hover{opacity:.83}
+.link-btn:active{opacity:.65}
+.link-text{
+  text-align:center;font-size:1.0625rem;font-weight:600;
+  letter-spacing:.01em;margin-bottom:0.75rem;margin-top:0.5rem;opacity:.9;
+}
+.not-found-msg{text-align:center;font-size:.9375rem;opacity:.55;margin-bottom:1.5rem}
+.hub-header{text-align:center;font-size:.875rem;opacity:.6;margin-bottom:1rem}
+.hub-footer{text-align:center;font-size:.8125rem;opacity:.45;margin-top:1.25rem}
+`;
