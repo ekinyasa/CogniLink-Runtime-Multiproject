@@ -19,41 +19,41 @@ META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
 # ==============================================================================
 [env.production]
 
-[[env.production.kv_namespaces]]
-binding = "SLUG_LINKS"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "SLUG_LINKS"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "CAMPAIGN_INDEX"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "CAMPAIGN_INDEX"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "LANDING_CONFIG"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "LANDING_CONFIG"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "CAMPAIGN_AB_ALIAS_INDEX"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "CAMPAIGN_AB_ALIAS_INDEX"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "AB_INDEX"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "AB_INDEX"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "ROUTE_ALIAS"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "ROUTE_ALIAS"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "APP_CONFIG"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "APP_CONFIG"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "ANALYTICS_DATA"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "ANALYTICS_DATA"
+# id = "REPLACE_WITH_REAL_ID" 
 
-[[env.production.kv_namespaces]]
-binding = "GUARD_CACHE"
-id = "" # TODO: CREATE NEW KV AND INSERT ID
+# [[env.production.kv_namespaces]]
+# binding = "GUARD_CACHE"
+# id = "REPLACE_WITH_REAL_ID" 
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_CONVERSION"
