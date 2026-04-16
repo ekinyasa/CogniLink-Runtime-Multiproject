@@ -19,41 +19,41 @@ META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
 # ==============================================================================
 [env.production]
 
-# [[env.production.kv_namespaces]]
-# binding = "SLUG_LINKS"
-# id = "cognilink_runtime_slug_links" 
+[[env.production.kv_namespaces]]
+binding = "SLUG_LINKS"
+id = "80d67ca209fe4d45a347cead5c542fd7" 
 
-# [[env.production.kv_namespaces]]
-# binding = "CAMPAIGN_INDEX"
-# id = "cognilink_rt_campaign_index" 
+[[env.production.kv_namespaces]]
+binding = "CAMPAIGN_INDEX"
+id = "85426e57aa834e73902718bcaa58548c" 
 
-# [[env.production.kv_namespaces]]
-# binding = "LANDING_CONFIG"
-# id = "cognilink_rt_landing_config" 
+[[env.production.kv_namespaces]]
+binding = "LANDING_CONFIG"
+id = "9d87f9b4651d4b7bac9cb01433700b9f" 
 
-# [[env.production.kv_namespaces]]
-# binding = "CAMPAIGN_AB_ALIAS_INDEX"
-# id = "cognilink_rt_camp_ab_index" 
+[[env.production.kv_namespaces]]
+binding = "CAMPAIGN_AB_ALIAS_INDEX"
+id = "d634f590e74445ff8f26ee29716d267f" 
 
-# [[env.production.kv_namespaces]]
-# binding = "AB_INDEX"
-# id = "cognilink_runtime_ab_index" 
+[[env.production.kv_namespaces]]
+binding = "AB_INDEX"
+id = "6a4ce5b7779348a6ba51c72cd61d0e50" 
 
-# [[env.production.kv_namespaces]]
-# binding = "ROUTE_ALIAS"
-# id = "cognilink_runtime_route_alias" 
+[[env.production.kv_namespaces]]
+binding = "ROUTE_ALIAS"
+id = "f0f0316463874b3c9d43101dd749eb46" 
 
-# [[env.production.kv_namespaces]]
-# binding = "APP_CONFIG"
-# id = "cognilink_runtime_app_config" 
+[[env.production.kv_namespaces]]
+binding = "APP_CONFIG"
+id = "81c4c8cfc4744e828091e6486f45b437" 
 
-# [[env.production.kv_namespaces]]
-# binding = "ANALYTICS_DATA"
-# id = "cognilink_rt_analytics_data" 
+[[env.production.kv_namespaces]]
+binding = "ANALYTICS_DATA"
+id = "340fe66c9295449e84eff8f48e782f58" 
 
-# [[env.production.kv_namespaces]]
-# binding = "GUARD_CACHE"
-# id = "cognilink_runtime_guard_cache"  
+[[env.production.kv_namespaces]]
+binding = "GUARD_CACHE"
+id = "59cadff0320d43229ec01a3ceec0ccfe" 
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_CONVERSION"
