@@ -39,7 +39,12 @@ export async function onRequestGet(context) {
   const { request, env } = context;
   if (!verifyToken(request, env)) return unauthorized();
 
-  const cfg = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
+  let cfg = {};
+  if (env.LANDING_CONFIG) {
+    try {
+      cfg = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
+    } catch (_) {}
+  }
 
   // Backward-compat: migrate old field names for response
   const out = { ...cfg };
@@ -64,7 +69,12 @@ export async function onRequestPut(context) {
     });
   }
 
-  const existing = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
+  let existing = {};
+  if (env.LANDING_CONFIG) {
+    try {
+      existing = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
+    } catch (_) {}
+  }
 
   // Start from existing, remove old field names
   const updated = { ...existing };
@@ -132,7 +142,9 @@ export async function onRequestPut(context) {
   }
 
   try {
-    await env.LANDING_CONFIG.put(CONFIG_KEY, JSON.stringify(updated));
+    if (env.LANDING_CONFIG) {
+      await env.LANDING_CONFIG.put(CONFIG_KEY, JSON.stringify(updated));
+    }
     return new Response(JSON.stringify({ ok: true, config: updated }), { headers: jsonHeaders() });
   } catch (e) {
     return new Response(JSON.stringify({ error: "Failed to save config." }), {

@@ -693,18 +693,37 @@ function handleFileImport(evt){
   reader.readAsText(file); evt.target.value='';
 }
 function saveVisualMap(){
-  if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: "SAVE_VISUAL_MAP", mapId: window.INJECTED_MAP_ID, data: { nodes, edges } }, "*");
-    toast('Saved to Admin Settings');
+  if (window.INJECTED_MAP_ID) {
+    // Legacy Engine Map behavior
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "SAVE_VISUAL_MAP", mapId: window.INJECTED_MAP_ID, data: { nodes, edges } }, "*");
+      toast('Saved to Admin Settings');
+    }
   } else {
-    const dataStr=JSON.stringify({nodes,edges});
-    const injected=document.documentElement.outerHTML.replace(
-      '<script>',
-      `<script> window.INJECTED_MAP_DATA=${dataStr};\n`
-    );
-    const blob=new Blob([injected],{type:'text/html'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='nilufer-funnel-editor.html'; a.click();
-    toast('Saved locally as HTML');
+    // Journey mode
+    (async () => {
+      try {
+        const token = window.parent ? window.parent.ADMIN_TOKEN : null;
+        if (!token) return toast('Missing Admin Token! Cannot protect API.');
+        
+        const journeyId = prompt("Enter Journey Name/ID to Save:", "main-funnel");
+        if (!journeyId) return;
+
+        const res = await fetch("/api/admin/journeys", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ id: journeyId, mapData: { nodes, edges } })
+        });
+        
+        if (res.ok) {
+          toast('Journey saved to server');
+        } else {
+          toast('Error saving journey!');
+        }
+      } catch (e) {
+        toast('Error saving journey');
+      }
+    })();
   }
 }
 

@@ -19,41 +19,41 @@ META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
 # ==============================================================================
 [env.production]
 
-# [[env.production.kv_namespaces]]
-# binding = "SLUG_LINKS"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "SLUG_LINKS"
+id = "cognilink_runtime_slug_links" 
 
-# [[env.production.kv_namespaces]]
-# binding = "CAMPAIGN_INDEX"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "CAMPAIGN_INDEX"
+id = "cognilink_rt_campaign_index" 
 
-# [[env.production.kv_namespaces]]
-# binding = "LANDING_CONFIG"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "LANDING_CONFIG"
+id = "cognilink_rt_landing_config" 
 
-# [[env.production.kv_namespaces]]
-# binding = "CAMPAIGN_AB_ALIAS_INDEX"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "CAMPAIGN_AB_ALIAS_INDEX"
+id = "cognilink_rt_camp_ab_index" 
 
-# [[env.production.kv_namespaces]]
-# binding = "AB_INDEX"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "AB_INDEX"
+id = "cognilink_runtime_ab_index" 
 
-# [[env.production.kv_namespaces]]
-# binding = "ROUTE_ALIAS"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "ROUTE_ALIAS"
+id = "cognilink_runtime_route_alias" 
 
-# [[env.production.kv_namespaces]]
-# binding = "APP_CONFIG"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "APP_CONFIG"
+id = "cognilink_runtime_app_config" 
 
-# [[env.production.kv_namespaces]]
-# binding = "ANALYTICS_DATA"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "ANALYTICS_DATA"
+id = "cognilink_rt_analytics_data" 
 
-# [[env.production.kv_namespaces]]
-# binding = "GUARD_CACHE"
-# id = "REPLACE_WITH_REAL_ID" 
+[[env.production.kv_namespaces]]
+binding = "GUARD_CACHE"
+id = "cognilink_runtime_guard_cache"  
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_CONVERSION"

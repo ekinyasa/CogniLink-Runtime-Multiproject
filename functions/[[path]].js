@@ -41,6 +41,7 @@ import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
 import { loadABConfig }                            from "./_shared/ab-router.js";
 import { resolveExperimentVariant }                from "./lib/experiment-router.js";
+import { resolveJourneyDestination }              from "./lib/journey-router.js";
 import { maybeRebalance }                          from "./_shared/bandit-rebalance.js";
 import { readCookie, buildSetCookie }              from "./_shared/cookie-utils.js";
 import { parseUserState, serializeUserState, updateUserState } from "./_shared/user-state.js";
@@ -319,14 +320,44 @@ export async function onRequestGet(context) {
   }));
 
   // ── Step 8: Load config + render ─────────────────────────────────────────
-  // Fetch slug + config in parallel (matching c/[slug].js pattern)
+  // First, check if this is a Journey-based Campaign
+  let hubConfig = null;
+  let isJourney = false;
+  let targetPageId = finalSlug; // default to legacy slug
+
+  if (env.APP_CONFIG) {
+    try {
+      const campRecord = await env.APP_CONFIG.get(`campaign:${finalSlug}`, { type: "json" });
+      if (campRecord && campRecord.journeyId) {
+        const journey = await env.APP_CONFIG.get(`journey:${campRecord.journeyId}`, { type: "json" });
+        if (journey) {
+          // Dummy evaluate early to get visitor state from cookie without modifying it yet
+          const rawState = request.headers.get("Cookie")?.includes("cos_state=") 
+             ? request.headers.get("Cookie").split('cos_state=')[1].split(';')[0]
+             : null;
+          // Basic state (full parsing is done in decision-controller)
+          const tempState = rawState ? { c: rawState.includes("%22c%22%3A1")?1:0, h: rawState.includes("%22h%22%3A1")?1:0, v: rawState.includes("%22v%22%3A1")?1:0 } : {c:0,h:0,v:0};
+          
+          const dest = await resolveJourneyDestination(journey, tempState);
+          if (dest && dest.pageId) {
+            targetPageId = dest.pageId;
+            isJourney = true;
+          }
+        }
+      }
+    } catch(e) {
+      console.error("[journey_error]", e);
+    }
+  }
+
+  // Fetch page/slug config + global configs
   const [hubConfigResult, globalConfigResult, engineResult] = await Promise.allSettled([
-    loadHubConfig(finalSlug, env, ttlMs), // from alias-router.js
+    loadHubConfig(targetPageId, env, ttlMs), // Load the target page (or legacy slug)
     env.LANDING_CONFIG ? env.LANDING_CONFIG.get("hub_config", { type: "json" }) : Promise.resolve({}),
     env.LANDING_CONFIG ? env.LANDING_CONFIG.get("engine_config", { type: "json" }) : Promise.resolve({}),
   ]);
 
-  const hubConfig    = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
+  hubConfig = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
 

@@ -10,6 +10,10 @@ export async function onRequestGet(context) {
   const prefix = url.searchParams.get("prefix") || undefined;
 
   try {
+    if (!env.SLUG_LINKS) {
+      return new Response(JSON.stringify({ slugs: [], total: 0, truncated: false }), { headers: jsonHeaders() });
+    }
+
     const listOpts = { limit };
     if (prefix) listOpts.prefix = prefix;
 

@@ -1,0 +1,56 @@
+import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
+
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  if (!verifyToken(request, env)) return unauthorized();
+  
+  const results = [];
+  if (env.APP_CONFIG) {
+     let cursor;
+     do {
+       const page = await env.APP_CONFIG.list({ prefix: "campaign:", cursor });
+       for (const key of page.keys) {
+         try {
+           const data = await env.APP_CONFIG.get(key.name, { type: "json" });
+           if (data) results.push({ slug: key.name.replace("campaign:", ""), ...data });
+         } catch(e){}
+       }
+       cursor = page.list_complete ? undefined : page.cursor;
+     } while(cursor);
+  }
+  return new Response(JSON.stringify({ campaigns: results }), { status: 200, headers: jsonHeaders() });
+}
+
+export async function onRequestPost(context) {
+  const { request, env } = context;
+  if (!verifyToken(request, env)) return unauthorized();
+  try {
+    const data = await request.json(); // { slug, journeyId, utms... }
+    if (!data.slug || !data.journeyId) throw new Error("Missing slug or journeyId");
+    
+    const slug = data.slug.toLowerCase().trim();
+    if (env.APP_CONFIG) {
+       await env.APP_CONFIG.put(`campaign:${slug}`, JSON.stringify(data));
+       
+       // Record alias for routing
+       if (env.ROUTE_ALIAS) {
+          await env.ROUTE_ALIAS.put(slug, slug);
+       }
+    }
+    return new Response(JSON.stringify({ success: true, slug }), { status: 200, headers: jsonHeaders() });
+  } catch(e) {
+    return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers: jsonHeaders() });
+  }
+}
+
+export async function onRequestDelete(context) {
+  const { request, env } = context;
+  if (!verifyToken(request, env)) return unauthorized();
+  const url = new URL(request.url);
+  const slug = url.searchParams.get("slug");
+  if (slug) {
+     if (env.APP_CONFIG) await env.APP_CONFIG.delete(`campaign:${slug}`);
+     if (env.ROUTE_ALIAS) await env.ROUTE_ALIAS.delete(slug);
+  }
+  return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
+}

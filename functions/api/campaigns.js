@@ -12,6 +12,10 @@ export async function onRequestGet(context) {
   if (!verifyToken(request, env)) return unauthorized();
 
   try {
+    if (!env.CAMPAIGN_INDEX) {
+      return new Response(JSON.stringify({ campaigns: [], total: 0 }), { headers: jsonHeaders() });
+    }
+
     const list = await env.CAMPAIGN_INDEX.list({ limit: 500 });
 
     const entries = await Promise.all(

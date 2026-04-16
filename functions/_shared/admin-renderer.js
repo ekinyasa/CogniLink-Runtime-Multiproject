@@ -67,10 +67,13 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
+    <button class="tab-btn" data-tab="pages">Pages (Landings)</button>
+    <button class="tab-btn" data-tab="journeys">Journeys (Funnels)</button>
     <button class="tab-btn" data-tab="campaigns">Campaigns</button>
-    <button class="tab-btn" data-tab="slugs">Nodes</button>
-    <button class="tab-btn" data-tab="kartra">Funnels</button>
-    <button class="tab-btn" data-tab="config">Landings</button>
+    
+    <button class="tab-btn" data-tab="slugs">Nodes (Legacy)</button>
+    <button class="tab-btn" data-tab="kartra">Funnels (Legacy)</button>
+    <button class="tab-btn" data-tab="config">Global Config</button>
     <button class="tab-btn" data-tab="routing">Paths</button>
     <button class="tab-btn" data-tab="diagnostics">Verify</button>
   </div>
@@ -189,6 +192,22 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
       </div>
 
     </div>
+  </div>
+
+  <!-- ── Tab: Pages ───────────────────────────────────── -->
+  <div id="tab-pages" class="tab-pane hidden">
+    <div class="layout-single">
+      <div class="card">
+        <p class="card-title">Pages</p>
+        <p class="hint">Pages are individual destinations. You can use Legacy Nodes to create them for now.</p>
+        <p class="hint">Full CRUD UI for Pages will be injected securely below.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Journeys ────────────────────────────────── -->
+  <div id="tab-journeys" class="tab-pane hidden" style="padding: 0; display:flex; flex-direction:column; height: 85vh;">
+    <iframe src="/mapper.html" style="width:100%; height:100%; border:none; border-radius: var(--radius);"></iframe>
   </div>
 
   <!-- ── Tab: Campaign Links ──────────────────────────── -->
