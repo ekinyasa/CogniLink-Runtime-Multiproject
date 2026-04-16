@@ -21,39 +21,39 @@ META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
 
 [[env.production.kv_namespaces]]
 binding = "SLUG_LINKS"
-id = "80d67ca209fe4d45a347cead5c542fd7" 
+id = "281632c6f5f1457db9e04ee79d979929" 
 
 [[env.production.kv_namespaces]]
 binding = "CAMPAIGN_INDEX"
-id = "85426e57aa834e73902718bcaa58548c" 
+id = "172ef04f783640228c68d3fd321ed33d" 
 
 [[env.production.kv_namespaces]]
 binding = "LANDING_CONFIG"
-id = "9d87f9b4651d4b7bac9cb01433700b9f" 
+id = "b44f1b0e907a4649b9f0c28fd849ac36" 
 
 [[env.production.kv_namespaces]]
 binding = "CAMPAIGN_AB_ALIAS_INDEX"
-id = "d634f590e74445ff8f26ee29716d267f" 
+id = "f76395da9009447dbd630acef12b522c" 
 
 [[env.production.kv_namespaces]]
 binding = "AB_INDEX"
-id = "6a4ce5b7779348a6ba51c72cd61d0e50" 
+id = "eafe5cfff45f40738c8bd7aba82e05ac" 
 
 [[env.production.kv_namespaces]]
 binding = "ROUTE_ALIAS"
-id = "f0f0316463874b3c9d43101dd749eb46" 
+id = "bc3f8583acb3480dbe9ba84d97612593" 
 
 [[env.production.kv_namespaces]]
 binding = "APP_CONFIG"
-id = "81c4c8cfc4744e828091e6486f45b437" 
+id = "2ff9d0424c9442a2919f60885097e017" 
 
 [[env.production.kv_namespaces]]
 binding = "ANALYTICS_DATA"
-id = "340fe66c9295449e84eff8f48e782f58" 
+id = "2034dc1f7c3243f382e5ed9a7e6d1dd9" 
 
 [[env.production.kv_namespaces]]
 binding = "GUARD_CACHE"
-id = "59cadff0320d43229ec01a3ceec0ccfe" 
+id = "7b9bb0d4c1b44c6797f8d328f1b64600" 
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_CONVERSION"
