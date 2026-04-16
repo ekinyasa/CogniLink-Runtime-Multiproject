@@ -1471,9 +1471,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     document.querySelectorAll(".btn-del-page").forEach(function(btn) {
       btn.addEventListener("click", async function() {
         if (!confirm("Delete page?")) return;
-        var res = await fetch("/api/admin/pages?id=" + encodeURIComponent(this.dataset.id), {
-          method: "DELETE",
-          headers: { "Authorization": "Bearer " + getT() }
+        var res = await apiFetch("/api/admin/pages?id=" + encodeURIComponent(this.dataset.id), {
+          method: "DELETE"
         });
         if (res.ok) await loadPages();
       });
@@ -1497,9 +1496,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if ($("f-page-url").value.trim()) payload.redirectUrl = $("f-page-url").value.trim();
       
       try {
-        var res = await fetch("/api/admin/pages", {
+        var res = await apiFetch("/api/admin/pages", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getT() },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
