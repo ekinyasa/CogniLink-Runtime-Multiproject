@@ -8,10 +8,14 @@
  */
 import { renderAdmin } from "../_shared/admin-renderer.js";
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ request, env }) {
+  const url = new URL(request.url);
+  const customDomain = env.CUSTOM_DOMAIN || url.hostname;
+
   return new Response(renderAdmin({
     branch: (env && env.CF_PAGES_BRANCH)     || "",
     sha:    (env && env.CF_PAGES_COMMIT_SHA) || "",
+    customDomain: customDomain
   }), {
     headers: {
       "Content-Type":           "text/html;charset=UTF-8",

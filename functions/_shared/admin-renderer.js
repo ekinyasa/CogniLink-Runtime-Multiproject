@@ -3,7 +3,7 @@
  * Token management and API calls are entirely client-side.
  * The word "admin" never appears in user-visible text.
  */
-export function renderAdmin({ branch = "", sha = "" } = {}) {
+export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.ekinyasa.online" } = {}) {
   // Derive version tag from CF Pages branch (e.g. "feat/v9-diagnostics" → "v9")
   var vMatch    = branch.match(/v(\d+)/);
   var vTag      = vMatch ? "v" + vMatch[1] : "v9";
@@ -347,7 +347,7 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
               <div class="override-row">
                 <label class="override-dest-label">Official Website</label>
                 <div class="override-fields">
-                  <input id="f-dest-official-url" class="override-url" type="url" placeholder="https://runtime.ekinyasa.online/tr" />
+                  <input id="f-dest-official-url" class="override-url" type="url" placeholder="https://${customDomain}/tr" />
                   <input id="f-dest-official-order" class="override-order" type="number" placeholder="order" />
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-official-active" checked /> Active</label>
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-official-noutm" /> No UTM</label>
@@ -798,9 +798,9 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
           <div class="landing-fields">
             <p class="dash-card-label" style="margin-bottom:0.75rem;">Global Redirects</p>
             <label for="e-redir-hot">Hot Traffic Redirect</label>
-            <input id="e-redir-hot" type="url" placeholder="https://runtime.ekinyasa.online/checkout" style="margin-bottom:12px;" />
+            <input id="e-redir-hot" type="url" placeholder="https://${customDomain}/checkout" style="margin-bottom:12px;" />
             <label for="e-redir-conv">Converted Traffic Redirect</label>
-            <input id="e-redir-conv" type="url" placeholder="https://runtime.ekinyasa.online/tesekkurler" />
+            <input id="e-redir-conv" type="url" placeholder="https://${customDomain}/tesekkurler" />
           </div>
 
           <!-- Engagement State Machine -->
@@ -4414,7 +4414,7 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
     // Replace script data with active map context
     var activeDataStr = JSON.stringify(activeDataObj);
     var blobHtml = window.VISUAL_MAPPER_HTML
-      .replace(/niluferormanli\.com/g, "runtime.ekinyasa.online")
+      .replace(/runtime\.ekinyasa\.online/g, "${customDomain}")
       .replace(
         "<script>",
         "<script> window.INJECTED_MAP_DATA = " + activeDataStr + "; window.INJECTED_MAP_ID = '" + mapId + "';"
