@@ -1343,6 +1343,7 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
   }
 
   /* ── Tabs ────────────────────────────────────────────── */
+  var pagesTabLoaded = false;
   var tabBtns  = document.querySelectorAll(".tab-btn");
   var tabPanes = document.querySelectorAll(".tab-pane");
 
@@ -1369,6 +1370,10 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
       if (target === "config" && !configTabLoaded) {
         configTabLoaded = true;
         loadConfig();
+      }
+      if (target === "pages" && !pagesTabLoaded) {
+        pagesTabLoaded = true;
+        loadPages();
       }
       if (target === "routing" && !routingTabLoaded) {
         routingTabLoaded = true;
@@ -1403,6 +1408,84 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
     }
   });
   elBtnLogout.addEventListener("click", function () { clearToken(); showGate(); });
+
+  /* ── Pages ───────────────────────────────────────────── */
+  var pagesStore = [];
+  async function loadPages() {
+    try {
+      var res = await apiFetch("/api/admin/pages");
+      if (res.ok) {
+        var d = await res.json();
+        pagesStore = d.pages || [];
+        renderPages();
+      }
+    } catch(e) { console.error("Failed loading pages", e); }
+  }
+  
+  function renderPages() {
+    var tbody = $("tbl-pages").querySelector("tbody");
+    tbody.innerHTML = "";
+    if (!pagesStore.length) {
+      tbody.innerHTML = "<tr><td colspan='3' class='empty-state'>No pages created yet.</td></tr>";
+      return;
+    }
+    pagesStore.forEach(function(item) {
+      var tr = document.createElement("tr");
+      var titleOrDest = item.redirectUrl || (item.headerInfo && item.headerInfo.title) || "-";
+      tr.innerHTML = "<td><code>" + esc(item.id) + "</code></td><td>" + esc(titleOrDest) + "</td><td><button class='btn-ghost btn-sm btn-del-page' style='color:var(--danger)' data-id='" + esc(item.id) + "'>Del</button></td>";
+      tbody.appendChild(tr);
+    });
+    
+    document.querySelectorAll(".btn-del-page").forEach(function(btn) {
+      btn.addEventListener("click", async function() {
+        if (!confirm("Delete page?")) return;
+        var res = await fetch("/api/admin/pages?id=" + encodeURIComponent(this.dataset.id), {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + getT() }
+        });
+        if (res.ok) await loadPages();
+      });
+    });
+  }
+
+  var pageForm = $("page-form");
+  if (pageForm) {
+    pageForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      $("btn-save-page").disabled = true;
+      hideErr($("page-form-error")); hideErr($("page-form-success"));
+      
+      var payload = {
+        id: $("f-page-id").value.trim(),
+        theme: $("f-page-theme").value,
+        headerInfo: { title: $("f-page-title").value.trim() },
+        linksType: "dynamic",
+        links: []
+      };
+      if ($("f-page-url").value.trim()) payload.redirectUrl = $("f-page-url").value.trim();
+      
+      try {
+        var res = await fetch("/api/admin/pages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getT() },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          $("page-form-success").textContent = "Page created!";
+          $("page-form-success").classList.remove("hidden");
+          pageForm.reset();
+          await loadPages();
+        } else {
+          var d = await res.json();
+          showErr($("page-form-error"), d.error || "Failed to create page");
+        }
+      } catch(e) {
+        showErr($("page-form-error"), e.toString());
+      }
+      $("btn-save-page").disabled = false;
+    });
+  }
+
 
   /* ── Analytics ───────────────────────────────────────── */
   function renderAnalyticsTable(tblId, rows, colKey, colCount) {
