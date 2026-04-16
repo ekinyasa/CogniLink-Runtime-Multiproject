@@ -80,7 +80,7 @@
 <body>
 
 <div id="header">
-  <div class="logo">Nilüfer Ormanlı <span>/ Funnel</span></div>
+  <div class="logo" id="mapper-logo">CogniLink <span>/ Funnel</span></div>
   <div class="tool-group">
     <button id="btn-select" class="active" onclick="setMode('select')">↖ Select <small style="opacity:0.45">V</small></button>
     <button id="btn-connect" onclick="connectClick(event)">⤳ Connect</button>
@@ -251,8 +251,9 @@ function defaultData() {
   }
 
   idCounter = 100;
+  const routerUrl = (window.parent && window.parent.CUSTOM_DOMAIN) || window.location.hostname;
   nodes = [
-    {id:'n1', name:'CogniLink Router',  url: window.location.hostname,  type:'cold',    goal:'Welcome cold visitors, tag by source, route to correct page',  x:30,  y:220, w:162, h:90},
+    {id:'n1', name:'CogniLink Router',  url: routerUrl,  type:'cold',    goal:'Welcome cold visitors, tag by source, route to correct page',  x:30,  y:220, w:162, h:90},
     {id:'n2', name:'Main Landing',      url:'/home',               type:'cold',    goal:'Brand intro, curiosity, soft waitlist entry',                  x:260, y:60,  w:155, h:85},
     {id:'n3', name:'Product Page',      url:'/voice-architecture', type:'warm',    goal:'Explain product, build trust, warm with video, push to CTA',   x:478, y:60,  w:155, h:85},
     {id:'n4', name:'Newsletter',        url:'/subscribe',          type:'warm',    goal:'Grow email list, deliver lead magnet, start long-term nurture', x:700, y:60,  w:148, h:85},
@@ -703,7 +704,7 @@ function saveVisualMap(){
     // Journey mode
     (async () => {
       try {
-        const token = window.parent ? window.parent.ADMIN_TOKEN : null;
+        const token = (window.parent && window.parent.ADMIN_TOKEN) || window.ADMIN_TOKEN || null;
         if (!token) return toast('Missing Admin Token! Cannot protect API.');
         
         const journeyId = prompt("Enter Journey Name/ID to Save:", "main-funnel");
@@ -739,6 +740,13 @@ defaultData();
 snapshot();
 window.addEventListener('resize',resize);
 resize();
+
+// Receive token from parent if pushed via postMessage
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SET_TOKEN') {
+    window.ADMIN_TOKEN = e.data.token;
+  }
+});
 </script>
 
 
