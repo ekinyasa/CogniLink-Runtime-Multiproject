@@ -171,13 +171,34 @@ ${bodyTag}
 <div class="container">
   ${headerHtml}
   <div id="links-wrap">
-    ${linkButtons}
+    ${slugData?.customBodyHtml || linkButtons}
   </div>
   ${footerHtml}
 </div>
+
+${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
+
 <script>
 (function () {
   "use strict";
+
+  // If this page is explicitly marked as a conversion goal in the engine map or slug data, fire it now.
+  var isConversionGoal = ${!!(slugData?.type === "conv" || slugData?.isConversion)};
+  if (isConversionGoal) {
+     fetch("/api/decision/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ 
+          type: "conversion", 
+          meta: {
+            source: ${JSON.stringify(contextId)},
+            campaign: ${JSON.stringify(campaign || "")},
+            engineMapId: ${JSON.stringify(slugData?.engineMapId || "")}
+          }
+        })
+      }).catch(function() {});
+  }
 
   /* ── Config injected server-side ──────────────────────── */
   var ROUTE_DEFAULTS = JSON.parse('${escJsString(utmsJson)}');
@@ -232,7 +253,7 @@ ${bodyTag}
   function buildHref(baseHref, utmContent, noUtm) {
     if (noUtm || !baseHref || baseHref.indexOf("mailto:") === 0 || baseHref.indexOf("tel:") === 0) return baseHref;
     try {
-      var url    = new URL(baseHref, "https://niluferormanli.studio");
+      var url    = new URL(baseHref, window.location.origin);
 
       /* ── Canonical UTM cleanup ───────────────────────────────
        * Strip all utm_* params already on the destination URL so

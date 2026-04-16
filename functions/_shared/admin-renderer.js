@@ -199,8 +199,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <div class="layout">
       <!-- Left: Create Form -->
       <div class="card form-card">
-        <p class="card-title">New Landing Page</p>
+        <p class="card-title" id="page-form-title">New Landing Page</p>
         <form id="page-form" autocomplete="off">
+          <input type="hidden" id="f-page-editing" value="" />
           <label for="f-page-id">Page ID / Slug <span class="req">*</span></label>
           <input type="text" id="f-page-id" placeholder="e.g. black-friday-landing" required pattern="[A-Za-z0-9-_]+" />
 
@@ -216,11 +217,30 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
           <label for="f-page-url">Redirect URL (optional)</label>
           <input type="url" id="f-page-url" placeholder="https://external-landing.com" />
-          <p class="hint">If provided, this page will act as a direct pass-through instead of a Hub.</p>
+          <p class="hint">If provided, this page acts as a pass-through.</p>
+
+          <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
+          <p class="card-title" style="font-size:12px; opacity:0.7">Advanced / Code Editor</p>
+
+          <label for="f-page-is-conv" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+             <input type="checkbox" id="f-page-is-conv" /> Mark as Conversion Goal (fires signal on load)
+          </label>
+
+          <label for="f-page-html">Custom Body (HTML Override)</label>
+          <textarea id="f-page-html" rows="4" placeholder="<p>Custom HTML content...</p>" style="font-family:monospace;"></textarea>
+
+          <label for="f-page-css">Custom CSS</label>
+          <textarea id="f-page-css" rows="3" placeholder=".my-class { color: red; }" style="font-family:monospace;"></textarea>
+
+          <label for="f-page-js">Custom Script (JS)</label>
+          <textarea id="f-page-js" rows="4" placeholder="console.log('Hello world');" style="font-family:monospace;"></textarea>
 
           <p id="page-form-error" class="error hidden"></p>
           <p id="page-form-success" class="success hidden"></p>
-          <button type="submit" id="btn-save-page" class="btn-primary">Create Page</button>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" id="btn-save-page" class="btn-primary" style="flex:1;">Save Page</button>
+            <button type="button" id="btn-cancel-page" class="btn-ghost hidden">Cancel</button>
+          </div>
         </form>
       </div>
 
@@ -228,12 +248,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <div class="card list-card">
         <p class="card-title">Active Pages</p>
         <div style="overflow-x:auto;">
-          <table class="data-table" id="tbl-pages">
-            <thead><tr><th>Page ID</th><th>Title/Dest</th><th>Actions</th></tr></thead>
+          <table id="tbl-pages" class="data-table">
+            <thead>
+              <tr><th>ID</th><th>Title/Dest</th><th width="80">Actions</th></tr>
+            </thead>
             <tbody></tbody>
           </table>
         </div>
       </div>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -1467,10 +1491,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     pagesStore.forEach(function(item) {
       var tr = document.createElement("tr");
       var titleOrDest = item.redirectUrl || (item.headerInfo && item.headerInfo.title) || "-";
-      tr.innerHTML = "<td><code>" + esc(item.id) + "</code></td><td>" + esc(titleOrDest) + "</td><td><button class='btn-ghost btn-sm btn-del-page' style='color:var(--danger)' data-id='" + esc(item.id) + "'>Del</button></td>";
+      tr.innerHTML = "<td><code>" + esc(item.id) + "</code></td><td>" + esc(titleOrDest) + "</td>" +
+        "<td><div style='display:flex;gap:5px;'>" +
+        "<button class='btn-ghost btn-sm btn-edit-page' data-id='" + esc(item.id) + "'>Edit</button>" +
+        "<button class='btn-ghost btn-sm btn-del-page' style='color:var(--danger)' data-id='" + esc(item.id) + "'>Del</button>" +
+        "</div></td>";
       tbody.appendChild(tr);
     });
     
+    document.querySelectorAll(".btn-edit-page").forEach(function(btn) {
+      btn.addEventListener("click", function() { editPage(this.dataset.id); });
+    });
+
     document.querySelectorAll(".btn-del-page").forEach(function(btn) {
       btn.addEventListener("click", async function() {
         if (!confirm("Delete page?")) return;
@@ -1481,6 +1513,33 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       });
     });
   }
+
+  function editPage(id) {
+    var p = pagesStore.find(function(item) { return item.id === id; });
+    if (!p) return;
+    $("f-page-editing").value = p.id;
+    $("f-page-id").value = p.id;
+    $("f-page-id").disabled = true;
+    $("f-page-title").value = (p.headerInfo && p.headerInfo.title) || "";
+    $("f-page-theme").value = p.theme || "dark";
+    $("f-page-url").value = p.redirectUrl || "";
+    $("f-page-is-conv").checked = !!p.isConversion;
+    $("f-page-html").value = p.customBodyHtml || "";
+    $("f-page-css").value = p.customStyleCss || "";
+    $("f-page-js").value = p.customScript || "";
+
+    $("page-form-title").textContent = "Editing: " + id;
+    $("btn-cancel-page").classList.remove("hidden");
+    $("page-tab").scrollIntoView();
+  }
+
+  $("btn-cancel-page").addEventListener("click", function() {
+    $("page-form").reset();
+    $("f-page-editing").value = "";
+    $("f-page-id").disabled = false;
+    $("page-form-title").textContent = "New Landing Page";
+    $("btn-cancel-page").classList.add("hidden");
+  });
 
   var pageForm = $("page-form");
   if (pageForm) {
@@ -1494,7 +1553,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         theme: $("f-page-theme").value,
         headerInfo: { title: $("f-page-title").value.trim() },
         linksType: "dynamic",
-        links: []
+        links: [],
+        isConversion: $("f-page-is-conv").checked,
+        customBodyHtml: $("f-page-html").value.trim(),
+        customStyleCss: $("f-page-css").value.trim(),
+        customScript: $("f-page-js").value.trim()
       };
       if ($("f-page-url").value.trim()) payload.redirectUrl = $("f-page-url").value.trim();
       
@@ -1504,13 +1567,17 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          $("page-form-success").textContent = "Page created!";
+          $("page-form-success").textContent = "Page saved!";
           $("page-form-success").classList.remove("hidden");
           pageForm.reset();
+          $("f-page-editing").value = "";
+          $("f-page-id").disabled = false;
+          $("page-form-title").textContent = "New Landing Page";
+          $("btn-cancel-page").classList.add("hidden");
           await loadPages();
         } else {
           var d = await res.json();
-          showErr($("page-form-error"), d.error || "Failed to create page");
+          showErr($("page-form-error"), d.error || "Failed to save page");
         }
       } catch(e) {
         showErr($("page-form-error"), e.toString());
