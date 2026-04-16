@@ -347,7 +347,7 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
               <div class="override-row">
                 <label class="override-dest-label">Official Website</label>
                 <div class="override-fields">
-                  <input id="f-dest-official-url" class="override-url" type="url" placeholder="https://niluferormanli.com/tr" />
+                  <input id="f-dest-official-url" class="override-url" type="url" placeholder="https://runtime.ekinyasa.online/tr" />
                   <input id="f-dest-official-order" class="override-order" type="number" placeholder="order" />
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-official-active" checked /> Active</label>
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-official-noutm" /> No UTM</label>
@@ -798,9 +798,9 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
           <div class="landing-fields">
             <p class="dash-card-label" style="margin-bottom:0.75rem;">Global Redirects</p>
             <label for="e-redir-hot">Hot Traffic Redirect</label>
-            <input id="e-redir-hot" type="url" placeholder="https://pages.niluferormanli.com/checkout" style="margin-bottom:12px;" />
+            <input id="e-redir-hot" type="url" placeholder="https://runtime.ekinyasa.online/checkout" style="margin-bottom:12px;" />
             <label for="e-redir-conv">Converted Traffic Redirect</label>
-            <input id="e-redir-conv" type="url" placeholder="https://pages.niluferormanli.com/tesekkurler" />
+            <input id="e-redir-conv" type="url" placeholder="https://runtime.ekinyasa.online/tesekkurler" />
           </div>
 
           <!-- Engagement State Machine -->
@@ -4413,10 +4413,12 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
     
     // Replace script data with active map context
     var activeDataStr = JSON.stringify(activeDataObj);
-    var blobHtml = window.VISUAL_MAPPER_HTML.replace(
-      "<script>",
-      "<script> window.INJECTED_MAP_DATA = " + activeDataStr + "; window.INJECTED_MAP_ID = '" + mapId + "';"
-    );
+    var blobHtml = window.VISUAL_MAPPER_HTML
+      .replace(/niluferormanli\.com/g, "runtime.ekinyasa.online")
+      .replace(
+        "<script>",
+        "<script> window.INJECTED_MAP_DATA = " + activeDataStr + "; window.INJECTED_MAP_ID = '" + mapId + "';"
+      );
     var blob = new Blob([blobHtml], { type: "text/html" });
     iframe.src = URL.createObjectURL(blob);
     modal.appendChild(iframe);
