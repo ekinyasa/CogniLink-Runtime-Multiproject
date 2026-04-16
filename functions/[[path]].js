@@ -200,13 +200,12 @@ export async function onRequestGet(context) {
     ? "/" + params.path.join("/")
     : "/" + String(params.path || "");
 
-  // ── Step 0: Root redirect fallback ──────────────────────────────────────
-  if (rawPath === "/" || !rawPath) {
-    return html404();
-  }
+  // ── Step 0: Root path handling ──────────────────────────────────────────
+  // If no path is specified, attempt to serve the "home" page.
+  const finalRawPath = (rawPath === "/" || !rawPath) ? "/home" : rawPath;
 
   // ── Steps 1–2: Parse + validate path ────────────────────────────────────
-  const parsed = parsePath(rawPath);
+  const parsed = parsePath(finalRawPath);
   if (parsed.error) return html404();
 
   const { alias, modifier } = parsed;
@@ -360,6 +359,18 @@ export async function onRequestGet(context) {
   hubConfig = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
+
+  // ── Step 7.1: Static Page Redirect ──────────────────────────────────────
+  if (hubConfig && hubConfig.redirectUrl) {
+    try {
+      const rUrl = new URL(hubConfig.redirectUrl);
+      // Transfer search params from inbound request
+      url.searchParams.forEach((v, k) => rUrl.searchParams.set(k, v));
+      return Response.redirect(rUrl.toString(), 302);
+    } catch (_) {
+      // Fall through if URL is malformed
+    }
+  }
 
   // ── Step 7.5: Decision Engine (Invisible Router - Unified) ───────────────
   // Evaluate behavior-driven rules to decide if we should show the hub or

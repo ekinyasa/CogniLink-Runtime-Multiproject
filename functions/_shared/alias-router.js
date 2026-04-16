@@ -164,36 +164,37 @@ export async function resolveAlias({ alias, modifier, env, requestId = "" }) {
   // ── Step 6: KV miss ───────────────────────────────────────────────────────
   if (kvSlug === null) {
     // ── Step 6a: Modifier fallback — try the base alias ──────────────────
-    // If the request included a modifier (e.g. /nb/offer) and ROUTE_ALIAS
-    // has no modifier-specific entry (route:nb@offer), fall back to the base
-    // alias (route:nb). This is at most 2 ROUTE_ALIAS reads: O(1).
-    //
-    // Do NOT change ROUTE_ALIAS structure — just perform a second read.
     if (modifier !== null) {
       let baseSlug = null;
       try {
         baseSlug = await env.ROUTE_ALIAS.get(`route:${alias}`, { type: "text" });
-      } catch (_) { /* treat as miss */ }
+      } catch (_) {}
 
       if (baseSlug !== null && validateCanonicalSlug(baseSlug)) {
-        // Cache the modifier-qualified key so future requests are warm (O(1))
         routeCacheSet(routeKey, baseSlug, env).catch(() => {});
-
-        // Cache the modifier-qualified key so future requests are warm (O(1))
-        routeCacheSet(routeKey, baseSlug, env).catch(() => {});
-        // NOTE: TRAFFIC_MEMORY is emitted in [[path]].js after A/B variant selection
         return { ok: true, canonicalSlug: baseSlug, cacheHit: false };
       }
     }
 
-    // No base alias found either (or no modifier) → true 404
-    const failEvent = modifier !== null
-      ? OPS_EVENTS.ROUTE_FAIL_UNKNOWN_MODIFIER
-      : OPS_EVENTS.ROUTE_FAIL_UNKNOWN_ALIAS;
-    emitOps(env, failEvent, {
+    // ── Step 6b: Direct Page ID fallback (Unify Pages + Aliases) ──────────
+    // If no explicit alias is found, check if the alias matches a Page ID.
+    // This allows /my-landing-page to work if "my-landing-page" exists in APP_CONFIG.
+    if (env.APP_CONFIG) {
+      try {
+        // We only check if it EXISTS. loadHubConfig will actually fetch the body later.
+        const pageExists = await env.APP_CONFIG.get(`hub:${alias}`, { type: "json" });
+        if (pageExists !== null) {
+          // Canonical slug is the alias itself
+          return { ok: true, canonicalSlug: alias, cacheHit: false };
+        }
+      } catch (_) {}
+    }
+
+    // Final failure
+    emitOps(env, OPS_EVENTS.ROUTE_FAIL_NOT_FOUND, {
       alias, modifier: modifier ?? "", request_id: requestId,
     });
-    return { ok: false, status: 404, reason: "route_not_found" };
+    return { ok: false, status: 404, reason: "alias_not_found" };
   }
 
   // ── Step 7: Canonical slug format validation ───────────────────────────────
