@@ -1,3 +1,3 @@
 export function onRequest() {
-  return Response.redirect("/admin", 302)
+  return new Response("Not Found", { status: 404 });
 }

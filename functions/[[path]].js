@@ -202,7 +202,7 @@ export async function onRequestGet(context) {
 
   // ── Step 0: Root redirect fallback ──────────────────────────────────────
   if (rawPath === "/" || !rawPath) {
-    return Response.redirect(new URL("/admin", request.url).href, 302);
+    return html404();
   }
 
   // ── Steps 1–2: Parse + validate path ────────────────────────────────────
