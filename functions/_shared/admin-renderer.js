@@ -196,11 +196,43 @@ export function renderAdmin({ branch = "", sha = "" } = {}) {
 
   <!-- ── Tab: Pages ───────────────────────────────────── -->
   <div id="tab-pages" class="tab-pane hidden">
-    <div class="layout-single">
-      <div class="card">
-        <p class="card-title">Pages</p>
-        <p class="hint">Pages are individual destinations. You can use Legacy Nodes to create them for now.</p>
-        <p class="hint">Full CRUD UI for Pages will be injected securely below.</p>
+    <div class="layout">
+      <!-- Left: Create Form -->
+      <div class="card form-card">
+        <p class="card-title">New Landing Page</p>
+        <form id="page-form" autocomplete="off">
+          <label for="f-page-id">Page ID / Slug <span class="req">*</span></label>
+          <input type="text" id="f-page-id" placeholder="e.g. black-friday-landing" required pattern="[A-Za-z0-9-_]+" />
+
+          <label for="f-page-title">Page Title</label>
+          <input type="text" id="f-page-title" placeholder="My Landing" />
+
+          <label for="f-page-theme">Theme</label>
+          <select id="f-page-theme">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="system">System Default</option>
+          </select>
+
+          <label for="f-page-url">Redirect URL (optional)</label>
+          <input type="url" id="f-page-url" placeholder="https://external-landing.com" />
+          <p class="hint">If provided, this page will act as a direct pass-through instead of a Hub.</p>
+
+          <p id="page-form-error" class="error hidden"></p>
+          <p id="page-form-success" class="success hidden"></p>
+          <button type="submit" id="btn-save-page" class="btn-primary">Create Page</button>
+        </form>
+      </div>
+
+      <!-- Right: List -->
+      <div class="card list-card">
+        <p class="card-title">Active Pages</p>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="tbl-pages">
+            <thead><tr><th>Page ID</th><th>Title/Dest</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
