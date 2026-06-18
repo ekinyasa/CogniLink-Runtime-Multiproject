@@ -5,11 +5,11 @@
  */
 export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.ekinyasa.online" } = {}) {
   // Derive version tag from CF Pages branch (e.g. "feat/v9-diagnostics" → "v9")
-  var vMatch    = branch.match(/v(\d+)/);
-  var vTag      = vMatch ? "v" + vMatch[1] : "v9";
+  var vMatch = branch.match(/v(\d+)/);
+  var vTag = vMatch ? "v" + vMatch[1] : "v9";
   // Prompt 69 — CogniLink branding: shaShort = first 2 + . + last 1
-  var shaShort  = sha ? sha.slice(0, 2) + "." + sha.slice(-1) : "";
-  var shaTag    = sha ? " \u00b7 " + shaShort : "";
+  var shaShort = sha ? sha.slice(0, 2) + "." + sha.slice(-1) : "";
+  var shaTag = sha ? " \u00b7 " + shaShort : "";
   var panelLogo = "CogniLink";
   var panelTitle = shaTag;
 
@@ -67,16 +67,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
-    <button class="tab-btn" data-tab="pages">Pages (Landings)</button>
-    <button class="tab-btn" data-tab="journeys">Journeys (Funnels)</button>
+    <button class="tab-btn" data-tab="pages">Landings</button>
+    <button class="tab-btn" data-tab="journeys">Map</button>
     <button class="tab-btn" data-tab="campaigns">Campaigns</button>
     
-    <button class="tab-btn" data-tab="slugs">Nodes (Legacy)</button>
-    <button class="tab-btn" data-tab="kartra">Funnels (Legacy)</button>
-    <button class="tab-btn" data-tab="config">Global Config</button>
+    <button class="tab-btn" data-tab="slugs">Nodes</button>
+    <button class="tab-btn" data-tab="kartra">Funnel</button>
+    <button class="tab-btn" data-tab="config">Config</button>
     <button class="tab-btn" data-tab="components">Components</button>
     <button class="tab-btn" data-tab="routing">Paths</button>
-    <button class="tab-btn" data-tab="diagnostics">Verify</button>
+    <button class="tab-btn" data-tab="diagnostics">Health</button>
   </div>
 
   <!-- ── Tab: Analytics ───────────────────────────────── -->
@@ -221,6 +221,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <p class="hint">If provided, this page acts as a pass-through.</p>
 
           <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
+          <p class="card-title" style="font-size:12px; opacity:0.7">Components Config</p>
+          <div id="page-components-container" style="margin-bottom:15px; display:flex; flex-direction:column; gap:8px;"></div>
+
+          <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
           <p class="card-title" style="font-size:12px; opacity:0.7">Advanced / Code Editor</p>
 
           <label for="f-page-is-conv" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
@@ -250,7 +254,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <p class="card-title">Active Pages</p>
         <div style="overflow-x:auto;">
           <table id="tbl-pages" class="data-table">
-            <thead>
+            <thead style="text-align: left;">
               <tr><th>ID</th><th>Title/Dest</th><th width="80">Actions</th></tr>
             </thead>
             <tbody></tbody>
@@ -1048,6 +1052,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var componentsTabLoaded       = false;
   var componentFamilies         = [];
   var componentVersions         = [];
+  var pageSelectedComponentIds  = [];
   var selectedFamilyId          = null;
   var selectedVersionNumber     = null;
   var recentEventsPage          = 0;
@@ -1488,6 +1493,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if (target === "pages" && !pagesTabLoaded) {
         pagesTabLoaded = true;
         loadPages();
+        loadComponents();
       }
       if (target === "routing" && !routingTabLoaded) {
         routingTabLoaded = true;
@@ -1546,7 +1552,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     pagesStore.forEach(function(item) {
       var tr = document.createElement("tr");
       var titleOrDest = item.redirectUrl || (item.headerInfo && item.headerInfo.title) || "-";
-      tr.innerHTML = "<td><code>" + esc(item.id) + "</code></td><td>" + esc(titleOrDest) + "</td>" +
+      tr.innerHTML = "<td><a href='/" + encodeURIComponent(item.id) + "' target='_blank' style='color:var(--accent);text-decoration:underline;'><code>" + esc(item.id) + "</code></a></td><td>" + esc(titleOrDest) + "</td>" +
         "<td><div style='display:flex;gap:5px;'>" +
         "<button class='btn-ghost btn-sm btn-edit-page' data-id='" + esc(item.id) + "'>Edit</button>" +
         "<button class='btn-ghost btn-sm btn-del-page' style='color:var(--danger)' data-id='" + esc(item.id) + "'>Del</button>" +
@@ -1583,9 +1589,20 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("f-page-css").value = p.customStyleCss || "";
     $("f-page-js").value = p.customScript || "";
 
+    if (Array.isArray(p.components)) {
+      pageSelectedComponentIds = p.components.slice();
+    } else {
+      pageSelectedComponentIds = componentFamilies
+        .filter(function(f) { return f.status === "active"; })
+        .map(function(f) { return f.family_id; });
+    }
+    renderPageComponentsEditor();
+
     $("page-form-title").textContent = "Editing: " + id;
     $("btn-cancel-page").classList.remove("hidden");
-    $("page-tab").scrollIntoView();
+    
+    var formCard = document.querySelector("#tab-pages .form-card");
+    if (formCard) formCard.scrollIntoView({ behavior: "smooth" });
   }
 
   $("btn-cancel-page").addEventListener("click", function() {
@@ -1594,6 +1611,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("f-page-id").disabled = false;
     $("page-form-title").textContent = "New Landing Page";
     $("btn-cancel-page").classList.add("hidden");
+    
+    pageSelectedComponentIds = componentFamilies
+      .filter(function(f) { return f.status === "active"; })
+      .map(function(f) { return f.family_id; });
+    renderPageComponentsEditor();
   });
 
   var pageForm = $("page-form");
@@ -1612,7 +1634,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         isConversion: $("f-page-is-conv").checked,
         customBodyHtml: $("f-page-html").value.trim(),
         customStyleCss: $("f-page-css").value.trim(),
-        customScript: $("f-page-js").value.trim()
+        customScript: $("f-page-js").value.trim(),
+        components: pageSelectedComponentIds
       };
       if ($("f-page-url").value.trim()) payload.redirectUrl = $("f-page-url").value.trim();
       
@@ -1629,6 +1652,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           $("f-page-id").disabled = false;
           $("page-form-title").textContent = "New Landing Page";
           $("btn-cancel-page").classList.add("hidden");
+          
+          pageSelectedComponentIds = componentFamilies
+            .filter(function(f) { return f.status === "active"; })
+            .map(function(f) { return f.family_id; });
+          renderPageComponentsEditor();
+
           await loadPages();
         } else {
           var d = await res.json();
@@ -1639,6 +1668,104 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
       $("btn-save-page").disabled = false;
     });
+  }
+
+  function renderPageComponentsEditor() {
+    var container = $("page-components-container");
+    if (!container) return;
+
+    if (componentFamilies.length === 0) {
+      container.innerHTML = '<p class="hint">No components available. Create them in the Components tab.</p>';
+      return;
+    }
+
+    var activeFamilies = componentFamilies.filter(function(f) { return f.status === "active"; });
+    var nonActiveFamilies = componentFamilies.filter(function(f) { return f.status !== "active"; });
+
+    var html = '<div style="font-size:0.8rem; font-weight:600; color:var(--text-m); margin-bottom: 5px;">Active Components (Enabled by default):</div>';
+    
+    activeFamilies.forEach(function(f) {
+      var isChecked = pageSelectedComponentIds.includes(f.family_id);
+      html += 
+        '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; background:var(--surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem;">' +
+          '<div style="display:flex; align-items:center; gap:8px;">' +
+            '<input type="checkbox" class="page-comp-checkbox" data-fid="' + f.family_id + '" ' + (isChecked ? 'checked' : '') + ' />' +
+            '<span>' + esc(f.family_name) + ' <span style="font-family:monospace; font-size:0.7rem; opacity:0.6;">(' + esc(f.family_key) + ')</span></span>' +
+          '</div>' +
+          '<span style="font-size:0.7rem; background:var(--border); color:var(--text-m); padding:1px 5px; border-radius:3px; text-transform:uppercase;">' + esc(f.type) + '</span>' +
+        '</label>';
+    });
+
+    var selectedNonActive = nonActiveFamilies.filter(function(f) {
+      return pageSelectedComponentIds.includes(f.family_id);
+    });
+
+    if (selectedNonActive.length > 0) {
+      html += '<div style="font-size:0.8rem; font-weight:600; color:var(--text-m); margin-top: 10px; margin-bottom: 5px;">Extra / Archived Components:</div>';
+      selectedNonActive.forEach(function(f) {
+        html += 
+          '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; background:var(--surface); border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">' +
+            '<div style="display:flex; align-items:center; gap:8px;">' +
+              '<input type="checkbox" class="page-comp-checkbox" data-fid="' + f.family_id + '" checked />' +
+              '<span>' + esc(f.family_name) + ' <span style="font-family:monospace; font-size:0.7rem; opacity:0.6;">(' + esc(f.family_key) + ')</span></span>' +
+            '</div>' +
+            '<div style="display:flex; align-items:center; gap:5px;">' +
+              '<span style="font-size:0.7rem; background:var(--border); color:var(--text-m); padding:1px 5px; border-radius:3px; text-transform:lowercase;">' + esc(f.status) + '</span>' +
+              '<button type="button" class="btn-remove-page-comp" data-fid="' + f.family_id + '" style="border:none; background:transparent; color:var(--danger); padding:2px 6px; cursor:pointer; font-weight:bold; font-size:1.1rem; line-height:1;">&times;</button>' +
+            '</div>' +
+          '</div>';
+      });
+    }
+
+    var availableNonActive = nonActiveFamilies.filter(function(f) {
+      return !pageSelectedComponentIds.includes(f.family_id);
+    });
+
+    if (availableNonActive.length > 0) {
+      html += 
+        '<div style="margin-top:10px;">' +
+          '<select id="add-archived-comp-select" style="padding:6px; font-size:0.8rem; width:100%; border-color:var(--border); background:var(--surface); color:var(--text);">' +
+            '<option value="">+ Add Archived/Draft Component...</option>';
+      availableNonActive.forEach(function(f) {
+        html += '<option value="' + f.family_id + '">' + esc(f.family_name) + ' (' + esc(f.family_key) + ') [' + esc(f.status) + ']</option>';
+      });
+      html += 
+          '</select>' +
+        '</div>';
+    }
+
+    container.innerHTML = html;
+
+    container.querySelectorAll(".page-comp-checkbox").forEach(function(cb) {
+      cb.addEventListener("change", function() {
+        var fid = cb.dataset.fid;
+        if (cb.checked) {
+          if (!pageSelectedComponentIds.includes(fid)) pageSelectedComponentIds.push(fid);
+        } else {
+          pageSelectedComponentIds = pageSelectedComponentIds.filter(function(x) { return x !== fid; });
+        }
+        renderPageComponentsEditor();
+      });
+    });
+
+    container.querySelectorAll(".btn-remove-page-comp").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var fid = btn.dataset.fid;
+        pageSelectedComponentIds = pageSelectedComponentIds.filter(function(x) { return x !== fid; });
+        renderPageComponentsEditor();
+      });
+    });
+
+    var select = $("add-archived-comp-select");
+    if (select) {
+      select.addEventListener("change", function() {
+        var fid = select.value;
+        if (fid) {
+          if (!pageSelectedComponentIds.includes(fid)) pageSelectedComponentIds.push(fid);
+          renderPageComponentsEditor();
+        }
+      });
+    }
   }
 
 
@@ -3719,6 +3846,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       
       renderComponentList();
       renderComponentEditor();
+
+      // Initialize selected components for Page config if not editing
+      if (!$("f-page-editing").value) {
+        pageSelectedComponentIds = componentFamilies
+          .filter(function(f) { return f.status === "active"; })
+          .map(function(f) { return f.family_id; });
+      }
+      renderPageComponentsEditor();
     } catch (err) {
       if (err.message !== "401") {
         console.error("Failed to load components:", err);

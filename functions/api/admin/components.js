@@ -343,20 +343,24 @@ async function syncLiveComponentsIndex(env) {
     for (const r of rows) if (r) versions.push(r);
   }
 
-  // Find active families
-  const activeFamilyIds = new Set(
-    families
-      .filter(f => f && f.status === "active")
-      .map(f => f.family_id)
-  );
+  // Map family status and key by family_id
+  const familyStatusMap = {};
+  const familyKeyMap = {};
+  families.forEach(f => {
+    if (f) {
+      familyStatusMap[f.family_id] = f.status;
+      familyKeyMap[f.family_id] = f.family_key;
+    }
+  });
 
-  // Find live and active versions of active families
-  const liveComponents = versions.filter(v => 
-    v && 
-    v.is_live && 
-    v.status === "active" && 
-    activeFamilyIds.has(v.family_id)
-  );
+  // Find live and active versions of all families
+  const liveComponents = versions
+    .filter(v => v && v.is_live && v.status === "active")
+    .map(v => ({
+      ...v,
+      family_status: familyStatusMap[v.family_id] || "archived",
+      family_key: familyKeyMap[v.family_id] || ""
+    }));
 
   // Save to comp_live index key
   await env.APP_CONFIG.put("comp_live", JSON.stringify(liveComponents));

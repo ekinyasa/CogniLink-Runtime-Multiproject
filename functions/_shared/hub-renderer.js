@@ -50,6 +50,47 @@ export function renderHub({
   const ctxIdEsc   = JSON.stringify(contextId);
   const engineMapIdEsc = JSON.stringify(slugData?.engineMapId || "");
 
+  // Compile component HTML sections (Prompt 140 / User Request)
+  var allowedComps = (components || []);
+  if (slugData && Array.isArray(slugData.components)) {
+    var enabledSet = {};
+    slugData.components.forEach(function(fid) { if (fid) enabledSet[fid] = true; });
+    allowedComps = allowedComps.filter(function(c) {
+      return enabledSet[c.family_id] || enabledSet[c.family_key];
+    });
+  } else {
+    allowedComps = allowedComps.filter(function(c) {
+      return c.family_status === "active";
+    });
+  }
+  var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
+  allowedComps.sort(function(a, b) {
+    var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+    var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+    if (pA !== pB) return pA - pB;
+    return (a.priority || 0) - (b.priority || 0);
+  });
+
+  var renderComponentHtml = function(c) {
+    var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
+    var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
+    return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
+      titleHtml +
+      '<div class="comp-body">' + (c.body || '') + '</div>' +
+      ctaHtml +
+    '</div>';
+  };
+
+  var compsHtml = { hero: "", body: "", legal: "", footer: "" };
+  allowedComps.forEach(function(c) {
+    var p = (c.placement_hint || c.type || "").toLowerCase();
+    var html = renderComponentHtml(c);
+    if (p === "hero") compsHtml.hero += html;
+    else if (p === "legal") compsHtml.legal += html;
+    else if (p === "footer") compsHtml.footer += html;
+    else compsHtml.body += html;
+  });
+
   // Config-driven extras
   const themeCssLink = cfg.themeCssUrl
     ? `<link rel="stylesheet" href="${escAttr(cfg.themeCssUrl)}">`
@@ -171,173 +212,13 @@ ${themeCssLink}${customStyleBlock}
 ${bodyTag}
 <div class="container">
   ${headerHtml}
-  ${(function() {
-    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
-    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
-    activeComps.sort(function(a, b) {
-      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
-      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
-      if (pA !== pB) return pA - pB;
-      return (a.priority || 0) - (b.priority || 0);
-    });
-
-    var renderComponentHtml = function(c) {
-      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
-      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
-      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
-        titleHtml +
-        '<div class="comp-body">' + (c.body || '') + '</div>' +
-        ctaHtml +
-      '</div>';
-    };
-
-    var heroCompsHtml = "";
-    var bodyCompsHtml = "";
-    var legalCompsHtml = "";
-    var footerCompsHtml = "";
-
-    activeComps.forEach(function(c) {
-      var p = (c.placement_hint || c.type || "").toLowerCase();
-      var html = renderComponentHtml(c);
-      if (p === "hero") heroCompsHtml += html;
-      else if (p === "legal") legalCompsHtml += html;
-      else if (p === "footer") footerCompsHtml += html;
-      else bodyCompsHtml += html;
-    });
-
-    return {
-      hero: heroCompsHtml,
-      body: bodyCompsHtml,
-      legal: legalCompsHtml,
-      footer: footerCompsHtml
-    };
-  })().hero}
+  ${compsHtml.hero}
   <div id="links-wrap">
     ${slugData?.customBodyHtml || linkButtons}
   </div>
-  ${(function() {
-    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
-    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
-    activeComps.sort(function(a, b) {
-      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
-      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
-      if (pA !== pB) return pA - pB;
-      return (a.priority || 0) - (b.priority || 0);
-    });
-
-    var renderComponentHtml = function(c) {
-      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
-      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
-      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
-        titleHtml +
-        '<div class="comp-body">' + (c.body || '') + '</div>' +
-        ctaHtml +
-      '</div>';
-    };
-
-    var heroCompsHtml = "";
-    var bodyCompsHtml = "";
-    var legalCompsHtml = "";
-    var footerCompsHtml = "";
-
-    activeComps.forEach(function(c) {
-      var p = (c.placement_hint || c.type || "").toLowerCase();
-      var html = renderComponentHtml(c);
-      if (p === "hero") heroCompsHtml += html;
-      else if (p === "legal") legalCompsHtml += html;
-      else if (p === "footer") footerCompsHtml += html;
-      else bodyCompsHtml += html;
-    });
-
-    return {
-      hero: heroCompsHtml,
-      body: bodyCompsHtml,
-      legal: legalCompsHtml,
-      footer: footerCompsHtml
-    };
-  })().body}
-  ${(function() {
-    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
-    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
-    activeComps.sort(function(a, b) {
-      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
-      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
-      if (pA !== pB) return pA - pB;
-      return (a.priority || 0) - (b.priority || 0);
-    });
-
-    var renderComponentHtml = function(c) {
-      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
-      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
-      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
-        titleHtml +
-        '<div class="comp-body">' + (c.body || '') + '</div>' +
-        ctaHtml +
-      '</div>';
-    };
-
-    var heroCompsHtml = "";
-    var bodyCompsHtml = "";
-    var legalCompsHtml = "";
-    var footerCompsHtml = "";
-
-    activeComps.forEach(function(c) {
-      var p = (c.placement_hint || c.type || "").toLowerCase();
-      var html = renderComponentHtml(c);
-      if (p === "hero") heroCompsHtml += html;
-      else if (p === "legal") legalCompsHtml += html;
-      else if (p === "footer") footerCompsHtml += html;
-      else bodyCompsHtml += html;
-    });
-
-    return {
-      hero: heroCompsHtml,
-      body: bodyCompsHtml,
-      legal: legalCompsHtml,
-      footer: footerCompsHtml
-    };
-  })().legal}
-  ${(function() {
-    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
-    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
-    activeComps.sort(function(a, b) {
-      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
-      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
-      if (pA !== pB) return pA - pB;
-      return (a.priority || 0) - (b.priority || 0);
-    });
-
-    var renderComponentHtml = function(c) {
-      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
-      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
-      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
-        titleHtml +
-        '<div class="comp-body">' + (c.body || '') + '</div>' +
-        ctaHtml +
-      '</div>';
-    };
-
-    var heroCompsHtml = "";
-    var bodyCompsHtml = "";
-    var legalCompsHtml = "";
-    var footerCompsHtml = "";
-
-    activeComps.forEach(function(c) {
-      var p = (c.placement_hint || c.type || "").toLowerCase();
-      var html = renderComponentHtml(c);
-      if (p === "hero") heroCompsHtml += html;
-      else if (p === "legal") legalCompsHtml += html;
-      else if (p === "footer") footerCompsHtml += html;
-      else bodyCompsHtml += html;
-    });
-
-    return {
-      hero: heroCompsHtml,
-      body: bodyCompsHtml,
-      legal: legalCompsHtml,
-      footer: footerCompsHtml
-    };
-  })().footer}
+  ${compsHtml.body}
+  ${compsHtml.legal}
+  ${compsHtml.footer}
   ${footerHtml}
 </div>
 
