@@ -3849,7 +3849,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<textarea id="c-version-body" rows="6" placeholder="Component content here..." style="font-family:monospace;"></textarea>' +
 
           '<label for="c-version-cta-label">CTA Label (optional)</label>' +
-          '<input type="text" id="c-version-cta-label" placeholder="e.g. WhatsApp\'tan Yazın" />' +
+          '<input type="text" id="c-version-cta-label" placeholder="e.g. WhatsApp\\\'tan Yazın" />' +
 
           '<label for="c-version-cta-url">CTA URL (optional)</label>' +
           '<input type="url" id="c-version-cta-url" placeholder="e.g. https://wa.me/..." />' +
