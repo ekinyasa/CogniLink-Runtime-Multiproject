@@ -210,11 +210,12 @@ export async function onRequestGet(context) {
   }
 
   // ── Case A: Alias is live — render hub + overlay ──────────────────────────────
-  // Fetch hub config, global config, and link validation results in parallel.
-  const [hubConfig, globalConfig, linkResults] = await Promise.all([
+  // Fetch hub config, global config, link validation results, and live components in parallel.
+  const [hubConfig, globalConfig, linkResults, liveComponents] = await Promise.all([
     loadHubConfig(canonicalSlug, env, ttlMs),
     loadGlobalConfig(env, ttlMs),
     checkHubLinks(baseUrl, rawAlias),
+    env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([]),
   ]);
 
   const links       = resolveLinks(hubConfig, globalConfig);
@@ -232,6 +233,7 @@ export async function onRequestGet(context) {
     ga4Id:       env.GA4_ID        || "",
     metaPixelId: env.META_PIXEL_ID || "",
     config:      globalConfig,
+    components:  liveComponents || [],
   });
 
   // Inject overlay before </body>

@@ -21,7 +21,7 @@ export async function onRequestGet(context) {
   }
 
   // Fetch slug + config + engine_config in parallel
-  const [slugResult, configResult, engineResult] = await Promise.allSettled([
+  const [slugResult, configResult, engineResult, liveComponentsResult] = await Promise.allSettled([
     slug ? env.SLUG_LINKS.get(slug, { type: "json" }) : Promise.resolve(null),
     env.LANDING_CONFIG
       ? env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" })
@@ -29,10 +29,12 @@ export async function onRequestGet(context) {
     env.LANDING_CONFIG
       ? env.LANDING_CONFIG.get("engine_config", { type: "json" })
       : Promise.resolve(null),
+    env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([]),
   ]);
 
   const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
+  const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
 
   if (!notFound) {
     if (slugResult.status === "fulfilled" && slugResult.value) {
@@ -134,6 +136,7 @@ export async function onRequestGet(context) {
     config,
     slug,                            // for CSS scoping
     slugData:    campaignData,       // for per-slug landing customization
+    components:  liveComponents,
   });
 
   const resHeaders = new Headers({

@@ -30,6 +30,7 @@ export function renderHub({
   slugData     = null,        // full slug KV record
   expToken     = "",          // A/B exposure token (Prompt 130)
   utmVariant   = "",          // A/B selected variant slug
+  components   = [],          // Live KV components (Prompt 140)
 } = {}) {
   const cfg = config || {};
 
@@ -170,9 +171,173 @@ ${themeCssLink}${customStyleBlock}
 ${bodyTag}
 <div class="container">
   ${headerHtml}
+  ${(function() {
+    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
+    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
+    activeComps.sort(function(a, b) {
+      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.priority || 0) - (b.priority || 0);
+    });
+
+    var renderComponentHtml = function(c) {
+      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
+      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
+      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
+        titleHtml +
+        '<div class="comp-body">' + (c.body || '') + '</div>' +
+        ctaHtml +
+      '</div>';
+    };
+
+    var heroCompsHtml = "";
+    var bodyCompsHtml = "";
+    var legalCompsHtml = "";
+    var footerCompsHtml = "";
+
+    activeComps.forEach(function(c) {
+      var p = (c.placement_hint || c.type || "").toLowerCase();
+      var html = renderComponentHtml(c);
+      if (p === "hero") heroCompsHtml += html;
+      else if (p === "legal") legalCompsHtml += html;
+      else if (p === "footer") footerCompsHtml += html;
+      else bodyCompsHtml += html;
+    });
+
+    return {
+      hero: heroCompsHtml,
+      body: bodyCompsHtml,
+      legal: legalCompsHtml,
+      footer: footerCompsHtml
+    };
+  })().hero}
   <div id="links-wrap">
     ${slugData?.customBodyHtml || linkButtons}
   </div>
+  ${(function() {
+    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
+    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
+    activeComps.sort(function(a, b) {
+      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.priority || 0) - (b.priority || 0);
+    });
+
+    var renderComponentHtml = function(c) {
+      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
+      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
+      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
+        titleHtml +
+        '<div class="comp-body">' + (c.body || '') + '</div>' +
+        ctaHtml +
+      '</div>';
+    };
+
+    var heroCompsHtml = "";
+    var bodyCompsHtml = "";
+    var legalCompsHtml = "";
+    var footerCompsHtml = "";
+
+    activeComps.forEach(function(c) {
+      var p = (c.placement_hint || c.type || "").toLowerCase();
+      var html = renderComponentHtml(c);
+      if (p === "hero") heroCompsHtml += html;
+      else if (p === "legal") legalCompsHtml += html;
+      else if (p === "footer") footerCompsHtml += html;
+      else bodyCompsHtml += html;
+    });
+
+    return {
+      hero: heroCompsHtml,
+      body: bodyCompsHtml,
+      legal: legalCompsHtml,
+      footer: footerCompsHtml
+    };
+  })().body}
+  ${(function() {
+    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
+    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
+    activeComps.sort(function(a, b) {
+      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.priority || 0) - (b.priority || 0);
+    });
+
+    var renderComponentHtml = function(c) {
+      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
+      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
+      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
+        titleHtml +
+        '<div class="comp-body">' + (c.body || '') + '</div>' +
+        ctaHtml +
+      '</div>';
+    };
+
+    var heroCompsHtml = "";
+    var bodyCompsHtml = "";
+    var legalCompsHtml = "";
+    var footerCompsHtml = "";
+
+    activeComps.forEach(function(c) {
+      var p = (c.placement_hint || c.type || "").toLowerCase();
+      var html = renderComponentHtml(c);
+      if (p === "hero") heroCompsHtml += html;
+      else if (p === "legal") legalCompsHtml += html;
+      else if (p === "footer") footerCompsHtml += html;
+      else bodyCompsHtml += html;
+    });
+
+    return {
+      hero: heroCompsHtml,
+      body: bodyCompsHtml,
+      legal: legalCompsHtml,
+      footer: footerCompsHtml
+    };
+  })().legal}
+  ${(function() {
+    var activeComps = (components || []).filter(function(c) { return c.status === "active"; });
+    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
+    activeComps.sort(function(a, b) {
+      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.priority || 0) - (b.priority || 0);
+    });
+
+    var renderComponentHtml = function(c) {
+      var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
+      var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
+      return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
+        titleHtml +
+        '<div class="comp-body">' + (c.body || '') + '</div>' +
+        ctaHtml +
+      '</div>';
+    };
+
+    var heroCompsHtml = "";
+    var bodyCompsHtml = "";
+    var legalCompsHtml = "";
+    var footerCompsHtml = "";
+
+    activeComps.forEach(function(c) {
+      var p = (c.placement_hint || c.type || "").toLowerCase();
+      var html = renderComponentHtml(c);
+      if (p === "hero") heroCompsHtml += html;
+      else if (p === "legal") legalCompsHtml += html;
+      else if (p === "footer") footerCompsHtml += html;
+      else bodyCompsHtml += html;
+    });
+
+    return {
+      hero: heroCompsHtml,
+      body: bodyCompsHtml,
+      legal: legalCompsHtml,
+      footer: footerCompsHtml
+    };
+  })().footer}
   ${footerHtml}
 </div>
 
@@ -550,4 +715,34 @@ body{
 .not-found-msg{text-align:center;font-size:.9375rem;opacity:.55;margin-bottom:1.5rem}
 .hub-header{text-align:center;font-size:.875rem;opacity:.6;margin-bottom:1rem}
 .hub-footer{text-align:center;font-size:.8125rem;opacity:.45;margin-top:1.25rem}
+
+/* Dynamic Components Styles */
+.comp-item{
+  margin:1.25rem 0;padding:1.25rem;
+  background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.05);
+  border-radius:var(--radius);
+}
+@media(prefers-color-scheme:dark){
+  .comp-item{
+    background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.07);
+  }
+}
+.comp-title{font-size:1.05rem;font-weight:600;margin-bottom:0.5rem;}
+.comp-body{font-size:0.875rem;line-height:1.45;opacity:0.9;}
+.comp-cta{margin-top:0.75rem;}
+.comp-cta-btn{
+  display:inline-block;padding:0.5rem 1rem;
+  background:var(--btn-bg);color:var(--btn-text);
+  border-radius:var(--radius);text-decoration:none;
+  font-size:0.85rem;font-weight:500;
+  transition:opacity 0.15s;
+}
+.comp-cta-btn:hover{opacity:0.85;}
+.comp-placement-legal,.comp-placement-footer{
+  background:transparent;border:none;padding:0.5rem 0;
+  font-size:0.8rem;text-align:center;margin:0.5rem 0;
+}
+.comp-placement-legal .comp-body,.comp-placement-footer .comp-body{
+  font-size:0.8rem;opacity:0.6;
+}
 `;

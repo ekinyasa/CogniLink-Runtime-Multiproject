@@ -74,6 +74,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <button class="tab-btn" data-tab="slugs">Nodes (Legacy)</button>
     <button class="tab-btn" data-tab="kartra">Funnels (Legacy)</button>
     <button class="tab-btn" data-tab="config">Global Config</button>
+    <button class="tab-btn" data-tab="components">Components</button>
     <button class="tab-btn" data-tab="routing">Paths</button>
     <button class="tab-btn" data-tab="diagnostics">Verify</button>
   </div>
@@ -800,6 +801,43 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </form>
   </div>
 
+  <!-- ── Tab: Components ──────────────────────────────── -->
+  <div id="tab-components" class="tab-pane hidden">
+    <div class="layout">
+      <!-- Left: Create/Edit Form & Version Manager -->
+      <div class="card form-card">
+        <div id="component-editor-container">
+          <!-- Dynamically generated HTML goes here -->
+        </div>
+      </div>
+
+      <!-- Right: List -->
+      <div class="card list-card">
+        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <p class="card-title" style="margin-bottom: 0;">Component Families</p>
+          <button type="button" id="btn-new-family" class="btn-primary btn-sm" style="width: auto; padding: 6px 12px;">+ New Component</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="tbl-components">
+            <thead>
+              <tr>
+                <th>Name / Slug</th>
+                <th>Type</th>
+                <th>Live Ver</th>
+                <th>Latest Ver</th>
+                <th>Status</th>
+                <th>Modified</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-components-body">
+              <tr><td colspan="6" class="empty-state">Loading components...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="tab-kartra" class="tab-pane hidden">
     <!-- Global Engine config card -->
     <div class="layout" style="padding-bottom: 0;">
@@ -1007,6 +1045,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var rawAnalyticsRecent        = [];      // PART 3: raw recent-events rows
   var campaignsTabLoaded        = false;
   var configTabLoaded           = false;
+  var componentsTabLoaded       = false;
+  var componentFamilies         = [];
+  var componentVersions         = [];
+  var selectedFamilyId          = null;
+  var selectedVersionNumber     = null;
   var recentEventsPage          = 0;
   var showAllExperiments        = false;
   var analyticsStartDate    = localStorage.getItem("analyticsStartDate") || "";
@@ -1437,6 +1480,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if (target === "config" && !configTabLoaded) {
         configTabLoaded = true;
         loadConfig();
+      }
+      if (target === "components" && !componentsTabLoaded) {
+        componentsTabLoaded = true;
+        loadComponents();
       }
       if (target === "pages" && !pagesTabLoaded) {
         pagesTabLoaded = true;
@@ -3652,6 +3699,516 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       elBtnSaveConfig.textContent = "Save Config";
     }
   });
+
+  /* ── Components Tab Logic ───────────────────────────── */
+  async function loadComponents() {
+    try {
+      var res  = await apiFetch("/api/admin/components");
+      var data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to load components");
+        return;
+      }
+      componentFamilies = data.families || [];
+      componentVersions = data.versions || [];
+      
+      if (selectedFamilyId && !componentFamilies.some(function(f) { return f.family_id === selectedFamilyId; })) {
+        selectedFamilyId = null;
+        selectedVersionNumber = null;
+      }
+      
+      renderComponentList();
+      renderComponentEditor();
+    } catch (err) {
+      if (err.message !== "401") {
+        console.error("Failed to load components:", err);
+      }
+    }
+  }
+
+  function renderComponentList() {
+    var tbody = document.getElementById("tbl-components-body");
+    if (!tbody) return;
+    
+    if (componentFamilies.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No components found. Create one to get started!</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = "";
+    componentFamilies.forEach(function(family) {
+      var familyVersions = componentVersions.filter(function(v) { return v.family_id === family.family_id; });
+      
+      var liveVerObj = familyVersions.find(function(v) { return v.is_live; });
+      var liveVer = liveVerObj ? "v" + liveVerObj.version_number : '<span style="color:var(--text-m)">None</span>';
+      
+      var maxVer = 0;
+      familyVersions.forEach(function(v) {
+        if (v.version_number > maxVer) maxVer = v.version_number;
+      });
+      var latestVer = maxVer > 0 ? "v" + maxVer : "—";
+      
+      var modifiedDate = family.updated_at ? new Date(family.updated_at).toLocaleString("tr-TR") : "—";
+      
+      var statusBadge = "";
+      if (family.status === "active") {
+        statusBadge = '<span class="badge-active">active</span>';
+      } else if (family.status === "draft") {
+        statusBadge = '<span class="badge-draft" style="background:var(--border);color:var(--text-m);padding:2px 6px;border-radius:4px;font-size:0.75rem;">draft</span>';
+      } else {
+        statusBadge = '<span class="badge-inactive">archived</span>';
+      }
+      
+      var tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
+      if (selectedFamilyId === family.family_id) {
+        tr.style.background = "var(--bg)";
+        tr.style.fontWeight = "600";
+      }
+      
+      tr.innerHTML = '<td><div style="font-weight:600;">' + esc(family.family_name) + '</div>' +
+                     '<div style="font-size:0.75rem;color:var(--text-m);font-family:monospace;">' + esc(family.family_key) + '</div></td>' +
+                     '<td style="text-transform: capitalize;">' + esc(family.type) + '</td>' +
+                     '<td>' + liveVer + '</td>' +
+                     '<td>' + latestVer + '</td>' +
+                     '<td>' + statusBadge + '</td>' +
+                     '<td style="font-size:0.8rem;white-space:nowrap;">' + modifiedDate + '</td>';
+      
+      tr.addEventListener("click", function() {
+        selectedFamilyId = family.family_id;
+        var liveV = familyVersions.find(function(v) { return v.is_live; });
+        if (liveV) {
+          selectedVersionNumber = liveV.version_number;
+        } else if (familyVersions.length > 0) {
+          selectedVersionNumber = Math.max.apply(null, familyVersions.map(function(v) { return v.version_number; }));
+        } else {
+          selectedVersionNumber = null;
+        }
+        renderComponentList();
+        renderComponentEditor();
+      });
+      
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderComponentEditor() {
+    var container = document.getElementById("component-editor-container");
+    if (!container) return;
+    
+    // Wire up "New Family" button at the list top
+    var btnNewFamily = document.getElementById("btn-new-family");
+    if (btnNewFamily) {
+      btnNewFamily.onclick = function() {
+        selectedFamilyId = null;
+        selectedVersionNumber = null;
+        renderComponentList();
+        renderComponentEditor();
+      };
+    }
+
+    if (!selectedFamilyId) {
+      container.innerHTML = 
+        '<p class="card-title">New Component Family</p>' +
+        '<form id="comp-family-create-form" autocomplete="off">' +
+          '<label for="c-family-key">Family Slug / Key <span class="req">*</span></label>' +
+          '<input type="text" id="c-family-key" placeholder="e.g. footer, trust-badges" required pattern="[a-z0-9-_]+" />' +
+          '<p class="hint" style="margin-top:-6px;margin-bottom:10px;font-size:0.75rem;">Lowercase letters, numbers, dashes and underscores only.</p>' +
+
+          '<label for="c-family-name">Family Name <span class="req">*</span></label>' +
+          '<input type="text" id="c-family-name" placeholder="e.g. Main Footer, Trust Signals" required />' +
+
+          '<label for="c-family-type">Component Type <span class="req">*</span></label>' +
+          '<select id="c-family-type" required>' +
+            '<option value="footer">Footer</option>' +
+            '<option value="legal">KVKK / Legal</option>' +
+            '<option value="trust">Trust Signals / Badges</option>' +
+            '<option value="cta">WhatsApp / CTA Block</option>' +
+            '<option value="faq">Frequently Asked Questions (FAQ)</option>' +
+            '<option value="process">How it Works (Process)</option>' +
+            '<option value="objection">Objection Handling</option>' +
+            '<option value="comparison">Comparison Table/Block</option>' +
+            '<option value="contact">Contact Block</option>' +
+            '<option value="support">After-sales Support</option>' +
+          '</select>' +
+
+          '<label for="c-family-status">Family Status</label>' +
+          '<select id="c-family-status">' +
+            '<option value="active">Active</option>' +
+            '<option value="draft">Draft</option>' +
+            '<option value="archived">Archived</option>' +
+          '</select>' +
+
+          '<hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />' +
+          '<p class="card-title" style="font-size:13px; opacity:0.8; margin-bottom: 10px;">First Version (v1) Content</p>' +
+
+          '<label for="c-version-title">Title (optional)</label>' +
+          '<input type="text" id="c-version-title" placeholder="e.g. Sıkça Sorulan Sorular" />' +
+
+          '<label for="c-version-body">Body / Content (HTML/Markdown/Text)</label>' +
+          '<textarea id="c-version-body" rows="6" placeholder="Component content here..." style="font-family:monospace;"></textarea>' +
+
+          '<label for="c-version-cta-label">CTA Label (optional)</label>' +
+          '<input type="text" id="c-version-cta-label" placeholder="e.g. WhatsApp\'tan Yazın" />' +
+
+          '<label for="c-version-cta-url">CTA URL (optional)</label>' +
+          '<input type="url" id="c-version-cta-url" placeholder="e.g. https://wa.me/..." />' +
+
+          '<label for="c-version-placement">Placement Hint <span class="hint-inline">(hero, trust, process, objection, cta, legal, footer, etc.)</span></label>' +
+          '<input type="text" id="c-version-placement" placeholder="e.g. footer" />' +
+
+          '<label for="c-version-priority">Priority / Order <span class="hint-inline">(lower priority runs first)</span></label>' +
+          '<input type="number" id="c-version-priority" placeholder="0" value="0" />' +
+
+          '<label for="c-version-notes">Notes (internal description)</label>' +
+          '<textarea id="c-version-notes" rows="2" placeholder="Describe this version..."></textarea>' +
+
+          '<p id="c-create-error" class="error hidden" style="margin-top: 10px;"></p>' +
+          '<button type="submit" class="btn-primary" style="margin-top: 15px; width: 100%;">Create Component Family</button>' +
+        '</form>';
+      
+      var form = document.getElementById("comp-family-create-form");
+      form.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var errEl = document.getElementById("c-create-error");
+        errEl.classList.add("hidden");
+        
+        var payload = {
+          family_key: document.getElementById("c-family-key").value,
+          family_name: document.getElementById("c-family-name").value,
+          type: document.getElementById("c-family-type").value,
+          status: document.getElementById("c-family-status").value,
+          title: document.getElementById("c-version-title").value,
+          body: document.getElementById("c-version-body").value,
+          cta_label: document.getElementById("c-version-cta-label").value,
+          cta_url: document.getElementById("c-version-cta-url").value,
+          placement_hint: document.getElementById("c-version-placement").value,
+          priority: parseInt(document.getElementById("c-version-priority").value) || 0,
+          notes: document.getElementById("c-version-notes").value
+        };
+        
+        try {
+          var res = await apiFetch("/api/admin/components", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          var data = await res.json();
+          if (!res.ok) {
+            errEl.textContent = data.error || "Failed to create component";
+            errEl.classList.remove("hidden");
+            return;
+          }
+          
+          selectedFamilyId = data.family_id;
+          selectedVersionNumber = 1;
+          loadComponents();
+        } catch (err) {
+          errEl.textContent = "Request failed.";
+          errEl.classList.remove("hidden");
+        }
+      });
+      return;
+    }
+    
+    var family = componentFamilies.find(function(f) { return f.family_id === selectedFamilyId; });
+    if (!family) {
+      selectedFamilyId = null;
+      selectedVersionNumber = null;
+      renderComponentEditor();
+      return;
+    }
+    
+    var familyVersions = componentVersions.filter(function(v) { return v.family_id === selectedFamilyId; });
+    var version = familyVersions.find(function(v) { return v.version_number === selectedVersionNumber; });
+    if (!version && familyVersions.length > 0) {
+      version = familyVersions[familyVersions.length - 1];
+      selectedVersionNumber = version.version_number;
+    }
+    
+    var versionTabsHtml = "";
+    familyVersions.forEach(function(v) {
+      var isSelected = v.version_number === selectedVersionNumber;
+      var isLive = v.is_live;
+      var style = isSelected ? "background:var(--accent);color:var(--accent-t);font-weight:bold;" : "background:var(--bg);color:var(--text);";
+      var liveBadge = isLive ? ' <span style="font-size:0.65rem;background:var(--success);color:white;padding:1px 4px;border-radius:3px;margin-left:4px;">LIVE</span>' : "";
+      var statusBadge = v.status === "archived" ? ' <span style="font-size:0.65rem;opacity:0.6;">(archived)</span>' : (v.status === "draft" ? ' <span style="font-size:0.65rem;opacity:0.6;">(draft)</span>' : "");
+      versionTabsHtml += 
+        '<button type="button" class="btn-version-pill" data-ver="' + v.version_number + '" style="border:none;padding:6px 12px;border-radius:20px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;' + style + '">' +
+          'v' + v.version_number + liveBadge + statusBadge +
+        '</button>';
+    });
+    
+    var isVersionLive = version ? version.is_live : false;
+    var isVersionArchived = version ? version.status === "archived" : false;
+    
+    container.innerHTML = 
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">' +
+        '<p class="card-title" style="margin-bottom:0;">Edit Component Family</p>' +
+        '<button type="button" id="btn-back-to-new" class="btn-ghost btn-sm" style="font-size:0.8rem;">+ New Family</button>' +
+      '</div>' +
+
+      '<form id="comp-family-edit-form" autocomplete="off" style="margin-bottom:20px;padding:15px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+          '<div>' +
+            '<label for="e-family-key" style="font-size:0.75rem;">Family Slug / Key</label>' +
+            '<input type="text" id="e-family-key" value="' + esc(family.family_key) + '" required pattern="[a-z0-9-_]+" style="padding:6px;font-size:0.85rem;" />' +
+          '</div>' +
+          '<div>' +
+            '<label for="e-family-name" style="font-size:0.75rem;">Family Name</label>' +
+            '<input type="text" id="e-family-name" value="' + esc(family.family_name) + '" required style="padding:6px;font-size:0.85rem;" />' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
+          '<div>' +
+            '<label for="e-family-type" style="font-size:0.75rem;">Type</label>' +
+            '<select id="e-family-type" style="padding:6px;font-size:0.85rem;">' +
+              '<option value="footer" ' + (family.type === "footer" ? "selected" : "") + '>Footer</option>' +
+              '<option value="legal" ' + (family.type === "legal" ? "selected" : "") + '>KVKK / Legal</option>' +
+              '<option value="trust" ' + (family.type === "trust" ? "selected" : "") + '>Trust Signals</option>' +
+              '<option value="cta" ' + (family.type === "cta" ? "selected" : "") + '>WhatsApp / CTA</option>' +
+              '<option value="faq" ' + (family.type === "faq" ? "selected" : "") + '>FAQ</option>' +
+              '<option value="process" ' + (family.type === "process" ? "selected" : "") + '>Process</option>' +
+              '<option value="objection" ' + (family.type === "objection" ? "selected" : "") + '>Objection Handling</option>' +
+              '<option value="comparison" ' + (family.type === "comparison" ? "selected" : "") + '>Comparison</option>' +
+              '<option value="contact" ' + (family.type === "contact" ? "selected" : "") + '>Contact</option>' +
+              '<option value="support" ' + (family.type === "support" ? "selected" : "") + '>Support</option>' +
+            '</select>' +
+          '</div>' +
+          '<div>' +
+            '<label for="e-family-status" style="font-size:0.75rem;">Status</label>' +
+            '<select id="e-family-status" style="padding:6px;font-size:0.85rem;">' +
+              '<option value="active" ' + (family.status === "active" ? "selected" : "") + '>Active</option>' +
+              '<option value="draft" ' + (family.status === "draft" ? "selected" : "") + '>Draft</option>' +
+              '<option value="archived" ' + (family.status === "archived" ? "selected" : "") + '>Archived</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<p id="c-family-edit-error" class="error hidden" style="margin-top:10px;"></p>' +
+        '<p id="c-family-edit-success" class="success hidden" style="margin-top:10px;"></p>' +
+        '<button type="submit" class="btn-ghost btn-sm" style="margin-top:10px;width:100%;background:var(--surface);">Update Family Details</button>' +
+      '</form>' +
+
+      '<div style="margin-bottom:15px;">' +
+        '<p class="card-title" style="font-size:0.85rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-m);">Versions</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+          versionTabsHtml +
+        '</div>' +
+      '</div>' +
+
+      (version ? 
+        '<form id="comp-version-edit-form" autocomplete="off">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+            '<p class="card-title" style="font-size:13px;opacity:0.8;margin-bottom:0;">Editing Version v' + version.version_number + '</p>' +
+            '<span style="font-size:0.75rem;color:var(--text-m);">Created: ' + (version.created_at ? new Date(version.created_at).toLocaleString("tr-TR") : "—") + '</span>' +
+          '</div>' +
+
+          '<label for="c-ver-name">Version Name</label>' +
+          '<input type="text" id="c-ver-name" value="' + esc(version.name) + '" required />' +
+
+          '<label for="c-ver-status">Version Status</label>' +
+          '<select id="c-ver-status">' +
+            '<option value="active" ' + (version.status === "active" ? "selected" : "") + '>Active</option>' +
+            '<option value="draft" ' + (version.status === "draft" ? "selected" : "") + '>Draft</option>' +
+            '<option value="archived" ' + (version.status === "archived" ? "selected" : "") + '>Archived</option>' +
+          '</select>' +
+
+          '<label for="c-ver-title">Title (optional)</label>' +
+          '<input type="text" id="c-ver-title" value="' + esc(version.title || "") + '" />' +
+
+          '<label for="c-ver-body">Body / Content (HTML/Markdown/Text)</label>' +
+          '<textarea id="c-ver-body" rows="6" style="font-family:monospace;">' + esc(version.body || "") + '</textarea>' +
+
+          '<label for="c-ver-cta-label">CTA Label (optional)</label>' +
+          '<input type="text" id="c-ver-cta-label" value="' + esc(version.cta_label || "") + '" />' +
+
+          '<label for="c-ver-cta-url">CTA URL (optional)</label>' +
+          '<input type="text" id="c-ver-cta-url" value="' + esc(version.cta_url || "") + '" />' +
+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">' +
+            '<div>' +
+              '<label for="c-ver-placement" style="font-size:0.75rem;margin-bottom:4px;">Placement Hint</label>' +
+              '<input type="text" id="c-ver-placement" value="' + esc(version.placement_hint || "") + '" style="padding:8px;font-size:0.85rem;" />' +
+            '</div>' +
+            '<div>' +
+              '<label for="c-ver-priority" style="font-size:0.75rem;margin-bottom:4px;">Priority / Order</label>' +
+              '<input type="number" id="c-ver-priority" value="' + (version.priority || 0) + '" style="padding:8px;font-size:0.85rem;" />' +
+            '</div>' +
+          '</div>' +
+
+          '<label for="c-ver-notes">Notes (internal)</label>' +
+          '<textarea id="c-ver-notes" rows="2">' + esc(version.notes || "") + '</textarea>' +
+
+          '<p id="c-version-edit-error" class="error hidden" style="margin-top:10px;"></p>' +
+          '<p id="c-version-edit-success" class="success hidden" style="margin-top:10px;"></p>' +
+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">' +
+            '<button type="submit" class="btn-primary" style="grid-column: 1 / -1;">Save Version</button>' +
+            '<button type="button" id="btn-duplicate-ver" class="btn-ghost btn-sm" style="background:var(--bg);">Duplicate v' + version.version_number + ' → v' + (version.version_number + 1) + '</button>' +
+            (!isVersionLive && !isVersionArchived ? 
+              '<button type="button" id="btn-set-live" class="btn-ghost btn-sm" style="color:var(--success);border-color:var(--success);background:transparent;">Make Live/Default</button>' : "") +
+          '</div>' +
+        '</form>' : '<p class="hint">No version found.</p>');
+    
+    var btnBack = document.getElementById("btn-back-to-new");
+    if (btnBack) {
+      btnBack.addEventListener("click", function() {
+        selectedFamilyId = null;
+        selectedVersionNumber = null;
+        renderComponentList();
+        renderComponentEditor();
+      });
+    }
+    
+    container.querySelectorAll(".btn-version-pill").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        selectedVersionNumber = parseInt(btn.dataset.ver);
+        renderComponentEditor();
+      });
+    });
+    
+    var familyForm = document.getElementById("comp-family-edit-form");
+    if (familyForm) {
+      familyForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var errEl = document.getElementById("c-family-edit-error");
+        var succEl = document.getElementById("c-family-edit-success");
+        errEl.classList.add("hidden");
+        succEl.classList.add("hidden");
+        
+        var payload = {
+          action: "update_family",
+          family_id: selectedFamilyId,
+          family_key: document.getElementById("e-family-key").value,
+          family_name: document.getElementById("e-family-name").value,
+          type: document.getElementById("e-family-type").value,
+          status: document.getElementById("e-family-status").value
+        };
+        
+        try {
+          var res = await apiFetch("/api/admin/components", {
+            method: "PUT",
+            body: JSON.stringify(payload)
+          });
+          var data = await res.json();
+          if (!res.ok) {
+            errEl.textContent = data.error || "Update failed";
+            errEl.classList.remove("hidden");
+            return;
+          }
+          succEl.textContent = "Family updated.";
+          succEl.classList.remove("hidden");
+          setTimeout(function() { loadComponents(); }, 1000);
+        } catch(err) {
+          errEl.textContent = "Request failed.";
+          errEl.classList.remove("hidden");
+        }
+      });
+    }
+    
+    var versionForm = document.getElementById("comp-version-edit-form");
+    if (versionForm && version) {
+      versionForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var errEl = document.getElementById("c-version-edit-error");
+        var succEl = document.getElementById("c-version-edit-success");
+        errEl.classList.add("hidden");
+        succEl.classList.add("hidden");
+        
+        var payload = {
+          action: "update_version",
+          family_id: selectedFamilyId,
+          version_number: version.version_number,
+          name: document.getElementById("c-ver-name").value,
+          status: document.getElementById("c-ver-status").value,
+          title: document.getElementById("c-ver-title").value,
+          body: document.getElementById("c-ver-body").value,
+          cta_label: document.getElementById("c-ver-cta-label").value,
+          cta_url: document.getElementById("c-ver-cta-url").value,
+          placement_hint: document.getElementById("c-ver-placement").value,
+          priority: parseInt(document.getElementById("c-ver-priority").value) || 0,
+          notes: document.getElementById("c-ver-notes").value
+        };
+        
+        try {
+          var res = await apiFetch("/api/admin/components", {
+            method: "PUT",
+            body: JSON.stringify(payload)
+          });
+          var data = await res.json();
+          if (!res.ok) {
+            errEl.textContent = data.error || "Update failed";
+            errEl.classList.remove("hidden");
+            return;
+          }
+          succEl.textContent = "Version updated.";
+          succEl.classList.remove("hidden");
+          setTimeout(function() { loadComponents(); }, 1000);
+        } catch(err) {
+          errEl.textContent = "Request failed.";
+          errEl.classList.remove("hidden");
+        }
+      });
+      
+      var btnDuplicate = document.getElementById("btn-duplicate-ver");
+      if (btnDuplicate) {
+        btnDuplicate.addEventListener("click", async function() {
+          var errEl = document.getElementById("c-version-edit-error");
+          errEl.classList.add("hidden");
+          
+          try {
+            var res = await apiFetch("/api/admin/components", {
+              method: "PUT",
+              body: JSON.stringify({
+                action: "duplicate_version",
+                family_id: selectedFamilyId,
+                version_number: version.version_number
+              })
+            });
+            var data = await res.json();
+            if (!res.ok) {
+              errEl.textContent = data.error || "Duplicate failed";
+              errEl.classList.remove("hidden");
+              return;
+            }
+            selectedVersionNumber = data.version_number;
+            loadComponents();
+          } catch(err) {
+            errEl.textContent = "Request failed.";
+            errEl.classList.remove("hidden");
+          }
+        });
+      }
+      
+      var btnSetLive = document.getElementById("btn-set-live");
+      if (btnSetLive) {
+        btnSetLive.addEventListener("click", async function() {
+          var errEl = document.getElementById("c-version-edit-error");
+          errEl.classList.add("hidden");
+          
+          try {
+            var res = await apiFetch("/api/admin/components", {
+              method: "PUT",
+              body: JSON.stringify({
+                action: "set_live",
+                family_id: selectedFamilyId,
+                version_number: version.version_number
+              })
+            });
+            var data = await res.json();
+            if (!res.ok) {
+              errEl.textContent = data.error || "Action failed";
+              errEl.classList.remove("hidden");
+              return;
+            }
+            loadComponents();
+          } catch(err) {
+            errEl.textContent = "Request failed.";
+            errEl.classList.remove("hidden");
+          }
+        });
+      }
+    }
+  }
 
   /* ── Routing tab: Compile Routes ─────────────────────── */
   // silentCompile — fire-and-forget compile triggered automatically after any

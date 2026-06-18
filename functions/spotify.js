@@ -11,14 +11,17 @@ export async function onRequestGet(context) {
 
   let globalConfig = {};
   let engineConfig = {};
+  let liveComponents = [];
   try {
     if (env.LANDING_CONFIG) {
-      const [hubRes, engineRes] = await Promise.allSettled([
+      const [hubRes, engineRes, compRes] = await Promise.allSettled([
         env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }),
-        env.LANDING_CONFIG.get("engine_config", { type: "json" })
+        env.LANDING_CONFIG.get("engine_config", { type: "json" }),
+        env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([])
       ]);
       globalConfig = hubRes.status === "fulfilled" ? (hubRes.value || {}) : {};
       engineConfig = engineRes.status === "fulfilled" ? (engineRes.value || {}) : {};
+      liveComponents = compRes.status === "fulfilled" ? (compRes.value || []) : [];
     }
   } catch (e) { /* optional */ }
 
@@ -52,6 +55,7 @@ export async function onRequestGet(context) {
     ga4Id:       env.GA4_ID       || "",
     metaPixelId: env.META_PIXEL_ID || "",
     config:      globalConfig,
+    components:  liveComponents,
   });
   const resHeaders = new Headers({
     "Content-Type":           "text/html;charset=UTF-8",

@@ -350,15 +350,17 @@ export async function onRequestGet(context) {
   }
 
   // Fetch page/slug config + global configs
-  const [hubConfigResult, globalConfigResult, engineResult] = await Promise.allSettled([
+  const [hubConfigResult, globalConfigResult, engineResult, liveComponentsResult] = await Promise.allSettled([
     loadHubConfig(targetPageId, env, ttlMs), // Load the target page (or legacy slug)
     env.LANDING_CONFIG ? env.LANDING_CONFIG.get("hub_config", { type: "json" }) : Promise.resolve({}),
     env.LANDING_CONFIG ? env.LANDING_CONFIG.get("engine_config", { type: "json" }) : Promise.resolve({}),
+    env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([]),
   ]);
 
   hubConfig = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
+  const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
 
   // ── Step 7.1: Static Page Redirect ──────────────────────────────────────
   if (hubConfig && hubConfig.redirectUrl) {
@@ -482,6 +484,7 @@ export async function onRequestGet(context) {
     slugData:    hubConfig,        // passing the campaign record
     expToken:    expResult?.expToken  || "",
     utmVariant:  expResult?.finalSlug || "",
+    components:  liveComponents,
   });
 
   // ── Admin overlay injection ───────────────────────────────────────────────
