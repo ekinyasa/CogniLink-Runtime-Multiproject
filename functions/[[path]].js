@@ -481,6 +481,7 @@ export async function onRequestGet(context) {
     ga4Id:       env.GA4_ID        || "",
     metaPixelId: env.META_PIXEL_ID || "",
     config:      globalConfig,
+    slug:        finalSlug,        // for CSS scoping (Prompt 116)
     slugData:    hubConfig,        // passing the campaign record
     expToken:    expResult?.expToken  || "",
     utmVariant:  expResult?.finalSlug || "",

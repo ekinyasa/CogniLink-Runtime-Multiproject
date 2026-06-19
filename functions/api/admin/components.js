@@ -293,6 +293,11 @@ export async function onRequestPut(context) {
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
     }
 
+    if (action === "sync_index") {
+      await syncLiveComponentsIndex(env);
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
+    }
+
     throw new Error("Invalid action");
   } catch (err) {
     return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500, headers: jsonHeaders() });

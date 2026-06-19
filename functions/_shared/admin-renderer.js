@@ -1645,6 +1645,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           body: JSON.stringify(payload)
         });
         if (res.ok) {
+          // Trigger components index rebuild to make sure any selected components are live
+          try {
+            await apiFetch("/api/admin/components", {
+              method: "PUT",
+              body: JSON.stringify({ action: "sync_index" })
+            });
+          } catch (compErr) {
+            console.error("Index sync failed:", compErr);
+          }
+
           $("page-form-success").textContent = "Page saved!";
           $("page-form-success").classList.remove("hidden");
           pageForm.reset();

@@ -233,6 +233,8 @@ export async function onRequestGet(context) {
     ga4Id:       env.GA4_ID        || "",
     metaPixelId: env.META_PIXEL_ID || "",
     config:      globalConfig,
+    slug:        canonicalSlug,
+    slugData:    hubConfig,
     components:  liveComponents || [],
   });
 
