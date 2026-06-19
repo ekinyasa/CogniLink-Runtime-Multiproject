@@ -16,73 +16,73 @@
  * @param {object}  [opts.slugData]     – full slug record (for per-slug landing customization)
  */
 export function renderHub({
-  contextType  = "route",
-  contextId    = "ig",
-  campaign     = "",          // drives utm_campaign, always wins
-  modifier     = "",          // public URL modifier segment (/alias/<modifier>) — available in client JS
-  defaultUtms  = {},          // utm_source + utm_medium only; no utm_campaign here
-  links        = [],
-  ga4Id        = "",
-  metaPixelId  = "",
-  notFound     = false,
-  config       = {},          // LANDING_CONFIG
-  slug         = "",          // slug name for CSS scoping
-  slugData     = null,        // full slug KV record
-  expToken     = "",          // A/B exposure token (Prompt 130)
-  utmVariant   = "",          // A/B selected variant slug
-  components   = [],          // Live KV components (Prompt 140)
+  contextType = "route",
+  contextId = "ig",
+  campaign = "",          // drives utm_campaign, always wins
+  modifier = "",          // public URL modifier segment (/alias/<modifier>) — available in client JS
+  defaultUtms = {},          // utm_source + utm_medium only; no utm_campaign here
+  links = [],
+  ga4Id = "",
+  metaPixelId = "",
+  notFound = false,
+  config = {},          // LANDING_CONFIG
+  slug = "",          // slug name for CSS scoping
+  slugData = null,        // full slug KV record
+  expToken = "",          // A/B exposure token (Prompt 130)
+  utmVariant = "",          // A/B selected variant slug
+  components = [],          // Live KV components (Prompt 140)
 } = {}) {
   const cfg = config || {};
 
-  const utmsJson     = JSON.stringify(defaultUtms);
+  const utmsJson = JSON.stringify(defaultUtms);
   const campaignJson = JSON.stringify(campaign || "");
   const modifierJson = JSON.stringify(modifier || "");
-  const linksJson   = JSON.stringify(
+  const linksJson = JSON.stringify(
     links.map((l) => ({
-      id:         l.id,
-      label:      l.label,
-      href:       l.href,
+      id: l.id,
+      label: l.label,
+      href: l.href,
       utmContent: l.utmContent,
-      noUtm:      !!l.noUtm,
+      noUtm: !!l.noUtm,
     }))
   );
   const ctxTypeEsc = JSON.stringify(contextType);
-  const ctxIdEsc   = JSON.stringify(contextId);
+  const ctxIdEsc = JSON.stringify(contextId);
   const engineMapIdEsc = JSON.stringify(slugData?.engineMapId || "");
 
   // Compile component HTML sections (Prompt 140 / User Request)
   var allowedComps = (components || []);
   if (slugData && Array.isArray(slugData.components)) {
     var enabledSet = {};
-    slugData.components.forEach(function(fid) { if (fid) enabledSet[fid] = true; });
-    allowedComps = allowedComps.filter(function(c) {
+    slugData.components.forEach(function (fid) { if (fid) enabledSet[fid] = true; });
+    allowedComps = allowedComps.filter(function (c) {
       return enabledSet[c.family_id] || enabledSet[c.family_key];
     });
   } else {
-    allowedComps = allowedComps.filter(function(c) {
+    allowedComps = allowedComps.filter(function (c) {
       return c.family_status === "active";
     });
   }
   var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
-  allowedComps.sort(function(a, b) {
+  allowedComps.sort(function (a, b) {
     var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
     var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
     if (pA !== pB) return pA - pB;
     return (a.priority || 0) - (b.priority || 0);
   });
 
-  var renderComponentHtml = function(c) {
+  var renderComponentHtml = function (c) {
     var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
     var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
     return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
       titleHtml +
       '<div class="comp-body">' + (c.body || '') + '</div>' +
       ctaHtml +
-    '</div>';
+      '</div>';
   };
 
   var compsHtml = { hero: "", body: "", legal: "", footer: "" };
-  allowedComps.forEach(function(c) {
+  allowedComps.forEach(function (c) {
     var p = (c.placement_hint || c.type || "").toLowerCase();
     var html = renderComponentHtml(c);
     if (p === "hero") compsHtml.hero += html;
@@ -500,7 +500,7 @@ function scopeCSS(css, slugId) {
       if (braceIdx === -1) return trimmed;
 
       const selector = trimmed.substring(0, braceIdx).trim();
-      const body     = trimmed.substring(braceIdx);
+      const body = trimmed.substring(braceIdx);
 
       // Skip @-rules (media queries, keyframes, etc.)
       if (selector.startsWith("@")) return selector + body + "}";
@@ -560,11 +560,15 @@ const HUB_CSS = `
 :root{
   --bg:#F8F8F6;--text:#111111;
   --btn-bg:#111111;--btn-text:#F8F8F6;
+  --link:#0f62fe;--link-hover:#0043ce;
   --radius:.875rem;
   --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
 }
 @media(prefers-color-scheme:dark){
-  :root{--bg:#111111;--text:#F8F8F6;--btn-bg:#F8F8F6;--btn-text:#111111}
+  :root{
+    --bg:#111111;--text:#F8F8F6;--btn-bg:#F8F8F6;--btn-text:#111111;
+    --link:#78a9ff;--link-hover:#a6c8ff;
+  }
 }
 html{height:100%}
 body{
@@ -572,7 +576,24 @@ body{
   min-height:100dvh;display:flex;align-items:center;justify-content:center;
   padding:2.5rem 1.25rem;-webkit-font-smoothing:antialiased;
 }
-.container{width:100%;max-width:420px;display:flex;flex-direction:column}
+a:not(.link-btn):not(.comp-cta-btn){
+  color:var(--link);
+  text-decoration:underline;
+  text-underline-offset:3px;
+  text-decoration-thickness:1.5px;
+  text-decoration-color:rgba(15,98,254,0.3);
+  transition:color .12s ease,text-decoration-color .12s ease;
+}
+@media(prefers-color-scheme:dark){
+  a:not(.link-btn):not(.comp-cta-btn){
+    text-decoration-color:rgba(120,169,255,0.35);
+  }
+}
+a:not(.link-btn):not(.comp-cta-btn):hover{
+  color:var(--link-hover);
+  text-decoration-color:var(--link-hover);
+}
+.container{width:100%;display:flex;flex-direction:column}
 .name{
   text-align:center;font-size:1.0625rem;font-weight:600;
   letter-spacing:.01em;margin-bottom:1.75rem;opacity:.9;

@@ -823,12 +823,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         </div>
         <div style="overflow-x:auto;">
           <table class="data-table" id="tbl-components">
-            <thead>
+            <thead style="text-align: left;">
               <tr>
-                <th>Name / Slug</th>
+                <th>Slug</th>
                 <th>Type</th>
-                <th>Live Ver</th>
-                <th>Latest Ver</th>
+                <th>Live</th>
+                <th>Latest</th>
                 <th>Status</th>
                 <th>Modified</th>
               </tr>
