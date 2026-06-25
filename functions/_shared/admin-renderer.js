@@ -221,8 +221,17 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <p class="hint">If provided, this page acts as a pass-through.</p>
 
           <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
-          <p class="card-title" style="font-size:12px; opacity:0.7">Components Config</p>
-          <div id="page-components-container" style="margin-bottom:15px; display:flex; flex-direction:column; gap:8px;"></div>
+          <p class="card-title" style="font-size:13px; font-weight:600; margin-bottom:10px;">Page Sections & Layout Manager</p>
+          <p class="hint" style="margin-top:-5px; margin-bottom:15px; font-size:0.75rem;">Arrange the order of components, links, and custom HTML sections. You can add multiple custom sections and position them anywhere.</p>
+          
+          <div id="page-layout-container" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;"></div>
+
+          <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:10px; margin-bottom:20px;">
+            <button type="button" id="btn-add-layout-html" class="btn-ghost btn-sm" style="background:var(--surface); padding:8px; font-size:0.8rem;">+ Add Custom HTML</button>
+            <select id="add-layout-comp-select" style="padding:6px; font-size:0.8rem; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:4px;">
+              <option value="">+ Add Component...</option>
+            </select>
+          </div>
 
           <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
           <p class="card-title" style="font-size:12px; opacity:0.7">Advanced / Code Editor</p>
@@ -231,8 +240,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
              <input type="checkbox" id="f-page-is-conv" /> Mark as Conversion Goal (fires signal on load)
           </label>
 
-          <label for="f-page-html">Custom Body (HTML Override)</label>
-          <textarea id="f-page-html" rows="4" placeholder="<p>Custom HTML content...</p>" style="font-family:monospace;"></textarea>
+          <input type="hidden" id="f-page-html" />
 
           <label for="f-page-css">Custom CSS</label>
           <textarea id="f-page-css" rows="3" placeholder=".my-class { color: red; }" style="font-family:monospace;"></textarea>
@@ -826,7 +834,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <thead style="text-align: left;">
               <tr>
                 <th>Slug</th>
-                <th>Type</th>
                 <th>Live</th>
                 <th>Latest</th>
                 <th>Status</th>
@@ -834,7 +841,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               </tr>
             </thead>
             <tbody id="tbl-components-body">
-              <tr><td colspan="6" class="empty-state">Loading components...</td></tr>
+              <tr><td colspan="5" class="empty-state">Loading components...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1053,6 +1060,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var componentFamilies         = [];
   var componentVersions         = [];
   var pageSelectedComponentIds  = [];
+  var pageLayoutItems           = [];
   var selectedFamilyId          = null;
   var selectedVersionNumber     = null;
   var recentEventsPage          = 0;
@@ -1589,14 +1597,19 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("f-page-css").value = p.customStyleCss || "";
     $("f-page-js").value = p.customScript || "";
 
-    if (Array.isArray(p.components)) {
-      pageSelectedComponentIds = p.components.slice();
+    if (Array.isArray(p.layout)) {
+      pageLayoutItems = p.layout.map(function(item) {
+        return {
+          type: item.type,
+          id: item.id,
+          name: item.name || "",
+          content: item.content || ""
+        };
+      });
     } else {
-      pageSelectedComponentIds = componentFamilies
-        .filter(function(f) { return f.status === "active"; })
-        .map(function(f) { return f.family_id; });
+      pageLayoutItems = convertPageToLayout(p);
     }
-    renderPageComponentsEditor();
+    renderPageLayoutEditor();
 
     $("page-form-title").textContent = "Editing: " + id;
     $("btn-cancel-page").classList.remove("hidden");
@@ -1612,10 +1625,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("page-form-title").textContent = "New Landing Page";
     $("btn-cancel-page").classList.add("hidden");
     
-    pageSelectedComponentIds = componentFamilies
-      .filter(function(f) { return f.status === "active"; })
-      .map(function(f) { return f.family_id; });
-    renderPageComponentsEditor();
+    pageLayoutItems = getDefaultLayout();
+    renderPageLayoutEditor();
   });
 
   var pageForm = $("page-form");
@@ -1632,10 +1643,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         linksType: "dynamic",
         links: [],
         isConversion: $("f-page-is-conv").checked,
-        customBodyHtml: $("f-page-html").value.trim(),
+        customBodyHtml: (function() {
+          var firstHtml = pageLayoutItems.find(function(x) { return x.type === "custom_html"; });
+          return firstHtml ? firstHtml.content.trim() : "";
+        })(),
         customStyleCss: $("f-page-css").value.trim(),
         customScript: $("f-page-js").value.trim(),
-        components: pageSelectedComponentIds
+        components: pageLayoutItems
+          .filter(function(x) { return x.type === "component"; })
+          .map(function(x) { return x.id; }),
+        layout: pageLayoutItems
       };
       if ($("f-page-url").value.trim()) payload.redirectUrl = $("f-page-url").value.trim();
       
@@ -1645,7 +1662,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          // Trigger components index rebuild to make sure any selected components are live
           try {
             await apiFetch("/api/admin/components", {
               method: "PUT",
@@ -1663,10 +1679,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           $("page-form-title").textContent = "New Landing Page";
           $("btn-cancel-page").classList.add("hidden");
           
-          pageSelectedComponentIds = componentFamilies
-            .filter(function(f) { return f.status === "active"; })
-            .map(function(f) { return f.family_id; });
-          renderPageComponentsEditor();
+          pageLayoutItems = getDefaultLayout();
+          renderPageLayoutEditor();
 
           await loadPages();
         } else {
@@ -1679,103 +1693,276 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       $("btn-save-page").disabled = false;
     });
   }
+  // Initialize Layout Manager controls
+  var addHtmlBtn = $("btn-add-layout-html");
+  if (addHtmlBtn) {
+    addHtmlBtn.addEventListener("click", function() {
+      pageLayoutItems.push({
+        type: "custom_html",
+        id: "section-" + Date.now(),
+        name: "Custom HTML Section",
+        content: ""
+      });
+      renderPageLayoutEditor();
+    });
+  }
 
-  function renderPageComponentsEditor() {
-    var container = $("page-components-container");
+  var addCompSelect = $("add-layout-comp-select");
+  if (addCompSelect) {
+    addCompSelect.addEventListener("change", function() {
+      var val = addCompSelect.value;
+      if (val) {
+        if (val === "links-block") {
+          pageLayoutItems.push({
+            type: "links",
+            id: "links",
+            name: "Default Link Buttons"
+          });
+        } else {
+          pageLayoutItems.push({
+            type: "component",
+            id: val
+          });
+        }
+        addCompSelect.value = "";
+        renderPageLayoutEditor();
+      }
+    });
+  }
+
+  function getDefaultLayout() {
+    var layout = [];
+    var activeFamilies = componentFamilies.filter(function(f) { return f.status === "active"; });
+    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "cta": 5, "legal": 6, "footer": 7 };
+    activeFamilies.sort(function(a, b) {
+      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.priority || 0) - (b.priority || 0);
+    });
+
+    var addedBody = false;
+    activeFamilies.forEach(function(f) {
+      var placement = (f.placement_hint || f.type || "").toLowerCase();
+      if (!addedBody && (placement === "process" || placement === "objection" || placement === "cta" || placement === "legal" || placement === "footer")) {
+        layout.push({
+          type: "links",
+          id: "links",
+          name: "Default Link Buttons"
+        });
+        addedBody = true;
+      }
+      layout.push({
+        type: "component",
+        id: f.family_id
+      });
+    });
+
+    if (!addedBody) {
+      layout.push({
+        type: "links",
+        id: "links",
+        name: "Default Link Buttons"
+      });
+    }
+    return layout;
+  }
+
+  function convertPageToLayout(p) {
+    var layout = [];
+    var comps = Array.isArray(p.components) ? p.components : [];
+    var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "cta": 5, "legal": 6, "footer": 7 };
+    
+    var resolvedComps = comps.map(function(fid) {
+      return componentFamilies.find(function(f) { return f.family_id === fid || f.family_key === fid; });
+    }).filter(Boolean);
+
+    resolvedComps.sort(function(a, b) {
+      var pA = placementOrder[(a.placement_hint || a.type || "").toLowerCase()] || 99;
+      var pB = placementOrder[(b.placement_hint || b.type || "").toLowerCase()] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.priority || 0) - (b.priority || 0);
+    });
+
+    var addedBody = false;
+    resolvedComps.forEach(function(f) {
+      var placement = (f.placement_hint || f.type || "").toLowerCase();
+      if (!addedBody && (placement === "process" || placement === "objection" || placement === "cta" || placement === "legal" || placement === "footer")) {
+        if (p.customBodyHtml) {
+          layout.push({
+            type: "custom_html",
+            id: "custom-body",
+            name: "Custom Body HTML",
+            content: p.customBodyHtml || ""
+          });
+        } else {
+          layout.push({
+            type: "links",
+            id: "links",
+            name: "Default Link Buttons"
+          });
+        }
+        addedBody = true;
+      }
+      layout.push({
+        type: "component",
+        id: f.family_id
+      });
+    });
+
+    if (!addedBody) {
+      if (p.customBodyHtml) {
+        layout.push({
+          type: "custom_html",
+          id: "custom-body",
+          name: "Custom Body HTML",
+          content: p.customBodyHtml || ""
+        });
+      } else {
+        layout.push({
+          type: "links",
+          id: "links",
+          name: "Default Link Buttons"
+        });
+      }
+    }
+    return layout;
+  }
+
+  function populateLayoutComponentsDropdown() {
+    var select = $("add-layout-comp-select");
+    if (!select) return;
+    select.innerHTML = '<option value="">+ Add Component...</option>';
+    select.innerHTML += '<option value="links-block">Default Link Buttons</option>';
+    
+    var sorted = componentFamilies.slice().sort(function(a, b) {
+      return a.family_name.localeCompare(b.family_name);
+    });
+    sorted.forEach(function(f) {
+      select.innerHTML += '<option value="' + f.family_id + '">' + esc(f.family_name) + ' (' + esc(f.status) + ')</option>';
+    });
+  }
+
+  function renderPageLayoutEditor() {
+    var container = $("page-layout-container");
     if (!container) return;
 
-    if (componentFamilies.length === 0) {
-      container.innerHTML = '<p class="hint">No components available. Create them in the Components tab.</p>';
+    if (pageLayoutItems.length === 0) {
+      container.innerHTML = '<p class="hint" style="text-align:center; padding:20px; border:1px dashed var(--border); border-radius:var(--radius-sm);">Layout is empty. Add a component or HTML section to get started.</p>';
       return;
     }
 
-    var activeFamilies = componentFamilies.filter(function(f) { return f.status === "active"; });
-    var nonActiveFamilies = componentFamilies.filter(function(f) { return f.status !== "active"; });
+    var html = "";
+    pageLayoutItems.forEach(function(item, idx) {
+      var isFirst = idx === 0;
+      var isLast = idx === pageLayoutItems.length - 1;
+      var cardStyle = "display:flex; flex-direction:column; gap:8px; padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); position:relative;";
+      
+      var upBtn = '<button type="button" class="btn-layout-move" data-idx="' + idx + '" data-dir="up" ' + (isFirst ? 'disabled style="opacity:0.2;cursor:default;"' : '') + ' style="border:none; background:transparent; cursor:pointer; padding:2px 6px; font-weight:bold; color:var(--text);">&#9650;</button>';
+      var downBtn = '<button type="button" class="btn-layout-move" data-idx="' + idx + '" data-dir="down" ' + (isLast ? 'disabled style="opacity:0.2;cursor:default;"' : '') + ' style="border:none; background:transparent; cursor:pointer; padding:2px 6px; font-weight:bold; color:var(--text);">&#9660;</button>';
+      
+      var orderControls = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; border-right:1px solid var(--border); padding-right:10px; gap:4px;">' +
+                            upBtn +
+                            '<span style="font-size:0.75rem; font-weight:bold; opacity:0.6;">' + (idx + 1) + '</span>' +
+                            downBtn +
+                          '</div>';
 
-    var html = '<div style="font-size:0.8rem; font-weight:600; color:var(--text-m); margin-bottom: 5px;">Active Components (Enabled by default):</div>';
-    
-    activeFamilies.forEach(function(f) {
-      var isChecked = pageSelectedComponentIds.includes(f.family_id);
-      html += 
-        '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; background:var(--surface); border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem;">' +
-          '<div style="display:flex; align-items:center; gap:8px;">' +
-            '<input type="checkbox" class="page-comp-checkbox" data-fid="' + f.family_id + '" ' + (isChecked ? 'checked' : '') + ' />' +
-            '<span>' + esc(f.family_name) + ' <span style="font-family:monospace; font-size:0.7rem; opacity:0.6;">(' + esc(f.family_key) + ')</span></span>' +
-          '</div>' +
-          '<span style="font-size:0.7rem; background:var(--border); color:var(--text-m); padding:1px 5px; border-radius:3px; text-transform:uppercase;">' + esc(f.type) + '</span>' +
-        '</label>';
-    });
+      var removeBtn = '<button type="button" class="btn-layout-remove" data-idx="' + idx + '" style="border:none; background:transparent; color:var(--danger); font-size:1.2rem; cursor:pointer; font-weight:bold; line-height:1; padding:4px 8px;">&times;</button>';
 
-    var selectedNonActive = nonActiveFamilies.filter(function(f) {
-      return pageSelectedComponentIds.includes(f.family_id);
-    });
+      if (item.type === "component") {
+        var f = componentFamilies.find(function(c) { return c.family_id === item.id; });
+        var name = f ? f.family_name : "Component: " + item.id;
+        var key = f ? f.family_key : item.id;
+        var status = f ? f.status : "unknown";
+        var statusBadge = status === "active" 
+          ? '<span style="font-size:0.7rem; background:rgba(0,128,0,0.1); color:green; padding:1px 5px; border-radius:3px; text-transform:uppercase; font-weight:bold;">active</span>'
+          : '<span style="font-size:0.7rem; background:var(--border); color:var(--text-m); padding:1px 5px; border-radius:3px; text-transform:uppercase;">' + esc(status) + '</span>';
 
-    if (selectedNonActive.length > 0) {
-      html += '<div style="font-size:0.8rem; font-weight:600; color:var(--text-m); margin-top: 10px; margin-bottom: 5px;">Extra / Archived Components:</div>';
-      selectedNonActive.forEach(function(f) {
         html += 
-          '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; background:var(--surface); border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">' +
-            '<div style="display:flex; align-items:center; gap:8px;">' +
-              '<input type="checkbox" class="page-comp-checkbox" data-fid="' + f.family_id + '" checked />' +
-              '<span>' + esc(f.family_name) + ' <span style="font-family:monospace; font-size:0.7rem; opacity:0.6;">(' + esc(f.family_key) + ')</span></span>' +
-            '</div>' +
-            '<div style="display:flex; align-items:center; gap:5px;">' +
-              '<span style="font-size:0.7rem; background:var(--border); color:var(--text-m); padding:1px 5px; border-radius:3px; text-transform:lowercase;">' + esc(f.status) + '</span>' +
-              '<button type="button" class="btn-remove-page-comp" data-fid="' + f.family_id + '" style="border:none; background:transparent; color:var(--danger); padding:2px 6px; cursor:pointer; font-weight:bold; font-size:1.1rem; line-height:1;">&times;</button>' +
+          '<div style="' + cardStyle + '">' +
+            '<div style="display:flex; align-items:center; justify-content:space-between; width:100%;">' +
+              '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
+                orderControls +
+                '<div style="display:flex; flex-direction:column; gap:2px;">' +
+                  '<div style="font-size:0.85rem; font-weight:600; color:var(--text);">' + esc(name) + '</div>' +
+                  '<div style="font-family:monospace; font-size:0.7rem; opacity:0.6;">' + esc(key) + '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div style="display:flex; align-items:center; gap:10px;">' +
+                statusBadge +
+                removeBtn +
+              '</div>' +
             '</div>' +
           '</div>';
-      });
-    }
-
-    var availableNonActive = nonActiveFamilies.filter(function(f) {
-      return !pageSelectedComponentIds.includes(f.family_id);
+      } else if (item.type === "links") {
+        html += 
+          '<div style="' + cardStyle + '">' +
+            '<div style="display:flex; align-items:center; justify-content:space-between; width:100%;">' +
+              '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
+                orderControls +
+                '<div style="display:flex; flex-direction:column; gap:2px;">' +
+                  '<div style="font-size:0.85rem; font-weight:600; color:var(--text);">' + esc(item.name || "Default Link Buttons") + '</div>' +
+                  '<div style="font-size:0.7rem; opacity:0.6;">Displays the landing page dynamic links list</div>' +
+                '</div>' +
+              '</div>' +
+              removeBtn +
+            '</div>' +
+          '</div>';
+      } else {
+        var sectionName = item.name || "Custom HTML Section";
+        html += 
+          '<div style="' + cardStyle + '">' +
+            '<div style="display:flex; align-items:flex-start; justify-content:space-between; width:100%; gap:10px;">' +
+              '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
+                orderControls +
+                '<div style="display:flex; flex-direction:column; gap:6px; flex:1;">' +
+                  '<input type="text" class="layout-html-title" data-idx="' + idx + '" value="' + esc(sectionName) + '" placeholder="Section Title (e.g. Custom Body)" style="font-size:0.8rem; font-weight:600; padding:4px 8px; border:1px solid var(--border); background:var(--bg); color:var(--text); border-radius:4px; width:100%;" />' +
+                  '<textarea class="layout-html-content" data-idx="' + idx + '" rows="4" placeholder="Enter custom HTML/CSS/JS..." style="font-family:monospace; font-size:0.8rem; padding:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); border-radius:4px; width:100%; resize:vertical;">' + esc(item.content || "") + '</textarea>' +
+                '</div>' +
+              '</div>' +
+              removeBtn +
+            '</div>' +
+          '</div>';
+      }
     });
-
-    if (availableNonActive.length > 0) {
-      html += 
-        '<div style="margin-top:10px;">' +
-          '<select id="add-archived-comp-select" style="padding:6px; font-size:0.8rem; width:100%; border-color:var(--border); background:var(--surface); color:var(--text);">' +
-            '<option value="">+ Add Archived/Draft Component...</option>';
-      availableNonActive.forEach(function(f) {
-        html += '<option value="' + f.family_id + '">' + esc(f.family_name) + ' (' + esc(f.family_key) + ') [' + esc(f.status) + ']</option>';
-      });
-      html += 
-          '</select>' +
-        '</div>';
-    }
 
     container.innerHTML = html;
 
-    container.querySelectorAll(".page-comp-checkbox").forEach(function(cb) {
-      cb.addEventListener("change", function() {
-        var fid = cb.dataset.fid;
-        if (cb.checked) {
-          if (!pageSelectedComponentIds.includes(fid)) pageSelectedComponentIds.push(fid);
-        } else {
-          pageSelectedComponentIds = pageSelectedComponentIds.filter(function(x) { return x !== fid; });
-        }
-        renderPageComponentsEditor();
-      });
-    });
-
-    container.querySelectorAll(".btn-remove-page-comp").forEach(function(btn) {
+    container.querySelectorAll(".btn-layout-move").forEach(function(btn) {
       btn.addEventListener("click", function() {
-        var fid = btn.dataset.fid;
-        pageSelectedComponentIds = pageSelectedComponentIds.filter(function(x) { return x !== fid; });
-        renderPageComponentsEditor();
+        var idx = parseInt(btn.dataset.idx);
+        var dir = btn.dataset.dir;
+        var targetIdx = dir === "up" ? idx - 1 : idx + 1;
+        if (targetIdx >= 0 && targetIdx < pageLayoutItems.length) {
+          var temp = pageLayoutItems[idx];
+          pageLayoutItems[idx] = pageLayoutItems[targetIdx];
+          pageLayoutItems[targetIdx] = temp;
+          renderPageLayoutEditor();
+        }
       });
     });
 
-    var select = $("add-archived-comp-select");
-    if (select) {
-      select.addEventListener("change", function() {
-        var fid = select.value;
-        if (fid) {
-          if (!pageSelectedComponentIds.includes(fid)) pageSelectedComponentIds.push(fid);
-          renderPageComponentsEditor();
-        }
+    container.querySelectorAll(".btn-layout-remove").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var idx = parseInt(btn.dataset.idx);
+        pageLayoutItems.splice(idx, 1);
+        renderPageLayoutEditor();
       });
-    }
+    });
+
+    container.querySelectorAll(".layout-html-title").forEach(function(input) {
+      input.addEventListener("input", function() {
+        var idx = parseInt(input.dataset.idx);
+        pageLayoutItems[idx].name = input.value;
+      });
+    });
+
+    container.querySelectorAll(".layout-html-content").forEach(function(textarea) {
+      textarea.addEventListener("input", function() {
+        var idx = parseInt(textarea.dataset.idx);
+        pageLayoutItems[idx].content = textarea.value;
+      });
+    });
   }
 
 
@@ -3859,11 +4046,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
       // Initialize selected components for Page config if not editing
       if (!$("f-page-editing").value) {
-        pageSelectedComponentIds = componentFamilies
-          .filter(function(f) { return f.status === "active"; })
-          .map(function(f) { return f.family_id; });
+        pageLayoutItems = getDefaultLayout();
       }
-      renderPageComponentsEditor();
+      populateLayoutComponentsDropdown();
+      renderPageLayoutEditor();
     } catch (err) {
       if (err.message !== "401") {
         console.error("Failed to load components:", err);
@@ -3876,7 +4062,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (!tbody) return;
     
     if (componentFamilies.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No components found. Create one to get started!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No components found. Create one to get started!</td></tr>';
       return;
     }
     
@@ -3913,7 +4099,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       
       tr.innerHTML = '<td><div style="font-weight:600;">' + esc(family.family_name) + '</div>' +
                      '<div style="font-size:0.75rem;color:var(--text-m);font-family:monospace;">' + esc(family.family_key) + '</div></td>' +
-                     '<td style="text-transform: capitalize;">' + esc(family.type) + '</td>' +
                      '<td>' + liveVer + '</td>' +
                      '<td>' + latestVer + '</td>' +
                      '<td>' + statusBadge + '</td>' +
@@ -3963,20 +4148,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<label for="c-family-name">Family Name <span class="req">*</span></label>' +
           '<input type="text" id="c-family-name" placeholder="e.g. Main Footer, Trust Signals" required />' +
 
-          '<label for="c-family-type">Component Type <span class="req">*</span></label>' +
-          '<select id="c-family-type" required>' +
-            '<option value="footer">Footer</option>' +
-            '<option value="legal">KVKK / Legal</option>' +
-            '<option value="trust">Trust Signals / Badges</option>' +
-            '<option value="cta">WhatsApp / CTA Block</option>' +
-            '<option value="faq">Frequently Asked Questions (FAQ)</option>' +
-            '<option value="process">How it Works (Process)</option>' +
-            '<option value="objection">Objection Handling</option>' +
-            '<option value="comparison">Comparison Table/Block</option>' +
-            '<option value="contact">Contact Block</option>' +
-            '<option value="support">After-sales Support</option>' +
-          '</select>' +
-
           '<label for="c-family-status">Family Status</label>' +
           '<select id="c-family-status">' +
             '<option value="active">Active</option>' +
@@ -4021,7 +4192,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var payload = {
           family_key: document.getElementById("c-family-key").value,
           family_name: document.getElementById("c-family-name").value,
-          type: document.getElementById("c-family-type").value,
+          type: "block",
           status: document.getElementById("c-family-status").value,
           title: document.getElementById("c-version-title").value,
           body: document.getElementById("c-version-body").value,
@@ -4103,30 +4274,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             '<input type="text" id="e-family-name" value="' + esc(family.family_name) + '" required style="padding:6px;font-size:0.85rem;" />' +
           '</div>' +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
-          '<div>' +
-            '<label for="e-family-type" style="font-size:0.75rem;">Type</label>' +
-            '<select id="e-family-type" style="padding:6px;font-size:0.85rem;">' +
-              '<option value="footer" ' + (family.type === "footer" ? "selected" : "") + '>Footer</option>' +
-              '<option value="legal" ' + (family.type === "legal" ? "selected" : "") + '>KVKK / Legal</option>' +
-              '<option value="trust" ' + (family.type === "trust" ? "selected" : "") + '>Trust Signals</option>' +
-              '<option value="cta" ' + (family.type === "cta" ? "selected" : "") + '>WhatsApp / CTA</option>' +
-              '<option value="faq" ' + (family.type === "faq" ? "selected" : "") + '>FAQ</option>' +
-              '<option value="process" ' + (family.type === "process" ? "selected" : "") + '>Process</option>' +
-              '<option value="objection" ' + (family.type === "objection" ? "selected" : "") + '>Objection Handling</option>' +
-              '<option value="comparison" ' + (family.type === "comparison" ? "selected" : "") + '>Comparison</option>' +
-              '<option value="contact" ' + (family.type === "contact" ? "selected" : "") + '>Contact</option>' +
-              '<option value="support" ' + (family.type === "support" ? "selected" : "") + '>Support</option>' +
-            '</select>' +
-          '</div>' +
-          '<div>' +
-            '<label for="e-family-status" style="font-size:0.75rem;">Status</label>' +
-            '<select id="e-family-status" style="padding:6px;font-size:0.85rem;">' +
-              '<option value="active" ' + (family.status === "active" ? "selected" : "") + '>Active</option>' +
-              '<option value="draft" ' + (family.status === "draft" ? "selected" : "") + '>Draft</option>' +
-              '<option value="archived" ' + (family.status === "archived" ? "selected" : "") + '>Archived</option>' +
-            '</select>' +
-          '</div>' +
+        '<div style="margin-top:10px;">' +
+          '<label for="e-family-status" style="font-size:0.75rem;">Status</label>' +
+          '<select id="e-family-status" style="padding:6px;font-size:0.85rem;width:100%;">' +
+            '<option value="active" ' + (family.status === "active" ? "selected" : "") + '>Active</option>' +
+            '<option value="draft" ' + (family.status === "draft" ? "selected" : "") + '>Draft</option>' +
+            '<option value="archived" ' + (family.status === "archived" ? "selected" : "") + '>Archived</option>' +
+          '</select>' +
         '</div>' +
         '<p id="c-family-edit-error" class="error hidden" style="margin-top:10px;"></p>' +
         '<p id="c-family-edit-success" class="success hidden" style="margin-top:10px;"></p>' +
@@ -4225,7 +4379,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           family_id: selectedFamilyId,
           family_key: document.getElementById("e-family-key").value,
           family_name: document.getElementById("e-family-name").value,
-          type: document.getElementById("e-family-type").value,
+          type: "block",
           status: document.getElementById("e-family-status").value
         };
         

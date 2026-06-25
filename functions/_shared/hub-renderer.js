@@ -71,15 +71,52 @@ export function renderHub({
     return (a.priority || 0) - (b.priority || 0);
   });
 
+  const linkButtons = links
+    .map((l) => {
+      if (!l.href) {
+        return `<div class="link-text" id="link-${escAttr(l.id)}">${escHtml(l.label)}</div>`;
+      }
+      return (
+        `<a class="link-btn" id="link-${escAttr(l.id)}" ` +
+        `data-link-id="${escAttr(l.id)}" ` +
+        `data-utm-content="${escAttr(l.utmContent)}" ` +
+        `data-no-utm="${l.noUtm ? "1" : "0"}" ` +
+        `href="${escAttr(l.href)}"` +
+        (l.href.startsWith("mailto:") || l.href.startsWith("tel:")
+          ? ""
+          : ` rel="noopener noreferrer" target="_blank"`) +
+        `>${escHtml(l.label)}</a>`
+      );
+    })
+    .join("\n    ");
+
+  var layoutHtml = "";
+  const hasCustomLayout = !!(slugData && Array.isArray(slugData.layout));
+  
   var renderComponentHtml = function (c) {
     var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
     var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
-    return '<div class="comp-item comp-type-' + escAttr(c.type) + ' comp-placement-' + escAttr(c.placement_hint || c.type) + '" id="comp-' + escAttr(c.component_id) + '">' +
+    return '<div class="comp-item comp-type-' + escAttr(c.type || "block") + ' comp-placement-' + escAttr(c.placement_hint || c.type || "block") + '" id="comp-' + escAttr(c.component_id) + '">' +
       titleHtml +
       '<div class="comp-body">' + (c.body || '') + '</div>' +
       ctaHtml +
       '</div>';
   };
+
+  if (hasCustomLayout) {
+    slugData.layout.forEach(function (item) {
+      if (item.type === "component") {
+        var c = allowedComps.find(function (x) { return x.family_id === item.id; });
+        if (c) {
+          layoutHtml += renderComponentHtml(c);
+        }
+      } else if (item.type === "custom_html") {
+        layoutHtml += item.content || "";
+      } else if (item.type === "links") {
+        layoutHtml += '<div id="links-wrap">' + linkButtons + '</div>';
+      }
+    });
+  }
 
   var compsHtml = { hero: "", body: "", legal: "", footer: "" };
   allowedComps.forEach(function (c) {
@@ -176,25 +213,6 @@ ${themeCssLink}
   }
 
   /* ── Normal hub ───────────────────────────────────────────────── */
-  const linkButtons = links
-    .map((l) => {
-      if (!l.href) {
-        return `<div class="link-text" id="link-${escAttr(l.id)}">${escHtml(l.label)}</div>`;
-      }
-      return (
-        `<a class="link-btn" id="link-${escAttr(l.id)}" ` +
-        `data-link-id="${escAttr(l.id)}" ` +
-        `data-utm-content="${escAttr(l.utmContent)}" ` +
-        `data-no-utm="${l.noUtm ? "1" : "0"}" ` +
-        `href="${escAttr(l.href)}"` +
-        (l.href.startsWith("mailto:") || l.href.startsWith("tel:")
-          ? ""
-          : ` rel="noopener noreferrer" target="_blank"`) +
-        `>${escHtml(l.label)}</a>`
-      );
-    })
-    .join("\n    ");
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -212,6 +230,7 @@ ${themeCssLink}${customStyleBlock}
 ${bodyTag}
 <div class="container">
   ${headerHtml}
+  ${hasCustomLayout ? layoutHtml : `
   ${compsHtml.hero}
   <div id="links-wrap">
     ${slugData?.customBodyHtml || linkButtons}
@@ -219,6 +238,7 @@ ${bodyTag}
   ${compsHtml.body}
   ${compsHtml.legal}
   ${compsHtml.footer}
+  `}
   ${footerHtml}
 </div>
 
@@ -593,7 +613,7 @@ a:not(.link-btn):not(.comp-cta-btn):hover{
   color:var(--link-hover);
   text-decoration-color:var(--link-hover);
 }
-.container{width:100%;display:flex;flex-direction:column}
+.container{width:100%;max-width:1000px;margin:0 auto;padding:0 20px;box-sizing:border-box;display:flex;flex-direction:column}
 .name{
   text-align:center;font-size:1.0625rem;font-weight:600;
   letter-spacing:.01em;margin-bottom:1.75rem;opacity:.9;
