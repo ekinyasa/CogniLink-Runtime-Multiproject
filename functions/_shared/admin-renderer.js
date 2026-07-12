@@ -4547,11 +4547,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             return Array.isArray(s.components) && s.components.indexOf(family.family_id) !== -1;
           }).map(function(s) { return s.slug; });
           
-          var msg = "Are you sure you want to delete the component family '" + family.family_name + "'?\nThis will hard-delete the family and all its versions.";
+          var msg = "Are you sure you want to delete the component family '" + family.family_name + "'?\\nThis will hard-delete the family and all its versions.";
           var totalUsage = matchingPages.length + matchingSlugs.length;
           if (totalUsage > 0) {
-            msg += "\n\nWARNING: This component is currently used by " + totalUsage + " layouts:\n" +
-                   (matchingPages.length ? "- Pages: " + matchingPages.join(", ") + "\n" : "") +
+            msg += "\\n\\nWARNING: This component is currently used by " + totalUsage + " layouts:\\n" +
+                   (matchingPages.length ? "- Pages: " + matchingPages.join(", ") + "\\n" : "") +
                    (matchingSlugs.length ? "- Slugs: " + matchingSlugs.join(", ") : "");
           }
           
@@ -4586,7 +4586,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           }
           var msg = "Are you sure you want to delete version v" + version.version_number + " of '" + family.family_name + "'?";
           if (familyVersions.length === 1) {
-            msg += "\nThis is the last version, so the entire component family will be deleted.";
+            msg += "\\nThis is the last version, so the entire component family will be deleted.";
           }
           if (!confirm(msg)) return;
           
