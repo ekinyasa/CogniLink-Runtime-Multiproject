@@ -89,12 +89,14 @@ export async function onRequestPost(context) {
     const family_id = crypto.randomUUID();
     const now = new Date().toISOString();
 
+    const initialStatus = (status === "draft" ? "inactive" : status) || "active";
+
     const family = {
       family_id,
       family_key: family_key.trim(),
       family_name: family_name.trim(),
       type: type.trim(),
-      status: (status === "draft" ? "inactive" : status) || "active",
+      status: initialStatus,
       created_at: now,
       updated_at: now
     };
@@ -106,9 +108,9 @@ export async function onRequestPost(context) {
       version_label: "v1",
       name: `${family_name.trim()} v1`,
       type: type.trim(),
-      status: "active",
-      is_live: true,
-      is_default: true,
+      status: initialStatus,
+      is_live: initialStatus === "active",
+      is_default: initialStatus === "active",
       title: (title || "").trim(),
       body: (body || "").trim(),
       cta_label: (cta_label || "").trim(),
@@ -155,14 +157,45 @@ export async function onRequestPut(context) {
       const existingFamily = await env.APP_CONFIG.get(`comp_family:${family_id}`, { type: "json" });
       if (!existingFamily) throw new Error("Family not found");
 
+      const cleanStatus = status === "draft" ? "inactive" : status;
+
       const updatedFamily = {
         ...existingFamily,
         family_key: family_key ? family_key.trim() : existingFamily.family_key,
         family_name: family_name ? family_name.trim() : existingFamily.family_name,
         type: type ? type.trim() : existingFamily.type,
-        status: (status === "draft" ? "inactive" : status) || existingFamily.status,
+        status: cleanStatus || existingFamily.status,
         updated_at: now
       };
+
+      if (cleanStatus) {
+        const verKeys = await listAllKeys(env, `comp_ver:${family_id}:`);
+        for (const vk of verKeys) {
+          const version = await env.APP_CONFIG.get(vk, { type: "json" });
+          if (version) {
+            let changed = false;
+            if (cleanStatus === "inactive" || cleanStatus === "archived") {
+              if (version.status !== cleanStatus || version.is_live || version.is_default) {
+                version.status = cleanStatus;
+                version.is_live = false;
+                version.is_default = false;
+                changed = true;
+              }
+            } else if (cleanStatus === "active") {
+              // Set the default/live or first version to active
+              if (version.is_live || version.version_number === 1) {
+                version.status = "active";
+                version.is_live = true;
+                version.is_default = true;
+                changed = true;
+              }
+            }
+            if (changed) {
+              await env.APP_CONFIG.put(vk, JSON.stringify(version));
+            }
+          }
+        }
+      }
 
       await env.APP_CONFIG.put(`comp_family:${family_id}`, JSON.stringify(updatedFamily));
       await recomputeFamilyStatusAndLive(env, family_id, now);
@@ -399,6 +432,7 @@ async function recomputeFamilyStatusAndLive(env, family_id, now) {
 
   if (versions.length === 0) {
     await env.APP_CONFIG.delete(`comp_family:${family_id}`);
+    await cleanReferencesFromKV(env, family_id);
     return;
   }
 

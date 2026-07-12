@@ -773,20 +773,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <p class="analytics-section-title" style="margin:1.25rem 1.25rem 0 1.25rem">Default Landing Page Configuration</p>
     <form id="config-form" class="landings-grid" autocomplete="off" novalidate>
       
-      <!-- Card A: Default Base Links -->
-      <div class="card">
-        <p class="card-title">Default Base Links</p>
-        <p class="hint" style="margin-bottom:1rem">Managed globally for all hub pages.</p>
-        <div class="base-links-section-open">
-          <div id="base-links-editor" class="links-editor-wrap"></div>
-          <button type="button" id="btn-add-config-link" class="btn-ghost btn-sm" style="margin-top:.5rem">+ Add link or text</button>
-        </div>
-      </div>
-
       <!-- Card B: General Settings -->
       <div class="card">
         <p class="card-title">General Settings</p>
-        <p class="hint">Changes apply to all hub pages without redeployment.</p>
+        <p class="hint">Changes apply globally to rendered pages without redeployment.</p>
         
         <label for="cfg-page-title">Default Page Title <span class="hint-inline">(shown in browser tab)</span></label>
         <input id="cfg-page-title" type="text" placeholder="Official Links" maxlength="200" />
@@ -1605,7 +1595,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("f-page-js").value = p.customScript || "";
 
     if (Array.isArray(p.layout)) {
-      pageLayoutItems = p.layout.map(function(item) {
+      pageLayoutItems = p.layout.filter(function(item) { return item.type !== "links"; }).map(function(item) {
         return {
           type: item.type,
           id: item.id,
@@ -1614,7 +1604,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         };
       });
     } else {
-      pageLayoutItems = convertPageToLayout(p);
+      pageLayoutItems = convertPageToLayout(p).filter(function(item) { return item.type !== "links"; });
     }
     renderPageLayoutEditor();
 
@@ -1748,30 +1738,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       return (a.priority || 0) - (b.priority || 0);
     });
 
-    var addedBody = false;
     activeFamilies.forEach(function(f) {
-      var placement = (f.placement_hint || f.type || "").toLowerCase();
-      if (!addedBody && (placement === "process" || placement === "objection" || placement === "cta" || placement === "legal" || placement === "footer")) {
-        layout.push({
-          type: "links",
-          id: "links",
-          name: "Default Link Buttons"
-        });
-        addedBody = true;
-      }
       layout.push({
         type: "component",
         id: f.family_id
       });
     });
-
-    if (!addedBody) {
-      layout.push({
-        type: "links",
-        id: "links",
-        name: "Default Link Buttons"
-      });
-    }
     return layout;
   }
 
@@ -1791,47 +1763,20 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       return (a.priority || 0) - (b.priority || 0);
     });
 
-    var addedBody = false;
     resolvedComps.forEach(function(f) {
-      var placement = (f.placement_hint || f.type || "").toLowerCase();
-      if (!addedBody && (placement === "process" || placement === "objection" || placement === "cta" || placement === "legal" || placement === "footer")) {
-        if (p.customBodyHtml) {
-          layout.push({
-            type: "custom_html",
-            id: "custom-body",
-            name: "Custom Body HTML",
-            content: p.customBodyHtml || ""
-          });
-        } else {
-          layout.push({
-            type: "links",
-            id: "links",
-            name: "Default Link Buttons"
-          });
-        }
-        addedBody = true;
-      }
       layout.push({
         type: "component",
         id: f.family_id
       });
     });
 
-    if (!addedBody) {
-      if (p.customBodyHtml) {
-        layout.push({
-          type: "custom_html",
-          id: "custom-body",
-          name: "Custom Body HTML",
-          content: p.customBodyHtml || ""
-        });
-      } else {
-        layout.push({
-          type: "links",
-          id: "links",
-          name: "Default Link Buttons"
-        });
-      }
+    if (p.customBodyHtml) {
+      layout.push({
+        type: "custom_html",
+        id: "custom-body",
+        name: "Custom Body HTML",
+        content: p.customBodyHtml || ""
+      });
     }
     return layout;
   }
@@ -1840,7 +1785,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var select = $("add-layout-comp-select");
     if (!select) return;
     select.innerHTML = '<option value="">+ Add Component...</option>';
-    select.innerHTML += '<option value="links-block">Default Link Buttons</option>';
     
     var sorted = componentFamilies.slice().sort(function(a, b) {
       return a.family_name.localeCompare(b.family_name);
@@ -3938,35 +3882,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   }
 
   /* ── Config tab ──────────────────────────────────────── */
-  function addConfigLinkRow(label, url) {
-    var row = document.createElement("div");
-    row.className = "link-row";
-    row.innerHTML =
-      '<div class="link-row-fields">' +
-        '<input class="bl-label" type="text" placeholder="Label or Text item" value="' + esc(label || "") + '" />' +
-        '<input class="bl-url" type="url" placeholder="https://... (empty for text only)" value="' + esc(url || "") + '" />' +
-      '</div>' +
-      '<div class="link-row-opts">' +
-        '<button type="button" class="btn-ghost btn-xs btn-move-up" title="Move up">↑</button>' +
-        '<button type="button" class="btn-ghost btn-xs btn-move-down" title="Move down">↓</button>' +
-        '<button type="button" class="btn-danger btn-xs link-remove" title="Remove">Remove item</button>' +
-      '</div>';
-    
-    row.querySelector(".link-remove").addEventListener("click", function () { row.remove(); });
-    row.querySelector(".btn-move-up").addEventListener("click", function () {
-      if (row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
-    });
-    row.querySelector(".btn-move-down").addEventListener("click", function () {
-      if (row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
-    });
-    
-    elBaseLinksEditor.appendChild(row);
-  }
-
-  if (elBtnAddConfigLink) {
-    elBtnAddConfigLink.addEventListener("click", function () { addConfigLinkRow("", ""); });
-  }
-
   async function loadConfig() {
     try {
       var res  = await apiFetch("/api/config");
@@ -3975,15 +3890,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       $("cfg-page-title").value  = cfg.pageTitle    || "";
       $("cfg-css").value         = cfg.themeCssUrl   || "";
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
-
-      /* Populate base links array */
-      if (elBaseLinksEditor) elBaseLinksEditor.innerHTML = "";
-      var bl = cfg.baseLinks || [];
-      if (Array.isArray(bl)) {
-        bl.forEach(function (item) {
-          addConfigLinkRow(item.label, item.url);
-        });
-      }
     } catch (err) {
       if (err.message !== "401") showErr(elConfigError, "Failed to load config.");
     }
@@ -3996,24 +3902,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     elBtnSaveConfig.disabled    = true;
      elBtnSaveConfig.textContent = "Saving…";
     try {
-      /* Collect dynamic base links */
-      var baseLinks = [];
-      if (elBaseLinksEditor) {
-        var rows = elBaseLinksEditor.querySelectorAll(".link-row");
-        rows.forEach(function (row) {
-          var label = (row.querySelector(".bl-label").value || "").trim();
-          var url   = (row.querySelector(".bl-url").value   || "").trim();
-          if (label) {
-            baseLinks.push({ label: label, url: url });
-          }
-        });
-      }
-
       var payload = {
         pageTitle:      $("cfg-page-title").value.trim()   || null,
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
-        baseLinks:      baseLinks.length > 0 ? baseLinks : null,
       };
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();
@@ -4580,10 +4472,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var btnDeleteVer = document.getElementById("btn-delete-ver");
       if (btnDeleteVer) {
         btnDeleteVer.addEventListener("click", async function() {
-          if (version.is_live) {
-            alert("You cannot delete the live version. Please set another version as live first.");
-            return;
-          }
           var msg = "Are you sure you want to delete version v" + version.version_number + " of '" + family.family_name + "'?";
           if (familyVersions.length === 1) {
             msg += "\\nThis is the last version, so the entire component family will be deleted.";

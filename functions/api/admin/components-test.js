@@ -19,7 +19,7 @@ export async function onRequestGet(context) {
   runTest("Page Title: Page-specific wins over Global", () => {
     const html = renderHub({
       config: { pageTitle: "Global Title" },
-      slugData: { pageTitle: "Page Title" },
+      slugData: { headerInfo: { title: "Page Title" } },
       links: []
     });
     if (!html.includes("<title>Page Title</title>")) {
@@ -119,20 +119,15 @@ export async function onRequestGet(context) {
     }
   });
 
-  // ── TEST 6: Conditional HUB_CSS ──
-  runTest("HUB_CSS Conditional Loading", () => {
-    const htmlWithLinks = renderHub({
+  // ── TEST 6: Default Base Links Omission ──
+  runTest("Default Base Links Omission", () => {
+    const html = renderHub({
+      config: { baseLinks: [{ label: "Base Link", url: "https://g.com" }] },
       links: [{ id: "l1", label: "Link", href: "http://g.com" }]
     });
-    const htmlWithoutLinks = renderHub({
-      links: []
-    });
 
-    if (!htmlWithLinks.includes(".link-btn")) {
-      throw new Error("HUB_CSS not loaded when links are present.");
-    }
-    if (htmlWithoutLinks.includes(".link-btn")) {
-      throw new Error("HUB_CSS loaded when page contains no links.");
+    if (html.includes("links-wrap") || html.includes("link-btn") || html.includes("link-text")) {
+      throw new Error("Legacy links elements are rendered in HTML.");
     }
   });
 
@@ -142,98 +137,132 @@ export async function onRequestGet(context) {
       const family_id = "test-fam-123";
       const now = new Date().toISOString();
 
-      // Clear existing test items first
-      await env.APP_CONFIG.delete(`comp_family:${family_id}`);
-      await env.APP_CONFIG.delete(`comp_ver:${family_id}:1`);
-      await env.APP_CONFIG.delete(`comp_ver:${family_id}:2`);
+      const clearKeys = async () => {
+        await env.APP_CONFIG.delete(`comp_family:${family_id}`);
+        await env.APP_CONFIG.delete(`comp_ver:${family_id}:1`);
+        await env.APP_CONFIG.delete(`comp_ver:${family_id}:2`);
+      };
 
-      // Write mock family
-      const family = {
-        family_id,
-        family_key: "test-fam",
-        family_name: "Test Component",
+      // Helper to invoke components endpoint
+      const componentsApi = async (method, body = null, qs = "") => {
+        const req = new Request(`http://localhost/api/admin/components${qs}`, {
+          method,
+          headers: { "Authorization": `Bearer ${env.ADMIN_TOKEN}` },
+          body: body ? JSON.stringify(body) : null
+        });
+        const { onRequestPost, onRequestPut, onRequestDelete } = await import("./components.js");
+        if (method === "POST") return (await onRequestPost({ request: req, env })).json();
+        if (method === "PUT") return (await onRequestPut({ request: req, env })).json();
+        if (method === "DELETE") return (await onRequestDelete({ request: req, env })).json();
+      };
+
+      // A. Create Inactive Component test
+      await clearKeys();
+      const createRes = await componentsApi("POST", {
+        family_key: "test-fam-state",
+        family_name: "Test Inactive",
         type: "block",
-        status: "active",
-        created_at: now,
-        updated_at: now
-      };
-      await env.APP_CONFIG.put(`comp_family:${family_id}`, JSON.stringify(family));
+        status: "inactive"
+      });
 
-      // Mock page referring to it
+      if (!createRes.success) {
+        results.push({ name: "KV States: create inactive family failed", ok: false, message: createRes.error });
+        return;
+      }
+
+      const checkFam = await env.APP_CONFIG.get(`comp_family:${createRes.family_id}`, { type: "json" });
+      const checkVer = await env.APP_CONFIG.get(`comp_ver:${createRes.family_id}:1`, { type: "json" });
+
+      if (checkFam.status !== "inactive" || checkVer.status !== "inactive") {
+        results.push({ name: "KV States: status save mismatch", ok: false, message: `Expected inactive/inactive, got ${checkFam.status}/${checkVer.status}` });
+        return;
+      }
+      results.push({ name: "KV States: create inactive status verified", ok: true, message: "Pass" });
+
+      // B. Update Family Status Cascade test
+      const updateRes = await componentsApi("PUT", {
+        action: "update_family",
+        family_id: createRes.family_id,
+        status: "active"
+      });
+      if (!updateRes.success) {
+        results.push({ name: "KV States: update family failed", ok: false, message: updateRes.error });
+        return;
+      }
+      const checkFamActive = await env.APP_CONFIG.get(`comp_family:${createRes.family_id}`, { type: "json" });
+      const checkVerActive = await env.APP_CONFIG.get(`comp_ver:${createRes.family_id}:1`, { type: "json" });
+      if (checkFamActive.status !== "active" || checkVerActive.status !== "active") {
+        results.push({ name: "KV States: status cascade active mismatch", ok: false, message: `Expected active/active, got ${checkFamActive.status}/${checkVerActive.status}` });
+        return;
+      }
+      results.push({ name: "KV States: update family status cascade verified", ok: true, message: "Pass" });
+
+      // C. Live Version Deletion test
+      // Duplicate to version 2 so there is a remaining version!
+      const dupRes = await componentsApi("PUT", {
+        action: "duplicate_version",
+        family_id: createRes.family_id,
+        version_number: 1
+      });
+      if (!dupRes.success) {
+        results.push({ name: "KV States: duplicate version failed", ok: false, message: dupRes.error });
+        return;
+      }
+
+      // Mock page layout referencing it
       const pageData = {
-        id: "test-landing-page",
-        components: [family_id],
-        layout: [{ type: "component", id: family_id }]
+        id: "test-page-title",
+        components: [createRes.family_id],
+        layout: [{ type: "component", id: createRes.family_id }]
       };
-      await env.APP_CONFIG.put("hub:test-landing-page", JSON.stringify(pageData));
+      await env.APP_CONFIG.put("hub:test-page-title", JSON.stringify(pageData));
 
-      // 1. Run migration endpoint
-      await env.APP_CONFIG.put(`comp_ver:${family_id}:1`, JSON.stringify({
-        component_id: "ver-1",
-        family_id,
-        version_number: 1,
-        status: "draft",
-        is_live: true
-      }));
-
-      // Trigger PUT migration logic
-      const req = new Request("http://localhost/api/admin/components", {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${env.ADMIN_TOKEN}` },
-        body: JSON.stringify({ action: "migrate_draft_status" })
-      });
-      const compContext = { ...context, request: req };
-      
-      const { onRequestPut } = await import("./components.js");
-      const resp = await onRequestPut(compContext);
-      const respData = await resp.json();
-
-      if (!respData.success) {
-        results.push({ name: "KV Invariants: migration trigger", ok: false, message: respData.error || "Migration failed." });
+      const delRes = await componentsApi("DELETE", null, `?family_id=${createRes.family_id}&version_number=1`);
+      if (!delRes.success) {
+        results.push({ name: "KV States: live version delete failed", ok: false, message: delRes.error });
         return;
       }
 
-      // Check migration result
-      const migratedVer = await env.APP_CONFIG.get(`comp_ver:${family_id}:1`, { type: "json" });
-      if (migratedVer.status !== "inactive") {
-        results.push({ name: "KV Invariants: draft -> inactive migration status check", ok: false, message: "Draft version was not migrated." });
-        return;
-      }
-      results.push({ name: "KV Invariants: migration status", ok: true, message: `Migrated ${respData.migrated_count} records.` });
-
-      // Check recomputed family status invariant (since only inactive version exists, family should be inactive)
-      const recomputedFam = await env.APP_CONFIG.get(`comp_family:${family_id}`, { type: "json" });
-      if (recomputedFam.status !== "inactive") {
-        results.push({ name: "KV Invariants: family status recomputation (inactive)", ok: false, message: `Expected family status to be inactive, got ${recomputedFam.status}` });
-        return;
-      }
-      results.push({ name: "KV Invariants: family status recomputation (inactive)", ok: true, message: "Pass" });
-
-      // Clean up mock references
-      const delReq = new Request(`http://localhost/api/admin/components?family_id=${family_id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${env.ADMIN_TOKEN}` }
-      });
-      const delContext = { ...context, request: delReq };
-      const { onRequestDelete } = await import("./components.js");
-      const delResp = await onRequestDelete(delContext);
-      const delRespData = await delResp.json();
-
-      if (!delRespData.success) {
-        results.push({ name: "KV Invariants: delete cascade execution", ok: false, message: delRespData.error });
+      // Live version record should be deleted
+      const checkVerDel = await env.APP_CONFIG.get(`comp_ver:${createRes.family_id}:1`);
+      if (checkVerDel !== null) {
+        results.push({ name: "KV States: live version record was not deleted", ok: false, message: "Record still exists." });
         return;
       }
 
-      // Assert references are clean
-      const cleanedPage = await env.APP_CONFIG.get("hub:test-landing-page", { type: "json" });
-      if (cleanedPage.components.includes(family_id) || cleanedPage.layout.some(item => item.id === family_id)) {
-        results.push({ name: "KV Invariants: layout reference scrubbing", ok: false, message: "References were not scrubbed from page layout." });
+      // Family layout reference must be preserved because version 2 still exists
+      const pageAfterVerDel = await env.APP_CONFIG.get("hub:test-page-title", { type: "json" });
+      if (!pageAfterVerDel.components.includes(createRes.family_id)) {
+        results.push({ name: "KV States: family reference scrubbed prematurely on single version delete", ok: false, message: "Reference was scrubbed." });
         return;
       }
-      results.push({ name: "KV Invariants: layout reference scrubbing", ok: true, message: "Scrubbed successfully." });
+      results.push({ name: "KV States: live version delete verified", ok: true, message: "Pass" });
 
-      // Clean up mock page
-      await env.APP_CONFIG.delete("hub:test-landing-page");
+      // D. Cascade Deletion on Last Version Delete
+      // Since version 1 was deleted, version 2 is the last remaining version. Delete it now.
+      const delRes2 = await componentsApi("DELETE", null, `?family_id=${createRes.family_id}&version_number=2`);
+      if (!delRes2.success) {
+        results.push({ name: "KV States: last version delete failed", ok: false, message: delRes2.error });
+        return;
+      }
+
+      // The family should have been cleaned up automatically by recomputeFamilyStatusAndLive
+      const checkFamDel = await env.APP_CONFIG.get(`comp_family:${createRes.family_id}`);
+      if (checkFamDel !== null) {
+        results.push({ name: "KV States: family was not deleted after last version deletion", ok: false, message: "Family record still exists." });
+        return;
+      }
+
+      // References should be scrubbed because the family is gone
+      const pageAfterFamDel = await env.APP_CONFIG.get("hub:test-page-title", { type: "json" });
+      if (pageAfterFamDel.components.includes(createRes.family_id)) {
+        results.push({ name: "KV States: references not scrubbed after last version deletion", ok: false, message: "References still exist." });
+        return;
+      }
+      results.push({ name: "KV States: cascade deletion on last version delete verified", ok: true, message: "Pass" });
+
+      await env.APP_CONFIG.delete("hub:test-page-title");
+      await clearKeys();
     };
 
     await runKVTests();

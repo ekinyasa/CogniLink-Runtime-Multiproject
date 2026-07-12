@@ -47,6 +47,7 @@ export async function onRequestGet(context) {
   delete out.footerText;
   delete out.headerHtml;
   delete out.footerHtml;
+  delete out.baseLinks;
 
   return new Response(JSON.stringify({ config: out }), { headers: jsonHeaders() });
 }
@@ -71,6 +72,7 @@ export async function onRequestPut(context) {
   delete updated.footerText;
   delete updated.headerHtml;
   delete updated.footerHtml;
+  delete updated.baseLinks;
 
   // Process known string keys
   for (const k of ALLOWED_STRING_KEYS) {
@@ -94,51 +96,13 @@ export async function onRequestPut(context) {
     }
   }
 
-  // Process baseLinks array
-  if ("baseLinks" in (body || {})) {
-    const bl = body.baseLinks;
-    if (bl === null || !Array.isArray(bl)) {
-      delete updated.baseLinks;
-    } else {
-      const sanitized = [];
-      for (const entry of bl) {
-        if (!entry || typeof entry !== "object") continue;
-        const out = {};
-        
-        // Label is required for an item to be valid
-        const label = (typeof entry.label === "string" ? entry.label.trim() : "").slice(0, 200);
-        if (!label) continue;
-        out.label = label;
-
-        // URL is optional (empty URL means plain text)
-        if (typeof entry.url === "string" && entry.url.trim()) {
-          const normalized = normalizeUrl(entry.url);
-          const urlErr = validateUrl(normalized);
-          if (!urlErr) {
-            out.url = normalized.slice(0, 2000);
-          }
-        }
-
-        // Preserve ID if present (helps with React-like key matching or overrides)
-        if (typeof entry.id === "string") out.id = entry.id.slice(0, 50);
-        
-        sanitized.push(out);
-      }
-      if (sanitized.length > 0) {
-        updated.baseLinks = sanitized;
-      } else {
-        delete updated.baseLinks;
-      }
-    }
-  }
-
   try {
     if (env.LANDING_CONFIG) {
       await env.LANDING_CONFIG.put(CONFIG_KEY, JSON.stringify(updated));
     }
     return new Response(JSON.stringify({ ok: true, config: updated }), { headers: jsonHeaders() });
   } catch (e) {
-    return new Response(JSON.stringify({ error: "Failed to save config." }), {
+    return new Response(JSON.stringify({ error: "Failed to save config in KV." }), {
       status: 500, headers: jsonHeaders(),
     });
   }

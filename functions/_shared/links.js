@@ -31,20 +31,7 @@ export const UTM_PRESETS = {
  * Only url and label are overridable globally; order stays fixed.
  */
 export function getEffectiveBaseLinks(config) {
-  const cfg = config || {};
-  const base = Array.isArray(cfg.baseLinks) ? cfg.baseLinks : [];
-
-  return base.map((link, idx) => {
-    return {
-      id:         link.id || `bl-${idx}`,
-      label:      link.label || "",
-      href:       link.url   || "",
-      utmContent: `primary_${link.id || idx}`,
-      noUtm:      !!link.noUtm,
-      isActive:   true,
-      order:      link.order !== undefined ? link.order : 10 + idx * 10,
-    };
-  });
+  return [];
 }
 
 /**

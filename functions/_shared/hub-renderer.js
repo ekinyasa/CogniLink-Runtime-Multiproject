@@ -37,15 +37,6 @@ export function renderHub({
   const utmsJson = JSON.stringify(defaultUtms);
   const campaignJson = JSON.stringify(campaign || "");
   const modifierJson = JSON.stringify(modifier || "");
-  const linksJson = JSON.stringify(
-    links.map((l) => ({
-      id: l.id,
-      label: l.label,
-      href: l.href,
-      utmContent: l.utmContent,
-      noUtm: !!l.noUtm,
-    }))
-  );
   const ctxTypeEsc = JSON.stringify(contextType);
   const ctxIdEsc = JSON.stringify(contextId);
   const engineMapIdEsc = JSON.stringify(slugData?.engineMapId || "");
@@ -71,25 +62,6 @@ export function renderHub({
     return (a.priority || 0) - (b.priority || 0);
   });
 
-  const linkButtons = links
-    .map((l) => {
-      if (!l.href) {
-        return `<div class="link-text" id="link-${escAttr(l.id)}">${escHtml(l.label)}</div>`;
-      }
-      return (
-        `<a class="link-btn" id="link-${escAttr(l.id)}" ` +
-        `data-link-id="${escAttr(l.id)}" ` +
-        `data-utm-content="${escAttr(l.utmContent)}" ` +
-        `data-no-utm="${l.noUtm ? "1" : "0"}" ` +
-        `href="${escAttr(l.href)}"` +
-        (l.href.startsWith("mailto:") || l.href.startsWith("tel:")
-          ? ""
-          : ` rel="noopener noreferrer" target="_blank"`) +
-        `>${escHtml(l.label)}</a>`
-      );
-    })
-    .join("\n    ");
-
   var layoutHtml = "";
   const hasCustomLayout = !!(slugData && Array.isArray(slugData.layout));
   
@@ -112,8 +84,6 @@ export function renderHub({
         }
       } else if (item.type === "custom_html") {
         layoutHtml += item.content || "";
-      } else if (item.type === "links") {
-        layoutHtml += '<div id="links-wrap">' + linkButtons + '</div>';
       }
     });
   }
@@ -134,7 +104,7 @@ export function renderHub({
     : "";
 
   // Title resolution order
-  const finalTitle = (slugData?.pageTitle && String(slugData.pageTitle).trim()) || 
+  const finalTitle = (slugData?.headerInfo?.title && String(slugData.headerInfo.title).trim()) || 
                      (cfg.pageTitle && String(cfg.pageTitle).trim()) || 
                      "CogniLink";
 
@@ -167,9 +137,7 @@ export function renderHub({
   }
 
   // Load old HUB_CSS conditionally (only when rendering link buttons)
-  const hasLinks = links && links.length > 0;
   const baseCssBlock = `<style>${BASE_CSS}</style>`;
-  const hubCssBlock = hasLinks ? `<style>${HUB_CSS}</style>` : "";
 
   // Body tag: add id for CSS scoping on campaign pages
   const bodyTag = slugId ? `<body id="slug-${escAttr(slugId)}">` : "<body>";
@@ -223,9 +191,7 @@ ${themeCssLink}
   }
 
   /* ── Normal page layout and wrapping ──────────────────────────── */
-  const hasLinksContent = !!(slugData?.customBodyHtml || linkButtons);
-  const linksWrapHtml = hasLinksContent ? `<div id="links-wrap">\n    ${slugData?.customBodyHtml || linkButtons}\n  </div>` : "";
-  const wrapperClass = hasLinks ? "container" : "page-shell";
+  const wrapperClass = "page-shell";
 
   let bodyContent = "";
   if (hasCustomLayout) {
@@ -233,7 +199,6 @@ ${themeCssLink}
   } else {
     bodyContent = `
   ${compsHtml.hero}
-  ${linksWrapHtml}
   ${compsHtml.body}
   ${compsHtml.legal}
   ${compsHtml.footer}`;
@@ -259,7 +224,7 @@ ${themeCssLink}
 <meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
 ${ga4Snippet}${pixelSnippet}
-${baseCssBlock}${hubCssBlock}
+${baseCssBlock}
 ${themeCssLink}${globalCssBlock}${pageCssBlock}
 </head>
 ${bodyTag}
@@ -293,7 +258,7 @@ ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
   var ROUTE_DEFAULTS = JSON.parse('${escJsString(utmsJson)}');
   var CAMPAIGN       = JSON.parse('${escJsString(campaignJson)}');
   var MODIFIER       = JSON.parse('${escJsString(modifierJson)}');
-  var LINKS_META     = JSON.parse('${escJsString(linksJson)}');
+  var LINKS_META     = [];
   var CONTEXT_TYPE   = JSON.parse('${escJsString(ctxTypeEsc)}');
   var CONTEXT_ID     = JSON.parse('${escJsString(ctxIdEsc)}');
   var ENGINE_MAP     = JSON.parse('${escJsString(engineMapIdEsc)}');
