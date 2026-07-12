@@ -788,19 +788,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <p class="card-title">General Settings</p>
         <p class="hint">Changes apply to all hub pages without redeployment.</p>
         
-        <label for="cfg-page-title">Hub Page Title <span class="hint-inline">(shown in browser tab)</span></label>
+        <label for="cfg-page-title">Default Page Title <span class="hint-inline">(shown in browser tab)</span></label>
         <input id="cfg-page-title" type="text" placeholder="Official Links" maxlength="200" />
-        
-        <label for="cfg-header-html">Header HTML <span class="hint-inline">(raw HTML, shown above buttons)</span></label>
-        <textarea id="cfg-header-html" rows="2" placeholder="<p>New album out now!</p>" maxlength="5000"></textarea>
-        
-        <label for="cfg-footer-html">Footer HTML <span class="hint-inline">(raw HTML, shown below buttons)</span></label>
-        <textarea id="cfg-footer-html" rows="2" placeholder="<p>&copy; 2026</p>" maxlength="5000"></textarea>
         
         <label for="cfg-css">External CSS URL <span class="hint-inline">(optional; https only)</span></label>
         <input id="cfg-css" type="url" placeholder="https://cdn.example.com/theme.css" />
         
-        <label for="cfg-custom-css">Custom CSS <span class="hint-inline">(injected as &lt;style&gt; block)</span></label>
+        <label for="cfg-custom-css">Global Custom CSS <span class="hint-inline">(injected as &lt;style&gt; block)</span></label>
         <textarea id="cfg-custom-css" rows="3" placeholder=".hub-header { color: red; }" maxlength="10000"></textarea>
 
         <p id="config-error" class="error hidden"></p>
@@ -826,7 +820,20 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <!-- Right: List -->
       <div class="card list-card">
         <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-          <p class="card-title" style="margin-bottom: 0;">Component Families</p>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <p class="card-title" style="margin-bottom: 0;">Component Families</p>
+            <div style="display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-m); margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="comp-filter-active" checked /> Active
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="comp-filter-inactive" checked /> Inactive
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" id="comp-filter-archived" /> Archived
+              </label>
+            </div>
+          </div>
           <button type="button" id="btn-new-family" class="btn-primary btn-sm" style="width: auto; padding: 6px 12px;">+ New Component</button>
         </div>
         <div style="overflow-x:auto;">
@@ -1839,7 +1846,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       return a.family_name.localeCompare(b.family_name);
     });
     sorted.forEach(function(f) {
-      select.innerHTML += '<option value="' + f.family_id + '">' + esc(f.family_name) + ' (' + esc(f.status) + ')</option>';
+      if (f.status !== "archived") {
+        select.innerHTML += '<option value="' + f.family_id + '">' + esc(f.family_name) + ' (' + esc(f.status) + ')</option>';
+      }
     });
   }
 
@@ -3964,8 +3973,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var data = await res.json();
       var cfg  = data.config || {};
       $("cfg-page-title").value  = cfg.pageTitle    || "";
-      $("cfg-header-html").value = cfg.headerHtml   || "";
-      $("cfg-footer-html").value = cfg.footerHtml   || "";
       $("cfg-css").value         = cfg.themeCssUrl   || "";
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
 
@@ -4004,8 +4011,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
       var payload = {
         pageTitle:      $("cfg-page-title").value.trim()   || null,
-        headerHtml:     $("cfg-header-html").value.trim() || null,
-        footerHtml:     $("cfg-footer-html").value.trim() || null,
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
         baseLinks:      baseLinks.length > 0 ? baseLinks : null,
@@ -4060,14 +4065,35 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   function renderComponentList() {
     var tbody = document.getElementById("tbl-components-body");
     if (!tbody) return;
-    
-    if (componentFamilies.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No components found. Create one to get started!</td></tr>';
+
+    var fActive = document.getElementById("comp-filter-active");
+    var fInactive = document.getElementById("comp-filter-inactive");
+    var fArchived = document.getElementById("comp-filter-archived");
+    if (fActive && !fActive.dataset.bound) {
+      fActive.dataset.bound = "true";
+      fActive.addEventListener("change", renderComponentList);
+      fInactive.addEventListener("change", renderComponentList);
+      fArchived.addEventListener("change", renderComponentList);
+    }
+
+    var filterActive = fActive ? fActive.checked : true;
+    var filterInactive = fInactive ? fInactive.checked : true;
+    var filterArchived = fArchived ? fArchived.checked : false;
+
+    var filteredFamilies = componentFamilies.filter(function(f) {
+      if (f.status === "active") return filterActive;
+      if (f.status === "inactive" || f.status === "draft") return filterInactive;
+      if (f.status === "archived") return filterArchived;
+      return true;
+    });
+
+    if (filteredFamilies.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No matching components found.</td></tr>';
       return;
     }
     
     tbody.innerHTML = "";
-    componentFamilies.forEach(function(family) {
+    filteredFamilies.forEach(function(family) {
       var familyVersions = componentVersions.filter(function(v) { return v.family_id === family.family_id; });
       
       var liveVerObj = familyVersions.find(function(v) { return v.is_live; });
@@ -4084,8 +4110,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var statusBadge = "";
       if (family.status === "active") {
         statusBadge = '<span class="badge-active">active</span>';
-      } else if (family.status === "draft") {
-        statusBadge = '<span class="badge-draft" style="background:var(--border);color:var(--text-m);padding:2px 6px;border-radius:4px;font-size:0.75rem;">draft</span>';
+      } else if (family.status === "inactive" || family.status === "draft") {
+        statusBadge = '<span class="badge-draft" style="background:var(--border);color:var(--text-m);padding:2px 6px;border-radius:4px;font-size:0.75rem;">inactive</span>';
       } else {
         statusBadge = '<span class="badge-inactive">archived</span>';
       }
@@ -4151,7 +4177,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<label for="c-family-status">Family Status</label>' +
           '<select id="c-family-status">' +
             '<option value="active">Active</option>' +
-            '<option value="draft">Draft</option>' +
+            '<option value="inactive">Inactive</option>' +
             '<option value="archived">Archived</option>' +
           '</select>' +
 
@@ -4247,7 +4273,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var isLive = v.is_live;
       var style = isSelected ? "background:var(--accent);color:var(--accent-t);font-weight:bold;" : "background:var(--bg);color:var(--text);";
       var liveBadge = isLive ? ' <span style="font-size:0.65rem;background:var(--success);color:white;padding:1px 4px;border-radius:3px;margin-left:4px;">LIVE</span>' : "";
-      var statusBadge = v.status === "archived" ? ' <span style="font-size:0.65rem;opacity:0.6;">(archived)</span>' : (v.status === "draft" ? ' <span style="font-size:0.65rem;opacity:0.6;">(draft)</span>' : "");
+      var statusBadge = v.status === "archived" ? ' <span style="font-size:0.65rem;opacity:0.6;">(archived)</span>' : ((v.status === "inactive" || v.status === "draft") ? ' <span style="font-size:0.65rem;opacity:0.6;">(inactive)</span>' : "");
       versionTabsHtml += 
         '<button type="button" class="btn-version-pill" data-ver="' + v.version_number + '" style="border:none;padding:6px 12px;border-radius:20px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;' + style + '">' +
           'v' + v.version_number + liveBadge + statusBadge +
@@ -4278,13 +4304,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<label for="e-family-status" style="font-size:0.75rem;">Status</label>' +
           '<select id="e-family-status" style="padding:6px;font-size:0.85rem;width:100%;">' +
             '<option value="active" ' + (family.status === "active" ? "selected" : "") + '>Active</option>' +
-            '<option value="draft" ' + (family.status === "draft" ? "selected" : "") + '>Draft</option>' +
+            '<option value="inactive" ' + ((family.status === "inactive" || family.status === "draft") ? "selected" : "") + '>Inactive</option>' +
             '<option value="archived" ' + (family.status === "archived" ? "selected" : "") + '>Archived</option>' +
           '</select>' +
         '</div>' +
         '<p id="c-family-edit-error" class="error hidden" style="margin-top:10px;"></p>' +
         '<p id="c-family-edit-success" class="success hidden" style="margin-top:10px;"></p>' +
-        '<button type="submit" class="btn-ghost btn-sm" style="margin-top:10px;width:100%;background:var(--surface);">Update Family Details</button>' +
+        '<div style="display:flex;gap:10px;margin-top:10px;">' +
+          '<button type="submit" class="btn-ghost btn-sm" style="flex:1;background:var(--surface);">Update Family Details</button>' +
+          '<button type="button" id="btn-delete-family" class="btn-ghost btn-sm" style="flex:1;color:var(--danger);border-color:var(--danger);background:transparent;">Delete Family</button>' +
+        '</div>' +
       '</form>' +
 
       '<div style="margin-bottom:15px;">' +
@@ -4307,7 +4336,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<label for="c-ver-status">Version Status</label>' +
           '<select id="c-ver-status">' +
             '<option value="active" ' + (version.status === "active" ? "selected" : "") + '>Active</option>' +
-            '<option value="draft" ' + (version.status === "draft" ? "selected" : "") + '>Draft</option>' +
+            '<option value="inactive" ' + ((version.status === "inactive" || version.status === "draft") ? "selected" : "") + '>Inactive</option>' +
             '<option value="archived" ' + (version.status === "archived" ? "selected" : "") + '>Archived</option>' +
           '</select>' +
 
@@ -4342,9 +4371,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">' +
             '<button type="submit" class="btn-primary" style="grid-column: 1 / -1;">Save Version</button>' +
-            '<button type="button" id="btn-duplicate-ver" class="btn-ghost btn-sm" style="background:var(--bg);">Duplicate v' + version.version_number + ' → v' + (version.version_number + 1) + '</button>' +
+            '<button type="button" id="btn-duplicate-ver" class="btn-ghost btn-sm" style="background:var(--bg);flex:1;">Duplicate v' + version.version_number + ' → v' + (version.version_number + 1) + '</button>' +
             (!isVersionLive && !isVersionArchived ? 
-              '<button type="button" id="btn-set-live" class="btn-ghost btn-sm" style="color:var(--success);border-color:var(--success);background:transparent;">Make Live/Default</button>' : "") +
+              '<button type="button" id="btn-set-live" class="btn-ghost btn-sm" style="color:var(--success);border-color:var(--success);background:transparent;flex:1;">Make Live/Default</button>' : "") +
+            '<button type="button" id="btn-delete-ver" class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);background:transparent;flex:1;grid-column:1/-1;">Delete Version v' + version.version_number + '</button>' +
           '</div>' +
         '</form>' : '<p class="hint">No version found.</p>');
     
@@ -4503,6 +4533,85 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           } catch(err) {
             errEl.textContent = "Request failed.";
             errEl.classList.remove("hidden");
+          }
+        });
+      }
+
+      var btnDeleteFamily = document.getElementById("btn-delete-family");
+      if (btnDeleteFamily) {
+        btnDeleteFamily.addEventListener("click", async function() {
+          var matchingPages = pagesStore.filter(function(p) {
+            return Array.isArray(p.components) && p.components.indexOf(family.family_id) !== -1;
+          }).map(function(p) { return p.id; });
+          var matchingSlugs = slugCache.filter(function(s) {
+            return Array.isArray(s.components) && s.components.indexOf(family.family_id) !== -1;
+          }).map(function(s) { return s.slug; });
+          
+          var msg = "Are you sure you want to delete the component family '" + family.family_name + "'?\nThis will hard-delete the family and all its versions.";
+          var totalUsage = matchingPages.length + matchingSlugs.length;
+          if (totalUsage > 0) {
+            msg += "\n\nWARNING: This component is currently used by " + totalUsage + " layouts:\n" +
+                   (matchingPages.length ? "- Pages: " + matchingPages.join(", ") + "\n" : "") +
+                   (matchingSlugs.length ? "- Slugs: " + matchingSlugs.join(", ") : "");
+          }
+          
+          if (!confirm(msg)) return;
+          
+          try {
+            var res = await apiFetch("/api/admin/components?family_id=" + encodeURIComponent(family.family_id), {
+              method: "DELETE"
+            });
+            var data = await res.json();
+            if (!res.ok) {
+              alert(data.error || "Delete failed");
+              return;
+            }
+            selectedFamilyId = null;
+            selectedVersionNumber = null;
+            await loadPages();
+            await loadSlugs();
+            loadComponents();
+          } catch(err) {
+            alert("Request failed: " + err.message);
+          }
+        });
+      }
+
+      var btnDeleteVer = document.getElementById("btn-delete-ver");
+      if (btnDeleteVer) {
+        btnDeleteVer.addEventListener("click", async function() {
+          if (version.is_live) {
+            alert("You cannot delete the live version. Please set another version as live first.");
+            return;
+          }
+          var msg = "Are you sure you want to delete version v" + version.version_number + " of '" + family.family_name + "'?";
+          if (familyVersions.length === 1) {
+            msg += "\nThis is the last version, so the entire component family will be deleted.";
+          }
+          if (!confirm(msg)) return;
+          
+          try {
+            var res = await apiFetch("/api/admin/components?family_id=" + encodeURIComponent(family.family_id) + "&version_number=" + version.version_number, {
+              method: "DELETE"
+            });
+            var data = await res.json();
+            if (!res.ok) {
+              alert(data.error || "Delete failed");
+              return;
+            }
+            
+            if (familyVersions.length === 1) {
+              selectedFamilyId = null;
+              selectedVersionNumber = null;
+              await loadPages();
+              await loadSlugs();
+            } else {
+              var remaining = familyVersions.filter(function(v) { return v.version_number !== version.version_number; });
+              selectedVersionNumber = Math.max.apply(null, remaining.map(function(v) { return v.version_number; }));
+            }
+            loadComponents();
+          } catch(err) {
+            alert("Request failed: " + err.message);
           }
         });
       }

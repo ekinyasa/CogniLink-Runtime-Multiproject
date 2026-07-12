@@ -2,7 +2,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../_shared/auth.js";
 
 const CONFIG_KEY = "hub_config";
 
-const ALLOWED_STRING_KEYS = ["themeCssUrl", "headerHtml", "footerHtml", "customStyleCss", "pageTitle"];
+const ALLOWED_STRING_KEYS = ["themeCssUrl", "customStyleCss", "pageTitle"];
 
 /* ── URL helpers ─────────────────────────────────────────────────── */
 function normalizeUrl(str) {
@@ -39,20 +39,14 @@ export async function onRequestGet(context) {
   const { request, env } = context;
   if (!verifyToken(request, env)) return unauthorized();
 
-  let cfg = {};
-  if (env.LANDING_CONFIG) {
-    try {
-      cfg = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
-    } catch (_) {}
-  }
+  const cfg = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
 
   // Backward-compat: migrate old field names for response
   const out = { ...cfg };
-  if (!out.headerHtml && out.headerText) { out.headerHtml = out.headerText; }
-  if (!out.footerHtml && out.footerText) { out.footerHtml = out.footerText; }
-  // Clean old names from response
   delete out.headerText;
   delete out.footerText;
+  delete out.headerHtml;
+  delete out.footerHtml;
 
   return new Response(JSON.stringify({ config: out }), { headers: jsonHeaders() });
 }
@@ -69,17 +63,14 @@ export async function onRequestPut(context) {
     });
   }
 
-  let existing = {};
-  if (env.LANDING_CONFIG) {
-    try {
-      existing = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
-    } catch (_) {}
-  }
+  const existing = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
 
   // Start from existing, remove old field names
   const updated = { ...existing };
   delete updated.headerText;
   delete updated.footerText;
+  delete updated.headerHtml;
+  delete updated.footerHtml;
 
   // Process known string keys
   for (const k of ALLOWED_STRING_KEYS) {

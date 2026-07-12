@@ -133,13 +133,14 @@ export function renderHub({
     ? `<link rel="stylesheet" href="${escAttr(cfg.themeCssUrl)}">`
     : "";
 
-  // Header / footer: per-slug overrides global config
-  // Backward-compat: read headerText/footerText if headerHtml/footerHtml missing
-  // Use ?? so empty string is preserved; undefined/null falls through
-  const globalHeader = cfg.headerHtml ?? cfg.headerText ?? null;
-  const globalFooter = cfg.footerHtml ?? cfg.footerText ?? null;
-  const headerRaw = (slugData?.customHeaderHtml ?? null) || globalHeader || "";
-  const footerRaw = (slugData?.customFooterHtml ?? null) || globalFooter || "";
+  // Title resolution order
+  const finalTitle = (slugData?.pageTitle && String(slugData.pageTitle).trim()) || 
+                     (cfg.pageTitle && String(cfg.pageTitle).trim()) || 
+                     "CogniLink";
+
+  // Per-page header/footers only (global fallbacks headerHtml/footerHtml are removed)
+  const headerRaw = slugData?.customHeaderHtml || "";
+  const footerRaw = slugData?.customFooterHtml || "";
 
   // Raw HTML injection (no escaping)
   const headerHtml = headerRaw
@@ -149,18 +150,26 @@ export function renderHub({
     ? `<div class="hub-footer">${footerRaw}</div>`
     : "";
 
-  // Custom CSS: per-slug overrides global (undefined → null → fallback)
-  const customCssRaw = (slugData?.customStyleCss ?? null) || cfg.customStyleCss || "";
+  // Global Custom CSS block (unscoped)
+  const globalCssBlock = cfg.customStyleCss
+    ? `\n<style>\n${cfg.customStyleCss}\n</style>`
+    : "";
 
-  // Slug-scoped CSS isolation
+  // Page-level Custom CSS block (scoped)
+  const pageCssRaw = slugData?.customStyleCss || "";
   const slugId = slug || "";
-  let customStyleBlock = "";
-  if (customCssRaw && slugId) {
-    const scoped = scopeCSS(customCssRaw, slugId);
-    customStyleBlock = `\n<style>\n#slug-${escAttr(slugId)} {}\n${scoped}\n</style>`;
-  } else if (customCssRaw) {
-    customStyleBlock = `\n<style>\n${customCssRaw}\n</style>`;
+  let pageCssBlock = "";
+  if (pageCssRaw && slugId) {
+    const scoped = scopeCSS(pageCssRaw, slugId);
+    pageCssBlock = `\n<style>\n#slug-${escAttr(slugId)} {}\n${scoped}\n</style>`;
+  } else if (pageCssRaw) {
+    pageCssBlock = `\n<style>\n${pageCssRaw}\n</style>`;
   }
+
+  // Load old HUB_CSS conditionally (only when rendering link buttons)
+  const hasLinks = links && links.length > 0;
+  const baseCssBlock = `<style>${BASE_CSS}</style>`;
+  const hubCssBlock = hasLinks ? `<style>${HUB_CSS}</style>` : "";
 
   // Body tag: add id for CSS scoping on campaign pages
   const bodyTag = slugId ? `<body id="slug-${escAttr(slugId)}">` : "<body>";
@@ -193,54 +202,68 @@ export function renderHub({
   /* ── 404 variant ──────────────────────────────────────────────── */
   if (notFound) {
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>${escHtml(cfg.pageTitle || "Hub")}</title>
+<title>${escHtml(finalTitle)}</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 ${ga4Snippet}${pixelSnippet}
-<style>${HUB_CSS}</style>
+${baseCssBlock}
 ${themeCssLink}
+</style>
 </head>
 <body>
-<div class="container">
-  <p class="not-found-msg">That link isn't active.</p>
+<div class="page-shell">
+  <p class="not-found-msg" style="text-align:center;font-size:.9375rem;opacity:.55;margin:2.5rem 0;">Aradığınız sayfa aktif değil veya bulunamadı.</p>
 </div>
 </body>
 </html>`;
   }
 
+  /* ── Normal page layout and wrapping ──────────────────────────── */
+  const hasLinksContent = !!(slugData?.customBodyHtml || linkButtons);
+  const linksWrapHtml = hasLinksContent ? `<div id="links-wrap">\n    ${slugData?.customBodyHtml || linkButtons}\n  </div>` : "";
+  const wrapperClass = hasLinks ? "container" : "page-shell";
+
+  let bodyContent = "";
+  if (hasCustomLayout) {
+    bodyContent = layoutHtml;
+  } else {
+    bodyContent = `
+  ${compsHtml.hero}
+  ${linksWrapHtml}
+  ${compsHtml.body}
+  ${compsHtml.legal}
+  ${compsHtml.footer}`;
+  }
+
+  const renderedContent = (headerHtml || bodyContent.trim() || footerHtml)
+    ? `<div class="${wrapperClass}">
+  ${headerHtml}
+  ${bodyContent}
+  ${footerHtml}
+</div>`
+    : "";
+
   /* ── Normal hub ───────────────────────────────────────────────── */
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>${escHtml(cfg.pageTitle || "Hub")}</title>
+<title>${escHtml(finalTitle)}</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
 ${ga4Snippet}${pixelSnippet}
-<style>${HUB_CSS}</style>
-${themeCssLink}${customStyleBlock}
+${baseCssBlock}${hubCssBlock}
+${themeCssLink}${globalCssBlock}${pageCssBlock}
 </head>
 ${bodyTag}
-<div class="container">
-  ${headerHtml}
-  ${hasCustomLayout ? layoutHtml : `
-  ${compsHtml.hero}
-  <div id="links-wrap">
-    ${slugData?.customBodyHtml || linkButtons}
-  </div>
-  ${compsHtml.body}
-  ${compsHtml.legal}
-  ${compsHtml.footer}
-  `}
-  ${footerHtml}
-</div>
+${renderedContent}
 
 ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
 
@@ -575,8 +598,15 @@ function escJsString(jsonStr) {
 }
 
 /* ── CSS ────────────────────────────────────────────────────────── */
+const BASE_CSS = `
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;min-height:100dvh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+img,video{max-width:100%;height:auto}
+button,input,select,textarea{font-family:inherit}
+.page-shell{width:100%;max-width:none;margin:0;padding:0;display:block}
+`;
+
 const HUB_CSS = `
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#F8F8F6;--text:#111111;
   --btn-bg:#111111;--btn-text:#F8F8F6;

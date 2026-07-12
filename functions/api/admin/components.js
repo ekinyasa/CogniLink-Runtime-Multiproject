@@ -94,7 +94,7 @@ export async function onRequestPost(context) {
       family_key: family_key.trim(),
       family_name: family_name.trim(),
       type: type.trim(),
-      status: status || "active",
+      status: (status === "draft" ? "inactive" : status) || "active",
       created_at: now,
       updated_at: now
     };
@@ -125,6 +125,7 @@ export async function onRequestPost(context) {
         env.APP_CONFIG.put(`comp_family:${family_id}`, JSON.stringify(family)),
         env.APP_CONFIG.put(`comp_ver:${family_id}:1`, JSON.stringify(version))
       ]);
+      await recomputeFamilyStatusAndLive(env, family_id, now);
       await syncLiveComponentsIndex(env);
     }
 
@@ -159,11 +160,12 @@ export async function onRequestPut(context) {
         family_key: family_key ? family_key.trim() : existingFamily.family_key,
         family_name: family_name ? family_name.trim() : existingFamily.family_name,
         type: type ? type.trim() : existingFamily.type,
-        status: status || existingFamily.status,
+        status: (status === "draft" ? "inactive" : status) || existingFamily.status,
         updated_at: now
       };
 
       await env.APP_CONFIG.put(`comp_family:${family_id}`, JSON.stringify(updatedFamily));
+      await recomputeFamilyStatusAndLive(env, family_id, now);
       await syncLiveComponentsIndex(env);
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
     }
@@ -175,16 +177,27 @@ export async function onRequestPut(context) {
       const existingVersion = await env.APP_CONFIG.get(`comp_ver:${family_id}:${version_number}`, { type: "json" });
       if (!existingVersion) throw new Error("Version not found");
 
+      const cleanStatus = status === "draft" ? "inactive" : status;
+
       // Check live status constraint
-      if (status === "archived" && existingVersion.is_live) {
+      if (cleanStatus === "archived" && existingVersion.is_live) {
         throw new Error("Archived version cannot be live/default. Please set another version as live first.");
+      }
+
+      let isLive = existingVersion.is_live;
+      let isDefault = existingVersion.is_default;
+      if (cleanStatus === "archived" || cleanStatus === "inactive") {
+        isLive = false;
+        isDefault = false;
       }
 
       const updatedVersion = {
         ...existingVersion,
         name: name ? name.trim() : existingVersion.name,
         type: type ? type.trim() : existingVersion.type,
-        status: status || existingVersion.status,
+        status: cleanStatus || existingVersion.status,
+        is_live: isLive,
+        is_default: isDefault,
         title: title !== undefined ? title.trim() : existingVersion.title,
         body: body !== undefined ? body.trim() : existingVersion.body,
         cta_label: cta_label !== undefined ? cta_label.trim() : existingVersion.cta_label,
@@ -195,10 +208,8 @@ export async function onRequestPut(context) {
         updated_at: now
       };
 
-      await Promise.all([
-        env.APP_CONFIG.put(`comp_ver:${family_id}:${version_number}`, JSON.stringify(updatedVersion)),
-        updateFamilyTimestamp(env, family_id, now)
-      ]);
+      await env.APP_CONFIG.put(`comp_ver:${family_id}:${version_number}`, JSON.stringify(updatedVersion));
+      await recomputeFamilyStatusAndLive(env, family_id, now);
       await syncLiveComponentsIndex(env);
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
@@ -208,11 +219,9 @@ export async function onRequestPut(context) {
       const { family_id, version_number } = data;
       if (!family_id || !version_number) throw new Error("Missing family_id or version_number");
 
-      // Fetch the source version
       const sourceVersion = await env.APP_CONFIG.get(`comp_ver:${family_id}:${version_number}`, { type: "json" });
       if (!sourceVersion) throw new Error("Source version not found");
 
-      // Find the max version number currently in KV for this family
       const verKeys = await listAllKeys(env, `comp_ver:${family_id}:`);
       let maxVer = 1;
       for (const k of verKeys) {
@@ -228,17 +237,15 @@ export async function onRequestPut(context) {
         version_number: newVerNum,
         version_label: `v${newVerNum}`,
         name: `${sourceVersion.name.replace(/ v\d+$/, "")} v${newVerNum}`,
-        status: "draft", // new version starts as draft
+        status: "inactive", // Duplicated starts as inactive
         is_live: false,
         is_default: false,
         created_at: now,
         updated_at: now
       };
 
-      await Promise.all([
-        env.APP_CONFIG.put(`comp_ver:${family_id}:${newVerNum}`, JSON.stringify(newVersion)),
-        updateFamilyTimestamp(env, family_id, now)
-      ]);
+      await env.APP_CONFIG.put(`comp_ver:${family_id}:${newVerNum}`, JSON.stringify(newVersion));
+      await recomputeFamilyStatusAndLive(env, family_id, now);
       await syncLiveComponentsIndex(env);
 
       return new Response(JSON.stringify({ success: true, version_number: newVerNum }), { status: 200, headers: jsonHeaders() });
@@ -248,14 +255,12 @@ export async function onRequestPut(context) {
       const { family_id, version_number } = data;
       if (!family_id || !version_number) throw new Error("Missing family_id or version_number");
 
-      // Fetch target version to verify status
       const targetVersion = await env.APP_CONFIG.get(`comp_ver:${family_id}:${version_number}`, { type: "json" });
       if (!targetVersion) throw new Error("Target version not found");
-      if (targetVersion.status === "archived") {
-        throw new Error("Archived version cannot be set as live/default.");
+      if (targetVersion.status === "archived" || targetVersion.status === "inactive") {
+        throw new Error("Archived or Inactive version cannot be set as live/default.");
       }
 
-      // Fetch all versions of this family
       const verKeys = await listAllKeys(env, `comp_ver:${family_id}:`);
       const versions = await Promise.all(
         verKeys.map(k => env.APP_CONFIG.get(k, { type: "json" }))
@@ -269,7 +274,7 @@ export async function onRequestPut(context) {
           if (!ver.is_live || !ver.is_default || ver.status !== "active") {
             ver.is_live = true;
             ver.is_default = true;
-            ver.status = "active"; // Live must be active
+            ver.status = "active";
             ver.updated_at = now;
             changed = true;
           }
@@ -286,11 +291,44 @@ export async function onRequestPut(context) {
         }
       }
 
-      updates.push(updateFamilyTimestamp(env, family_id, now));
       await Promise.all(updates);
+      await recomputeFamilyStatusAndLive(env, family_id, now);
       await syncLiveComponentsIndex(env);
 
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
+    }
+
+    if (action === "migrate_draft_status") {
+      const [familyKeys, verKeys] = await Promise.all([
+        listAllKeys(env, "comp_family:"),
+        listAllKeys(env, "comp_ver:")
+      ]);
+
+      let migratedCount = 0;
+
+      for (const fk of familyKeys) {
+        const family = await env.APP_CONFIG.get(fk, { type: "json" });
+        if (family && (family.status === "draft" || !family.status)) {
+          family.status = "inactive";
+          family.updated_at = now;
+          await env.APP_CONFIG.put(fk, JSON.stringify(family));
+          migratedCount++;
+        }
+      }
+
+      for (const vk of verKeys) {
+        const version = await env.APP_CONFIG.get(vk, { type: "json" });
+        if (version && (version.status === "draft" || !version.status)) {
+          version.status = "inactive";
+          version.updated_at = now;
+          await env.APP_CONFIG.put(vk, JSON.stringify(version));
+          migratedCount++;
+        }
+      }
+
+      await syncLiveComponentsIndex(env);
+
+      return new Response(JSON.stringify({ success: true, migrated_count: migratedCount }), { status: 200, headers: jsonHeaders() });
     }
 
     if (action === "sync_index") {
@@ -301,6 +339,138 @@ export async function onRequestPut(context) {
     throw new Error("Invalid action");
   } catch (err) {
     return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500, headers: jsonHeaders() });
+  }
+}
+
+export async function onRequestDelete(context) {
+  const { request, env } = context;
+  if (!verifyToken(request, env)) return unauthorized();
+
+  try {
+    const url = new URL(request.url);
+    const family_id = url.searchParams.get("family_id");
+    const version_number = url.searchParams.get("version_number");
+
+    if (!family_id) {
+      throw new Error("Missing family_id");
+    }
+
+    if (!env.APP_CONFIG) {
+      throw new Error("APP_CONFIG storage is not available");
+    }
+
+    const now = new Date().toISOString();
+
+    if (version_number) {
+      const verNum = parseInt(version_number);
+      const versionKey = `comp_ver:${family_id}:${verNum}`;
+      
+      await env.APP_CONFIG.delete(versionKey);
+      await recomputeFamilyStatusAndLive(env, family_id, now);
+      await syncLiveComponentsIndex(env);
+    } else {
+      await env.APP_CONFIG.delete(`comp_family:${family_id}`);
+      
+      const verKeys = await listAllKeys(env, `comp_ver:${family_id}:`);
+      await Promise.all(verKeys.map(k => env.APP_CONFIG.delete(k)));
+      
+      await cleanReferencesFromKV(env, family_id);
+      await syncLiveComponentsIndex(env);
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
+  } catch (err) {
+    return new Response(JSON.stringify({ success: false, error: err.message }), { status: 500, headers: jsonHeaders() });
+  }
+}
+
+async function recomputeFamilyStatusAndLive(env, family_id, now) {
+  if (!env.APP_CONFIG) return;
+
+  const family = await env.APP_CONFIG.get(`comp_family:${family_id}`, { type: "json" });
+  if (!family) return;
+
+  const verKeys = await listAllKeys(env, `comp_ver:${family_id}:`);
+  const versions = [];
+  for (const k of verKeys) {
+    const val = await env.APP_CONFIG.get(k, { type: "json" });
+    if (val) versions.push(val);
+  }
+
+  if (versions.length === 0) {
+    await env.APP_CONFIG.delete(`comp_family:${family_id}`);
+    return;
+  }
+
+  let status = "archived";
+  if (versions.some(v => v.status === "active")) {
+    status = "active";
+  } else if (versions.some(v => v.status === "inactive" || v.status === "draft")) {
+    status = "inactive";
+  }
+
+  family.status = status;
+  family.updated_at = now;
+  await env.APP_CONFIG.put(`comp_family:${family_id}`, JSON.stringify(family));
+}
+
+async function cleanReferencesFromKV(env, family_id) {
+  if (env.SLUG_LINKS) {
+    let cursor;
+    do {
+      const page = await env.SLUG_LINKS.list({ cursor, limit: 100 });
+      for (const key of page.keys) {
+        try {
+          const slugData = await env.SLUG_LINKS.get(key.name, { type: "json" });
+          if (slugData) {
+            let changed = false;
+            if (Array.isArray(slugData.components)) {
+              const len = slugData.components.length;
+              slugData.components = slugData.components.filter(id => id !== family_id);
+              if (slugData.components.length !== len) changed = true;
+            }
+            if (Array.isArray(slugData.layout)) {
+              const len = slugData.layout.length;
+              slugData.layout = slugData.layout.filter(item => !(item.type === "component" && item.id === family_id));
+              if (slugData.layout.length !== len) changed = true;
+            }
+            if (changed) {
+              await env.SLUG_LINKS.put(key.name, JSON.stringify(slugData));
+            }
+          }
+        } catch (e) {}
+      }
+      cursor = page.list_complete ? undefined : page.cursor;
+    } while (cursor);
+  }
+
+  if (env.APP_CONFIG) {
+    let cursor;
+    do {
+      const page = await env.APP_CONFIG.list({ prefix: "hub:", cursor, limit: 100 });
+      for (const key of page.keys) {
+        try {
+          const pageData = await env.APP_CONFIG.get(key.name, { type: "json" });
+          if (pageData) {
+            let changed = false;
+            if (Array.isArray(pageData.components)) {
+              const len = pageData.components.length;
+              pageData.components = pageData.components.filter(id => id !== family_id);
+              if (pageData.components.length !== len) changed = true;
+            }
+            if (Array.isArray(pageData.layout)) {
+              const len = pageData.layout.length;
+              pageData.layout = pageData.layout.filter(item => !(item.type === "component" && item.id === family_id));
+              if (pageData.layout.length !== len) changed = true;
+            }
+            if (changed) {
+              await env.APP_CONFIG.put(key.name, JSON.stringify(pageData));
+            }
+          }
+        } catch (e) {}
+      }
+      cursor = page.list_complete ? undefined : page.cursor;
+    } while (cursor);
   }
 }
 
@@ -348,7 +518,6 @@ async function syncLiveComponentsIndex(env) {
     for (const r of rows) if (r) versions.push(r);
   }
 
-  // Map family status and key by family_id
   const familyStatusMap = {};
   const familyKeyMap = {};
   families.forEach(f => {
@@ -358,7 +527,6 @@ async function syncLiveComponentsIndex(env) {
     }
   });
 
-  // Find live and active versions of all families
   const liveComponents = versions
     .filter(v => v && v.is_live && v.status === "active")
     .map(v => ({
@@ -367,6 +535,5 @@ async function syncLiveComponentsIndex(env) {
       family_key: familyKeyMap[v.family_id] || ""
     }));
 
-  // Save to comp_live index key
   await env.APP_CONFIG.put("comp_live", JSON.stringify(liveComponents));
 }
