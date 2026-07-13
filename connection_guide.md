@@ -120,7 +120,7 @@ When creating the token in the Cloudflare Dashboard (**My Profile** ➔ **API To
 1. **Token Name:** Give it a descriptive name (e.g., `CogniLink Analytics Engine Reader`).
 2. **Permissions:**
    - **Type:** `Account`
-   - **Feature:** `Cloudflare Analytics Engine`
+   - **Feature:** `Cloudflare Analytics Engine` Account Analytics
    - **Access Level:** `Read`
 3. **Account Resources:**
    - **Type:** `Include`
