@@ -79,7 +79,7 @@ export async function onRequestGet(context) {
     const baseCssIdx = html.indexOf("*,*::before,*::after{box-sizing:border-box}");
     const themeCssIdx = html.indexOf('href="https://example.com/theme.css"');
     const globalCssIdx = html.indexOf(".global-class { color: red; }");
-    const pageCssIdx = html.indexOf("#slug-mypage .page-class");
+    const pageCssIdx = html.indexOf(".page-class { color: blue; }");
 
     if (baseCssIdx === -1 || themeCssIdx === -1 || globalCssIdx === -1 || pageCssIdx === -1) {
       throw new Error("One or more style declarations are missing.");
@@ -90,22 +90,24 @@ export async function onRequestGet(context) {
     }
   });
 
-  // ── TEST 4: Scoping Isolation ──
-  runTest("Scoping: Global CSS unscoped, Page CSS scoped", () => {
+  // ── TEST 4: CSS Unscoped Verification ──
+  runTest("CSS Unscoped: Page CSS matches byte-for-byte and retains media queries", () => {
+    const complexCss = `@media (max-width: 768px) {\n  :root { --color: red; }\n  body { background: blue; }\n  .hero:has(> .title) { display: grid; }\n}`;
     const html = renderHub({
       config: {
-        customStyleCss: ".global-class { color: red; }"
+        customStyleCss: "body { margin: 0; }"
       },
       slugData: {
-        customStyleCss: ".page-class { color: blue; }"
+        customStyleCss: complexCss
       },
       slug: "page1"
     });
-    if (html.includes("#slug-page1 .global-class")) {
-      throw new Error("Global CSS was scoped incorrectly.");
+
+    if (!html.includes(complexCss)) {
+      throw new Error("Complex page CSS was modified or not preserved byte-for-byte.");
     }
-    if (!html.includes("#slug-page1 .page-class")) {
-      throw new Error("Page CSS was not scoped.");
+    if (!html.includes("body { margin: 0; }")) {
+      throw new Error("Global config CSS was modified or missing.");
     }
   });
 

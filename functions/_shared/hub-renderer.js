@@ -125,14 +125,11 @@ export function renderHub({
     ? `\n<style>\n${cfg.customStyleCss}\n</style>`
     : "";
 
-  // Page-level Custom CSS block (scoped)
-  const pageCssRaw = slugData?.customStyleCss || "";
+  // Page-level Custom CSS block (unscoped)
   const slugId = slug || "";
+  const pageCssRaw = slugData?.customStyleCss || "";
   let pageCssBlock = "";
-  if (pageCssRaw && slugId) {
-    const scoped = scopeCSS(pageCssRaw, slugId);
-    pageCssBlock = `\n<style>\n#slug-${escAttr(slugId)} {}\n${scoped}\n</style>`;
-  } else if (pageCssRaw) {
+  if (pageCssRaw) {
     pageCssBlock = `\n<style>\n${pageCssRaw}\n</style>`;
   }
 
