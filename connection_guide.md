@@ -83,12 +83,33 @@ This document serves as a complete reference for all KV Namespaces and Cloudflar
 
 ---
 
-## 🔑 Required Credentials & Settings
+## 🔑 Variables, Secrets & API Tokens Settings
 
-To allow querying and writing to the Analytics Engine, the following variables must be configured in your Cloudflare Pages Dashboard environment:
-- `CF_ACCOUNT_ID`: Your Cloudflare Account ID (needed to access the SQL Endpoint at `https://api.cloudflare.com/client/v4/accounts/.../analytics_engine/sql`).
-- `CF_AE_API_TOKEN`: Cloudflare API Token carrying `Analytics Engine:Read` permissions.
-- `ADMIN_TOKEN` / `EKIN_ADMIN_TOKEN` / `NILUFER_ADMIN_TOKEN`: Tokens for API administrative access validation.
+To run the application, the environment variables must be defined in the following locations:
+
+### A. Cloudflare Pages Dashboard (Production/Preview Environments)
+1. Go to **Workers & Pages** ➔ **[Your Pages Project]** ➔ **Settings** ➔ **Environment variables**.
+2. Under **Environment variables**, click **Add variables** for both **Production** and **Preview** environments.
+3. Configure the following keys:
+   - `ADMIN_TOKEN` / `EKIN_ADMIN_TOKEN` / `NILUFER_ADMIN_TOKEN`: Administrative auth token (Secret/Encrypt recommended).
+   - `CF_ACCOUNT_ID`: Cloudflare Account ID (String).
+   - `CF_AE_API_TOKEN`: Cloudflare API token with `Analytics Engine:Read` permission (Secret).
+   - `EXPOSURE_TOKEN_SECRET`: Custom cryptographic key used for variant tracking signature validation (Secret).
+   - `GA4_ID`: Google Analytics measurement ID (e.g. `G-XXXXXX`) (String).
+   - `META_PIXEL_ID`: Meta Pixel ID (String).
+   - `CUSTOM_DOMAIN`: Custom primary domain name mapped to the deployment (e.g. `runtime.ekinyasa.online`) (String).
+
+### B. Local Development Environment
+Create or edit the `.dev.vars` file in the root directory of your project (this file is excluded from Git). Add keys in `KEY=value` format:
+```env
+ADMIN_TOKEN=O+nAq0Kpgq+6zJsIdeU3JY...
+CF_ACCOUNT_ID=ab0a0fd02766e5da...
+CF_AE_API_TOKEN=cfut_LejbmxSy9OWlz...
+EXPOSURE_TOKEN_SECRET=your_local_secret_key
+GA4_ID=G-DWCN82754X
+META_PIXEL_ID=
+CUSTOM_DOMAIN=localhost:8788
+```
 
 ---
 
@@ -172,7 +193,7 @@ Bu belge, CogniLink Runtime tarafından kullanılan tüm KV Veri Tabanı (Namesp
 ### 8. `ANALYTICS_DATA`
 - **Ne depolanır:** Önbelleğe alınmış analiz raporları ve grafik veri özetleri.
 - **Admin Panel Okuma/Yazma İşlemleri:**
-  - Analiz sekmesinde trafik grafiklerini çizmek için okunur.
+  - Okunur by the Analytics Dashboard tab to display traffic graphs.
 
 ### 9. `GUARD_CACHE`
 - **Ne depolanır:** Güvenlik anahtarları, istek sınırlandırma (rate limit) kayıtları ve geçiş logları.
@@ -200,12 +221,33 @@ Bu belge, CogniLink Runtime tarafından kullanılan tüm KV Veri Tabanı (Namesp
 
 ---
 
-## 🔑 Gerekli Kimlik Bilgileri ve Ayarlar
+## 🔑 Değişkenler, Gizli Anahtarlar ve API Token Tanımlamaları
 
-Analiz Motoruna yazma ve sorgulama yapılabilmesi için Cloudflare Pages Panelinde aşağıdaki ortam değişkenlerinin (environment variables) tanımlı olması gerekir:
-- `CF_ACCOUNT_ID`: Cloudflare Hesap ID'niz (sorguların gönderildiği `https://api.cloudflare.com/client/v4/accounts/.../analytics_engine/sql` adresi için gereklidir).
-- `CF_AE_API_TOKEN`: `Analytics Engine:Read` yetkilerine sahip Cloudflare API anahtarı.
-- `ADMIN_TOKEN` / `EKIN_ADMIN_TOKEN` / `NILUFER_ADMIN_TOKEN`: Yönetici API erişim kontrol anahtarları.
+Uygulamanın çalışması için gerekli ortam değişkenleri (environment variables) şu konumlarda tanımlanmalıdır:
+
+### A. Cloudflare Pages Paneli (Production & Preview Ortamları)
+1. **Workers & Pages** ➔ **[Pages Projeniz]** ➔ **Settings** ➔ **Environment variables** sayfasına gidin.
+2. **Environment variables** başlığı altında hem **Production** hem de **Preview** ortamları için **Add variables** butonuna tıklayın.
+3. Aşağıdaki değişkenleri tanımlayın:
+   - `ADMIN_TOKEN` / `EKIN_ADMIN_TOKEN` / `NILUFER_ADMIN_TOKEN`: Yönetici doğrulama anahtarı (Şifrelenmiş/Secret yapılması önerilir).
+   - `CF_ACCOUNT_ID`: Cloudflare Hesap ID'niz (Metin/String).
+   - `CF_AE_API_TOKEN`: `Analytics Engine:Read` iznine sahip API anahtarı (Secret).
+   - `EXPOSURE_TOKEN_SECRET`: A/B test trafik doğrulamasında kullanılan kriptografik anahtar (Secret).
+   - `GA4_ID`: Google Analytics ölçüm kimliği (Örn: `G-XXXXXX`) (String).
+   - `META_PIXEL_ID`: Meta Pixel kimlik numarası (String).
+   - `CUSTOM_DOMAIN`: Dağıtıma bağlı ana alan adınız (Örn: `runtime.ekinyasa.online`) (String).
+
+### B. Yerel Geliştirme Ortamı (Local Dev)
+Projenizin ana dizininde `.dev.vars` adında bir dosya oluşturun veya düzenleyin (bu dosya Git yedeğine dahil edilmez). Değişkenleri `ANAHTAR=değer` formatında ekleyin:
+```env
+ADMIN_TOKEN=O+nAq0Kpgq+6zJsIdeU3JY...
+CF_ACCOUNT_ID=ab0a0fd02766e5da...
+CF_AE_API_TOKEN=cfut_LejbmxSy9OWlz...
+EXPOSURE_TOKEN_SECRET=yerel_kripto_anahtarim
+GA4_ID=G-DWCN82754X
+META_PIXEL_ID=
+CUSTOM_DOMAIN=localhost:8788
+```
 
 ---
 
