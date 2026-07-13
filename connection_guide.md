@@ -92,8 +92,8 @@ To run the application, the environment variables must be defined in the followi
 2. Under **Environment variables**, click **Add variables** for both **Production** and **Preview** environments.
 3. Configure the following keys:
    - `ADMIN_TOKEN` / `EKIN_ADMIN_TOKEN` / `NILUFER_ADMIN_TOKEN`: Administrative auth token (Secret/Encrypt recommended).
-   - `CF_ACCOUNT_ID`: Cloudflare Account ID (String).
-   - `CF_AE_API_TOKEN`: Cloudflare API token with `Analytics Engine:Read` permission (Secret).
+   - `CF_ACCOUNT_ID`: Your Cloudflare Account ID (String).
+   - `CF_AE_API_TOKEN`: Cloudflare API token with Analytics Engine Read permission (Secret).
    - `EXPOSURE_TOKEN_SECRET`: Custom cryptographic key used for variant tracking signature validation (Secret).
    - `GA4_ID`: Google Analytics measurement ID (e.g. `G-XXXXXX`) (String).
    - `META_PIXEL_ID`: Meta Pixel ID (String).
@@ -110,6 +110,23 @@ GA4_ID=G-DWCN82754X
 META_PIXEL_ID=
 CUSTOM_DOMAIN=localhost:8788
 ```
+
+---
+
+## 🛠️ How to Create the Cloudflare API Token (`CF_AE_API_TOKEN`)
+
+When creating the token in the Cloudflare Dashboard (**My Profile** ➔ **API Tokens** ➔ **Create Token** ➔ **Create Custom Token**), configure the fields exactly as follows:
+
+1. **Token Name:** Give it a descriptive name (e.g., `CogniLink Analytics Engine Reader`).
+2. **Permissions:**
+   - **Type:** `Account`
+   - **Feature:** `Cloudflare Analytics Engine`
+   - **Access Level:** `Read`
+3. **Account Resources:**
+   - **Type:** `Include`
+   - **Resource:** `All accounts` (or select the specific account containing the Analytics Engine datasets).
+4. **Client IP Address Filtering (Optional):** Leave blank to allow queries from all server locations (Cloudflare Pages Functions).
+5. **TTL:** Leave blank (no end date) to prevent the token from expiring and disrupting live reports.
 
 ---
 
@@ -248,6 +265,23 @@ GA4_ID=G-DWCN82754X
 META_PIXEL_ID=
 CUSTOM_DOMAIN=localhost:8788
 ```
+
+---
+
+## 🛠️ Cloudflare API Token (`CF_AE_API_TOKEN`) Nasıl Oluşturulur?
+
+Cloudflare Panelinde token oluştururken (**My Profile** ➔ **API Tokens** ➔ **Create Token** ➔ **Create Custom Token**), form alanlarını görseldeki gibi şu şekilde doldurun:
+
+1. **Token Name:** Açıklayıcı bir isim girin (Örn: `CogniLink Analytics Engine Reader`).
+2. **Permissions (Yetkiler):**
+   - **İlk Kutu:** `Account`
+   - **İkinci Kutu:** `Cloudflare Analytics Engine`
+   - **Üçüncü Kutu:** `Read`
+3. **Account Resources:**
+   - **İlk Kutu:** `Include`
+   - **İkinci Kutu:** `All accounts` (veya Analytics Engine veri setlerinin bulunduğu ilgili hesabınızı seçin).
+4. **Client IP Address Filtering (İsteğe Bağlı):** Pages Functions isteklerinin sorunsuz gelmesi için boş bırakın.
+5. **TTL (Zaman Aşımı):** Grafiklerin ve analitik raporların ileride durmaması için tarih girmeyin (boş bırakın).
 
 ---
 
