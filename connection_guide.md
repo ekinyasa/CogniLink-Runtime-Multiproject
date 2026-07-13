@@ -110,3 +110,120 @@ If any of the bindings are deleted, follow these instructions to re-initialize t
 3. Go to **Workers & Pages** ➔ **[Your Pages Project]** ➔ **Settings** ➔ **Functions**.
 4. Find **Analytics Engine Bindings** and click **Add Binding**.
 5. Set the **Variable name** exactly as shown in the AE section (e.g. `AE_TRAFFIC`), enter the **Dataset Name** (e.g. `cognilink_runtime_traffic_prod`), and click **Save**.
+
+<br>
+<hr>
+<br>
+
+# Cloudflare KV & Analytics Engine Bağlantı Kılavuzu (Turkish)
+
+Bu belge, CogniLink Runtime tarafından kullanılan tüm KV Veri Tabanı (Namespace) alanları ve Cloudflare Analytics Engine (AE) Veri Setleri için eksiksiz bir referans kılavuzudur.
+
+---
+
+## 📦 Cloudflare KV Namespaces (Veri Tabanı Alanları)
+
+### 1. `SLUG_LINKS`
+- **Ne depolanır:** Sayfa yerleşimleri (layouts), özel header'lar, footer'lar, script kodları, izleme (tracking) varsayılanları ve stil özellikleri dahil olmak üzere slug bazlı kampanya yapılandırmaları.
+  - *Anahtar formatı:* `{slug_name}` (örneğin: `trafik-yenileme`)
+  - *Değer şeması:* `{ slug, campaign, defaults: { utm_source, ... }, isActive, links: [...], overrides: {...}, customStyleCss, customHeaderHtml, customFooterHtml, customScript, engineMapId }`
+- **Admin Panel Okuma/Yazma İşlemleri:** 
+  - **Slugs Editor** (`admin-renderer.js` / `/api/slugs` ve `/api/slug/:slug`) tarafından yönetilir.
+  - Runtime yönlendirici (`[[path]].js`) tarafından kampanya sayfalarını derlerken okunur.
+
+### 2. `CAMPAIGN_INDEX`
+- **Ne depolanır:** Kampanya isimlerini aktif slug değerlerine hızlıca eşleştiren ikincil indeks kayıtları.
+- **Admin Panel Okuma/Yazma İşlemleri:** 
+  - Kampanya yönetim ekranları tarafından yazılır ve okunur.
+
+### 3. `LANDING_CONFIG`
+- **Ne depolanır:** Sistem genelindeki global ayarlar ve karar mekanizması kuralları.
+  - *Anahtar:* `hub_config` (Global `Default Page Title`, `External CSS URL` ve `Global Custom CSS` bilgilerini depolar).
+  - *Anahtar:* `engine_config` (Global Decision Engine haritalarını ve fallback yönlendirme yollarını depolar).
+- **Admin Panel Okuma/Yazma İşlemleri:** 
+  - **Genel Ayarlar / Config** ekranından yönetilir (`/api/config`).
+  - `hub-renderer.js` tarafından varsayılan başlık ve global CSS bloklarını derlemek için okunur.
+
+### 4. `CAMPAIGN_AB_ALIAS_INDEX`
+- **Ne depolanır:** Kampanya takma adlarının (alias) A/B test varyasyonlarına yönlendirme eşleştirmeleri.
+- **Admin Panel Okuma/Yazma İşlemleri:**
+  - Deneyler (Experiments) panelinde A/B test kurulumu sırasında yazılır.
+
+### 5. `AB_INDEX`
+- **Ne depolanır:** Aktif A/B test deneylerinin varyant bazlı trafik dağıtım ayarları.
+- **Admin Panel Okuma/Yazma İşlemleri:**
+  - A/B Deney yöneticisi tarafından okunur ve güncellenir.
+
+### 6. `ROUTE_ALIAS`
+- **Ne depolanır:** Kısa/estetik takma adları (vanity alias) kanonik slug yollarına eşleştiren yönlendirme tabloları.
+- **Admin Panel Okuma/Yazma İşlemleri:**
+  - Rotalar (Routes) yönetim panelinde düzenlenir.
+
+### 7. `APP_CONFIG`
+- **Ne depolanır:** Dinamik Bileşenler (Components) kütüphanesi ve sayfa şablonu (layout) sıralamaları.
+  - *Anahtar formatları:* 
+    - `comp_family:{family_id}` ➔ Bileşen ailesi ana bilgileri `{ family_id, family_key, family_name, type, status }`
+    - `comp_ver:{family_id}:{ver_num}` ➔ Bileşen versiyon detayları `{ component_id, title, body, cta_label, cta_url, status, is_live }`
+    - `comp_live` ➔ Aktif canlı bileşenlerin indeks eşleşme listesi.
+    - `hub:{page_id}` ➔ Sayfa yerleşim modelleri ve sıralanmış bölüm listesi.
+- **Admin Panel Okuma/Yazma İşlemleri:**
+  - **Bileşenler (Components) sekmesi** düzenleyicisi tarafından yazılır ve okunur.
+
+### 8. `ANALYTICS_DATA`
+- **Ne depolanır:** Önbelleğe alınmış analiz raporları ve grafik veri özetleri.
+- **Admin Panel Okuma/Yazma İşlemleri:**
+  - Analiz sekmesinde trafik grafiklerini çizmek için okunur.
+
+### 9. `GUARD_CACHE`
+- **Ne depolanır:** Güvenlik anahtarları, istek sınırlandırma (rate limit) kayıtları ve geçiş logları.
+- **Admin Panel Okuma/Yazma İşlemleri:**
+  - Yalnızca sistem çalışma zamanında (runtime) dahili olarak kullanılır.
+
+---
+
+## 📊 Cloudflare Analytics Engine (AE - Analiz Motoru) Veri Setleri
+
+### 1. `AE_TRAFFIC`
+- **Üretim (Production) Veri Seti Adı:** `cognilink_runtime_traffic_prod`
+- **Ne depolanır:** Sunucu bazlı operasyon logları, trafik yolları, hızlı yönlendirme sinyalleri ve ray-ID bilgileri.
+- **Admin Panel Okuma İşlemleri:** SQL REST API uç noktası üzerinden sorgulanarak trafik hızları ve sunucu sağlığı raporlarını gösterir.
+
+### 2. `AE_CONVERSION`
+- **Üretim (Production) Veri Seti Adı:** `cognilink_runtime_conversion_prod`
+- **Ne depolanır:** Kullanıcı aksiyonları, CTA buton tıklamaları, satın almalar ve form kayıtları.
+- **Admin Panel Okuma İşlemleri:** Dönüşüm oranlarını hesaplamak ve performans grafiklerini çizmek için sorgulanır.
+
+### 3. `AE_EXPERIMENT`
+- **Üretim (Production) Veri Seti Adı:** `cognilink_runtime_experiment_prod`
+- **Ne depolanır:** Ziyaretçilerin hangi A/B test varyasyonuna maruz kaldığını gösteren gösterim (exposure) verileri.
+- **Admin Panel Okuma İşlemleri:** A/B test raporlarında hangi varyasyonun kazandığını belirlemek için sorgulanır.
+
+---
+
+## 🔑 Gerekli Kimlik Bilgileri ve Ayarlar
+
+Analiz Motoruna yazma ve sorgulama yapılabilmesi için Cloudflare Pages Panelinde aşağıdaki ortam değişkenlerinin (environment variables) tanımlı olması gerekir:
+- `CF_ACCOUNT_ID`: Cloudflare Hesap ID'niz (sorguların gönderildiği `https://api.cloudflare.com/client/v4/accounts/.../analytics_engine/sql` adresi için gereklidir).
+- `CF_AE_API_TOKEN`: `Analytics Engine:Read` yetkilerine sahip Cloudflare API anahtarı.
+- `ADMIN_TOKEN` / `EKIN_ADMIN_TOKEN` / `NILUFER_ADMIN_TOKEN`: Yönetici API erişim kontrol anahtarları.
+
+---
+
+## 🚨 Kurtarma Prosedürü (Silinme Durumunda Yeniden Ekleme)
+
+Eğer bu bağlantılardan veya veri tabanlarından biri silinirse, aşağıdaki adımlarla yeniden oluşturabilirsiniz:
+
+### A. KV Namespaces (KV Alanları)
+1. **Cloudflare Dashboard** paneline giriş yapın.
+2. Sol menüden **Workers & Pages** ➔ **KV** sekmesine gidin.
+3. **Create Namespace** butonuna tıklayarak ilgili adı girin (Örn: `SLUG_LINKS`).
+4. **Workers & Pages** ➔ **[Pages Projeniz]** ➔ **Settings** ➔ **Functions** yolunu izleyin.
+5. **KV Namespace Bindings** alanını bulun ve **Add Binding** butonuna tıklayın.
+6. **Variable name** alanına tabloda belirtilen ismi birebir yazın (Örn: `SLUG_LINKS`), ardından az önce oluşturduğunuz KV alanını listeden seçerek **Save** butonuna tıklayın.
+
+### B. Analytics Engine Datasets (AE Veri Setleri)
+1. Sol menüden **Workers & Pages** ➔ **Analytics Engine** sekmesine gidin.
+2. **Add Dataset** butonuna tıklayın. Veri seti adını üretim adı ile oluşturun (Örn: `cognilink_runtime_traffic_prod`).
+3. **Workers & Pages** ➔ **[Pages Projeniz]** ➔ **Settings** ➔ **Functions** yolunu izleyin.
+4. **Analytics Engine Bindings** alanını bulun ve **Add Binding** butonuna tıklayın.
+5. **Variable name** alanına AE başlığında belirtilen ismi yazın (Örn: `AE_TRAFFIC`), **Dataset Name** alanına ise üretim veri seti adını yazıp (Örn: `cognilink_runtime_traffic_prod`) kaydedin.
