@@ -91,7 +91,7 @@ async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaig
     aePost(accountId, apiToken,
       `SELECT COUNT() AS cnt
        FROM ${dataset}
-       WHERE index1 = 'alias_click'
+       WHERE index1 = 'traffic_memory'
          AND blob1 = '${alias}'
          AND blob4 = '${campaign}'
          AND toUnixTimestamp(timestamp) >= ${since}`
@@ -99,7 +99,7 @@ async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaig
     aePost(accountId, apiToken,
       `SELECT blob3 AS modifier, COUNT() AS cnt
        FROM ${dataset}
-       WHERE index1 = 'alias_click'
+       WHERE index1 = 'traffic_memory'
          AND blob1 = '${alias}'
          AND blob4 = '${campaign}'
          AND blob3 != ''

@@ -113,7 +113,7 @@ async function queryRecentEvents(accountId, apiToken, env) {
   const sql = [
     `SELECT timestamp, blob1 AS alias, blob4 AS campaign`,
     `FROM ${dataset}`,
-    `WHERE index1 = 'alias_click'`,
+    `WHERE index1 = 'traffic_memory'`,
     `AND timestamp > now() - INTERVAL '5' MINUTE`,
     `ORDER BY timestamp DESC`,
     `LIMIT 10`,
