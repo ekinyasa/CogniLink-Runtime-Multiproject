@@ -1,6 +1,6 @@
 # CogniLink Health & Diagnostics Troubleshooting Guide
 
-This guide details the common errors encountered during **Health / System self-tests** and the **Pulse analytics tab**, explaining their root causes and how to resolve them.
+This guide details the common errors encountered during **Health / System self-tests** and the **Pulse analytics tab**, explaining their root causes, the dynamic dataset fixes applied, and security guidelines.
 
 ---
 
@@ -27,26 +27,28 @@ This guide details the common errors encountered during **Health / System self-t
   - `[Analytics API] Partial query failures detected: Error: AE SQL error 403: Authorization error`
   - **Pulse tab** fails to load/render analytics.
 - **Root Cause:**
-  - Direct Cloudflare Analytics Engine REST SQL query authentication failure.
-  - The API token used to query the Analytics Engine (`CF_AE_API_TOKEN`) is either missing, incorrect, expired, or lacks read permissions.
-- **How to Fix:**
+  - **Mismatch of Dataset Names (Resolved):** In previous CogniLink versions, the dataset was hardcoded as `linkhub_ops_events` (in `test-runner.js`, `health.js`, `manual-test.js`, and `background-test.js`). 
+  - Additionally, `experiments.js` and `bandit-update.js` constructed `ae_traffic_production` instead of `cognilink_runtime_traffic_prod` when `ENV_NAME` was set to `production`.
+  - Since these legacy/constructed datasets did not exist on your new Cloudflare account, Cloudflare returned a 403 authorization error.
+- **Applied Fix:**
+  - All occurrences were updated to dynamically check if the environment is production (`ENV_NAME === 'production'`) and query `cognilink_runtime_traffic_prod` / `cognilink_runtime_conversion_prod` accordingly.
+- **What to double check if 403 persists:**
   1. Go to your **Cloudflare Dashboard** ➔ **Workers & Pages** ➔ **[Your Pages App]** ➔ **Settings** ➔ **Environment variables**.
   2. Ensure `CF_ACCOUNT_ID` matches your Cloudflare Account ID exactly.
   3. Verify `CF_AE_API_TOKEN` is set as an encrypted Secret.
-  4. Ensure the API token carries the **`Analytics Engine:Read`** permission at the account level. If not, generate a new token at `My Profile` ➔ `API Tokens` with the correct template.
+  4. Ensure the API token carries the **`Account ➔ Account Analytics ➔ Read`** permission.
 
 ---
 
-## 3. ✖ Telemetry Ingest FAIL / Manual Validation Timeout
-- **Error symptoms:**
-  - `Telemetry ingest ✖ FAIL`
-  - `Manual validation timeout` or `stage: analytics (AE timeout)`
-- **Root Cause:**
-  - Telemetry logs rely on the router tests succeeding first. If the router returned 404 (due to missing `nb` alias), no telemetry events are ever generated.
-  - Alternatively, Cloudflare Analytics Engine is experiencing temporary ingestion delays. Ingestion of data points into SQL databases can take up to 60–90 seconds.
-- **How to Fix:**
-  1. First, resolve the **Router 404** issue by ensuring the `nb` alias is configured.
-  2. Allow up to 2 minutes for Cloudflare's internal buffers to flush before triggering a self-test again.
+## 3. 🛡️ wp-admin / wp-content Scans & Bot Activities
+- **What is happening:**
+  - You may notice entries inside `cognilink_runtime_traffic_prod` under `blob1` containing paths like `wp-admin`, `wp-includes`, `wp-content`, or `actuator`.
+- **Is this a breach?**
+  - **No.** This is normal automated bot scanner activity attempting to locate WordPress vulnerability files.
+  - Since CogniLink uses a **wildcard route handler** (`[[path]].js`) to serve dynamic campaigns, any request that doesn't match a static asset (including `/wp-admin`) falls through to the routing engine. The router treats `wp-admin` as a campaign slug, tries to look it up in KV, and logs the access attempt as a `traffic_memory` event in the Analytics Engine.
+- **How to protect KV & AE from Scanner spam:**
+  1. **Configure Cloudflare WAF (Recommended):** Add WAF Rules in the Cloudflare Dashboard (`Security ➔ WAF`) to block requests containing `wp-admin`, `.php`, `wp-content` or standard WordPress paths.
+  2. **Fast-Failure in Router:** WAF rules stop the execution at the edge, saving KV read operations and Analytics Engine data points.
 
 <br>
 <hr>
@@ -54,7 +56,7 @@ This guide details the common errors encountered during **Health / System self-t
 
 # CogniLink Sistem Sağlığı & Hata Teşhis Kılavuzu (Turkish)
 
-Bu kılavuz, **Sistem Sağlık Testleri (Health/Self-Tests)** ve **Pulse Analitik Sekmesinde** karşılaşılan yaygın hataları, bunların nedenlerini ve nasıl düzeltileceğini açıklamaktadır.
+Bu kılavuz, **Sistem Sağlık Testleri (Health/Self-Tests)** ve **Pulse Analitik Sekmesinde** karşılaşılan yaygın hataları, bunların nedenlerini, veri seti düzeltmelerini ve güvenlik önlemlerini açıklamaktadır.
 
 ---
 
@@ -79,25 +81,26 @@ Bu kılavuz, **Sistem Sağlık Testleri (Health/Self-Tests)** ve **Pulse Analiti
   - `Analytics ingest ✖ FAIL`
   - `Consistency probe ✖ FAIL`
   - `[Analytics API] Partial query failures detected: Error: AE SQL error 403: Authorization error`
-  - **Pulse sekmesinin** grafik yükleyememesi veya analitik verileri çekememesi.
+  - **Pulse sekmesinin** analitik verileri çekememesi.
 - **Temel Neden:**
-  - Cloudflare Analytics Engine SQL sorgulama uç noktasının kimlik doğrulama hatasıdır.
-  - Analytics Engine verilerini çekmek için kullanılan `CF_AE_API_TOKEN` anahtarı geçersiz, eksik, süresi dolmuş veya okuma yetkisi olmayan bir tokendir.
-- **Nasıl Düzeltilir:**
-  1. **Cloudflare Dashboard** ➔ **Workers & Pages** ➔ **[Pages Projeniz]** ➔ **Settings** ➔ **Environment variables** bölümüne gidin.
-  2. `CF_ACCOUNT_ID` değerinin Cloudflare Hesap ID'niz ile birebir eşleştiğini doğrulayın.
-  3. `CF_AE_API_TOKEN` değişkeninin doğru bir şekilde şifrelenmiş Secret olarak eklendiğinden emin olun.
-  4. Bu API Token'ın **`Analytics Engine:Read`** yetkisine sahip olduğunu kontrol edin. Yetki yoksa `My Profile` ➔ `API Tokens` sayfasından bu yetkiyle yeni bir token oluşturup güncelleyin.
+  - **Eski Veri Seti Adları (Çözüldü):** Eski CogniLink sürümlerinde `linkhub_ops_events` veri seti adı test dosyalarında (`test-runner.js`, `health.js`, `manual-test.js` ve `background-test.js`) statik olarak tanımlanmıştı.
+  - Ek olarak, `experiments.js` ve `bandit-update.js` dosyalarında `ENV_NAME = production` olduğunda `ae_traffic_production` aranıyordu.
+  - Bu veri setleri yeni hesabınızda mevcut olmadığı için Cloudflare 403 hata kodu dönüyordu.
+- **Uygulanan Düzeltme:**
+  - Tüm sorgular güncellenerek üretim ortamında `cognilink_runtime_traffic_prod` / `cognilink_runtime_conversion_prod` veri setleri dinamik olarak hedeflendi.
+- **Hata Devam Ederse Kontrol Edilecekler:**
+  1. Cloudflare Pages panelinden `CF_ACCOUNT_ID` değerinizi doğrulayın.
+  2. `CF_AE_API_TOKEN` anahtarının Pages üzerinde Secret olarak eklendiğinden emin olun.
+  3. Bu anahtarın Cloudflare panelinde **`Account ➔ Account Analytics ➔ Read`** yetkisi taşıdığını doğrulayın.
 
 ---
 
-## 3. ✖ Telemetri Girişi Hatası / Manuel Doğrulama Zaman Aşımı
-- **Hata Belirtileri:**
-  - `Telemetry ingest ✖ FAIL`
-  - `Manual validation timeout` veya `stage: analytics (AE timeout)`
-- **Temel Neden:**
-  - Telemetri testleri, yönlendiricinin başarılı olmasına bağlıdır. Eğer yönlendirici 404 dönüyorsa telemetri verisi üretilemez.
-  - Cloudflare Analytics Engine sistemindeki geçici gecikmeler. Gönderilen verilerin SQL sorgu veri tabanına işlenmesi 60 ila 90 saniye sürebilir.
-- **Nasıl Düzeltilir:**
-  1. Öncelikle yönlendirici 404 hatasını çözmek için **`nb`** kısayolunun tanımlandığından emin olun.
-  2. Cloudflare veri işleme tamponlarının boşalması için testleri yeniden tetiklemeden önce yaklaşık 2 dakika bekleyin.
+## 3. 🛡️ wp-admin / wp-content Taramaları & Bot Hareketleri
+- **Olay Nedir:**
+  - `cognilink_runtime_traffic_prod` veri setindeki sorgularda `wp-admin`, `wp-includes`, `wp-content` veya `actuator` gibi isteklerin loglandığını görebilirsiniz.
+- **Bu Bir Güvenlik İhlali mi?**
+  - **Hayır.** Bu durum, internetteki açıkları tarayan otomatik botların web sitenize yaptığı standart isteklerdir.
+  - CogniLink joker yönlendirme (`[[path]].js`) kullandığı için statik dosya dışındaki tüm istekleri yönlendiriciye iletir. Yönlendirici `wp-admin` ifadesini bir kampanya kısayolu sanıp KV'de arar ve bu giriş denemesini telemetri amaçlı `AE_TRAFFIC` veri tabanına kaydeder.
+- **KV ve AE Veri Tabanlarını Bu Taramalardan Nasıl Koruruz?**
+  1. **Cloudflare WAF Kuralları (Önerilen):** Cloudflare Dashboard üzerinden `Security ➔ WAF` sekmesine gidin. `wp-admin`, `.php`, `wp-content` içeren tüm istekleri engelleyecek (Block) bir kural tanımlayın.
+  2. Bu sayede tarama istekleri daha sunucuya ulaşmadan kenarda (Edge) kesilir; gereksiz KV sorgularının ve AE veri yazımlarının önüne geçilir.
