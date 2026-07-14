@@ -87,14 +87,18 @@ function fmtTs(ms) {
  *
  * Returns { total, offer, vsl } counts.
  */
-async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaign) {
+async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaign, env) {
   // Subtract 5 seconds to guard against clock drift (PART 3)
   const since = fmtTs(testStartMs - 5_000);
+
+  const envName = (env.ENV_NAME || "dev").toLowerCase();
+  const isProd = envName === "production";
+  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
 
   const [totalJson, modJson] = await Promise.all([
     aePost(accountId, apiToken,
       `SELECT COUNT() AS cnt
-       FROM ${DATASET}
+       FROM ${dataset}
        WHERE index1 = 'alias_click'
          AND blob1 = '${alias}'
          AND blob4 = '${campaign}'
@@ -102,7 +106,7 @@ async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaig
     ),
     aePost(accountId, apiToken,
       `SELECT blob3 AS modifier, COUNT() AS cnt
-       FROM ${DATASET}
+       FROM ${dataset}
        WHERE index1 = 'alias_click'
          AND blob1 = '${alias}'
          AND blob4 = '${campaign}'
@@ -215,7 +219,7 @@ export async function runManualTest(env, request, fixture = null) {
   // ── 4. Retry AE until expected events appear (timestamp-based) ────────────
   const aeResult = await retryWithBackoff(async () => {
     const { total, offer, vsl } = await queryEventsSince(
-      accountId, apiToken, testStartMs, alias, campaign
+      accountId, apiToken, testStartMs, alias, campaign, env
     );
     const ok = total >= EXPECTED.alias && offer >= EXPECTED.offer && vsl >= EXPECTED.vsl;
     return { ok, total, offer, vsl };

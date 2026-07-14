@@ -68,6 +68,10 @@ async function checkAnalytics(env) {
   const apiToken  = env.CF_AE_API_TOKEN || "";
   if (!accountId || !apiToken) return "error";
 
+  const envName = (env.ENV_NAME || "dev").toLowerCase();
+  const isProd = envName === "production";
+  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+
   try {
     const res = await fetch(
       `${AE_SQL_BASE}/${accountId}/analytics_engine/sql`,
@@ -77,7 +81,7 @@ async function checkAnalytics(env) {
           Authorization:  `Bearer ${apiToken}`,
           "Content-Type": "text/plain",
         },
-        body: `SELECT COUNT() AS cnt FROM ${DATASET} WHERE timestamp > now() - INTERVAL '1' MINUTE`,
+        body: `SELECT COUNT() AS cnt FROM ${dataset} WHERE timestamp > now() - INTERVAL '1' MINUTE`,
       }
     );
     return res.ok ? "ok" : "error";

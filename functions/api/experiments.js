@@ -167,8 +167,9 @@ export async function onRequestGet(context) {
     }
 
     const envName = (env.ENV_NAME || "dev").toLowerCase();
-    const datasetOps = `ae_traffic_${envName}`;
-    const datasetEvt = `ae_conversion_${envName}`;
+    const isProd = envName === "production";
+    const datasetOps = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+    const datasetEvt = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
 
     // Load A/B config to get the ordered variant list (uses in-memory cache)
     const abConfig = await loadABConfig(alias, env);

@@ -77,16 +77,20 @@ function fmtTs(ms) {
   return new Date(ms).toISOString().replace("T", " ").slice(0, 19);
 }
 
-async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaign) {
+async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaign, env) {
   // Use Unix integer comparison — avoids AE SQL datetime-string parsing errors (SECTION 6).
   // "The string did not match expected pattern" is caused by space-separated datetime strings;
   // toUnixTimestamp() accepts the AE timestamp column directly and is always unambiguous.
   const since = Math.floor((testStartMs - 5_000) / 1000); // Unix seconds, 5s clock-drift buffer
 
+  const envName = (env.ENV_NAME || "dev").toLowerCase();
+  const isProd = envName === "production";
+  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+
   const [totalJson, modJson] = await Promise.all([
     aePost(accountId, apiToken,
       `SELECT COUNT() AS cnt
-       FROM ${DATASET}
+       FROM ${dataset}
        WHERE index1 = 'alias_click'
          AND blob1 = '${alias}'
          AND blob4 = '${campaign}'
@@ -94,7 +98,7 @@ async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaig
     ),
     aePost(accountId, apiToken,
       `SELECT blob3 AS modifier, COUNT() AS cnt
-       FROM ${DATASET}
+       FROM ${dataset}
        WHERE index1 = 'alias_click'
          AND blob1 = '${alias}'
          AND blob4 = '${campaign}'
@@ -226,7 +230,7 @@ async function runBackgroundTest(env, baseUrl) {
 
   const aeResult = await retryWithBackoff(async () => {
     const { total, offer, vsl } = await queryEventsSince(
-      accountId, apiToken, t0, alias, campaign
+      accountId, apiToken, t0, alias, campaign, env
     );
     // Pass as soon as at least one ALIAS_CLICK appears in AE (SECTION B).
     // offer/vsl modifier counts are still captured for informational diagnostics

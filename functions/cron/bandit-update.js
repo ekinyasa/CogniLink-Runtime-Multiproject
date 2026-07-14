@@ -285,8 +285,9 @@ export async function rebalanceExperiment(env, alias) {
   if (!accountId || !apiToken) return { ok: false, reason: "analytics_api_not_configured" };
 
   const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const datasetOps = `ae_traffic_${envName}`;
-  const datasetEvt = `ae_conversion_${envName}`;
+  const isProd = envName === "production";
+  const datasetOps = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  const datasetEvt = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
 
   const aliasEscaped = alias.replace(/'/g, "''");
   

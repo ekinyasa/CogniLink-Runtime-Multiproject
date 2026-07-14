@@ -105,10 +105,14 @@ async function kvHealthCheck(env) {
  * Query AE for recent alias_click events (last 5 minutes).
  * Returns { ok, events, error? } — never throws.
  */
-async function queryRecentEvents(accountId, apiToken) {
+async function queryRecentEvents(accountId, apiToken, env) {
+  const envName = (env?.ENV_NAME || "dev").toLowerCase();
+  const isProd = envName === "production";
+  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+
   const sql = [
     `SELECT timestamp, blob1 AS alias, blob4 AS campaign`,
-    `FROM ${DATASET}`,
+    `FROM ${dataset}`,
     `WHERE index1 = 'alias_click'`,
     `AND timestamp > now() - INTERVAL '5' MINUTE`,
     `ORDER BY timestamp DESC`,
@@ -347,7 +351,7 @@ export async function runSmokeTests(env, request) {
   } else {
     // Shared retry helper — stops early once events are found
     const combined = await retryWithBackoff(async () => {
-      const r = await queryRecentEvents(accountId, apiToken);
+      const r = await queryRecentEvents(accountId, apiToken, env);
       if (!r.ok) return { ok: false, aeQueryOk: false, events: [], error: r.error };
       return { ok: r.events.length > 0, aeQueryOk: true, events: r.events };
     });
