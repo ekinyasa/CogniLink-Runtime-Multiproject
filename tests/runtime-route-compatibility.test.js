@@ -322,6 +322,51 @@ async function runTests() {
     assert.equal(body.includes("decisionShadow"), false);
   });
 
+  // 18. Verify shadow_decision_rules is prioritized and evaluated without mapping
+  await test("18. Verify shadow_decision_rules is prioritized and evaluated natively", async () => {
+    const hubEnv = createMockEnv({
+      APP_CONFIG: {
+        get: async (key) => {
+          if (key === "hub:p-shadow") {
+            return {
+              slug: "p-shadow",
+              theme: "light",
+              isActive: true,
+              shadow_decision_rules: [{
+                id: "shadow_v2",
+                enabled: true,
+                action: { type: "block" },
+                condition: { field: "pageContent.id", operator: "equals", value: "p-shadow" }
+              }],
+              decision_rules: [{ id: "legacy_r1", action: "redirect", target: "bad" }]
+            };
+          }
+          return null;
+        }
+      },
+      ROUTE_ALIAS: {
+        get: async (key) => {
+          if (key === "route:shadow-test") return "p-shadow";
+          return null;
+        }
+      }
+    });
+
+    const req = createMockRequest("https://localhost/shadow-test?runtime-debug=1", { "Authorization": "Bearer secret_admin" });
+    const ctx = createMockContext(req, hubEnv, { path: ["shadow-test"] });
+    const res = await catchAllHandler(ctx);
+    
+    assert.equal(res.status, 200);
+    const payload = await res.json();
+    
+    assert.equal(payload.ruleShadow.source, "shadow_page_config");
+    assert.equal(payload.ruleShadow.schema, "v2");
+    assert.equal(payload.ruleShadow.valid_count, 1);
+    
+    assert.equal(payload.decisionShadow.matched_rule_id, "shadow_v2");
+    assert.equal(payload.decisionShadow.action, "block");
+  });
+
   console.log("\n── Test Summary ──");
   console.log(`Passed: ${passed}`);
   console.log(`Failed: ${failed}`);

@@ -389,7 +389,7 @@ export async function onRequestGet(context) {
       });
       
       const rawRules = ruleSource.rules || [];
-      const validRules = normalizeRules(rawRules, runtimeContext);
+      const validRules = ruleSource.schema === "v2" ? rawRules : normalizeRules(rawRules, runtimeContext);
       
       ruleShadow = {
         source: ruleSource.source,

@@ -19,7 +19,17 @@ export function createRuleRepository(env) {
       try {
         const { engineConfig = null, globalConfig = null } = options;
         
-        // 1. Check Engine Map ID overrides
+        // 1. Check shadow_decision_rules for Canary / V2 Direct Rules
+        if (Array.isArray(legacyObject.shadow_decision_rules) && legacyObject.shadow_decision_rules.length > 0) {
+          return {
+            rules: legacyObject.shadow_decision_rules,
+            source: "shadow_page_config",
+            source_id: legacyObject.slug || legacyObject.id || "unknown",
+            schema: "v2"
+          };
+        }
+
+        // 2. Check Engine Map ID overrides
         if (legacyObject.engineMapId && engineConfig?.customMaps && engineConfig.customMaps[legacyObject.engineMapId]) {
           const mapData = engineConfig.customMaps[legacyObject.engineMapId];
           if (Array.isArray(mapData.rules)) {
@@ -34,7 +44,7 @@ export function createRuleRepository(env) {
           }
         }
 
-        // 2. Check Global Engine Config tag-based rules
+        // 3. Check Global Engine Config tag-based rules
         if (engineConfig?.redirects && Array.isArray(engineConfig.redirects.rules)) {
           return {
             rules: engineConfig.redirects.rules,

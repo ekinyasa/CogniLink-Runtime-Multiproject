@@ -12,10 +12,20 @@ async function runTests() {
 
   const repo = createRuleRepository({});
 
-  await test("Returns page_config rules if present in legacyObject", async () => {
+  await test("Returns shadow_decision_rules rules if present and schema is v2", async () => {
+    const legacy = { id: "p1", shadow_decision_rules: [{ id: "shadow_1" }], decision_rules: [{ id: "r1" }] };
+    const res = await repo.fetchRules({}, legacy, {});
+    assert.equal(res.source, "shadow_page_config");
+    assert.equal(res.schema, "v2");
+    assert.equal(res.rules.length, 1);
+    assert.equal(res.rules[0].id, "shadow_1");
+  });
+
+  await test("Returns page_config rules if present in legacyObject (no shadow rules)", async () => {
     const legacy = { id: "p1", decision_rules: [{ id: "r1" }] };
     const res = await repo.fetchRules({}, legacy, {});
     assert.equal(res.source, "page_config");
+    assert.equal(res.schema, "legacy");
     assert.equal(res.rules.length, 1);
   });
 
