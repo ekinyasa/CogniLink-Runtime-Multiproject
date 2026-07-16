@@ -1,0 +1,39 @@
+{
+  "slug": "legacy-insurance-demo",
+  "campaign": "legacy-summer-campaign",
+  "alias": "demo24",
+  "context": "campaign",
+  "defaults": {
+    "utm_source": "google",
+    "utm_medium": "cpc",
+    "utm_term": "insurance"
+  },
+  "overrides": {
+    "official": {
+      "url": "https://example.com/legacy-official",
+      "isActive": true
+    }
+  },
+  "links": [
+    {
+      "id": "buy-now",
+      "label": "Buy Now",
+      "href": "https://example.com/checkout",
+      "utmContent": "buy-btn",
+      "noUtm": false,
+      "order": 100,
+      "isActive": true
+    }
+  ],
+  "engineMapId": "funnel-v1",
+  "customHeaderHtml": "<script>console.log('legacy header');</script>",
+  "customFooterHtml": "<div>Legacy Footer</div>",
+  "customStyleCss": ".legacy { color: red; }",
+  "isActive": true,
+  "createdAt": "2023-01-01T12:00:00.000Z",
+  "updatedAt": "2023-01-02T12:00:00.000Z",
+  "layout": [
+    { "type": "component", "id": "fam-hero-1" }
+  ],
+  "components": ["fam-hero-1"]
+}

@@ -1,0 +1,30 @@
+{
+  "campaign": {
+    "id": "c_12345",
+    "name": "v2-summer-campaign",
+    "utm_defaults": {
+      "utm_source": "fb",
+      "utm_medium": "social"
+    },
+    "status": "active"
+  },
+  "page": {
+    "id": "p_98765",
+    "title": "V2 Insurance Landing",
+    "layout": [
+      { "type": "component", "id": "fam-hero-2" }
+    ],
+    "components": ["fam-hero-2"],
+    "custom_css": ".v2 { color: blue; }",
+    "custom_html": "<script>console.log('v2 html');</script>",
+    "links": [
+      {
+        "id": "get-quote",
+        "label": "Get Quote",
+        "href": "https://example.com/quote",
+        "order": 110,
+        "isActive": true
+      }
+    ]
+  }
+}
