@@ -8,7 +8,7 @@ This document serves as the permanent system architecture reference guide for th
 CogniLink Runtime is a high-performance web campaign router and dynamic HTML renderer deployed on Cloudflare Pages. Its responsibilities are:
 - Resolving shorthand vanity aliases into target campaign slugs.
 - Rendering fast, responsive campaign and landing pages using server-side rendering (SSR) templates.
-- Executing behavior-driven Decision Engine routing algorithms at the edge.
+- Executing behavior-driven Decision Engine routing algorithms at the edge (see [decision_rule_model.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/decision_rule_model.md)).
 - Dispatching operational telemetry events to the Cloudflare Analytics Engine (AE) to feed the administrative dashboard.
 - Tracking split testing (A/B) variants.
 

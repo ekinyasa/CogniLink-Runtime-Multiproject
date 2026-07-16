@@ -65,7 +65,8 @@ type Decision = {
 
 ## 4. Kural Sistemi (Rule Model)
 
-Eski sistemdeki *Hot Score*, *Soft Score*, *Time Rules* gibi koda gömülü ve platforma sıkı sıkıya bağlı (Kartra vs. Hub) konseptler, **Kural Tabanlı (Rule-Based)** veya **Expression-Based** modele evrilir.
+Eski sistemdeki *Hot Score*, *Soft Score*, *Time Rules* gibi koda gömülü ve platforma sıkı sıkıya bağlı konseptler, **Kural Tabanlı (Rule-Based)** modele evrilir.
+Kural dilinin spesifikasyonu, operatör tipleri ve önceliklendirme detayları için [decision_rule_model.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/decision_rule_model.md) dosyasına bakınız.
 
 **Yeni Kural Anatomisi (JSON Rules):**
 Sistem, pipeline bazlı, önceliklendirilmiş (priority-based) kural setleri çalıştırır.
