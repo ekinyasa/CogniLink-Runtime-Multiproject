@@ -28,8 +28,8 @@ export function createRuntimeRepository(env) {
   async function fetchPage(pageId) {
     if (!pageId || !env.APP_CONFIG) return null;
     try {
-      // TODO: Check Cache Layer
-      return await env.APP_CONFIG.get(`page:${pageId}`, { type: "json" });
+      // Use the REAL data source: 'hub:' prefix used by the existing Landing system
+      return await env.APP_CONFIG.get(`hub:${pageId}`, { type: "json" });
     } catch (e) {
       console.error(`[Repository] Error fetching page for ${pageId}:`, e);
       return null;
@@ -39,7 +39,6 @@ export function createRuntimeRepository(env) {
   async function fetchCampaign(campaignId) {
     if (!campaignId || !env.APP_CONFIG) return null;
     try {
-      // TODO: Check Cache Layer
       return await env.APP_CONFIG.get(`campaign:${campaignId}`, { type: "json" });
     } catch (e) {
       console.error(`[Repository] Error fetching campaign for ${campaignId}:`, e);
@@ -50,7 +49,6 @@ export function createRuntimeRepository(env) {
   async function fetchAlias(alias) {
     if (!alias || !env.ROUTE_ALIAS) return null;
     try {
-      // TODO: Check Cache Layer
       return await env.ROUTE_ALIAS.get(`route:${alias}`, { type: "text" });
     } catch (e) {
       console.error(`[Repository] Error fetching alias for ${alias}:`, e);
@@ -59,15 +57,48 @@ export function createRuntimeRepository(env) {
   }
 
   async function fetchV2(campaignId, pageId = campaignId) {
-    // Uses Promise.all to fetch decoupled entities in parallel (No Waterfall)
-    const [campaign, page] = await Promise.all([
+    // Uses Promise.all to fetch decoupled entities in parallel
+    const [rawCampaign, rawPage] = await Promise.all([
       fetchCampaign(campaignId),
       fetchPage(pageId)
     ]);
 
-    // If neither exists, return null so adapter falls back to legacy
-    if (!campaign && !page) {
+    if (!rawCampaign && !rawPage) {
       return null;
+    }
+
+    // Map the real existing Landing record (hub:) to the V2 pageContent schema
+    let page = null;
+    if (rawPage) {
+      const headerHtml = typeof rawPage.customHeaderHtml === 'string' ? rawPage.customHeaderHtml : "";
+      const footerHtml = typeof rawPage.customFooterHtml === 'string' ? rawPage.customFooterHtml : "";
+      const customHtml = [headerHtml, footerHtml].filter(Boolean).join("\n");
+
+      page = {
+        id: rawPage.slug || rawPage.id || pageId,
+        title: rawPage.pageTitle || rawPage.title || null,
+        layout: Array.isArray(rawPage.layout) ? rawPage.layout : [],
+        components: Array.isArray(rawPage.components) ? rawPage.components : [],
+        links: Array.isArray(rawPage.links) ? rawPage.links : [],
+        custom_css: typeof rawPage.customStyleCss === 'string' ? rawPage.customStyleCss : "",
+        custom_html: customHtml,
+        redirect: rawPage.redirectUrl || rawPage.redirect || null,
+        theme: rawPage.theme || null,
+        metadata: rawPage.metadata || {},
+        modifier: rawPage.modifier || null
+      };
+    }
+
+    // If campaign is missing but page exists, extract campaign data from the page record (legacy structure)
+    let campaign = rawCampaign;
+    if (!campaign && rawPage) {
+      campaign = {
+        id: rawPage.campaign || null,
+        name: rawPage.campaign || null,
+        utm_defaults: rawPage.defaults || {},
+        status: rawPage.isActive === false ? "inactive" : "active",
+        modifier: rawPage.modifier || null
+      };
     }
 
     return { campaign, page };

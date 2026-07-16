@@ -30,7 +30,22 @@ async function runTests() {
     },
     APP_CONFIG: {
       get: async (key) => {
-        if (key === "page:p-1") return { id: "p-1", title: "Page 1" };
+        if (key === "hub:p-1") {
+          return {
+            slug: "p-1",
+            pageTitle: "Page 1",
+            customStyleCss: "body { color: red; }",
+            customHeaderHtml: "<head></head>",
+            layout: [{ id: "l1" }],
+            components: ["c1", "c2"],
+            links: [{ id: "link1", href: "#" }],
+            theme: "dark",
+            campaign: "c-1",
+            defaults: { utm_source: "test" },
+            isActive: true,
+            modifier: "test-mod"
+          };
+        }
         if (key === "campaign:c-1") return { id: "c-1", name: "Campaign 1" };
         return null;
       }
@@ -65,7 +80,20 @@ async function runTests() {
 
   await test("fetchPage returns raw JSON from APP_CONFIG", async () => {
     const data = await repo.fetchPage("p-1");
-    assert.deepEqual(data, { id: "p-1", title: "Page 1" });
+    assert.deepEqual(data, {
+      slug: "p-1",
+      pageTitle: "Page 1",
+      customStyleCss: "body { color: red; }",
+      customHeaderHtml: "<head></head>",
+      layout: [{ id: "l1" }],
+      components: ["c1", "c2"],
+      links: [{ id: "link1", href: "#" }],
+      theme: "dark",
+      campaign: "c-1",
+      defaults: { utm_source: "test" },
+      isActive: true,
+      modifier: "test-mod"
+    });
     
     const missing = await repo.fetchPage("missing");
     assert.equal(missing, null);
@@ -79,27 +107,34 @@ async function runTests() {
     assert.equal(missing, null);
   });
 
-  await test("fetchV2 combines page and campaign via Promise.all", async () => {
+  await test("fetchV2 combines page and campaign via Promise.all and maps hub: schema", async () => {
     // Both exist
     const data1 = await repo.fetchV2("c-1", "p-1");
     assert.deepEqual(data1.campaign, { id: "c-1", name: "Campaign 1" });
-    assert.deepEqual(data1.page, { id: "p-1", title: "Page 1" });
+    assert.equal(data1.page.id, "p-1");
+    assert.equal(data1.page.title, "Page 1");
+    assert.equal(data1.page.custom_css, "body { color: red; }");
 
     // Only campaign exists
     const data2 = await repo.fetchV2("c-1", "missing");
     assert.deepEqual(data2.campaign, { id: "c-1", name: "Campaign 1" });
     assert.equal(data2.page, null);
 
-    // Only page exists
+    // Only page exists (campaign is extracted from the page record)
     const data3 = await repo.fetchV2("missing", "p-1");
-    assert.equal(data3.campaign, null);
-    assert.deepEqual(data3.page, { id: "p-1", title: "Page 1" });
+    assert.deepEqual(data3.campaign, {
+      id: "c-1",
+      name: "c-1",
+      utm_defaults: { utm_source: "test" },
+      status: "active",
+      modifier: "test-mod"
+    });
+    assert.equal(data3.page.id, "p-1");
 
     // Single identifier passed (assumes campaignId == pageId)
-    // If identifier is p-1, campaign:p-1 will return null, page:p-1 will return page
     const data4 = await repo.fetchV2("p-1");
-    assert.equal(data4.campaign, null);
-    assert.deepEqual(data4.page, { id: "p-1", title: "Page 1" });
+    assert.equal(data4.page.id, "p-1");
+    assert.equal(data4.campaign.id, "c-1"); // Extracted from page
 
     // Neither exists
     const data5 = await repo.fetchV2("missing1", "missing2");

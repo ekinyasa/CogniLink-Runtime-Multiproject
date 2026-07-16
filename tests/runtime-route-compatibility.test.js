@@ -225,6 +225,67 @@ async function runTests() {
     assert.equal(res.headers.get("Content-Type"), "application/json;charset=UTF-8");
   });
 
+  // 16. Verify Landing Inspector correctly populates rawV2 and achieves identical Diff using real APP_CONFIG hub: records
+  await test("16. Verify Landing Inspector populates rawV2 and identical Diff using hub: mapping", async () => {
+    // We mock APP_CONFIG to return a full hub: object
+    const hubEnv = createMockEnv({
+      APP_CONFIG: {
+        get: async (key) => {
+          if (key === "hub:p-2") {
+            return {
+              slug: "p-2",
+              pageTitle: "Page 2",
+              customStyleCss: "body { color: blue; }",
+              customHeaderHtml: "<meta name='test'>",
+              layout: [{ id: "l2" }],
+              components: ["c3"],
+              links: [{ id: "link2", href: "#", isActive: true }],
+              theme: "light",
+              campaign: "c-2",
+              defaults: { utm_source: "fb" },
+              isActive: true
+            };
+          }
+          return null;
+        }
+      },
+      SLUG_LINKS: {
+        get: async (key) => {
+          // This is a direct campaign route or independent landing, 
+          // let's return it from SLUG_LINKS as well so the router doesn't 404
+          if (key === "p-2") {
+            return {
+              slug: "p-2",
+              isActive: true
+            };
+          }
+          return null;
+        }
+      },
+      ROUTE_ALIAS: {
+        get: async (key) => {
+          if (key === "route:landing-test") return "p-2";
+          return null;
+        }
+      }
+    });
+
+    const req = createMockRequest("https://localhost/landing-test?runtime-debug=1", { "Authorization": "Bearer secret_admin" });
+    // path must match the alias resolution logic, let's map route:landing-test to p-2
+    const ctx = createMockContext(req, hubEnv, { path: ["landing-test"] });
+    const res = await catchAllHandler(ctx);
+    
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("Content-Type"), "application/json;charset=UTF-8");
+
+    const payload = await res.json();
+    if (!payload.runtimeDiff.identical) {
+      console.error(JSON.stringify(payload.runtimeDiff, null, 2));
+    }
+    assert.ok(payload.repositoryResult.rawV2 !== null, "rawV2 should not be null");
+    assert.ok(payload.runtimeDiff.identical === true, "runtimeDiff should be perfectly identical");
+  });
+
   console.log("\n── Test Summary ──");
   console.log(`Passed: ${passed}`);
   console.log(`Failed: ${failed}`);
