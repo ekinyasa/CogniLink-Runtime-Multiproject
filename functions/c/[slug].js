@@ -6,6 +6,7 @@ import { handleDecision }          from "../lib/decision-controller.js";
 import { emitOps, OPS_EVENTS }       from "../_shared/ops-telemetry.js";
 import { createRuntimeRepository }   from "../_shared/runtime-repository.js";
 import { resolveContext }            from "../_shared/runtime-adapter.js";
+import { compareRuntime }            from "../_shared/runtime-diff.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -162,6 +163,8 @@ export async function onRequestGet(context) {
 
   if (adminVerified && url.searchParams.get("runtime-debug") === "1") {
     const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
+    const diff = compareRuntime(campaignData, shadowData?.context);
+    
     const debugPayload = {
       _warning: "RUNTIME INSPECTOR (Shadow Mode)",
       aliasResolution: { canonicalSlug: slug, type: "direct-c-route" },
@@ -171,6 +174,7 @@ export async function onRequestGet(context) {
       },
       legacyObject: campaignData,
       runtimeContext: shadowData?.context || null,
+      runtimeDiff: diff,
       metadata: {
         runtime_version: "adapter",
         render_mode: "canonical",

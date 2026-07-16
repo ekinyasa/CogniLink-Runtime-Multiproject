@@ -38,6 +38,7 @@ import { resolveLinks }                            from "./_shared/links.js";
 import { renderHub }                               from "./_shared/hub-renderer.js";
 import { createRuntimeRepository }                 from "./_shared/runtime-repository.js";
 import { resolveContext }                          from "./_shared/runtime-adapter.js";
+import { compareRuntime }                          from "./_shared/runtime-diff.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
@@ -515,6 +516,8 @@ export async function onRequestGet(context) {
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
   if (adminVerified && url.searchParams.get("runtime-debug") === "1") {
     const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
+    const diff = compareRuntime(hubConfig, shadowData?.context);
+    
     const debugPayload = {
       _warning: "RUNTIME INSPECTOR (Shadow Mode)",
       aliasResolution: resolution,
@@ -524,6 +527,7 @@ export async function onRequestGet(context) {
       },
       legacyObject: hubConfig,
       runtimeContext: shadowData?.context || null,
+      runtimeDiff: diff,
       metadata: {
         runtime_version: "adapter",
         render_mode: abActive ? "experiment" : "canonical",
