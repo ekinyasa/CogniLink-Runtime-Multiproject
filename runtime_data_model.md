@@ -142,5 +142,5 @@ All telemetry sent to Analytics Engine (`AE_TRAFFIC` / `AE_CONVERSION` / `AE_EXP
 ## 12. DOCUMENT METADATA
 - **Last Updated:** 2026-07-16
 - **Status:** Proposed
-- **Related Files:** [runtime_architecture.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_architecture.md)
+- **Related Files:** [runtime_architecture.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_architecture.md), [runtime_adapter.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_adapter.md)
 - **Related Bindings:** `SLUG_LINKS`, `APP_CONFIG`

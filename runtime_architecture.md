@@ -166,5 +166,5 @@ Sistem mimarisini, binding yapısını, event sözleşmesini, route akışını,
 
 - **Last Updated:** 2026-07-16
 - **Status:** Evaluated
-- **Related Files:** [connection_guide.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/connection_guide.md), [health_issues.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/health_issues.md), [runtime_data_model.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_data_model.md)
+- **Related Files:** [connection_guide.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/connection_guide.md), [health_issues.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/health_issues.md), [runtime_data_model.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_data_model.md), [runtime_adapter.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_adapter.md)
 - **Related Bindings:** `SLUG_LINKS`, `AE_TRAFFIC`, `AE_CONVERSION`
