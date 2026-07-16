@@ -37,6 +37,7 @@ CogniLink Runtime is a high-performance web campaign router and dynamic HTML ren
   - *Proposed:* Standardized `page_view` and `conversion` contract events.
 - **Decision Engine:**
   - *Current:* Edge rules engine executing instant redirects based on client parameters.
+  - *Proposed:* Domain-agnostic pure logic engine decoupled from rendering (see [decision_engine_v2.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/decision_engine_v2.md)).
 - **Health Check:**
   - *Current:* Infrastructure checks probing router paths (`/nb`), KV namespaces, and AE connectivity.
 
