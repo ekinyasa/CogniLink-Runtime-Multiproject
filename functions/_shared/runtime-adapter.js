@@ -6,6 +6,27 @@
  * a strictly typed RuntimeContext for the rest of the application.
  * 
  * Pure normalization engine. Zero hidden state. Zero direct KV I/O operations.
+ * * This module MUST remain:
+
+ *
+
+ * - deterministic
+
+ * - side-effect free
+
+ * - repository independent
+
+ * - renderer independent
+
+ * - decision-engine independent
+
+ * - telemetry independent
+
+ *
+
+ * It only transforms raw runtime objects
+
+ * into RuntimeContext.
  */
 
 /**
@@ -92,6 +113,8 @@ export async function resolveContext(identifier, provider, options = {}) {
     activeLinks: Array.isArray(normalized?.activeLinks) ? normalized.activeLinks : [],
     render_mode: renderMode,
     metadata: {
+      ...DEFAULT_RUNTIME_CONTEXT.metadata,
+      ...(normalized?.metadata || {}),
       source_schema: schemaType,
       runtime_version: "adapter"
     }
@@ -107,28 +130,69 @@ export async function resolveContext(identifier, provider, options = {}) {
  * @returns {object} - Partial RuntimeContext payload.
  */
 function normalizeLegacy(rawLegacyData, options = {}) {
-  // TODO: Full mapping implementation in next phases.
-  // 1. Extract Campaign Context (defaults, status, campaign name)
-  // 2. Construct Virtual Page from layout, customHeaderHtml, customStyleCss
-  // 3. Consolidate and resolve Components
-  // 4. Filter and sort activeLinks
+  const data = rawLegacyData || {};
   
+  const campaignName = typeof data.campaign === 'string' ? data.campaign : null;
+  const utmDefaults = (data.defaults && typeof data.defaults === 'object') ? data.defaults : {};
+  const status = data.isActive === false ? "inactive" : "active";
+
+  // Normalize components (no null, no duplicate, valid strings)
+  const rawComponents = Array.isArray(data.components) ? data.components : [];
+  const components = [...new Set(rawComponents.filter(c => typeof c === 'string' && c.trim() !== ''))];
+
+  // Normalize layout
+  let layout = Array.isArray(data.layout) ? data.layout : [];
+  layout = layout.filter(item => item && typeof item === 'object' && item.id);
+
+  // Normalize links (no null, duplicate IDs, disabled/inactive, missing href)
+  const rawLinks = Array.isArray(data.links) ? data.links : [];
+  const activeLinksMap = new Map();
+  
+  for (const link of rawLinks) {
+    if (!link || typeof link !== 'object') continue;
+    if (!link.id || typeof link.href !== 'string' || !link.href.trim()) continue;
+    if (link.isActive === false || link.disabled === true) continue;
+    
+    // First active link with a specific ID wins
+    if (!activeLinksMap.has(link.id)) {
+      activeLinksMap.set(link.id, link);
+    }
+  }
+  const activeLinks = Array.from(activeLinksMap.values());
+  activeLinks.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Normalize HTML/CSS
+  const customCss = typeof data.customStyleCss === 'string' ? data.customStyleCss : "";
+  const headerHtml = typeof data.customHeaderHtml === 'string' ? data.customHeaderHtml : "";
+  const footerHtml = typeof data.customFooterHtml === 'string' ? data.customFooterHtml : "";
+  const customHtml = [headerHtml, footerHtml].filter(Boolean).join("\n");
+
+  const title = typeof data.pageTitle === 'string' ? data.pageTitle : (typeof data.title === 'string' ? data.title : null);
+
+  const customMetadata = (data.metadata && typeof data.metadata === 'object') ? data.metadata : {};
+
   return {
     campaignContext: {
       id: null,
-      name: rawLegacyData?.campaign || null,
-      utm_defaults: rawLegacyData?.defaults || {},
-      status: rawLegacyData?.isActive === false ? "inactive" : "active"
+      name: campaignName,
+      utm_defaults: utmDefaults,
+      status: status
     },
     pageContent: {
-      id: rawLegacyData?.slug || null,
-      title: null, 
-      layout: rawLegacyData?.layout || [],
-      components: rawLegacyData?.components || [],
-      custom_css: rawLegacyData?.customStyleCss || "",
-      custom_html: rawLegacyData?.customHeaderHtml || ""
+      id: data.slug || null,
+      title: title, 
+      layout: layout,
+      components: components,
+      custom_css: customCss,
+      custom_html: customHtml,
+      redirect: data.redirect || null,
+      theme: data.theme || null
     },
-    activeLinks: Array.isArray(rawLegacyData?.links) ? rawLegacyData.links : []
+    activeLinks: activeLinks,
+    metadata: {
+      ...customMetadata,
+      modifier: data.modifier || null
+    }
   };
 }
 
@@ -141,12 +205,56 @@ function normalizeLegacy(rawLegacyData, options = {}) {
  * @returns {object} - Partial RuntimeContext payload.
  */
 function normalizeV2(rawV2Data, options = {}) {
-  // TODO: Full mapping implementation in next phases.
-  // Expects rawV2Data to have structured { campaign: {...}, page: {...} } objects
-  
+  const data = rawV2Data || {};
+  const campaign = data.campaign || {};
+  const page = data.page || {};
+
+  // Normalize components
+  const rawComponents = Array.isArray(page.components) ? page.components : [];
+  const components = [...new Set(rawComponents.filter(c => typeof c === 'string' && c.trim() !== ''))];
+
+  // Normalize layout
+  let layout = Array.isArray(page.layout) ? page.layout : [];
+  layout = layout.filter(item => item && typeof item === 'object' && item.id);
+
+  // Normalize links
+  const rawLinks = Array.isArray(page.links) ? page.links : [];
+  const activeLinksMap = new Map();
+  for (const link of rawLinks) {
+    if (!link || typeof link !== 'object') continue;
+    if (!link.id || typeof link.href !== 'string' || !link.href.trim()) continue;
+    if (link.isActive === false || link.disabled === true) continue;
+    
+    if (!activeLinksMap.has(link.id)) {
+      activeLinksMap.set(link.id, link);
+    }
+  }
+  const activeLinks = Array.from(activeLinksMap.values());
+  activeLinks.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const customMetadata = (page.metadata && typeof page.metadata === 'object') ? page.metadata : {};
+
   return {
-    campaignContext: rawV2Data?.campaign || {},
-    pageContent: rawV2Data?.page || {},
-    activeLinks: rawV2Data?.page?.links || []
+    campaignContext: {
+      id: campaign.id || null,
+      name: campaign.name || null,
+      utm_defaults: campaign.utm_defaults || {},
+      status: campaign.status || "inactive"
+    },
+    pageContent: {
+      id: page.id || null,
+      title: page.title || null,
+      layout: layout,
+      components: components,
+      custom_css: page.custom_css || "",
+      custom_html: page.custom_html || "",
+      redirect: page.redirect || null,
+      theme: page.theme || null
+    },
+    activeLinks: activeLinks,
+    metadata: {
+      ...customMetadata,
+      modifier: campaign.modifier || page.modifier || null
+    }
   };
 }

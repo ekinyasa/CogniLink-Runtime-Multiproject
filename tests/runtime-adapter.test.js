@@ -116,7 +116,7 @@ async function runTests() {
 
     // Page mapping
     assert.equal(result.pageContent.id, "legacy-insurance-demo");
-    assert.equal(result.pageContent.custom_html, "<script>console.log('legacy header');</script>");
+    assert.equal(result.pageContent.custom_html, "<script>console.log('legacy header');</script>\n<div>Legacy Footer</div>");
     assert.equal(result.pageContent.custom_css, ".legacy { color: red; }");
     assert.equal(result.pageContent.layout[0].id, "fam-hero-1");
 
@@ -125,7 +125,40 @@ async function runTests() {
     assert.equal(result.activeLinks[0].href, "https://example.com/checkout");
   });
 
-  // ── 5. Side Effects & Immutability ──────────────────────────────────────────
+  // ── 5. Edge Cases & Filtering ─────────────────────────────────────────────────
+
+  await test("Edge Cases: Filters invalid, duplicate, and inactive components/links", async () => {
+    const dirtyLegacy = {
+      slug: "dirty-page",
+      components: ["hero", "hero", null, " ", "footer"],
+      links: [
+        { id: "link1", href: "https://a.com", order: 2 },
+        { id: "link1", href: "https://duplicate.com" }, // Should be ignored (first wins)
+        { id: "link2", href: "" }, // Invalid href
+        { id: "link3", href: "https://b.com", isActive: false }, // Inactive
+        { id: "link4", href: "https://c.com", order: 1 }
+      ],
+      customHeaderHtml: "<header>",
+      customFooterHtml: "<footer>"
+    };
+
+    const provider = createMockProvider(null, dirtyLegacy);
+    const result = await resolveContext("dirty-page", provider);
+
+    // Components
+    assert.deepEqual(result.pageContent.components, ["hero", "footer"]);
+
+    // Links (should be sorted by order)
+    assert.equal(result.activeLinks.length, 2);
+    assert.equal(result.activeLinks[0].id, "link4"); // order: 1
+    assert.equal(result.activeLinks[1].id, "link1"); // order: 2
+    assert.equal(result.activeLinks[1].href, "https://a.com"); // First instance won
+
+    // HTML combination
+    assert.equal(result.pageContent.custom_html, "<header>\n<footer>");
+  });
+
+  // ── 6. Side Effects & Immutability ──────────────────────────────────────────
 
   await test("Side effects: Input objects are not mutated", async () => {
     const legacyClone = JSON.parse(JSON.stringify(legacyRecord));
@@ -136,15 +169,13 @@ async function runTests() {
     assert.deepEqual(legacyClone, legacyRecord);
   });
 
-  // ── 6. Deterministic Guarantee ──────────────────────────────────────────────
+  // ── 7. Deterministic Guarantee ──────────────────────────────────────────────
 
   await test("Deterministic Guarantee: Same input yields exactly deepEqual output over 100 runs", async () => {
     const provider = createMockProvider(null, legacyRecord);
     
-    // First run is the baseline
     const baseline = await resolveContext("legacy-insurance-demo", provider);
     
-    // 100 subsequent runs
     for (let i = 0; i < 100; i++) {
       const current = await resolveContext("legacy-insurance-demo", provider);
       assert.deepEqual(current, baseline, `Run ${i + 1} produced different output. Adapter is not deterministic!`);
