@@ -30,7 +30,7 @@ export function compareRuntime(legacyObject, runtimeContext) {
   }
 
   // 1. Page Identity
-  const expectedPageId = legacy.slug || null;
+  const expectedPageId = legacy.id || legacy.slug || null;
   const actualPageId = ctx.pageContent?.id || null;
   comparePrimitive("pageContent.id", expectedPageId, actualPageId);
 

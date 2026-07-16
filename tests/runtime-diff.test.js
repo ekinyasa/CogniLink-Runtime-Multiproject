@@ -87,6 +87,60 @@ async function runTests() {
     assert.equal(diff.items[0].type, "type_mismatch");
   });
 
+  await test("1. Legacy slug identity ile RuntimeContext page id eşleşir", async () => {
+    const legacy = { slug: "test-slug" };
+    const ctx = { pageContent: { id: "test-slug" } };
+    const diff = compareRuntime(legacy, ctx);
+    assert.equal(diff.identical, true);
+  });
+
+  await test("2. V2 landing legacyObject.id ile RuntimeContext page id eşleşir", async () => {
+    const legacy = { id: "test-id" };
+    const ctx = { pageContent: { id: "test-id" } };
+    const diff = compareRuntime(legacy, ctx);
+    assert.equal(diff.identical, true);
+  });
+
+  await test("3. Legacy identity null, runtime identity dolu → mismatch", async () => {
+    const legacy = {};
+    const ctx = { pageContent: { id: "test-id" } };
+    const diff = compareRuntime(legacy, ctx);
+    assert.equal(diff.identical, false);
+    assert.equal(diff.items[0].type, "extra");
+  });
+
+  await test("4. Legacy ve runtime identity farklı → mismatch", async () => {
+    const legacy = { id: "test-id", slug: "test-slug" };
+    const ctx = { pageContent: { id: "wrong-id" } };
+    const diff = compareRuntime(legacy, ctx);
+    assert.equal(diff.identical, false);
+    assert.equal(diff.items[0].type, "mismatch");
+    assert.equal(diff.items[0].expected, "test-id");
+  });
+
+  await test("8. RuntimeContext, legacyObject veya input objeleri mutate edilmiyor", async () => {
+    const legacy = { id: "test-id", components: ["a"] };
+    const legacyStr = JSON.stringify(legacy);
+    const ctx = { pageContent: { id: "test-id", components: ["a"] } };
+    const ctxStr = JSON.stringify(ctx);
+    
+    compareRuntime(legacy, ctx);
+    
+    assert.equal(JSON.stringify(legacy), legacyStr);
+    assert.equal(JSON.stringify(ctx), ctxStr);
+  });
+
+  await test("9. Aynı input 100 kez aynı diff sonucunu üretiyor (pure and deterministic)", async () => {
+    const legacy = { id: "test-id", layout: [{id:"l1"}], campaign: "test-camp" };
+    const ctx = { pageContent: { id: "wrong-id" }, campaignContext: { name: "test-camp" } };
+    
+    const firstDiff = compareRuntime(legacy, ctx);
+    for (let i = 0; i < 100; i++) {
+      const diff = compareRuntime(legacy, ctx);
+      assert.deepEqual(diff, firstDiff);
+    }
+  });
+
   // ── Summary ─────────────────────────────────────────────────────────────────
 
   console.log("\n── Test Summary ──");
