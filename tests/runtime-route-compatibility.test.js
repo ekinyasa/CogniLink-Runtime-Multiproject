@@ -243,7 +243,13 @@ async function runTests() {
               theme: "light",
               campaign: "c-2",
               defaults: { utm_source: "fb" },
-              isActive: true
+              isActive: true,
+              decision_rules: [{
+                id: "r1",
+                // empty condition matches always
+                action: "redirect",
+                target: "https://test.com"
+              }]
             };
           }
           return null;
@@ -279,11 +285,41 @@ async function runTests() {
     assert.equal(res.headers.get("Content-Type"), "application/json;charset=UTF-8");
 
     const payload = await res.json();
-    if (!payload.runtimeDiff.identical) {
-      console.error(JSON.stringify(payload.runtimeDiff, null, 2));
-    }
     assert.ok(payload.repositoryResult.rawV2 !== null, "rawV2 should not be null");
     assert.ok(payload.runtimeDiff.identical === true, "runtimeDiff should be perfectly identical");
+    
+    // Check ruleShadow and decisionShadow
+    assert.ok(payload.ruleShadow !== undefined, "ruleShadow should be exposed");
+    assert.ok(payload.decisionShadow !== undefined, "decisionShadow should be exposed");
+    assert.equal(payload.ruleShadow.source, "page_config");
+    assert.equal(payload.ruleShadow.raw_count, 1);
+    assert.equal(payload.ruleShadow.valid_count, 1);
+    assert.equal(payload.ruleShadow.invalid_count, 0);
+    assert.equal(payload.decisionShadow.decision_id, "dec_r1_p-2");
+    assert.equal(payload.decisionShadow.matched_rule_id, "r1");
+    assert.equal(payload.decisionShadow.action, "redirect");
+    assert.equal(payload.decisionShadow.redirect_target, "https://test.com");
+  });
+
+  // 17. Verify normal user doesn't see rule/debug info
+  await test("17. Verify normal user doesn't see rule/debug info", async () => {
+    const hubEnv = createMockEnv({
+      APP_CONFIG: { 
+        get: async (key) => {
+          if (key === "comp_live") return [];
+          return { isActive: true };
+        }
+      },
+      SLUG_LINKS: { get: async () => ({ slug: "test", isActive: true }) }
+    });
+    const req = createMockRequest("https://localhost/c/test", {});
+    const ctx = createMockContext(req, hubEnv, { slug: "test" });
+    const res = await campaignHandler(ctx);
+    
+    assert.equal(res.status, 200);
+    const body = await res.text();
+    assert.equal(body.includes("ruleShadow"), false);
+    assert.equal(body.includes("decisionShadow"), false);
   });
 
   console.log("\n── Test Summary ──");

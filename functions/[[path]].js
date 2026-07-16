@@ -360,33 +360,59 @@ export async function onRequestGet(context) {
       const repo = createRuntimeRepository(env);
       const rawLegacy = await repo.fetchLegacy(targetPageId);
       const rawV2 = await repo.fetchV2(targetPageId);
-      const context = await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
+      const runtimeContext = await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
       
-      // Shadow Decision Evaluation (using empty rules array as V2 rules do not exist yet)
-      let decision = null;
-      try {
-        decision = evaluateDecision(context, []);
-      } catch (e) {
-        // Safe fallback if evaluation crashes
-      }
-      
-      return { rawLegacy, rawV2, context, decision };
+      return { rawLegacy, rawV2, context: runtimeContext };
     })()
   ]);
 
-  let runtimeContextShadow = shadowResult.status === "fulfilled" ? shadowResult.value : null;
-  if (shadowResult.status === "rejected") {
-    console.debug("[Shadow Mode Error]", shadowResult.reason?.message);
-  }
-
-  hubConfig = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
+  const hubConfigVal = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
-  const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
   const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
+  const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
 
+  // ── RULE REPOSITORY (Shadow Mode) ─────────────────────────────────────────
+  let ruleShadow = null;
+  let decisionShadow = null;
+  if (runtimeContext) {
+    try {
+      // Dynamic import to avoid breaking legacy code if there's an issue
+      const { createRuleRepository } = await import("./_shared/rule-repository.js");
+      const { normalizeRules } = await import("./_shared/rule-compat.js");
+      
+      const ruleRepo = createRuleRepository(env);
+      const ruleSource = await ruleRepo.fetchRules(runtimeContext, hubConfigVal || shadowData?.rawLegacy || {}, {
+        engineConfig,
+        globalConfig
+      });
+      
+      const rawRules = ruleSource.rules || [];
+      const validRules = normalizeRules(rawRules, runtimeContext);
+      
+      ruleShadow = {
+        source: ruleSource.source,
+        source_id: ruleSource.source_id,
+        schema: ruleSource.schema,
+        raw_count: rawRules.length,
+        valid_count: validRules.length,
+        invalid_count: rawRules.length - validRules.length,
+        rules: validRules
+      };
+
+      const { evaluateDecision } = await import("./_shared/decision-engine-v2.js");
+      decisionShadow = evaluateDecision(runtimeContext, validRules);
+    } catch (e) {
+      console.error("[Shadow Rule Evaluation Error]", e);
+      ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
+      const { evaluateDecision } = await import("./_shared/decision-engine-v2.js");
+      decisionShadow = evaluateDecision(runtimeContext, []);
+    }
+  }
+
   // ── CUTOVER VIEW ──────────────────────────────────────────────────────────
+  hubConfig = hubConfigVal;
   const originalHubConfig = hubConfig;
   const readEnabled = (env.RUNTIME_CONTEXT_READ_ENABLED === "true" || env.RUNTIME_CONTEXT_READ_ENABLED === true);
   if (readEnabled && runtimeContext) {
@@ -413,7 +439,8 @@ export async function onRequestGet(context) {
       runtimeCompatibilityView: readEnabled ? hubConfig : null,
       runtimeContext: shadowData?.context || null,
       runtimeDiff: diff,
-      decisionShadow: shadowData?.decision || null,
+      ruleShadow,
+      decisionShadow,
       metadata: {
         runtime_version: "adapter",
         render_mode: abActive ? "experiment" : "canonical",

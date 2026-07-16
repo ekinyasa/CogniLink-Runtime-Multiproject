@@ -10,6 +10,8 @@ import { compareRuntime } from "../_shared/runtime-diff.js";
 import { evaluateDecision } from "../_shared/decision-engine-v2.js";
 import { createLegacyCompatibleView } from "../_shared/runtime-compat-view.js";
 import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
+import { createRuleRepository } from "../_shared/rule-repository.js";
+import { normalizeRules } from "../_shared/rule-compat.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -43,17 +45,9 @@ export async function onRequestGet(context) {
       const repo = createRuntimeRepository(env);
       const rawLegacy = await repo.fetchLegacy(slug);
       const rawV2 = await repo.fetchV2(slug);
-      const context = await resolveContext(slug, repo, { render_mode: "canonical" });
+      const runtimeContext = await resolveContext(slug, repo, { render_mode: "canonical" });
       
-      // Shadow Decision Evaluation (using empty rules array as V2 rules do not exist yet)
-      let decision = null;
-      try {
-        decision = evaluateDecision(context, []);
-      } catch (e) {
-        // Safe fallback if evaluation crashes
-      }
-
-      return { rawLegacy, rawV2, context, decision };
+      return { rawLegacy, rawV2, context: runtimeContext };
     })()
   ]);
 
@@ -69,6 +63,38 @@ export async function onRequestGet(context) {
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
+
+  // ── RULE REPOSITORY (Shadow Mode) ─────────────────────────────────────────
+  let ruleShadow = null;
+  let decisionShadow = null;
+  if (runtimeContext) {
+    try {
+      const ruleRepo = createRuleRepository(env);
+      const ruleSource = await ruleRepo.fetchRules(runtimeContext, campaignDataVal || shadowData?.rawLegacy || {}, {
+        engineConfig,
+        globalConfig: config
+      });
+      
+      const rawRules = ruleSource.rules || [];
+      const validRules = normalizeRules(rawRules, runtimeContext);
+      
+      ruleShadow = {
+        source: ruleSource.source,
+        source_id: ruleSource.source_id,
+        schema: ruleSource.schema,
+        raw_count: rawRules.length,
+        valid_count: validRules.length,
+        invalid_count: rawRules.length - validRules.length,
+        rules: validRules
+      };
+
+      decisionShadow = evaluateDecision(runtimeContext, validRules);
+    } catch (e) {
+      console.error("[Shadow Rule Evaluation Error]", e);
+      ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
+      decisionShadow = evaluateDecision(runtimeContext, []);
+    }
+  }
 
   // ── CUTOVER VIEW ──────────────────────────────────────────────────────────
   campaignData = campaignDataVal;
@@ -98,7 +124,8 @@ export async function onRequestGet(context) {
       runtimeCompatibilityView: readEnabled ? campaignData : null,
       runtimeContext: shadowData?.context || null,
       runtimeDiff: diff,
-      decisionShadow: shadowData?.decision || null,
+      ruleShadow,
+      decisionShadow,
       metadata: {
         runtime_version: "adapter",
         render_mode: "canonical",
