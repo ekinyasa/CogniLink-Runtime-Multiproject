@@ -4,6 +4,8 @@ import { incrementCounter }         from "../_shared/counter.js";
 import { deriveCampaignFromSlug } from "../_shared/slug-utils.js";
 import { handleDecision }          from "../lib/decision-controller.js";
 import { emitOps, OPS_EVENTS }       from "../_shared/ops-telemetry.js";
+import { createRuntimeRepository }   from "../_shared/runtime-repository.js";
+import { resolveContext }            from "../_shared/runtime-adapter.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -21,7 +23,7 @@ export async function onRequestGet(context) {
   }
 
   // Fetch slug + config + engine_config in parallel
-  const [slugResult, configResult, engineResult, liveComponentsResult] = await Promise.allSettled([
+  const [slugResult, configResult, engineResult, liveComponentsResult, shadowResult] = await Promise.allSettled([
     slug ? env.SLUG_LINKS.get(slug, { type: "json" }) : Promise.resolve(null),
     env.LANDING_CONFIG
       ? env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" })
@@ -30,7 +32,19 @@ export async function onRequestGet(context) {
       ? env.LANDING_CONFIG.get("engine_config", { type: "json" })
       : Promise.resolve(null),
     env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([]),
+    (async () => {
+      if (!slug) return null;
+      // ── SHADOW MODE: Runtime Pipeline Evaluation ─────────────────────────────
+      // Evaluates the new decoupled pipeline. Does not affect legacy flow.
+      const repo = createRuntimeRepository(env);
+      return await resolveContext(slug, repo, { render_mode: "canonical" });
+    })()
   ]);
+
+  let runtimeContextShadow = shadowResult.status === "fulfilled" ? shadowResult.value : null;
+  if (shadowResult.status === "rejected") {
+    console.debug("[Shadow Mode Error]", shadowResult.reason?.message);
+  }
 
   const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};

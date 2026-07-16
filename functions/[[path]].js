@@ -36,6 +36,8 @@ import { parsePath, resolveAlias, loadHubConfig } from "./_shared/alias-router.j
 import { buildRouteKey }                           from "./_shared/alias-router.js";
 import { resolveLinks }                            from "./_shared/links.js";
 import { renderHub }                               from "./_shared/hub-renderer.js";
+import { createRuntimeRepository }                 from "./_shared/runtime-repository.js";
+import { resolveContext }                          from "./_shared/runtime-adapter.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
@@ -350,12 +352,23 @@ export async function onRequestGet(context) {
   }
 
   // Fetch page/slug config + global configs
-  const [hubConfigResult, globalConfigResult, engineResult, liveComponentsResult] = await Promise.allSettled([
+  const [hubConfigResult, globalConfigResult, engineResult, liveComponentsResult, shadowResult] = await Promise.allSettled([
     loadHubConfig(targetPageId, env, ttlMs), // Load the target page (or legacy slug)
     env.LANDING_CONFIG ? env.LANDING_CONFIG.get("hub_config", { type: "json" }) : Promise.resolve({}),
     env.LANDING_CONFIG ? env.LANDING_CONFIG.get("engine_config", { type: "json" }) : Promise.resolve({}),
     env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([]),
+    (async () => {
+      // ── SHADOW MODE: Runtime Pipeline Evaluation ─────────────────────────────
+      // Evaluates the new decoupled pipeline. Does not affect legacy flow.
+      const repo = createRuntimeRepository(env);
+      return await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
+    })()
   ]);
+
+  let runtimeContextShadow = shadowResult.status === "fulfilled" ? shadowResult.value : null;
+  if (shadowResult.status === "rejected") {
+    console.debug("[Shadow Mode Error]", shadowResult.reason?.message);
+  }
 
   hubConfig = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
