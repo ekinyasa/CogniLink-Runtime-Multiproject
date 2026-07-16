@@ -398,6 +398,39 @@ export async function onRequestGet(context) {
     }
   }
 
+  // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
+  if (verifyAdminDebug(request, env)) {
+    const diff = compareRuntime(originalHubConfig, runtimeContext);
+    
+    const debugPayload = {
+      _warning: "RUNTIME INSPECTOR (Shadow Mode)",
+      aliasResolution: resolution,
+      repositoryResult: {
+        rawLegacy: shadowData?.rawLegacy || null,
+        rawV2: shadowData?.rawV2 || null
+      },
+      legacyObject: originalHubConfig,
+      runtimeCompatibilityView: readEnabled ? hubConfig : null,
+      runtimeContext: shadowData?.context || null,
+      runtimeDiff: diff,
+      decisionShadow: shadowData?.decision || null,
+      metadata: {
+        runtime_version: "adapter",
+        render_mode: abActive ? "experiment" : "canonical",
+        source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
+        runtime_context_read_enabled: readEnabled
+      }
+    };
+    return new Response(JSON.stringify(debugPayload, null, 2), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+        "Cache-Control": "no-store, private",
+        ...SEC_HEADERS
+      }
+    });
+  }
+
   // ── Step 7.1: Static Page Redirect ──────────────────────────────────────
   const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfig?.redirectUrl;
   if (staticRedirect) {
@@ -528,38 +561,6 @@ export async function onRequestGet(context) {
   // Removed per security requirements; tokens must not be embedded in HTML.
   const finalHtml = html;
 
-  // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
-  if (verifyAdminDebug(request, env)) {
-    const diff = compareRuntime(originalHubConfig, runtimeContext);
-    
-    const debugPayload = {
-      _warning: "RUNTIME INSPECTOR (Shadow Mode)",
-      aliasResolution: resolution,
-      repositoryResult: {
-        rawLegacy: shadowData?.rawLegacy || null,
-        rawV2: shadowData?.rawV2 || null
-      },
-      legacyObject: originalHubConfig,
-      runtimeCompatibilityView: readEnabled ? hubConfig : null,
-      runtimeContext: shadowData?.context || null,
-      runtimeDiff: diff,
-      decisionShadow: shadowData?.decision || null,
-      metadata: {
-        runtime_version: "adapter",
-        render_mode: abActive ? "experiment" : "canonical",
-        source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
-        runtime_context_read_enabled: readEnabled
-      }
-    };
-    return new Response(JSON.stringify(debugPayload, null, 2), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json;charset=UTF-8",
-        "Cache-Control": "no-store, private",
-        ...SEC_HEADERS
-      }
-    });
-  }
 
   // ── Build response headers ────────────────────────────────────────────────
   // Use Headers object so we can append Set-Cookie without overwriting it.

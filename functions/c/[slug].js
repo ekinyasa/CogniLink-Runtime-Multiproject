@@ -83,6 +83,41 @@ export async function onRequestGet(context) {
     }
   }
 
+  // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
+  if (verifyAdminDebug(request, env)) {
+    const diff = compareRuntime(originalCampaignData, runtimeContext);
+    
+    const debugPayload = {
+      _warning: "RUNTIME INSPECTOR (Shadow Mode)",
+      aliasResolution: { canonicalSlug: slug, type: "direct-c-route" },
+      repositoryResult: {
+        rawLegacy: shadowData?.rawLegacy || null,
+        rawV2: shadowData?.rawV2 || null
+      },
+      legacyObject: originalCampaignData,
+      runtimeCompatibilityView: readEnabled ? campaignData : null,
+      runtimeContext: shadowData?.context || null,
+      runtimeDiff: diff,
+      decisionShadow: shadowData?.decision || null,
+      metadata: {
+        runtime_version: "adapter",
+        render_mode: "canonical",
+        source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
+        runtime_context_read_enabled: readEnabled
+      }
+    };
+    return new Response(JSON.stringify(debugPayload, null, 2), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+        "Cache-Control": "no-store, private",
+        "X-Robots-Tag": "noindex,nofollow",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+      }
+    });
+  }
+
   if (!notFound) {
     if (!campaignData || campaignData.isActive === false) {
       notFound = true;
@@ -179,40 +214,7 @@ export async function onRequestGet(context) {
     components:  liveComponents,
   });
 
-  // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
-  if (verifyAdminDebug(request, env)) {
-    const diff = compareRuntime(originalCampaignData, runtimeContext);
-    
-    const debugPayload = {
-      _warning: "RUNTIME INSPECTOR (Shadow Mode)",
-      aliasResolution: { canonicalSlug: slug, type: "direct-c-route" },
-      repositoryResult: {
-        rawLegacy: shadowData?.rawLegacy || null,
-        rawV2: shadowData?.rawV2 || null
-      },
-      legacyObject: originalCampaignData,
-      runtimeCompatibilityView: readEnabled ? campaignData : null,
-      runtimeContext: shadowData?.context || null,
-      runtimeDiff: diff,
-      decisionShadow: shadowData?.decision || null,
-      metadata: {
-        runtime_version: "adapter",
-        render_mode: "canonical",
-        source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
-        runtime_context_read_enabled: readEnabled
-      }
-    };
-    return new Response(JSON.stringify(debugPayload, null, 2), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json;charset=UTF-8",
-        "Cache-Control": "no-store, private",
-        "X-Robots-Tag": "noindex,nofollow",
-        "X-Content-Type-Options": "nosniff",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
-      }
-    });
-  }
+
 
   const resHeaders = new Headers({
     "Content-Type":           "text/html;charset=UTF-8",
