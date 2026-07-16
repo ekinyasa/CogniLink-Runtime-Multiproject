@@ -37,7 +37,10 @@ export async function onRequestGet(context) {
       // ── SHADOW MODE: Runtime Pipeline Evaluation ─────────────────────────────
       // Evaluates the new decoupled pipeline. Does not affect legacy flow.
       const repo = createRuntimeRepository(env);
-      return await resolveContext(slug, repo, { render_mode: "canonical" });
+      const rawLegacy = await repo.fetchLegacy(slug);
+      const rawV2 = await repo.fetchV2(slug);
+      const context = await resolveContext(slug, repo, { render_mode: "canonical" });
+      return { rawLegacy, rawV2, context };
     })()
   ]);
 
@@ -152,6 +155,39 @@ export async function onRequestGet(context) {
     slugData:    campaignData,       // for per-slug landing customization
     components:  liveComponents,
   });
+
+  // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
+  const adminVerifyParam = url.searchParams.get("admin-verify");
+  const adminVerified    = Boolean(adminVerifyParam && env.ADMIN_TOKEN && adminVerifyParam === env.ADMIN_TOKEN);
+
+  if (adminVerified && url.searchParams.get("runtime-debug") === "1") {
+    const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
+    const debugPayload = {
+      _warning: "RUNTIME INSPECTOR (Shadow Mode)",
+      aliasResolution: { canonicalSlug: slug, type: "direct-c-route" },
+      repositoryResult: {
+        rawLegacy: shadowData?.rawLegacy || null,
+        rawV2: shadowData?.rawV2 || null
+      },
+      legacyObject: campaignData,
+      runtimeContext: shadowData?.context || null,
+      metadata: {
+        runtime_version: "adapter",
+        render_mode: "canonical",
+        source_schema: shadowData?.context?.metadata?.source_schema || "unknown"
+      }
+    };
+    return new Response(JSON.stringify(debugPayload, null, 2), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex,nofollow",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+      }
+    });
+  }
 
   const resHeaders = new Headers({
     "Content-Type":           "text/html;charset=UTF-8",

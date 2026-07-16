@@ -361,7 +361,10 @@ export async function onRequestGet(context) {
       // ── SHADOW MODE: Runtime Pipeline Evaluation ─────────────────────────────
       // Evaluates the new decoupled pipeline. Does not affect legacy flow.
       const repo = createRuntimeRepository(env);
-      return await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
+      const rawLegacy = await repo.fetchLegacy(targetPageId);
+      const rawV2 = await repo.fetchV2(targetPageId);
+      const context = await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
+      return { rawLegacy, rawV2, context };
     })()
   ]);
 
@@ -508,6 +511,34 @@ export async function onRequestGet(context) {
   const finalHtml = adminVerified
     ? html.replace("</body>", buildAdminOverlay(alias, adminVerifyParam) + "\n</body>")
     : html;
+
+  // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
+  if (adminVerified && url.searchParams.get("runtime-debug") === "1") {
+    const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
+    const debugPayload = {
+      _warning: "RUNTIME INSPECTOR (Shadow Mode)",
+      aliasResolution: resolution,
+      repositoryResult: {
+        rawLegacy: shadowData?.rawLegacy || null,
+        rawV2: shadowData?.rawV2 || null
+      },
+      legacyObject: hubConfig,
+      runtimeContext: shadowData?.context || null,
+      metadata: {
+        runtime_version: "adapter",
+        render_mode: abActive ? "experiment" : "canonical",
+        source_schema: shadowData?.context?.metadata?.source_schema || "unknown"
+      }
+    };
+    return new Response(JSON.stringify(debugPayload, null, 2), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+        "Cache-Control": "no-store",
+        ...SEC_HEADERS
+      }
+    });
+  }
 
   // ── Build response headers ────────────────────────────────────────────────
   // Use Headers object so we can append Set-Cookie without overwriting it.
