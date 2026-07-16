@@ -382,11 +382,14 @@ export async function onRequestGet(context) {
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
   const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
+  const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
+  const runtimeContext = shadowData?.context || null;
 
   // ── Step 7.1: Static Page Redirect ──────────────────────────────────────
-  if (hubConfig && hubConfig.redirectUrl) {
+  const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfig?.redirectUrl;
+  if (staticRedirect) {
     try {
-      const rUrl = new URL(hubConfig.redirectUrl);
+      const rUrl = new URL(staticRedirect);
       // Transfer search params from inbound request
       url.searchParams.forEach((v, k) => rUrl.searchParams.set(k, v));
       return Response.redirect(rUrl.toString(), 302);
@@ -400,7 +403,7 @@ export async function onRequestGet(context) {
   // perform an instant redirect. Managed by handleDecision() helper.
   const utmSource   = url.searchParams.get("utm_source")   || "";
   const utmMedium   = url.searchParams.get("utm_medium")   || "";
-  const utmCampaign = (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
+  const utmCampaign = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
 
   const decision = await handleDecision(request, env, {
     source:   utmSource,
@@ -450,14 +453,13 @@ export async function onRequestGet(context) {
   //   2. CHANNEL_UTM suffix derivation (heuristic from slug name)
   //   3. {} fallback (utm_campaign + utm_content only)                  ← lowest
   const slugUtms    = buildDefaultUtms(finalSlug);
-  const storedUtms  = (hubConfig?.defaults && typeof hubConfig.defaults === "object")
-    ? hubConfig.defaults : {};
+  const storedUtms  = runtimeContext?.campaignContext?.utm_defaults ?? ((hubConfig?.defaults && typeof hubConfig.defaults === "object") ? hubConfig.defaults : {});
   const defaultUtms = Object.assign({}, slugUtms, storedUtms);
 
   // LOG TRAFFIC_MEMORY AFTER defaultUtms is safely defined
   emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
     alias, modifier: modifier ?? "", canonical_slug: finalSlug,
-    campaign: (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug),
+    campaign: (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug),
     request_id: requestId,
     utm_source: defaultUtms.utm_source || "",
     utm_medium: defaultUtms.utm_medium || "",
@@ -488,8 +490,8 @@ export async function onRequestGet(context) {
   // expToken is null when EXPOSURE_TOKEN_SECRET is not bound (graceful degradation).
   if (expResult?.expToken) defaultUtms.exp_token = expResult.expToken;
   // Prefer explicitly stored slug.campaign; fall back to heuristic for old records.
-  // No extra KV reads — campaign is already in hubConfig (loaded above).
-  const campaign    = (hubConfig?.campaign && String(hubConfig.campaign).trim())
+  // No extra KV reads — campaign is already in hubConfig/runtimeContext (loaded above).
+  const campaign    = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim())
     || deriveCampaignFromSlug(finalSlug);
 
   const html = renderHub({
@@ -515,8 +517,7 @@ export async function onRequestGet(context) {
 
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
   if (verifyAdminDebug(request, env)) {
-    const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
-    const diff = compareRuntime(hubConfig, shadowData?.context);
+    const diff = compareRuntime(hubConfig, runtimeContext);
     
     const debugPayload = {
       _warning: "RUNTIME INSPECTOR (Shadow Mode)",

@@ -29,7 +29,7 @@ async function runTests() {
 
   test("1. Rules boşsa fallback Decision", () => {
     const dec = evaluateDecision(baseCtx, []);
-    assert.equal(dec.matched_rule_id, "default");
+    assert.equal(dec.matched_rule_id, null);
     assert.equal(dec.action, "render");
     assert.equal(dec.decision_id, "default");
   });
@@ -139,17 +139,17 @@ async function runTests() {
 
   test("14. bilinmeyen operator güvenli fallback", () => {
     const rules = [{ id: "r1", condition: { field: "state.score", operator: "magical", value: 10 }, action: { type: "redirect" } }];
-    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, "default");
+    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, null);
   });
 
   test("15. bozuk condition çökertmiyor", () => {
     const rules = [{ id: "r1", condition: null, action: { type: "redirect" } }];
-    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, "default");
+    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, null);
   });
 
   test("16. bozuk action atlanır", () => {
     const rules = [{ id: "r1", condition: "always", action: null }];
-    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, "default");
+    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, null);
   });
 
   test("16b. invalid action type atlanır", () => {

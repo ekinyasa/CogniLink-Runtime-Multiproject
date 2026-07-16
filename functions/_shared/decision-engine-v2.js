@@ -7,7 +7,7 @@
 
 const DEFAULT_DECISION = {
   decision_id: "default",
-  matched_rule_id: "default",
+  matched_rule_id: null,
   action: "render",
   render_mode: "canonical",
   redirect_target: null,
