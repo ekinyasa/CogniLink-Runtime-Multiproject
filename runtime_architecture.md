@@ -18,18 +18,23 @@ CogniLink Runtime is a high-performance web campaign router and dynamic HTML ren
 
 - **Page / Landing:**
   - *Current:* Dynamic component layout blocks rendered under campaign configurations.
-  - *Proposed:* Fully decoupled, independent landing page records with isolated URLs.
+  - *Proposed:* Decoupled page records with independent schemas and paths (see [runtime_data_model.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_data_model.md)).
 - **Campaign:**
-  - *Current:* The core attribution context representing source, medium, and defaults.
-  - *Proposed:* Decoupled tracking wrapper that points to one or more landing pages.
+  - *Current:* Core attribution context tying slugs, destination links, and UTM defaults.
+  - *Proposed:* Independent marketing context pointing to target pages via `target_page_id`.
 - **Alias:**
-  - *Current:* Vanity shortcuts (e.g., `/nb`) resolving to canonical campaign pages.
+  - *Current:* Vanity shortcuts (e.g. `/nb`) resolving to canonical campaign slugs.
 - **Component:**
-  - *Current:* Reusable HTML/CSS blocks (versioned and sharded) stored in `APP_CONFIG`.
+  - *Current:* Reusable HTML/CSS blocks stored in `APP_CONFIG`.
 - **Experiment:**
   - *Current:* Variant traffic split configurations mapped under `AB_INDEX`.
+- **Session:**
+  - *Pending:* Behavior state cookie context tracking conversions and flow transitions.
+- **Lead:**
+  - *Pending:* Form outcome and consent records captured at conversion points.
 - **Event:**
-  - *Current:* Analytics Engine telemetry data points (`traffic_memory`, `ab_selected`, `conversion`).
+  - *Current:* Telemetry points logged under `traffic_memory` / `ab_selected`.
+  - *Proposed:* Standardized `page_view` and `conversion` contract events.
 - **Decision Engine:**
   - *Current:* Edge rules engine executing instant redirects based on client parameters.
 - **Health Check:**
@@ -159,7 +164,7 @@ See [connection_guide.md](file:///Users/ekinyasa/Coding/projects/claude/cognilin
 ## 13. DOCUMENT MAINTENANCE RULES
 Sistem mimarisini, binding yapısını, event sözleşmesini, route akışını, health check varsayımlarını veya entity ilişkilerini değiştiren her geliştirme, ilgili markdown rehberleri güncellenmeden tamamlanmış sayılmaz.
 
-- **Last Updated:** 2026-07-15
+- **Last Updated:** 2026-07-16
 - **Status:** Evaluated
-- **Related Files:** [connection_guide.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/connection_guide.md), [health_issues.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/health_issues.md)
+- **Related Files:** [connection_guide.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/connection_guide.md), [health_issues.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/health_issues.md), [runtime_data_model.md](file:///Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/runtime_data_model.md)
 - **Related Bindings:** `SLUG_LINKS`, `AE_TRAFFIC`, `AE_CONVERSION`
