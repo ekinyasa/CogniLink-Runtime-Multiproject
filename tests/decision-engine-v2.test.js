@@ -147,9 +147,17 @@ async function runTests() {
     assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, "default");
   });
 
-  test("16. bozuk action render döner", () => {
+  test("16. bozuk action atlanır", () => {
     const rules = [{ id: "r1", condition: "always", action: null }];
-    assert.equal(evaluateDecision(baseCtx, rules).action, "render");
+    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, "default");
+  });
+
+  test("16b. invalid action type atlanır", () => {
+    const rules = [
+      { id: "r1", priority: 20, condition: "always", action: { type: "magical" } },
+      { id: "r2", priority: 10, condition: "always", action: { type: "render" } }
+    ];
+    assert.equal(evaluateDecision(baseCtx, rules).matched_rule_id, "r2");
   });
 
   test("17. redirect action", () => {
@@ -181,7 +189,7 @@ async function runTests() {
 
   test("21. input mutation yok", () => {
     const ctx = { state: { tags: ["a"] } };
-    const rules = [{ id: "r1", condition: "always", action: { type: "redirect", overrides: { x: 1 } } }];
+    const rules = [{ id: "r1", condition: "always", action: { type: "render", overrides: { x: 1 } } }];
     const rulesSnapshot = JSON.stringify(rules);
     const ctxSnapshot = JSON.stringify(ctx);
     

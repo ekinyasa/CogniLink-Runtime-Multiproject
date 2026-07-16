@@ -7,6 +7,7 @@ import { emitOps, OPS_EVENTS }       from "../_shared/ops-telemetry.js";
 import { createRuntimeRepository }   from "../_shared/runtime-repository.js";
 import { resolveContext }            from "../_shared/runtime-adapter.js";
 import { compareRuntime }            from "../_shared/runtime-diff.js";
+import { evaluateDecision }          from "../_shared/decision-engine-v2.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -41,7 +42,16 @@ export async function onRequestGet(context) {
       const rawLegacy = await repo.fetchLegacy(slug);
       const rawV2 = await repo.fetchV2(slug);
       const context = await resolveContext(slug, repo, { render_mode: "canonical" });
-      return { rawLegacy, rawV2, context };
+      
+      // Shadow Decision Evaluation (using empty rules array as V2 rules do not exist yet)
+      let decision = null;
+      try {
+        decision = evaluateDecision(context, []);
+      } catch (e) {
+        // Safe fallback if evaluation crashes
+      }
+
+      return { rawLegacy, rawV2, context, decision };
     })()
   ]);
 
@@ -175,6 +185,7 @@ export async function onRequestGet(context) {
       legacyObject: campaignData,
       runtimeContext: shadowData?.context || null,
       runtimeDiff: diff,
+      decisionShadow: shadowData?.decision || null,
       metadata: {
         runtime_version: "adapter",
         render_mode: "canonical",

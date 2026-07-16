@@ -39,6 +39,7 @@ import { renderHub }                               from "./_shared/hub-renderer.
 import { createRuntimeRepository }                 from "./_shared/runtime-repository.js";
 import { resolveContext }                          from "./_shared/runtime-adapter.js";
 import { compareRuntime }                          from "./_shared/runtime-diff.js";
+import { evaluateDecision }                        from "./_shared/decision-engine-v2.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
@@ -365,7 +366,16 @@ export async function onRequestGet(context) {
       const rawLegacy = await repo.fetchLegacy(targetPageId);
       const rawV2 = await repo.fetchV2(targetPageId);
       const context = await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
-      return { rawLegacy, rawV2, context };
+      
+      // Shadow Decision Evaluation (using empty rules array as V2 rules do not exist yet)
+      let decision = null;
+      try {
+        decision = evaluateDecision(context, []);
+      } catch (e) {
+        // Safe fallback if evaluation crashes
+      }
+      
+      return { rawLegacy, rawV2, context, decision };
     })()
   ]);
 
@@ -528,6 +538,7 @@ export async function onRequestGet(context) {
       legacyObject: hubConfig,
       runtimeContext: shadowData?.context || null,
       runtimeDiff: diff,
+      decisionShadow: shadowData?.decision || null,
       metadata: {
         runtime_version: "adapter",
         render_mode: abActive ? "experiment" : "canonical",

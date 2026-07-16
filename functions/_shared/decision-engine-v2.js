@@ -83,10 +83,16 @@ export function evaluateDecision(runtimeContext, rules, options = {}) {
   const ctx = runtimeContext || {};
   const safeRules = Array.isArray(rules) ? rules : [];
 
-  // Filter disabled rules
+  // Filter disabled rules and validate rule schema
   const validRules = safeRules.filter(r => {
     if (r === null || typeof r !== 'object') return false;
+    if (!r.id) return false;
     if (r.enabled === false) return false;
+    
+    // Action validation
+    if (!r.action || typeof r.action !== 'object') return false;
+    if (!["render", "redirect", "block"].includes(r.action.type)) return false;
+    
     return true;
   });
 
@@ -132,9 +138,6 @@ export function evaluateDecision(runtimeContext, rules, options = {}) {
       decision.render_overrides = deepClone(action.overrides || {});
     } else if (type === "block") {
       decision.action = "block";
-    } else {
-      // Unknown or missing action defaults safely to render
-      decision.action = "render";
     }
 
     if (action.state_mutations) {
