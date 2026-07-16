@@ -40,6 +40,7 @@ import { createRuntimeRepository }                 from "./_shared/runtime-repos
 import { resolveContext }                          from "./_shared/runtime-adapter.js";
 import { compareRuntime }                          from "./_shared/runtime-diff.js";
 import { evaluateDecision }                        from "./_shared/decision-engine-v2.js";
+import { createLegacyCompatibleView }              from "./_shared/runtime-compat-view.js";
 import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
@@ -385,6 +386,18 @@ export async function onRequestGet(context) {
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
 
+  // ── CUTOVER VIEW ──────────────────────────────────────────────────────────
+  const originalHubConfig = hubConfig;
+  const readEnabled = (env.RUNTIME_CONTEXT_READ_ENABLED === "true" || env.RUNTIME_CONTEXT_READ_ENABLED === true);
+  if (readEnabled && runtimeContext) {
+    try {
+      hubConfig = createLegacyCompatibleView(runtimeContext, originalHubConfig);
+    } catch (e) {
+      console.error("[compat_view_error]", e);
+      hubConfig = originalHubConfig; // fallback on error
+    }
+  }
+
   // ── Step 7.1: Static Page Redirect ──────────────────────────────────────
   const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfig?.redirectUrl;
   if (staticRedirect) {
@@ -517,7 +530,7 @@ export async function onRequestGet(context) {
 
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
   if (verifyAdminDebug(request, env)) {
-    const diff = compareRuntime(hubConfig, runtimeContext);
+    const diff = compareRuntime(originalHubConfig, runtimeContext);
     
     const debugPayload = {
       _warning: "RUNTIME INSPECTOR (Shadow Mode)",
@@ -526,14 +539,16 @@ export async function onRequestGet(context) {
         rawLegacy: shadowData?.rawLegacy || null,
         rawV2: shadowData?.rawV2 || null
       },
-      legacyObject: hubConfig,
+      legacyObject: originalHubConfig,
+      runtimeCompatibilityView: readEnabled ? hubConfig : null,
       runtimeContext: shadowData?.context || null,
       runtimeDiff: diff,
       decisionShadow: shadowData?.decision || null,
       metadata: {
         runtime_version: "adapter",
         render_mode: abActive ? "experiment" : "canonical",
-        source_schema: shadowData?.context?.metadata?.source_schema || "unknown"
+        source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
+        runtime_context_read_enabled: readEnabled
       }
     };
     return new Response(JSON.stringify(debugPayload, null, 2), {

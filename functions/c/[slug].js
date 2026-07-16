@@ -5,9 +5,10 @@ import { deriveCampaignFromSlug } from "../_shared/slug-utils.js";
 import { handleDecision }          from "../lib/decision-controller.js";
 import { emitOps, OPS_EVENTS }       from "../_shared/ops-telemetry.js";
 import { createRuntimeRepository }   from "../_shared/runtime-repository.js";
-import { resolveContext }            from "../_shared/runtime-adapter.js";
-import { compareRuntime }            from "../_shared/runtime-diff.js";
-import { evaluateDecision }          from "../_shared/decision-engine-v2.js";
+import { resolveContext } from "../_shared/runtime-adapter.js";
+import { compareRuntime } from "../_shared/runtime-diff.js";
+import { evaluateDecision } from "../_shared/decision-engine-v2.js";
+import { createLegacyCompatibleView } from "../_shared/runtime-compat-view.js";
 import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
 
 const CONFIG_KEY = "hub_config";
@@ -61,21 +62,31 @@ export async function onRequestGet(context) {
     console.debug("[Shadow Mode Error]", shadowResult.reason?.message);
   }
 
+  const campaignResult = slugResult;
+  const  campaignDataVal = campaignResult.status === "fulfilled" ? (campaignResult.value || null) : null;
   const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
-  const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
   const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
+  const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
+  const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
+  const runtimeContext = shadowData?.context || null;
 
-  if (!notFound) {
-    if (slugResult.status === "fulfilled" && slugResult.value) {
-      campaignData = slugResult.value;
-    } else {
-      notFound = true;
+  // ── CUTOVER VIEW ──────────────────────────────────────────────────────────
+  campaignData = campaignDataVal;
+  const originalCampaignData = campaignData;
+  const readEnabled = (env.RUNTIME_CONTEXT_READ_ENABLED === "true" || env.RUNTIME_CONTEXT_READ_ENABLED === true);
+  if (readEnabled && runtimeContext) {
+    try {
+      campaignData = createLegacyCompatibleView(runtimeContext, originalCampaignData);
+    } catch (e) {
+      console.error("[compat_view_error]", e);
+      campaignData = originalCampaignData; // fallback on error
     }
   }
 
-  // Slug isActive check — disabled slug → 404
-  if (!notFound && campaignData.isActive === false) {
-    notFound = true;
+  if (!notFound) {
+    if (!campaignData || campaignData.isActive === false) {
+      notFound = true;
+    }
   }
 
   if (notFound) {
@@ -170,8 +181,7 @@ export async function onRequestGet(context) {
 
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
   if (verifyAdminDebug(request, env)) {
-    const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
-    const diff = compareRuntime(campaignData, shadowData?.context);
+    const diff = compareRuntime(originalCampaignData, runtimeContext);
     
     const debugPayload = {
       _warning: "RUNTIME INSPECTOR (Shadow Mode)",
@@ -180,14 +190,16 @@ export async function onRequestGet(context) {
         rawLegacy: shadowData?.rawLegacy || null,
         rawV2: shadowData?.rawV2 || null
       },
-      legacyObject: campaignData,
+      legacyObject: originalCampaignData,
+      runtimeCompatibilityView: readEnabled ? campaignData : null,
       runtimeContext: shadowData?.context || null,
       runtimeDiff: diff,
       decisionShadow: shadowData?.decision || null,
       metadata: {
         runtime_version: "adapter",
         render_mode: "canonical",
-        source_schema: shadowData?.context?.metadata?.source_schema || "unknown"
+        source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
+        runtime_context_read_enabled: readEnabled
       }
     };
     return new Response(JSON.stringify(debugPayload, null, 2), {
