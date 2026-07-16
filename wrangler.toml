@@ -13,6 +13,7 @@ compatibility_date = "2024-09-23"
 ENV_NAME = "dev"
 GA4_ID = "" # REPLACE GA4_ID
 META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
+RUNTIME_CONTEXT_READ_ENABLED = "true"
 
 # ==============================================================================
 # PRODUCTION ENVIRONMENT
@@ -71,3 +72,4 @@ id = "7b9bb0d4c1b44c6797f8d328f1b64600"
 ENV_NAME = "production"
 GA4_ID = "" # REPLACE GA4_ID
 META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
+RUNTIME_CONTEXT_READ_ENABLED = "true"
