@@ -8,6 +8,7 @@ import { createRuntimeRepository }   from "../_shared/runtime-repository.js";
 import { resolveContext }            from "../_shared/runtime-adapter.js";
 import { compareRuntime }            from "../_shared/runtime-diff.js";
 import { evaluateDecision }          from "../_shared/decision-engine-v2.js";
+import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -168,10 +169,7 @@ export async function onRequestGet(context) {
   });
 
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
-  const adminVerifyParam = url.searchParams.get("admin-verify");
-  const adminVerified    = Boolean(adminVerifyParam && env.ADMIN_TOKEN && adminVerifyParam === env.ADMIN_TOKEN);
-
-  if (adminVerified && url.searchParams.get("runtime-debug") === "1") {
+  if (verifyAdminDebug(request, env)) {
     const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
     const diff = compareRuntime(campaignData, shadowData?.context);
     
@@ -196,7 +194,7 @@ export async function onRequestGet(context) {
       status: 200,
       headers: {
         "Content-Type": "application/json;charset=UTF-8",
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, private",
         "X-Robots-Tag": "noindex,nofollow",
         "X-Content-Type-Options": "nosniff",
         "Referrer-Policy": "strict-origin-when-cross-origin"

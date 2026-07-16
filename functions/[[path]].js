@@ -40,6 +40,7 @@ import { createRuntimeRepository }                 from "./_shared/runtime-repos
 import { resolveContext }                          from "./_shared/runtime-adapter.js";
 import { compareRuntime }                          from "./_shared/runtime-diff.js";
 import { evaluateDecision }                        from "./_shared/decision-engine-v2.js";
+import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
@@ -215,15 +216,8 @@ export async function onRequestGet(context) {
   const { alias, modifier } = parsed;
 
   // ── Admin-verify overlay check ────────────────────────────────────────────
-  // Validate ?admin-verify=<token> against env.ADMIN_TOKEN (constant-time not
-  // required here — this is not a cryptographic boundary, just a presentation gate).
-  // Token never reaches analytics, logs, or any downstream system.
-  const adminVerifyParam = new URL(request.url).searchParams.get("admin-verify");
-  const adminVerified    = Boolean(
-    adminVerifyParam &&
-    env.ADMIN_TOKEN  &&
-    adminVerifyParam === env.ADMIN_TOKEN
-  );
+  // Removed old query-param logic per security requirements.
+  // Inspector auth is now securely handled via headers.
 
   // Stable tracing ID (cf-ray is available in prod; fallback for local dev)
   const requestId = request.headers.get("cf-ray") || crypto.randomUUID?.() || "";
@@ -516,15 +510,11 @@ export async function onRequestGet(context) {
   });
 
   // ── Admin overlay injection ───────────────────────────────────────────────
-  // Injects ✔/⚠/✖ link-state badges for authenticated admins.
-  // Admin-verified responses are served no-store to prevent caching of the
-  // embedded token in Workers Cache or CDN edge nodes.
-  const finalHtml = adminVerified
-    ? html.replace("</body>", buildAdminOverlay(alias, adminVerifyParam) + "\n</body>")
-    : html;
+  // Removed per security requirements; tokens must not be embedded in HTML.
+  const finalHtml = html;
 
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
-  if (adminVerified && url.searchParams.get("runtime-debug") === "1") {
+  if (verifyAdminDebug(request, env)) {
     const shadowData = shadowResult?.status === "fulfilled" ? shadowResult.value : null;
     const diff = compareRuntime(hubConfig, shadowData?.context);
     
@@ -549,7 +539,7 @@ export async function onRequestGet(context) {
       status: 200,
       headers: {
         "Content-Type": "application/json;charset=UTF-8",
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, private",
         ...SEC_HEADERS
       }
     });
@@ -562,10 +552,10 @@ export async function onRequestGet(context) {
     ...SEC_HEADERS,
   });
 
-  // Cache-Control: no-store when admin-verified OR when setting a new experiment
+  // Cache-Control: no-store when setting a new experiment
   // cookie (prevents the cookie-setting response from being cached and replayed
   // to visitors who already hold a different assignment).
-  if (adminVerified || expResult?.isNewAssignment) {
+  if (expResult?.isNewAssignment) {
     resHeaders.set("Cache-Control", "no-store");
   } else {
     resHeaders.set("Cache-Control", "public, max-age=60, s-maxage=0");
