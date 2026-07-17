@@ -29,9 +29,7 @@ export function createRuntimeRepository(env) {
               "operator": "===",
               "value": "m2-shadow-probe"
             },
-            "action": {
-              "type": "render"
-            }
+            "action": "render"
           }
         ];
       }
