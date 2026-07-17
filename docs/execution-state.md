@@ -4,7 +4,7 @@
 
 ## Active milestone
 
-**M3A — Decision V2 limited cutover** attempted its approved single-route automated validation, but the bounded validation process connection ended before the required probe and observation evidence could be captured. Codex applied the required safety rollback. M3A is not complete, manual browser validation was not reached, and M3B remains blocked pending a newly approved retry procedure.
+**M3A — Decision V2 limited cutover** is currently **blocked at the production deployment gate**. Scoped local validation was successfully executed and verified (10 trigger probes and 5 baseline probes passed with 100% correct authority and identical results). However, production deployment via the GitHub Actions pipeline is blocked because the required secrets (`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`) are missing/not configured in the repository settings. The repository remains on the safe rollback baseline.
 
 ## Production baseline
 
@@ -60,9 +60,10 @@
 
 ## Next gates
 
-1. Stop at M3A: obtain explicit approval for a retry/recovery procedure that preserves preimages and required observation evidence through the entire validation window; manual browser validation is not yet eligible.
-2. Do not cut over Decision V2, renderer, journeys, or Rule Builder before their recorded prerequisites are met.
-3. M3A/M3B, M4B/M4C, M5A, M6A/M6B, and Pulse UI each retain their own public-behavior, product, or visual manual gates.
+1. Stop at M3A: Resolve the GitHub repository deployment secrets blocker. Ekin must configure `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the `CogniLink-Runtime-Pages` repository settings.
+2. Once GHA deployment is functional, deploy and execute the M3A production cutover, then proceed to the manual browser validation gate.
+3. Do not cut over Decision V2, renderer, journeys, or Rule Builder before their recorded prerequisites are met.
+4. M3A/M3B, M4B/M4C, M5A, M6A/M6B, and Pulse UI each retain their own public-behavior, product, or visual manual gates.
 
 ## Change log
 
@@ -73,3 +74,4 @@
 - 2026-07-17: Expanded M2–M7 into evidence-based executable contracts without changing runtime code, production routes, flags, or configuration.
 - 2026-07-17: Completed M2B with the approved temporary source rule and one Inspector probe. Both decision engines rendered identically; all temporary KV and Pages configuration changes were fully rolled back and verified before the M3A manual gate.
 - 2026-07-17: M3A scoped validation halted after the bounded validation process connection ended before required evidence was captured. Codex restored the selected record's semantic baseline and legacy Pages configuration, then verified health; M3A remains incomplete.
+- 2026-07-17: Conducted M3A local validation using a running Wrangler dev server and local KV injection. Executed 10 trigger probes (confirmed Decision V2 authority matches and compares identically) and 5 baseline probes (confirmed legacy authority falls back successfully). Documented the GHA deployment credentials blocker.
