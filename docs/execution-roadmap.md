@@ -4,7 +4,7 @@
 
 ## Verified baseline — 2026-07-17
 
-- Production is serving commit `98de036`; health, KV, and Analytics Engine checks are healthy.
+- Production is serving commit `a7c881a`; health, KV, and Analytics Engine checks are healthy.
 - Runtime Adapter, Runtime Diff, Inspector, compatibility view, Decision V2 shadow evaluation, shadow telemetry, and summary endpoints are implemented and tested.
 - `RUNTIME_CONTEXT_READ_ENABLED=true` serves the legacy-compatible view. Legacy `handleDecision()` and `renderHub()` remain the response authorities.
 - Production contains six `SLUG_LINKS` records, two `APP_CONFIG` pages, and no page, global, or engine legacy decision rules or overrides. Real-rule comparison therefore has no sample population.
@@ -26,7 +26,7 @@
 
 Create the execution roadmap, state ledger, and persistent repository rules. Keep historical notes as non-authoritative evidence.
 
-### M1 — Decision V2 shadow-context parity — ready
+### M1 — Decision V2 shadow-context parity — complete
 
 **Goal:** Give V2 the same immutable request and pre-decision user-state inputs used by the legacy evaluator, without changing the public response.
 
