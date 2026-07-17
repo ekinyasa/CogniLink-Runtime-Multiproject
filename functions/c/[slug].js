@@ -108,7 +108,7 @@ export async function onRequestGet(context) {
   if (runtimeContext) {
     try {
       const ruleRepo = createRuleRepository(env);
-      const ruleSource = await ruleRepo.fetchRules(runtimeContext, campaignDataVal || shadowData?.rawLegacy || {}, {
+      const ruleSource = await ruleRepo.fetchRules(runtimeContext, shadowData?.rawLegacy || campaignDataVal || {}, {
         engineConfig,
         globalConfig: config
       });
