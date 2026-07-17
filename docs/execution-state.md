@@ -4,7 +4,7 @@
 
 ## Active milestone
 
-**M3A — Decision V2 limited cutover** has an approved single-route authority scope. Implementation, automated production validation, and the required 15-minute observation are in progress; M3A is not complete until Ekin approves the manual browser check. M3B remains blocked.
+**M3A — Decision V2 limited cutover** attempted its approved single-route automated validation, but the bounded validation process connection ended before the required probe and observation evidence could be captured. Codex applied the required safety rollback. M3A is not complete, manual browser validation was not reached, and M3B remains blocked pending a newly approved retry procedure.
 
 ## Production baseline
 
@@ -48,9 +48,17 @@
 - Observation contract: at least 10 controlled trigger probes, 5 triggerless baseline probes, 15 minutes of production checks, and health/diagnostic verification.
 - Manual gate owner: Ekin. Browser validation is mandatory before recording M3A completion or considering M3B.
 
+## M3A failed validation and safety rollback
+
+- The scoped implementation commit was `b5d2fc7`. The selected target record temporarily received only the approved `decision_rules` entry, and the scoped Pages authority flags were enabled for the validation window.
+- The validation process connection ended before it produced the required ten trigger probes, five baseline probes, fifteen-minute observation, or a complete diagnostic record. No successful M3A result is claimed.
+- Codex immediately restored legacy baseline configuration: `DECISION_V2_CUTOVER_ENABLED=false`, `REAL_RULE_SHADOW_ENABLED=false`, sampling restored to `0.1`, and all selected cutover identifiers cleared.
+- Read-only recovery verification confirmed the selected record has no `decision_rules`, metadata remains a JSON object, no expiration is present, and production health returned `200`.
+- The original target value was held only in the bounded process memory that became unavailable. The recovery write removed only `decision_rules` from the current JSON record, so semantic restoration is verified but raw byte-for-byte preimage equality cannot be certified. This integrity caveat blocks completion and requires an explicit retry/recovery decision before M3A resumes.
+
 ## Next gates
 
-1. Stop at M3A: obtain explicit approval for the Decision V2 authority scope, success metrics, rollback owner, and required manual render validation.
+1. Stop at M3A: obtain explicit approval for a retry/recovery procedure that preserves preimages and required observation evidence through the entire validation window; manual browser validation is not yet eligible.
 2. Do not cut over Decision V2, renderer, journeys, or Rule Builder before their recorded prerequisites are met.
 3. M3A/M3B, M4B/M4C, M5A, M6A/M6B, and Pulse UI each retain their own public-behavior, product, or visual manual gates.
 
@@ -62,3 +70,4 @@
 - 2026-07-17: Verified M1 implementation `a7c881a` in production; `ea42715` is the post-verification documentation commit confirmed active by health. Inspector found no production rule sources and the public smoke response was unchanged.
 - 2026-07-17: Expanded M2–M7 into evidence-based executable contracts without changing runtime code, production routes, flags, or configuration.
 - 2026-07-17: Completed M2B with the approved temporary source rule and one Inspector probe. Both decision engines rendered identically; all temporary KV and Pages configuration changes were fully rolled back and verified before the M3A manual gate.
+- 2026-07-17: M3A scoped validation halted after the bounded validation process connection ended before required evidence was captured. Codex restored the selected record's semantic baseline and legacy Pages configuration, then verified health; M3A remains incomplete.

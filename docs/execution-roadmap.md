@@ -91,7 +91,8 @@ V2 receives immutable request/user-state inputs compatible with legacy evaluatio
 - **Rollback plan:** Disable the scoped authority switch and immediately return the selected scope to legacy `handleDecision()`; retain evidence and do not alter rule data.
 - **Exit criteria:** Approved limited scope remains stable through the agreed observation window, fallback is proven, no unresolved mismatch/failure exists, and product owner accepts results.
 - **Next milestone unlock condition:** M3B unlocks only after explicit approval to expand from the limited scope to full Decision V2 authority.
-- **Approved scope (2026-07-17):** Only direct `/c/test-1783922084893-igbio` requests with `utm_source=m2-shadow-probe` and matched rule `m2-shadow-source-render` may use V2 authority. All other routes and rule sources remain legacy. Codex owns automatic rollback; Ekin owns the post-observation browser gate. M3A remains incomplete until that gate passes.
+- **Approved scope (2026-07-17):** Only direct `/c/test-1783922084893-igbio` requests with `utm_source=m2-shadow-probe` and matched rule `m2-shadow-source-render` may use V2 authority. All other routes and rule sources remain legacy. Codex owns automatic rollback; Ekin owns the post-observation browser gate.
+- **Execution result (2026-07-17):** The first scoped validation halted when its bounded execution connection ended before the required probe matrix and observation evidence could be captured. Codex removed the temporary target rule, restored legacy configuration, and verified the selected record's semantic state and health. Because the original raw preimage existed only in the ended process memory, byte-for-byte restoration cannot be certified; no M3A success or browser gate is claimed. M3A remains incomplete and M3B stays locked until an explicitly approved retry/recovery procedure addresses this evidence-integrity gap.
 
 ### M3B — Decision V2 full authority — manual gate
 
