@@ -15,6 +15,7 @@ import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
 import { normalizeRules } from "../_shared/rule-compat.js";
 import { compareDecisions } from "../_shared/decision-comparator.js";
 import { createDecisionShadowContext } from "../_shared/decision-shadow-context.js";
+import { applyDecisionAuthority, selectDecisionAuthority } from "../_shared/decision-authority.js";
 import { readCookie } from "../_shared/cookie-utils.js";
 import { parseUserState } from "../_shared/user-state.js";
 
@@ -97,11 +98,13 @@ export async function onRequestGet(context) {
     console.error("[Legacy Decision Error]", err);
     legacyError = true;
   }
+  const legacyDecision = decision;
 
   // ── RULE REPOSITORY (Shadow Mode) ─────────────────────────────────────────
   let ruleShadow = null;
   let decisionShadow = null;
   let decisionComparison = null;
+  let v2Error = false;
   if (runtimeContext) {
     try {
       const ruleRepo = createRuleRepository(env);
@@ -129,7 +132,7 @@ export async function onRequestGet(context) {
       const realRuleShadowEnabled = String(env.REAL_RULE_SHADOW_ENABLED) === "true";
       if (realRuleShadowEnabled) {
         const hasRules = validRules && validRules.length > 0;
-        decisionComparison = compareDecisions(decision, decisionShadow, {
+        decisionComparison = compareDecisions(legacyDecision, decisionShadow, {
           legacyError,
           v2Error: false,
           hasRules
@@ -137,10 +140,23 @@ export async function onRequestGet(context) {
       }
     } catch (e) {
       console.error("[Shadow Rule Evaluation Error]", e);
+      v2Error = true;
       ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
       decisionShadow = evaluateDecision(decisionShadowContext, []);
     }
   }
+
+  const decisionAuthority = selectDecisionAuthority(env, {
+    routeType: "c",
+    slug,
+    source: utmSource,
+    ruleShadow,
+    decisionShadow,
+    decisionComparison,
+    legacyError,
+    v2Error
+  });
+  decision = applyDecisionAuthority(legacyDecision, decisionShadow, decisionAuthority);
 
   // ── CUTOVER VIEW ──────────────────────────────────────────────────────────
   campaignData = campaignDataVal;
@@ -210,8 +226,9 @@ export async function onRequestGet(context) {
           legacy_action: decisionComparison?.legacy?.action_type || null,
           v2_action: decisionComparison?.v2?.action_type || null,
           matched_rule_id: decisionShadow?.matched_rule_id || null
+        },
+        decisionAuthority
         }
-      }
     };
     return new Response(JSON.stringify(debugPayload, null, 2), {
       status: 200,

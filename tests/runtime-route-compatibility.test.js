@@ -421,6 +421,46 @@ async function runTests() {
     assert.equal(visitorPayload.metadata.realRuleShadow.comparison_status, "identical");
   });
 
+  await test("20. M3A authority is limited to the approved c-route scope", async () => {
+    const record = {
+      slug: "test-1783922084893-igbio",
+      isActive: true,
+      decision_rules: [{
+        id: "m2-shadow-source-render",
+        priority: 100,
+        condition: { property: "source", operator: "===", value: "m2-shadow-probe" },
+        action: "render"
+      }]
+    };
+    const hubEnv = createMockEnv({
+      SLUG_LINKS: { get: async (key) => key === record.slug ? record : null },
+      DECISION_V2_CUTOVER_ENABLED: "true",
+      DECISION_V2_CUTOVER_ROUTE_TYPE: "c",
+      DECISION_V2_CUTOVER_SLUG: record.slug,
+      DECISION_V2_CUTOVER_SOURCE: "m2-shadow-probe",
+      DECISION_V2_CUTOVER_RULE_ID: "m2-shadow-source-render"
+    });
+
+    const selectedRequest = createMockRequest(
+      `https://localhost/c/${record.slug}?runtime-debug=1&utm_source=m2-shadow-probe`,
+      { "Authorization": "Bearer secret_admin" }
+    );
+    const selectedResponse = await campaignHandler(createMockContext(selectedRequest, hubEnv, { slug: record.slug }));
+    const selectedPayload = await selectedResponse.json();
+    assert.equal(selectedPayload.metadata.decisionAuthority.authority, "decision_v2");
+    assert.equal(selectedPayload.metadata.decisionAuthority.fallback_used, false);
+    assert.equal(selectedPayload.metadata.realRuleShadow.comparison_status, "identical");
+
+    const outsideRequest = createMockRequest(
+      `https://localhost/c/${record.slug}?runtime-debug=1`,
+      { "Authorization": "Bearer secret_admin" }
+    );
+    const outsideResponse = await campaignHandler(createMockContext(outsideRequest, hubEnv, { slug: record.slug }));
+    const outsidePayload = await outsideResponse.json();
+    assert.equal(outsidePayload.metadata.decisionAuthority.authority, "legacy");
+    assert.equal(outsidePayload.metadata.decisionAuthority.fallback_used, false);
+  });
+
   console.log("\n── Test Summary ──");
   console.log(`Passed: ${passed}`);
   console.log(`Failed: ${failed}`);

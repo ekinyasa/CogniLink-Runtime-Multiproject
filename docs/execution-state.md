@@ -4,7 +4,7 @@
 
 ## Active milestone
 
-**M3A — Decision V2 limited cutover** is at a manual gate. M2B completed with an explicitly approved, one-request controlled shadow validation and a verified full rollback. Decision response authority remains legacy; no M3A work has started.
+**M3A — Decision V2 limited cutover** has an approved single-route authority scope. Implementation, automated production validation, and the required 15-minute observation are in progress; M3A is not complete until Ekin approves the manual browser check. M3B remains blocked.
 
 ## Production baseline
 
@@ -39,6 +39,14 @@
 - Runtime activation: Inspector confirmed `REAL_RULE_SHADOW_ENABLED=true` and sampling rate `1` after a controlled deployment of the verified repository HEAD. The request correlation identifier was captured only in process memory and not persisted.
 - Rollback: the target value was byte-equal to its preimage; expiration matched; metadata was JSON-semantically equal; `decision_rules` was absent; both Pages flags matched baseline; health returned `200`; and the normal public route status/location matched its preimage behavior.
 - Evidence method: the explicitly approved Inspector response was the single-probe authority. Analytics SQL was not used and no Account Analytics permission was requested.
+
+## M3A approved authority scope
+
+- Scope: only direct `/c/test-1783922084893-igbio` requests with `utm_source=m2-shadow-probe` and matched rule `m2-shadow-source-render` may use Decision V2 authority.
+- Authority contract: V2 action is used only after an identical legacy comparison, one converted supported rule, and a valid V2 action. All other routes, sources, rules, errors, unsupported results, and invalid actions retain legacy authority.
+- Fallback and rollback owner: Codex. Any action mismatch, scope escape, fallback failure, 5xx, health failure, or unexpected response difference requires immediate return to legacy authority.
+- Observation contract: at least 10 controlled trigger probes, 5 triggerless baseline probes, 15 minutes of production checks, and health/diagnostic verification.
+- Manual gate owner: Ekin. Browser validation is mandatory before recording M3A completion or considering M3B.
 
 ## Next gates
 
