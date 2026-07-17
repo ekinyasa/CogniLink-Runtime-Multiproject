@@ -44,6 +44,7 @@ import { createRuleRepository }                    from "./_shared/rule-reposito
 import { evaluateDecision }                        from "./_shared/decision-engine-v2.js";
 import { createLegacyCompatibleView }              from "./_shared/runtime-compat-view.js";
 import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
+import { compareDecisions }                        from "./_shared/decision-comparator.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
@@ -375,15 +376,38 @@ export async function onRequestGet(context) {
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
 
+  // Pre-calculate inputs for legacy decision
+  const utmSource = url.searchParams.get("utm_source") || "";
+  const utmMedium = url.searchParams.get("utm_medium") || "";
+  const utmCampaign = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfigVal?.campaign && String(hubConfigVal.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
+
+  const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfigVal?.redirectUrl;
+
+  let decision = null;
+  let legacyError = false;
+  if (!staticRedirect) {
+    try {
+      decision = await handleDecision(request, env, {
+        source:   utmSource,
+        medium:   utmMedium,
+        campaign: utmCampaign,
+        decisionRules: hubConfigVal?.decision_rules || globalConfig?.decision_rules || [],
+        engineConfig,
+        engineMapId: hubConfigVal?.engineMapId || null,
+      });
+    } catch (err) {
+      console.error("[Legacy Decision Error]", err);
+      legacyError = true;
+    }
+  }
+
   // ── RULE REPOSITORY (Shadow Mode) ─────────────────────────────────────────
   let ruleShadow = null;
   let decisionShadow = null;
+  let decisionComparison = null;
   if (runtimeContext) {
     try {
-      // Dynamic import to avoid breaking legacy code if there's an issue
       const { createRuleRepository } = await import("./_shared/rule-repository.js");
-      const { normalizeRules } = await import("./_shared/rule-compat.js");
-      
       const ruleRepo = createRuleRepository(env);
       const ruleSource = await ruleRepo.fetchRules(runtimeContext, hubConfigVal || shadowData?.rawLegacy || {}, {
         engineConfig,
@@ -391,20 +415,32 @@ export async function onRequestGet(context) {
       });
       
       const rawRules = ruleSource.rules || [];
-      const validRules = ruleSource.schema === "v2" ? rawRules : normalizeRules(rawRules, runtimeContext);
+      const validRules = rawRules; // Consolidated repository returns pre-normalized V2 rules
       
       ruleShadow = {
         source: ruleSource.source,
         source_id: ruleSource.source_id,
         schema: ruleSource.schema,
-        raw_count: rawRules.length,
-        valid_count: validRules.length,
-        invalid_count: rawRules.length - validRules.length,
+        raw_count: ruleSource.raw_count !== undefined ? ruleSource.raw_count : rawRules.length,
+        valid_count: ruleSource.valid_count !== undefined ? ruleSource.valid_count : validRules.length,
+        invalid_count: ruleSource.invalid_count !== undefined ? ruleSource.invalid_count : 0,
         rules: validRules
       };
 
       const { evaluateDecision } = await import("./_shared/decision-engine-v2.js");
       decisionShadow = evaluateDecision(runtimeContext, validRules);
+
+      // Compare legacy vs V2 decisions
+      const realRuleShadowEnabled = String(env.REAL_RULE_SHADOW_ENABLED) === "true";
+      if (realRuleShadowEnabled) {
+        const { compareDecisions } = await import("./_shared/decision-comparator.js");
+        const hasRules = validRules && validRules.length > 0;
+        decisionComparison = compareDecisions(decision, decisionShadow, {
+          legacyError,
+          v2Error: false,
+          hasRules
+        });
+      }
     } catch (e) {
       console.error("[Shadow Rule Evaluation Error]", e);
       ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
@@ -440,7 +476,8 @@ export async function onRequestGet(context) {
         decisionShadow,
         exception: shadowData?.exception || null,
         request_id: request.headers.get("cf-ray") || "",
-        uid: "" 
+        uid: decision?.userState?.uid || "",
+        decisionComparison
       });
     } catch (e) {
       console.error("[Shadow Telemetry Error]", e);
@@ -469,7 +506,18 @@ export async function onRequestGet(context) {
         render_mode: abActive ? "experiment" : "canonical",
         source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
         runtime_context_read_enabled: readEnabled,
-        shadowTelemetry: shadowTelemetryMeta
+        shadowTelemetry: shadowTelemetryMeta,
+        realRuleShadow: {
+          enabled: String(env.REAL_RULE_SHADOW_ENABLED) === "true",
+          source_count: ruleShadow?.raw_count || 0,
+          converted_count: ruleShadow?.valid_count || 0,
+          unsupported_count: ruleShadow?.invalid_count || 0,
+          comparable: decisionComparison ? decisionComparison.comparable : false,
+          comparison_status: decisionComparison ? decisionComparison.status : "not_comparable",
+          legacy_action: decisionComparison?.legacy?.action_type || null,
+          v2_action: decisionComparison?.v2?.action_type || null,
+          matched_rule_id: decisionShadow?.matched_rule_id || null
+        }
       }
     };
     return new Response(JSON.stringify(debugPayload, null, 2), {
@@ -483,7 +531,6 @@ export async function onRequestGet(context) {
   }
 
   // ── Step 7.1: Static Page Redirect ──────────────────────────────────────
-  const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfig?.redirectUrl;
   if (staticRedirect) {
     try {
       const rUrl = new URL(staticRedirect);
@@ -498,18 +545,24 @@ export async function onRequestGet(context) {
   // ── Step 7.5: Decision Engine (Invisible Router - Unified) ───────────────
   // Evaluate behavior-driven rules to decide if we should show the hub or
   // perform an instant redirect. Managed by handleDecision() helper.
-  const utmSource   = url.searchParams.get("utm_source")   || "";
-  const utmMedium   = url.searchParams.get("utm_medium")   || "";
-  const utmCampaign = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
+  if (!decision && !staticRedirect && !legacyError) {
+    try {
+      decision = await handleDecision(request, env, {
+        source:   utmSource,
+        medium:   utmMedium,
+        campaign: utmCampaign,
+        decisionRules: hubConfig?.decision_rules || globalConfig?.decision_rules || [],
+        engineConfig,
+        engineMapId: hubConfig?.engineMapId || null,
+      });
+    } catch (e) {
+      console.error("[Decision Engine Fail]", e);
+    }
+  }
 
-  const decision = await handleDecision(request, env, {
-    source:   utmSource,
-    medium:   utmMedium,
-    campaign: utmCampaign,
-    decisionRules: hubConfig?.decision_rules || globalConfig?.decision_rules || [],
-    engineConfig,
-    engineMapId: hubConfig?.engineMapId || null,
-  });
+  if (!decision) {
+    decision = { action: "render", cookies: [], userState: { v: 1 } };
+  }
 
   if (decision.action === "redirect" && decision.target) {
     // ── Instant Redirect (Decision Layer remains invisible) ───────────────

@@ -15,6 +15,7 @@ const createMockEnv = (overrides = {}) => {
     META_PIXEL_ID: "P-TEST",
     RUNTIME_CONTEXT_READ_ENABLED: "true",
     ADMIN_TOKEN: "secret_admin",
+    REAL_RULE_SHADOW_ENABLED: "true",
     ...overrides
   };
   // If ADMIN_TOKEN is explicitly passed as undefined in overrides, delete it

@@ -10,7 +10,8 @@ async function runTests() {
     catch (e) { console.error(`❌ FAIL: ${name}`); console.error(e); failed++; }
   }
 
-  const repo = createRuleRepository({});
+  const repo = createRuleRepository({ REAL_RULE_SHADOW_ENABLED: "true" });
+  const repoDisabled = createRuleRepository({ REAL_RULE_SHADOW_ENABLED: "false" });
 
   await test("Returns shadow_decision_rules rules if present and schema is v2", async () => {
     const legacy = { id: "p1", shadow_decision_rules: [{ id: "shadow_1" }], decision_rules: [{ id: "r1" }] };
@@ -22,19 +23,19 @@ async function runTests() {
   });
 
   await test("Returns page_config rules if present in legacyObject (no shadow rules)", async () => {
-    const legacy = { id: "p1", decision_rules: [{ id: "r1" }] };
+    const legacy = { id: "p1", decision_rules: [{ id: "r1", action: "render" }] };
     const res = await repo.fetchRules({}, legacy, {});
     assert.equal(res.source, "page_config");
-    assert.equal(res.schema, "legacy");
+    assert.equal(res.schema, "v2");
     assert.equal(res.rules.length, 1);
   });
 
   await test("Returns engine_config_map rules if engineMapId matches", async () => {
     const legacy = { id: "p1", engineMapId: "m1" };
-    const engineConfig = { customMaps: { "m1": { rules: [{ id: "tag1" }] } } };
+    const engineConfig = { customMaps: { "m1": { rules: [{ id: "tag1", action: "render" }] } } };
     const res = await repo.fetchRules({}, legacy, { engineConfig });
     assert.equal(res.source, "engine_config_map");
-    assert.equal(res.rules[0].id, "tag1");
+    assert.equal(res.schema, "v2");
   });
 
   await test("Returns empty array and 'none' source if no rules found", async () => {
@@ -43,10 +44,17 @@ async function runTests() {
     assert.equal(res.rules.length, 0);
   });
 
+  await test("Returns none if REAL_RULE_SHADOW_ENABLED is false", async () => {
+    const legacy = { id: "p1", decision_rules: [{ id: "r1", action: "render" }] };
+    const res = await repoDisabled.fetchRules({}, legacy, {});
+    assert.equal(res.source, "none");
+    assert.equal(res.rules.length, 0);
+  });
+
   await test("Exceptions are caught and safe fallback returned", async () => {
     // Force exception
     const fakeLegacy = { get engineMapId() { throw new Error("BOOM"); } };
-    const res = await repo.fetchRules({}, fakeLegacy, {});
+    const res = await repo.fetchRules({}, fakeLegacy, { engineConfig: {} });
     assert.equal(res.source, "error");
     assert.equal(res.rules.length, 0);
   });

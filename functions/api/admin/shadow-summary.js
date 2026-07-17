@@ -4,7 +4,7 @@
  * GET /api/admin/shadow-summary?window=1h
  * 
  * Read-only admin endpoint that queries Cloudflare Analytics Engine
- * for shadow_evaluation and shadow_mismatch event counts.
+ * for shadow_evaluation and shadow_mismatch event counts, and aggregates them.
  * 
  * Uses the same AE SQL API pattern as analytics.js.
  * 
@@ -82,66 +82,98 @@ export async function onRequestGet(context) {
   const intervalStr = `INTERVAL '${windowDef.interval}' ${windowDef.unit}`;
 
   try {
-    // Query 1: Count evaluations and mismatches
-    const sqlCounts = `
-      SELECT index1 AS event_type, SUM(_sample_interval) AS count
+    // Query raw dataset grouped by event type, slug, route_type, and details JSON to compile metrics in JS
+    const sqlQuery = `
+      SELECT index1 AS event_type, blob1 AS slug, blob2 AS route_type, blob4 AS detail, SUM(_sample_interval) AS count
       FROM ${dataset}
       WHERE index1 IN ('shadow_evaluation', 'shadow_mismatch')
         AND timestamp > now() - ${intervalStr}
-      GROUP BY event_type
+      GROUP BY event_type, slug, route_type, detail
+      LIMIT 10000
     `;
 
-    // Query 2: Top mismatch categories (from blob4 detail JSON)
-    // blob4 contains JSON with mismatch_categories array
-    // AE SQL doesn't support JSON parsing, so we extract from blob2 (route_type)
-    // and blob1 (slug) for grouping. For categories we query the raw mismatch events.
-    const sqlMismatchBySlug = `
-      SELECT blob1 AS slug, blob2 AS route_type, SUM(_sample_interval) AS count
-      FROM ${dataset}
-      WHERE index1 = 'shadow_mismatch'
-        AND timestamp > now() - ${intervalStr}
-      GROUP BY slug, route_type
-      ORDER BY count DESC
-      LIMIT 20
-    `;
-
-    const [countsRes, mismatchRes] = await Promise.allSettled([
-      aeQuery(accountId, apiToken, sqlCounts),
-      aeQuery(accountId, apiToken, sqlMismatchBySlug)
-    ]);
+    const aeResponse = await aeQuery(accountId, apiToken, sqlQuery);
+    const rows = Array.isArray(aeResponse?.data) ? aeResponse.data : [];
 
     let evaluationCount = 0;
+    let comparableCount = 0;
+    let notComparableCount = 0;
     let mismatchCount = 0;
+    let failureCount = 0;
+    let diagnosticMismatchCount = 0;
 
-    if (countsRes.status === "fulfilled" && Array.isArray(countsRes.value?.data)) {
-      for (const row of countsRes.value.data) {
-        const count = Number(row.count) || 0;
-        if (row.event_type === "shadow_evaluation") evaluationCount = count;
-        else if (row.event_type === "shadow_mismatch") mismatchCount = count;
+    const routeMismatches = {};
+    const ruleMismatches = {};
+
+    for (const row of rows) {
+      const eventType = row.event_type;
+      const slug = row.slug || "";
+      const routeType = row.route_type || "";
+      const detailStr = row.detail || "";
+      const count = Number(row.count) || 0;
+
+      let detail = {};
+      try {
+        if (detailStr) {
+          detail = JSON.parse(detailStr) || {};
+        }
+      } catch (e) {
+        // Fallback for non-JSON or corrupted payloads
+      }
+
+      const isDiag = slug === "admin_diagnostic" || routeType === "diagnostic" || detail.mismatch_categories?.includes("diagnostic");
+
+      if (isDiag) {
+        if (eventType === "shadow_mismatch") {
+          diagnosticMismatchCount += count;
+        }
+      } else {
+        if (eventType === "shadow_evaluation") {
+          evaluationCount += count;
+          if (detail.comparable === true) {
+            comparableCount += count;
+          } else if (detail.comparable === false) {
+            notComparableCount += count;
+          }
+        } else if (eventType === "shadow_mismatch") {
+          mismatchCount += count;
+          
+          if (detail.mismatch_categories?.includes("exception") || detail.mismatch_categories?.includes("context_failure")) {
+            failureCount += count;
+          }
+
+          // Accumulate route/rule mismatches
+          if (routeType) {
+            routeMismatches[routeType] = (routeMismatches[routeType] || 0) + count;
+          }
+          if (detail.matched_rule_id && detail.matched_rule_id !== "none") {
+            ruleMismatches[detail.matched_rule_id] = (ruleMismatches[detail.matched_rule_id] || 0) + count;
+          }
+        }
       }
     }
 
-    const mismatchRate = evaluationCount > 0
-      ? mismatchCount / evaluationCount
-      : (mismatchCount > 0 ? 1 : 0);
-
-    const topMismatchSlugs = [];
-    if (mismatchRes.status === "fulfilled" && Array.isArray(mismatchRes.value?.data)) {
-      for (const row of mismatchRes.value.data) {
-        topMismatchSlugs.push({
-          slug: row.slug || "unknown",
-          route_type: row.route_type || "unknown",
-          count: Number(row.count) || 0
-        });
-      }
-    }
+    const mismatchRate = comparableCount > 0
+      ? mismatchCount / comparableCount
+      : 0;
 
     return new Response(JSON.stringify({
       ok: true,
       evaluation_count: evaluationCount,
+      comparable_count: comparableCount,
+      not_comparable_count: notComparableCount,
       mismatch_count: mismatchCount,
       mismatch_rate: Math.round(mismatchRate * 10000) / 10000,
-      top_mismatch_slugs: topMismatchSlugs,
+      failure_count: failureCount,
+      diagnostic_mismatch_count: diagnosticMismatchCount,
+      top_mismatch_routes: Object.entries(routeMismatches)
+        .map(([route, count]) => ({ route, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5),
+      top_mismatch_rules: Object.entries(ruleMismatches)
+        .map(([rule_id, count]) => ({ rule_id, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5),
       window: windowParam,
       dataset,
       generated_at: new Date().toISOString()

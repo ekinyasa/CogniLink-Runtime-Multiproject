@@ -13,6 +13,7 @@ import { emitShadowTelemetry } from "../_shared/shadow-telemetry.js";
 import { createLegacyCompatibleView } from "../_shared/runtime-compat-view.js";
 import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
 import { normalizeRules } from "../_shared/rule-compat.js";
+import { compareDecisions } from "../_shared/decision-comparator.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -65,9 +66,32 @@ export async function onRequestGet(context) {
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
 
+  // Pre-calculate inputs for legacy decision
+  const url         = new URL(request.url);
+  const utmSource   = url.searchParams.get("utm_source")   || "";
+  const utmMedium   = url.searchParams.get("utm_medium")   || "";
+  const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug);
+
+  let decision = null;
+  let legacyError = false;
+  try {
+    decision = await handleDecision(request, env, {
+      source:   utmSource,
+      medium:   utmMedium,
+      campaign: utmCampaign,
+      decisionRules: campaignDataVal?.decision_rules || config?.decision_rules || [],
+      engineConfig,
+      engineMapId: campaignDataVal?.engineMapId || null,
+    });
+  } catch (err) {
+    console.error("[Legacy Decision Error]", err);
+    legacyError = true;
+  }
+
   // ── RULE REPOSITORY (Shadow Mode) ─────────────────────────────────────────
   let ruleShadow = null;
   let decisionShadow = null;
+  let decisionComparison = null;
   if (runtimeContext) {
     try {
       const ruleRepo = createRuleRepository(env);
@@ -77,19 +101,30 @@ export async function onRequestGet(context) {
       });
       
       const rawRules = ruleSource.rules || [];
-      const validRules = ruleSource.schema === "v2" ? rawRules : normalizeRules(rawRules, runtimeContext);
+      const validRules = rawRules; // Consolidated repository returns pre-normalized V2 rules
       
       ruleShadow = {
         source: ruleSource.source,
         source_id: ruleSource.source_id,
         schema: ruleSource.schema,
-        raw_count: rawRules.length,
-        valid_count: validRules.length,
-        invalid_count: rawRules.length - validRules.length,
+        raw_count: ruleSource.raw_count !== undefined ? ruleSource.raw_count : rawRules.length,
+        valid_count: ruleSource.valid_count !== undefined ? ruleSource.valid_count : validRules.length,
+        invalid_count: ruleSource.invalid_count !== undefined ? ruleSource.invalid_count : 0,
         rules: validRules
       };
 
       decisionShadow = evaluateDecision(runtimeContext, validRules);
+
+      // Compare legacy vs V2 decisions
+      const realRuleShadowEnabled = String(env.REAL_RULE_SHADOW_ENABLED) === "true";
+      if (realRuleShadowEnabled) {
+        const hasRules = validRules && validRules.length > 0;
+        decisionComparison = compareDecisions(decision, decisionShadow, {
+          legacyError,
+          v2Error: false,
+          hasRules
+        });
+      }
     } catch (e) {
       console.error("[Shadow Rule Evaluation Error]", e);
       ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
@@ -124,7 +159,8 @@ export async function onRequestGet(context) {
         decisionShadow,
         exception: shadowData?.exception || null,
         request_id: request.headers.get("cf-ray") || "",
-        uid: "" 
+        uid: decision?.userState?.uid || "",
+        decisionComparison
       });
     } catch (e) {
       console.error("[Shadow Telemetry Error]", e);
@@ -153,7 +189,18 @@ export async function onRequestGet(context) {
         render_mode: "canonical",
         source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
         runtime_context_read_enabled: readEnabled,
-        shadowTelemetry: shadowTelemetryMeta
+        shadowTelemetry: shadowTelemetryMeta,
+        realRuleShadow: {
+          enabled: String(env.REAL_RULE_SHADOW_ENABLED) === "true",
+          source_count: ruleShadow?.raw_count || 0,
+          converted_count: ruleShadow?.valid_count || 0,
+          unsupported_count: ruleShadow?.invalid_count || 0,
+          comparable: decisionComparison ? decisionComparison.comparable : false,
+          comparison_status: decisionComparison ? decisionComparison.status : "not_comparable",
+          legacy_action: decisionComparison?.legacy?.action_type || null,
+          v2_action: decisionComparison?.v2?.action_type || null,
+          matched_rule_id: decisionShadow?.matched_rule_id || null
+        }
       }
     };
     return new Response(JSON.stringify(debugPayload, null, 2), {
@@ -199,19 +246,24 @@ export async function onRequestGet(context) {
 
   // ── Step 3: Decision Engine (Invisible Router - Unified) ─────────────────
   // Evaluate behavior-driven rules in the /c/ entry point.
-  const url         = new URL(request.url);
-  const utmSource   = url.searchParams.get("utm_source")   || "";
-  const utmMedium   = url.searchParams.get("utm_medium")   || "";
-  const utmCampaign = campaign;
+  if (!decision && !legacyError) {
+    try {
+      decision = await handleDecision(request, env, {
+        source:   utmSource,
+        medium:   utmMedium,
+        campaign: utmCampaign,
+        decisionRules: campaignData?.decision_rules || config?.decision_rules || [],
+        engineConfig,
+        engineMapId: campaignData?.engineMapId || null,
+      });
+    } catch (e) {
+      console.error("[Decision Engine Fail]", e);
+    }
+  }
 
-  const decision = await handleDecision(request, env, {
-    source:   utmSource,
-    medium:   utmMedium,
-    campaign: utmCampaign,
-    decisionRules: campaignData?.decision_rules || config?.decision_rules || [],
-    engineConfig,
-    engineMapId: campaignData?.engineMapId || null,
-  });
+  if (!decision) {
+    decision = { action: "render", cookies: [], userState: { v: 1 } };
+  }
 
   if (decision.action === "redirect" && decision.target) {
     const redirectUrl = new URL(decision.target);

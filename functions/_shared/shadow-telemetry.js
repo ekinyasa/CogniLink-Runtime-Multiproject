@@ -53,31 +53,46 @@ export function emitShadowTelemetry(env, request, payloadData) {
   let isMismatch = false;
   const mismatchCategories = new Set();
   
-  if (exception) {
+  if (slug === "admin_diagnostic" || routeType === "diagnostic") {
+    isMismatch = true;
+    mismatchCategories.add("diagnostic");
+  } else if (exception) {
     isMismatch = true;
     mismatchCategories.add("exception");
   } else if (!runtimeContext) {
     isMismatch = true;
     mismatchCategories.add("context_failure");
-  } else if (runtimeDiff && runtimeDiff.identical === false) {
-    isMismatch = true;
-    // Extract canonical categories from diff items
-    if (Array.isArray(runtimeDiff.items)) {
-      for (const item of runtimeDiff.items) {
-        if (!item.field) continue;
-        const field = item.field;
-        if (field === "pageContent.id") mismatchCategories.add("identity");
-        else if (field === "pageContent.custom_html") mismatchCategories.add("html");
-        else if (field === "pageContent.custom_css" || field === "pageContent.custom_font") mismatchCategories.add("css");
-        else if (field === "pageContent.layout") mismatchCategories.add("layout");
-        else if (field.startsWith("pageContent.components")) mismatchCategories.add("components");
-        else if (field === "activeLinks") mismatchCategories.add("links");
-        else if (field === "campaignContext.name") mismatchCategories.add("campaign");
-        else if (field.startsWith("metadata")) mismatchCategories.add("metadata");
-        else mismatchCategories.add("unknown");
+  } else {
+    if (runtimeDiff && runtimeDiff.identical === false) {
+      isMismatch = true;
+      if (Array.isArray(runtimeDiff.items)) {
+        for (const item of runtimeDiff.items) {
+          if (!item.field) continue;
+          const field = item.field;
+          if (field === "pageContent.id") mismatchCategories.add("identity");
+          else if (field === "pageContent.custom_html") mismatchCategories.add("html");
+          else if (field === "pageContent.custom_css" || field === "pageContent.custom_font") mismatchCategories.add("css");
+          else if (field === "pageContent.layout") mismatchCategories.add("layout");
+          else if (field.startsWith("pageContent.components")) mismatchCategories.add("components");
+          else if (field === "activeLinks") mismatchCategories.add("links");
+          else if (field === "campaignContext.name") mismatchCategories.add("campaign");
+          else if (field.startsWith("metadata")) mismatchCategories.add("metadata");
+          else mismatchCategories.add("unknown");
+        }
+      } else {
+        mismatchCategories.add("unknown");
       }
-    } else {
-      mismatchCategories.add("unknown");
+    }
+
+    if (payloadData.decisionComparison) {
+      const comp = payloadData.decisionComparison;
+      if (comp.status === "semantic_mismatch") {
+        isMismatch = true;
+        mismatchCategories.add("rules");
+      } else if (comp.status === "legacy_error" || comp.status === "v2_error") {
+        isMismatch = true;
+        mismatchCategories.add("decision");
+      }
     }
   }
 
@@ -123,7 +138,11 @@ export function emitShadowTelemetry(env, request, payloadData) {
       matched_rule_id: decisionShadow?.matched_rule_id || "none",
       source_schema: runtimeContext?.metadata?.source_schema || "unknown",
       runtime_version: "adapter",
-      render_mode: runtimeContext?.render_mode || "canonical"
+      render_mode: runtimeContext?.render_mode || "canonical",
+      comparable: payloadData.decisionComparison?.comparable ?? null,
+      comparison_status: payloadData.decisionComparison?.status ?? null,
+      legacy_action_type: payloadData.decisionComparison?.legacy?.action_type ?? null,
+      v2_action_type: payloadData.decisionComparison?.v2?.action_type ?? null
     };
 
     const dataset = env.AE_TRAFFIC || env.AE_SHADOW_LOGS;
