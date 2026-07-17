@@ -58,17 +58,17 @@ id = "2034dc1f7c3243f382e5ed9a7e6d1dd9"
 binding = "GUARD_CACHE"
 id = "7b9bb0d4c1b44c6797f8d328f1b64600" 
 
-# [[env.production.analytics_engine_datasets]]
-# binding = "AE_CONVERSION"
-# dataset = "cognilink_runtime_conversion_prod" # NOTE: Create dataset via Wrangler or Dashboard
+[[env.production.analytics_engine_datasets]]
+binding = "AE_CONVERSION"
+dataset = "cognilink_runtime_conversion_prod" # NOTE: Create dataset via Wrangler or Dashboard
 
-# [[env.production.analytics_engine_datasets]]
-# binding = "AE_TRAFFIC"
-# dataset = "cognilink_runtime_traffic_prod" # NOTE: Create dataset via Wrangler or Dashboard
+[[env.production.analytics_engine_datasets]]
+binding = "AE_TRAFFIC"
+dataset = "cognilink_runtime_traffic_prod" # NOTE: Create dataset via Wrangler or Dashboard
 
-# [[env.production.analytics_engine_datasets]]
-# binding = "AE_EXPERIMENT"
-# dataset = "cognilink_runtime_experiment_prod" # NOTE: Create dataset via Wrangler or Dashboard
+[[env.production.analytics_engine_datasets]]
+binding = "AE_EXPERIMENT"
+dataset = "cognilink_runtime_experiment_prod" # NOTE: Create dataset via Wrangler or Dashboard
 
 [env.production.vars]
 ENV_NAME = "production"
