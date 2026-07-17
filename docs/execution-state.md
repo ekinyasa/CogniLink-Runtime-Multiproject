@@ -20,6 +20,8 @@
 - `SHADOW_TELEMETRY_SAMPLE_RATE=0.1`: generic runtime-diff telemetry sampling rate
 - M2B temporary configuration deployment commit: `6a6a6bbd680d515c15731821f846d0aa7d617dc4` (no application-code change)
 - M2B rollback deployment health-verified active commit: `6a6a6bbd680d515c15731821f846d0aa7d617dc4`
+- M3A scoped implementation commit: `b5d2fc7`
+- M3A rollback configuration and health-verified active production commit: `5f21d9f63c505d74313f566d8b50dc43bfab29bf`
 
 ## Read-only production evidence
 
