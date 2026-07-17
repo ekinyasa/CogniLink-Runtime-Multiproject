@@ -59,7 +59,7 @@ V2 receives immutable request/user-state inputs compatible with legacy evaluatio
 - **Exit criteria:** One option, route, legacy semantics, expected public impact, evidence method, rollback, and explicit approval are recorded.
 - **Next milestone unlock condition:** M2B unlocks only after M2A exit criteria and the approved source are actually present.
 
-### M2B — Comparable production shadow soak — blocked by M2A
+### M2B — Comparable production shadow soak — completed 2026-07-17
 
 - **Goal:** Observe converted real legacy rules and compare legacy and V2 decisions without changing normal response authority.
 - **Why now:** This is the missing evidence required before any Decision V2 authority work; it must follow an approved source rather than manufacture traffic behavior.
@@ -74,6 +74,7 @@ V2 receives immutable request/user-state inputs compatible with legacy evaluatio
 - **Rollback plan:** Disable/remove only the approved rule/config change and restore the prior `REAL_RULE_SHADOW_ENABLED` state; do not roll back unrelated generic telemetry flags.
 - **Exit criteria:** At least one selected route shows `source_count > 0`; converted or unsupported coverage is visible; comparable samples are nonzero; no unresolved decision failure exists; normal public behavior remains legacy.
 - **Next milestone unlock condition:** M3A unlocks only with a written parity assessment, explicit cutover scope, and product approval for public behavior change.
+- **Execution result:** The explicitly approved controlled route used one temporary page rule and one Inspector request. It produced one converted, comparable `identical` render result with no unsupported rules. The target KV value, expiration, and metadata were restored and verified; both temporary Pages flags were restored through a second production deployment. By explicit approval, the Inspector response—not Analytics SQL—was the single-probe evidence source.
 
 ### M3A — Decision V2 limited cutover — manual gate
 
