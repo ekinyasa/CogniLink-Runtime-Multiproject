@@ -49,6 +49,18 @@ async function runTests() {
     assert.equal(res.rules.length, 1);
   });
 
+  await test("2b. engine override rules contribute to conversion coverage", async () => {
+    const env = { REAL_RULE_SHADOW_ENABLED: "true" };
+    const repo = createRuleRepository(env);
+    const res = await repo.fetchRules({}, {}, {
+      engineConfig: { redirects: { converted: "https://converted.example" } }
+    });
+    assert.equal(res.source, "engine_config_global");
+    assert.equal(res.raw_count, 1);
+    assert.equal(res.valid_count, 1);
+    assert.equal(res.rules[0].id, "engine_converted_override");
+  });
+
   // ════════════════════════════════════════════════════════════════════════
   // 2. V2 RULE COMPATIBILITY & ADAPTER TESTS
   // ════════════════════════════════════════════════════════════════════════
@@ -164,6 +176,14 @@ async function runTests() {
     const v2 = { action: "redirect", redirect_target: "https://url.com", matched_rule_id: "v2_rule" };
     const comparison = compareDecisions(legacy, v2, { hasRules: true });
     assert.equal(comparison.status, "identical"); // Action and target match, so they are semantically identical
+    assert.equal(comparison.comparable, true);
+  });
+
+  await test("13b. matched render decisions are comparable", async () => {
+    const legacy = { action: "render", decisionId: "render_rule" };
+    const v2 = { action: "render", matched_rule_id: "render_rule" };
+    const comparison = compareDecisions(legacy, v2, { hasRules: true });
+    assert.equal(comparison.status, "identical");
     assert.equal(comparison.comparable, true);
   });
 

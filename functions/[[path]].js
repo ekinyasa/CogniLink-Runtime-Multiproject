@@ -42,6 +42,7 @@ import { compareRuntime }                          from "./_shared/runtime-diff.
 import { emitShadowTelemetry }                     from "./_shared/shadow-telemetry.js";
 import { createRuleRepository }                    from "./_shared/rule-repository.js";
 import { evaluateDecision }                        from "./_shared/decision-engine-v2.js";
+import { createDecisionShadowContext }             from "./_shared/decision-shadow-context.js";
 import { createLegacyCompatibleView }              from "./_shared/runtime-compat-view.js";
 import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
 import { compareDecisions }                        from "./_shared/decision-comparator.js";
@@ -382,6 +383,13 @@ export async function onRequestGet(context) {
   const utmCampaign = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfigVal?.campaign && String(hubConfigVal.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
 
   const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfigVal?.redirectUrl;
+  const decisionInputState = parseUserState(readCookie(request, "cos_state"));
+  const decisionShadowContext = createDecisionShadowContext(runtimeContext, {
+    source: utmSource,
+    medium: utmMedium,
+    campaign: utmCampaign,
+    userState: decisionInputState
+  });
 
   let decision = null;
   let legacyError = false;
@@ -428,7 +436,7 @@ export async function onRequestGet(context) {
       };
 
       const { evaluateDecision } = await import("./_shared/decision-engine-v2.js");
-      decisionShadow = evaluateDecision(runtimeContext, validRules);
+      decisionShadow = evaluateDecision(decisionShadowContext, validRules);
 
       // Compare legacy vs V2 decisions
       const realRuleShadowEnabled = String(env.REAL_RULE_SHADOW_ENABLED) === "true";
@@ -445,7 +453,7 @@ export async function onRequestGet(context) {
       console.error("[Shadow Rule Evaluation Error]", e);
       ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
       const { evaluateDecision } = await import("./_shared/decision-engine-v2.js");
-      decisionShadow = evaluateDecision(runtimeContext, []);
+      decisionShadow = evaluateDecision(decisionShadowContext, []);
     }
   }
 

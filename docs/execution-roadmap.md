@@ -30,7 +30,7 @@ Create the execution roadmap, state ledger, and persistent repository rules. Kee
 
 **Goal:** Give V2 the same immutable request and pre-decision user-state inputs used by the legacy evaluator, without changing the public response.
 
-**Scope:** Build a pure shadow context, use it in both runtime entry points, and add parity regression tests for UTM/campaign and user-state conditions.
+**Scope:** Build a pure shadow context, use it in both runtime entry points, preserve legacy matched-render identity, count derived engine overrides as converted sources, and add parity regression tests for UTM/campaign and user-state conditions.
 
 **Exit:** Full tests pass; production Inspector remains shadow-only and normal public responses are unchanged.
 

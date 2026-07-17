@@ -368,6 +368,59 @@ async function runTests() {
     assert.equal(payload.decisionShadow.action, "block");
   });
 
+  await test("19. Shadow Decision V2 receives legacy request and pre-decision user state", async () => {
+    const hubEnv = createMockEnv({
+      APP_CONFIG: {
+        get: async (key) => {
+          if (key === "hub:p-rule-context") {
+            return {
+              slug: "p-rule-context",
+              campaign: "spring",
+              isActive: true,
+              decision_rules: [
+                {
+                  id: "source_rule",
+                  condition: { property: "source", operator: "===", value: "instagram" },
+                  action: "redirect",
+                  target: "https://source.example"
+                },
+                {
+                  id: "visited_rule",
+                  condition: { property: "user_visited", operator: "===", value: true },
+                  action: "redirect",
+                  target: "https://visited.example"
+                }
+              ]
+            };
+          }
+          return null;
+        }
+      },
+      ROUTE_ALIAS: {
+        get: async (key) => key === "route:rule-context" ? "p-rule-context" : null
+      }
+    });
+
+    const sourceRequest = createMockRequest(
+      "https://localhost/rule-context?runtime-debug=1&utm_source=instagram",
+      { "Authorization": "Bearer secret_admin" }
+    );
+    const sourceResponse = await catchAllHandler(createMockContext(sourceRequest, hubEnv, { path: ["rule-context"] }));
+    const sourcePayload = await sourceResponse.json();
+    assert.equal(sourcePayload.decisionShadow.matched_rule_id, "source_rule");
+    assert.equal(sourcePayload.metadata.realRuleShadow.comparison_status, "identical");
+
+    const visitorCookie = encodeURIComponent(JSON.stringify({ v: 1 }));
+    const visitorRequest = createMockRequest(
+      "https://localhost/rule-context?runtime-debug=1",
+      { "Authorization": "Bearer secret_admin", "Cookie": `cos_state=${visitorCookie}` }
+    );
+    const visitorResponse = await catchAllHandler(createMockContext(visitorRequest, hubEnv, { path: ["rule-context"] }));
+    const visitorPayload = await visitorResponse.json();
+    assert.equal(visitorPayload.decisionShadow.matched_rule_id, "visited_rule");
+    assert.equal(visitorPayload.metadata.realRuleShadow.comparison_status, "identical");
+  });
+
   console.log("\n── Test Summary ──");
   console.log(`Passed: ${passed}`);
   console.log(`Failed: ${failed}`);

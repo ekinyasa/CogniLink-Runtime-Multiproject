@@ -14,6 +14,9 @@ import { createLegacyCompatibleView } from "../_shared/runtime-compat-view.js";
 import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
 import { normalizeRules } from "../_shared/rule-compat.js";
 import { compareDecisions } from "../_shared/decision-comparator.js";
+import { createDecisionShadowContext } from "../_shared/decision-shadow-context.js";
+import { readCookie } from "../_shared/cookie-utils.js";
+import { parseUserState } from "../_shared/user-state.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -71,6 +74,13 @@ export async function onRequestGet(context) {
   const utmSource   = url.searchParams.get("utm_source")   || "";
   const utmMedium   = url.searchParams.get("utm_medium")   || "";
   const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug);
+  const decisionInputState = parseUserState(readCookie(request, "cos_state"));
+  const decisionShadowContext = createDecisionShadowContext(runtimeContext, {
+    source: utmSource,
+    medium: utmMedium,
+    campaign: utmCampaign,
+    userState: decisionInputState
+  });
 
   let decision = null;
   let legacyError = false;
@@ -113,7 +123,7 @@ export async function onRequestGet(context) {
         rules: validRules
       };
 
-      decisionShadow = evaluateDecision(runtimeContext, validRules);
+      decisionShadow = evaluateDecision(decisionShadowContext, validRules);
 
       // Compare legacy vs V2 decisions
       const realRuleShadowEnabled = String(env.REAL_RULE_SHADOW_ENABLED) === "true";
@@ -128,7 +138,7 @@ export async function onRequestGet(context) {
     } catch (e) {
       console.error("[Shadow Rule Evaluation Error]", e);
       ruleShadow = { source: "error", source_id: null, schema: "none", raw_count: 0, valid_count: 0, invalid_count: 0, rules: [] };
-      decisionShadow = evaluateDecision(runtimeContext, []);
+      decisionShadow = evaluateDecision(decisionShadowContext, []);
     }
   }
 

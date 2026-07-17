@@ -4,7 +4,7 @@
 
 ## Active milestone
 
-**M1 — Decision V2 shadow-context parity** is in progress.
+**M1 — Decision V2 shadow-context parity** is ready for production verification.
 
 ## Production baseline
 
@@ -36,3 +36,4 @@
 
 - 2026-07-17: Disabled empty real-rule soak in `98de036`; retained generic runtime shadow telemetry.
 - 2026-07-17: Established this execution ledger and roadmap.
+- 2026-07-17: Completed M1 implementation: request/user-state shadow context, matched-render identity, and engine-override coverage accounting.

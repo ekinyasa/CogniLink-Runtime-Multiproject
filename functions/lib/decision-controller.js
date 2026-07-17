@@ -132,6 +132,7 @@ export async function handleDecision(request, env, opts) {
 
   return {
     action: "render",
+    ...(decisionMatch?.id ? { decisionId: decisionMatch.id } : {}),
     userState,
     cookies,
   };

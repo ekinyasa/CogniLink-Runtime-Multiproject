@@ -128,6 +128,7 @@ export function createRuleRepository(env) {
           }
           // 2. Hardcoded override rules
           const hardcoded = makeHardcodedOverrideRules(checkRedirects);
+          totalRawCount += hardcoded.length;
           consolidatedRules.push(...hardcoded);
         }
 
