@@ -33,6 +33,7 @@ jobs:
 
       - name: Deploy NILUFER (links-niluferormanli-studio)
         if: github.ref == 'refs/heads/main'
+        continue-on-error: true
         run: |
           cp wrangler-nilufer.toml wrangler.toml
           npx wrangler pages deploy public --project-name links-niluferormanli-studio --commit-dirty=true
@@ -43,7 +44,7 @@ jobs:
       - name: Deploy EKIN (links-ekinyasa-online)
         if: github.ref == 'refs/heads/main'
         run: |
-          cp wrangler-ekin.toml wrangler.toml
+          git restore wrangler.toml || true
           npx wrangler pages deploy public --project-name links-ekinyasa-online --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
