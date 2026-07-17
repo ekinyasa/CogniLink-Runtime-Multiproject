@@ -55,7 +55,7 @@
 - The scoped implementation commit was `b5d2fc7`. The selected target record temporarily received only the approved `decision_rules` entry, and the scoped Pages authority flags were enabled for the validation window.
 - The validation process connection ended before it produced the required ten trigger probes, five baseline probes, fifteen-minute observation, or a complete diagnostic record. No successful M3A result is claimed.
 - Codex immediately restored legacy baseline configuration: `DECISION_V2_CUTOVER_ENABLED=false`, `REAL_RULE_SHADOW_ENABLED=false`, sampling restored to `0.1`, and all selected cutover identifiers cleared.
-- Read-only recovery verification confirmed the selected record has no `decision_rules`, metadata remains a JSON object, no expiration is present, and production health returned `200`.
+- Read-only recovery verification: rollback_verified. Confirmed the selected record has no `decision_rules`, metadata remains a JSON object, no expiration is present, and production health returned `200`.
 - The original target value was held only in the bounded process memory that became unavailable. The recovery write removed only `decision_rules` from the current JSON record, so semantic restoration is verified but raw byte-for-byte preimage equality cannot be certified. This integrity caveat blocks completion and requires an explicit retry/recovery decision before M3A resumes.
 
 ## Next gates
