@@ -39,6 +39,8 @@ import { renderHub }                               from "./_shared/hub-renderer.
 import { createRuntimeRepository }                 from "./_shared/runtime-repository.js";
 import { resolveContext }                          from "./_shared/runtime-adapter.js";
 import { compareRuntime }                          from "./_shared/runtime-diff.js";
+import { emitShadowTelemetry }                     from "./_shared/shadow-telemetry.js";
+import { createRuleRepository }                    from "./_shared/rule-repository.js";
 import { evaluateDecision }                        from "./_shared/decision-engine-v2.js";
 import { createLegacyCompatibleView }              from "./_shared/runtime-compat-view.js";
 import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
@@ -424,6 +426,27 @@ export async function onRequestGet(context) {
     }
   }
 
+  // ── SHADOW TELEMETRY ──────────────────────────────────────────────────────
+  let shadowTelemetryMeta = { enabled: false };
+  if (shadowData || runtimeContext) {
+    try {
+      const diff = compareRuntime(originalHubConfig, runtimeContext);
+      shadowTelemetryMeta = emitShadowTelemetry(env, request, {
+        slug: resolution.canonicalSlug,
+        routeType: resolution.type,
+        runtimeContext,
+        runtimeDiff: diff,
+        ruleShadow,
+        decisionShadow,
+        exception: shadowData?.exception || null,
+        request_id: request.headers.get("cf-ray") || "",
+        uid: "" 
+      });
+    } catch (e) {
+      console.error("[Shadow Telemetry Error]", e);
+    }
+  }
+
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
   if (verifyAdminDebug(request, env)) {
     const diff = compareRuntime(originalHubConfig, runtimeContext);
@@ -445,7 +468,8 @@ export async function onRequestGet(context) {
         runtime_version: "adapter",
         render_mode: abActive ? "experiment" : "canonical",
         source_schema: shadowData?.context?.metadata?.source_schema || "unknown",
-        runtime_context_read_enabled: readEnabled
+        runtime_context_read_enabled: readEnabled,
+        shadowTelemetry: shadowTelemetryMeta
       }
     };
     return new Response(JSON.stringify(debugPayload, null, 2), {
