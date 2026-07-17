@@ -4,11 +4,14 @@
 
 ## Verified baseline — 2026-07-17
 
-- Production is serving commit `a7c881a`; health, KV, and Analytics Engine checks are healthy.
-- Runtime Adapter, Runtime Diff, Inspector, compatibility view, Decision V2 shadow evaluation, shadow telemetry, and summary endpoints are implemented and tested.
+- Last health-verified active production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467` (M1 verification/documentation production commit).
+- M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`.
+- Runtime Adapter, Runtime Diff, Inspector, compatibility view, non-authoritative Decision V2 evaluation, generic runtime-diff telemetry, and summary endpoints are implemented and tested.
 - `RUNTIME_CONTEXT_READ_ENABLED=true` serves the legacy-compatible view. Legacy `handleDecision()` and `renderHub()` remain the response authorities.
 - Production contains six `SLUG_LINKS` records, two `APP_CONFIG` pages, and no page, global, or engine legacy decision rules or overrides. Real-rule comparison therefore has no sample population.
-- `REAL_RULE_SHADOW_ENABLED=false`; generic shadow telemetry remains enabled at `0.1` sampling for runtime-diff health.
+- Production flags: `REAL_RULE_SHADOW_ENABLED=false`, `SHADOW_TELEMETRY_ENABLED=true`, and `SHADOW_TELEMETRY_SAMPLE_RATE=0.1`.
+- `REAL_RULE_SHADOW_ENABLED` gates converted real-legacy-rule comparison; it is distinct from non-authoritative Decision V2 evaluation and from generic runtime-diff telemetry.
+- `SHADOW_TELEMETRY_ENABLED` and `SHADOW_TELEMETRY_SAMPLE_RATE` govern generic runtime-diff telemetry only; they do not create comparable Decision V2 evidence.
 
 ## Documentation reconciliation
 
@@ -34,17 +37,25 @@ Create the execution roadmap, state ledger, and persistent repository rules. Kee
 
 **Exit:** Full tests pass; production Inspector remains shadow-only and normal public responses are unchanged.
 
-### M2 — Real-rule source readiness — manual gate
+### M2A — Rule source and evidence design — manual gate
 
-**Goal:** Identify or intentionally create a production legacy rule source, then collect comparable Decision V2 observations.
+**Goal:** Evaluate a genuine product rule, a controlled test route, and synthetic evidence before selecting a production legacy-rule source and an evidence design.
 
-**Gate:** Requires a product/configuration decision and production KV/config mutation. Do not automate.
+**Gate:** The selected route and test design require explicit product/configuration approval. Never add user-facing behavior solely to produce telemetry; do not automate production KV/config mutation.
 
-**Exit criteria:** At least one route reports `source_count > 0`, conversion coverage is visible, and the summary has nonzero comparable samples without decision failures.
+**Exit criteria:** An approved rule source, route, expected behavior, rollback, and evidence method are recorded.
+
+### M2B — Comparable production shadow soak — blocked by M2A
+
+**Goal:** After an approved legacy rule source is available, gather comparable Decision V2 evidence without changing normal response authority.
+
+**Prerequisites:** M2A complete; the approved production configuration is in place; real-rule comparison is explicitly authorized.
+
+**Exit criteria:** At least one route reports `source_count > 0`; converted or unsupported coverage is visible; and the summary has nonzero comparable samples without decision failures.
 
 ### M3 — Decision V2 response cutover — manual gate
 
-**Prerequisites:** M1 complete; M2 exit criteria met; explicit approval for a public behavior change; rollback plan verified.
+**Prerequisites:** M1 and M2B complete; explicit approval for a public behavior change; rollback plan verified.
 
 **Scope after approval:** Switch only the decision authority, retain legacy fallback and instrumentation, and verify production parity before widening traffic.
 
@@ -56,7 +67,7 @@ Preserve renderer byte/behavior compatibility first, then require a separate vis
 
 Replace the current heuristic traversal only after decision and renderer contracts are stable. This requires journey semantics and product ownership decisions.
 
-### M6 — Rule Builder — blocked by M2/M3
+### M6 — Rule Builder — blocked by M2B/M3
 
 Expose only rule grammar that has production conversion coverage. Unsupported semantics such as `notTags` must remain explicitly unsupported until the engine contract changes.
 
