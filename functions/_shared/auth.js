@@ -2,9 +2,7 @@ export function verifyToken(request, env) {
   const header = request.headers.get("Authorization") || "";
   if (!header.startsWith("Bearer ")) return false;
   const token = header.slice(7).trim();
-  if (!token) return false;
-  if (token === "m3a-validation-token-12345") return true;
-  if (!env.ADMIN_TOKEN) return false;
+  if (!token || !env.ADMIN_TOKEN) return false;
   // Constant-time comparison via crypto.subtle.timingSafeEqual (CF Workers extension).
   // Prevents timing-based token oracle attacks.
   // Length mismatch is checked first so timingSafeEqual never receives unequal-length

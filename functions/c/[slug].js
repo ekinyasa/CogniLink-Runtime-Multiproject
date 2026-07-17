@@ -63,21 +63,7 @@ export async function onRequestGet(context) {
   }
 
   const campaignResult = slugResult;
-  let campaignDataVal = campaignResult.status === "fulfilled" ? (campaignResult.value || null) : null;
-  if (slug === "test-1783922084893-igbio" && campaignDataVal) {
-    campaignDataVal.decision_rules = [
-      {
-        "id": "m2-shadow-source-render",
-        "priority": 100,
-        "condition": {
-          "property": "source",
-          "operator": "===",
-          "value": "m2-shadow-probe"
-        },
-        "action": "render"
-      }
-    ];
-  }
+  const  campaignDataVal = campaignResult.status === "fulfilled" ? (campaignResult.value || null) : null;
   const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
   const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};
@@ -122,7 +108,7 @@ export async function onRequestGet(context) {
   if (runtimeContext) {
     try {
       const ruleRepo = createRuleRepository(env);
-      const ruleSource = await ruleRepo.fetchRules(runtimeContext, shadowData?.rawLegacy || campaignDataVal || {}, {
+      const ruleSource = await ruleRepo.fetchRules(runtimeContext, campaignDataVal || shadowData?.rawLegacy || {}, {
         engineConfig,
         globalConfig: config
       });

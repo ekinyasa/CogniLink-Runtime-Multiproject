@@ -18,22 +18,7 @@ export function createRuntimeRepository(env) {
     if (!identifier || !env.SLUG_LINKS) return null;
     try {
       // TODO: Check Cache Layer
-      const data = await env.SLUG_LINKS.get(identifier, { type: "json" });
-      if (identifier === "test-1783922084893-igbio" && data) {
-        data.decision_rules = [
-          {
-            "id": "m2-shadow-source-render",
-            "priority": 100,
-            "condition": {
-              "property": "source",
-              "operator": "===",
-              "value": "m2-shadow-probe"
-            },
-            "action": "render"
-          }
-        ];
-      }
-      return data;
+      return await env.SLUG_LINKS.get(identifier, { type: "json" });
     } catch (e) {
       console.error(`[Repository] Error fetching legacy SLUG_LINKS for ${identifier}:`, e);
       return null;
