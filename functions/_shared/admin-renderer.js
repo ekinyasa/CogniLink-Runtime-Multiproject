@@ -67,7 +67,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
-    <button class="tab-btn" data-tab="pages">Landings</button>
+    <button class="tab-btn" data-tab="pages" style="display:none">Landings</button>
     <button class="tab-btn" data-tab="journeys">Map</button>
     <button class="tab-btn" data-tab="campaigns">Campaigns</button>
     

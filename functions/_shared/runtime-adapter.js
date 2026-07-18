@@ -77,9 +77,17 @@ export async function resolveContext(identifier, provider, options = {}) {
   let rawData = null;
   let schemaType = "unknown";
 
+  let campaignId = identifier;
+  let pageId = identifier;
+  if (identifier.includes(":")) {
+    const parts = identifier.split(":");
+    campaignId = parts[0];
+    pageId = parts[1];
+  }
+
   // 1. Attempt V2 decoupled schema first
   if (typeof provider.fetchV2 === "function") {
-    rawData = await provider.fetchV2(identifier);
+    rawData = await provider.fetchV2(campaignId, pageId);
     if (rawData) schemaType = "v2";
   }
 
@@ -236,8 +244,8 @@ function normalizeV2(rawV2Data, options = {}) {
 
   return {
     campaignContext: {
-      id: campaign.id || null,
-      name: campaign.name || null,
+      id: campaign.id || campaign.slug || null,
+      name: campaign.name || campaign.slug || null,
       utm_defaults: campaign.utm_defaults || {},
       status: campaign.status || "inactive"
     },

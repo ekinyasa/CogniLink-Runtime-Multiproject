@@ -57,39 +57,46 @@ export function createRuntimeRepository(env) {
   }
 
   async function fetchV2(campaignId, pageId = campaignId) {
-    // Uses Promise.all to fetch decoupled entities in parallel
-    const [rawCampaign, rawPage] = await Promise.all([
-      fetchCampaign(campaignId),
-      fetchPage(pageId)
-    ]);
+    const rawCampaign = await fetchCampaign(campaignId);
 
-    if (!rawCampaign && !rawPage) {
+    let rawPage = null;
+    let nestedLanding = null;
+
+    if (rawCampaign && Array.isArray(rawCampaign.landings)) {
+      const targetId = (pageId === campaignId) ? rawCampaign.mainLandingId : pageId;
+      nestedLanding = rawCampaign.landings.find(l => l.id === targetId || l.slug === targetId) || rawCampaign.landings[0];
+    }
+
+    if (!nestedLanding && pageId) {
+      rawPage = await fetchPage(pageId);
+    }
+
+    if (!rawCampaign && !rawPage && !nestedLanding) {
       return null;
     }
 
-    // Map the real existing Landing record (hub:) to the V2 pageContent schema
+    const sourcePage = nestedLanding || rawPage;
     let page = null;
-    if (rawPage) {
-      const headerHtml = typeof rawPage.customHeaderHtml === 'string' ? rawPage.customHeaderHtml : "";
-      const footerHtml = typeof rawPage.customFooterHtml === 'string' ? rawPage.customFooterHtml : "";
+    if (sourcePage) {
+      const headerHtml = typeof sourcePage.customHeaderHtml === 'string' ? sourcePage.customHeaderHtml : "";
+      const footerHtml = typeof sourcePage.customFooterHtml === 'string' ? sourcePage.customFooterHtml : "";
       const customHtml = [headerHtml, footerHtml].filter(Boolean).join("\n");
 
       page = {
-        id: rawPage.slug || rawPage.id || pageId,
-        title: rawPage.pageTitle || rawPage.title || null,
-        layout: Array.isArray(rawPage.layout) ? rawPage.layout : [],
-        components: Array.isArray(rawPage.components) ? rawPage.components : [],
-        links: Array.isArray(rawPage.links) ? rawPage.links : [],
-        custom_css: typeof rawPage.customStyleCss === 'string' ? rawPage.customStyleCss : "",
+        id: sourcePage.slug || sourcePage.id || pageId,
+        title: sourcePage.pageTitle || sourcePage.title || null,
+        layout: Array.isArray(sourcePage.layout) ? sourcePage.layout : [],
+        components: Array.isArray(sourcePage.components) ? sourcePage.components : [],
+        links: Array.isArray(sourcePage.links) ? sourcePage.links : [],
+        custom_css: typeof sourcePage.customStyleCss === 'string' ? sourcePage.customStyleCss : "",
         custom_html: customHtml,
-        redirect: rawPage.redirectUrl || rawPage.redirect || null,
-        theme: rawPage.theme || null,
-        metadata: rawPage.metadata || {},
-        modifier: rawPage.modifier || null
+        redirect: sourcePage.redirectUrl || sourcePage.redirect || null,
+        theme: sourcePage.theme || null,
+        metadata: sourcePage.metadata || {},
+        modifier: sourcePage.modifier || null
       };
     }
 
-    // If campaign is missing but page exists, extract campaign data from the page record (legacy structure)
     let campaign = rawCampaign;
     if (!campaign && rawPage) {
       campaign = {
