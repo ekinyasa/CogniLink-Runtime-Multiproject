@@ -14,6 +14,7 @@
 
 import { readCookie, buildSetCookie } from "../../_shared/cookie-utils.js";
 import { parseUserState, serializeUserState, updateUserState } from "../../_shared/user-state.js";
+import { writePageViewEvent, writeLandingSignalEvent } from "../../_shared/analytics.js";
 
 const getCorsHeaders = (request) => {
   const origin = request.headers.get("Origin") || "*";
@@ -232,29 +233,17 @@ export async function onRequestPost(context) {
 
     // --- Analytics Engine Bridge (Pulse Dashboard Restoration) ---
     try {
-      const campaignAlias = String(body.meta?.campaign || body.meta?.alias || "");
-      const sourceData = String(body.meta?.source || "");
-      const pageType = String(body.meta?.page_type || "");
-
-      if (type === "page_view" && context.env.AE_TRAFFIC) {
-        // Pulse API expects AE_TRAFFIC: index='traffic_memory', blob1=alias, blob2=slug, blob4=campaign, blob5=source
-        context.env.AE_TRAFFIC.writeDataPoint({
-          indexes: ["traffic_memory"],
-          blobs: [campaignAlias, pageType, "", campaignAlias, sourceData]
+      if (type === "page_view") {
+        writePageViewEvent(context.env, {
+          utm_campaign: body.meta?.campaign || body.meta?.alias || "",
+          utm_source: body.meta?.source || "",
+          page_type: body.meta?.page_type || ""
         });
-      } else if (context.env.AE_CONVERSION) {
-        // Pulse API expects AE_CONVERSION: index='click'|'conversion', blob1=alias, blob2=slug, blob3=source
-        if (type === "click_hard" || type === "click_soft" || type === "checkout_start") {
-          context.env.AE_CONVERSION.writeDataPoint({
-            indexes: ["click"],
-            blobs: [campaignAlias, type, sourceData, "", ""]
-          });
-        } else if (type === "conversion") {
-          context.env.AE_CONVERSION.writeDataPoint({
-            indexes: ["conversion"],
-            blobs: [campaignAlias, pageType, sourceData, "", ""]
-          });
-        }
+      } else {
+        writeLandingSignalEvent(context.env, {
+          type,
+          meta: body.meta
+        });
       }
     } catch (_e) { }
   }
