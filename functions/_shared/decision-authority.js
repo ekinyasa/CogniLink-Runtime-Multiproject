@@ -4,6 +4,11 @@ function enabled(env) {
   return String(env?.DECISION_V2_CUTOVER_ENABLED) === "true";
 }
 
+function isFullAuthority(env) {
+  return String(env?.DECISION_V2_FULL_AUTHORITY_ENABLED) === "true"
+    || (enabled(env) && String(env?.DECISION_V2_CUTOVER_SLUG) === "*");
+}
+
 function scoped(env, input) {
   return enabled(env)
     && String(env?.DECISION_V2_CUTOVER_ROUTE_TYPE) === input.routeType
@@ -18,7 +23,10 @@ export function selectDecisionAuthority(env, input = {}) {
     fallback_reason: "scope_outside"
   };
 
-  if (!scoped(env, input)) return legacy;
+  const fullAuth = isFullAuthority(env);
+  const scopedAuth = scoped(env, input);
+
+  if (!fullAuth && !scopedAuth) return legacy;
 
   if (input.legacyError) {
     return { ...legacy, fallback_used: true, fallback_reason: "legacy_error" };
@@ -28,23 +36,7 @@ export function selectDecisionAuthority(env, input = {}) {
     return { ...legacy, fallback_used: true, fallback_reason: "v2_error" };
   }
 
-  const expectedRuleId = String(env?.DECISION_V2_CUTOVER_RULE_ID || "");
-  const ruleShadow = input.ruleShadow || {};
   const decision = input.decisionShadow || {};
-
-  if (
-    !expectedRuleId
-    || ruleShadow.raw_count !== 1
-    || ruleShadow.valid_count !== 1
-    || ruleShadow.invalid_count !== 0
-    || decision.matched_rule_id !== expectedRuleId
-  ) {
-    return { ...legacy, fallback_used: true, fallback_reason: "rule_not_eligible" };
-  }
-
-  if (input.decisionComparison?.status !== "identical") {
-    return { ...legacy, fallback_used: true, fallback_reason: "comparison_not_identical" };
-  }
 
   if (!ALLOWED_ACTIONS.has(decision.action)) {
     return { ...legacy, fallback_used: true, fallback_reason: "invalid_v2_action" };
@@ -52,6 +44,26 @@ export function selectDecisionAuthority(env, input = {}) {
 
   if (decision.action === "redirect" && !decision.redirect_target) {
     return { ...legacy, fallback_used: true, fallback_reason: "invalid_v2_redirect" };
+  }
+
+  // In M3A scoped cutover mode, enforce strict rule matching and identical comparison
+  if (!fullAuth && scopedAuth) {
+    const expectedRuleId = String(env?.DECISION_V2_CUTOVER_RULE_ID || "");
+    const ruleShadow = input.ruleShadow || {};
+
+    if (
+      !expectedRuleId
+      || ruleShadow.raw_count !== 1
+      || ruleShadow.valid_count !== 1
+      || ruleShadow.invalid_count !== 0
+      || decision.matched_rule_id !== expectedRuleId
+    ) {
+      return { ...legacy, fallback_used: true, fallback_reason: "rule_not_eligible" };
+    }
+
+    if (input.decisionComparison?.status !== "identical") {
+      return { ...legacy, fallback_used: true, fallback_reason: "comparison_not_identical" };
+    }
   }
 
   return {

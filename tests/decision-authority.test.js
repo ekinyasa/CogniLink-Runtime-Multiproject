@@ -49,6 +49,29 @@ const tests = [
     assert.equal(decision.decisionId, "m2-shadow-source-render");
     assert.deepEqual(decision.cookies, legacy.cookies);
     assert.deepEqual(decision.userState, legacy.userState);
+  }],
+  ["selects V2 for any route when DECISION_V2_FULL_AUTHORITY_ENABLED is true", () => {
+    const fullScope = { DECISION_V2_FULL_AUTHORITY_ENABLED: "true" };
+    const authority = selectDecisionAuthority(fullScope, {
+      routeType: "direct",
+      slug: "any-slug",
+      source: "any-source",
+      decisionShadow: { action: "render", matched_rule_id: "rule-1" }
+    });
+    assert.equal(authority.authority, "decision_v2");
+    assert.equal(authority.fallback_used, false);
+  }],
+  ["falls back to legacy when V2 errors in full authority mode", () => {
+    const fullScope = { DECISION_V2_FULL_AUTHORITY_ENABLED: "true" };
+    const authority = selectDecisionAuthority(fullScope, {
+      routeType: "c",
+      slug: "any-slug",
+      v2Error: true,
+      decisionShadow: { action: "render" }
+    });
+    assert.equal(authority.authority, "legacy");
+    assert.equal(authority.fallback_used, true);
+    assert.equal(authority.fallback_reason, "v2_error");
   }]
 ];
 
