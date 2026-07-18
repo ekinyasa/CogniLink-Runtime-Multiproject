@@ -4,11 +4,11 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Campaign & Landing Builder Integration** is currently **completed**. Integrated Landing Page Builder, versioning control, and layout editing tools directly into the Campaign details workspace (`functions/admin/campaign/[campaign].js`). Refactored `functions/_shared/runtime-repository.js` and `runtime-adapter.js` to dynamically resolve nested campaign landing versions with fallback logic.
+**Iterative Development Phase — Campaign & Landing Builder Integration** is currently **completed**. Integrated Landing Page Builder, versioning control, and layout editing tools directly into the main Studio Panel (/admin) under the renamed "Intents" tab as a split two-column workspace. Refactored `functions/_shared/runtime-repository.js` and `runtime-adapter.js` to dynamically resolve nested campaign landing versions with fallback logic.
 
 ## Production baseline
 
-- Last health-verified active production commit: `2f9baae5f4668766705ceb604d6ceb8ec01e8fb0`
+- Last health-verified active production commit: `e2622ec5c4cceb7ae36c3dd4464e3747bc11f397`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
