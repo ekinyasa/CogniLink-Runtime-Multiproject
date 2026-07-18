@@ -548,9 +548,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
           </div>
 
-          <!-- 2. Landing Page Versions -->
+          <!-- 2. Landing Versions -->
           <div class="card">
-            <p class="card-title">Landing Page Versions</p>
+            <p class="card-title">Landing Versions</p>
             <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
               <!-- Loaded via JS -->
             </div>
@@ -559,10 +559,23 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
           <!-- 3. Edit Landing Version (builder) -->
           <div class="card" id="studio-builder-panel" style="display: none; flex-direction: column; gap: 1rem;">
-            <p class="card-title">Edit Landing Version: <span id="studio-current-edit-version-id"></span></p>
+            <p class="card-title" style="margin-bottom: 0.25rem;">Edit Landing Version</p>
+            <p id="studio-current-edit-version-title" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1rem; color: var(--primary);"></p>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Version Name / ID
-              <input type="text" id="studio-version-name" />
+              Display Name
+              <input type="text" id="studio-version-display-name" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Version ID (System)
+              <input type="text" id="studio-version-name" readonly style="opacity: 0.7; cursor: not-allowed;" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Status
+              <select id="studio-version-status">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Page Title
@@ -5533,13 +5546,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var studioCurrentEditingLanding = null;
 
   async function selectCampaign(campaignName) {
+    var previousSelectedLandingId = studioCurrentEditingLanding ? studioCurrentEditingLanding.id : null;
     currentSelectedCampaign = campaignName;
     document.getElementById("workspace-title").textContent = campaignName;
     document.getElementById("intent-workspace").style.display = "flex";
-
-    // Reset/hide builder
-    document.getElementById("studio-builder-panel").style.display = "none";
-    studioCurrentEditingLanding = null;
 
     // Load Journeys
     try {
@@ -5629,6 +5639,31 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       });
     }
 
+    // Select the landing version to edit (Selection persistence with safe fallbacks)
+    var targetLanding = null;
+    if (previousSelectedLandingId) {
+      targetLanding = studioCampaignConfig.landings.find(function (l) { return l.id === previousSelectedLandingId; });
+    }
+    if (!targetLanding) {
+      // Fallback 1: mainLandingId
+      targetLanding = studioCampaignConfig.landings.find(function (l) { return l.id === studioCampaignConfig.mainLandingId; });
+    }
+    if (!targetLanding) {
+      // Fallback 2: first non-archived version
+      targetLanding = studioCampaignConfig.landings.find(function (l) { return l.status !== "archived"; });
+    }
+    if (!targetLanding) {
+      // Fallback 3: first available version
+      targetLanding = studioCampaignConfig.landings[0];
+    }
+
+    if (targetLanding) {
+      editStudioLanding(targetLanding.id);
+    } else {
+      document.getElementById("studio-builder-panel").style.display = "none";
+      studioCurrentEditingLanding = null;
+    }
+
     renderStudioVersionsList();
   }
 
@@ -5641,17 +5676,34 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     }
 
     studioCampaignConfig.landings.forEach(function (l) {
+      // Fallback/migration mapping for legacy entries
+      if (!l.displayName) l.displayName = l.id.replace("version-", "Version ");
+      if (!l.status) l.status = "draft";
+      if (!l.updatedAt) l.updatedAt = new Date().toISOString();
+
+      var isMain = studioCampaignConfig.mainLandingId === l.id;
+      var createdFmt = l.updatedAt ? new Date(l.updatedAt).toLocaleString() : "—";
       var div = document.createElement("div");
       div.className = "version-item";
-      var isMain = studioCampaignConfig.mainLandingId === l.id;
+      div.style = "padding: 0.75rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.35rem;";
 
-      div.innerHTML = '<div><strong>' + esc(l.id) + '</strong> ' +
-        (isMain ? '<span style="color: var(--success); font-weight: bold; margin-left: 5px;">[Main]</span>' : '') +
-        '<div style="font-size: 0.75rem; color: var(--text-m);">' + esc(l.headerInfo?.title || 'No Title') + '</div></div>' +
-        '<div style="display: flex; gap: 0.5rem;">' +
+      div.innerHTML = 
+        '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
+          '<div>' +
+            '<div style="font-weight: bold; font-size: 0.95rem; color: var(--text);">' + esc(l.displayName) + '</div>' +
+            '<div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.15rem;">' +
+              '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--border); text-transform: capitalize;">' + esc(l.status) + '</span>' +
+              (isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--success); color: white; font-weight: bold;">Main</span>' : '') +
+            '</div>' +
+            '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Last updated: ' + esc(createdFmt) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="version-actions" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\\x27' + esc(l.id) + '\\x27)">Edit</button>' +
-          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled' : '') + '>Set Main</button>' +
-          '<button class="btn-danger btn-xs" onclick="deleteStudioLanding(\\x27' + esc(l.id) + '\\x27)">Delete</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled' : '') + '>Set as Main</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="duplicateStudioLanding(\\x27' + esc(l.id) + '\\x27)">Duplicate</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="toggleArchiveStudioLanding(\\x27' + esc(l.id) + '\\x27)">' + (l.status === "archived" ? "Restore" : "Archive") + '</button>' +
+          '<button class="btn-danger btn-xs" onclick="deleteStudioLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled title="Cannot delete main landing version"' : '') + '>Delete</button>' +
         '</div>';
       container.appendChild(div);
     });
@@ -5666,9 +5718,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     studioCurrentEditingLanding = studioCampaignConfig.landings.find(function (l) { return l.id === id; });
     if (!studioCurrentEditingLanding) return;
 
-    document.getElementById("studio-builder-panel").style.display = "block";
-    document.getElementById("studio-current-edit-version-id").textContent = id;
+    if (!studioCurrentEditingLanding.displayName) {
+      studioCurrentEditingLanding.displayName = studioCurrentEditingLanding.id.replace("version-", "Version ");
+    }
+    if (!studioCurrentEditingLanding.status) {
+      studioCurrentEditingLanding.status = "draft";
+    }
+
+    document.getElementById("studio-builder-panel").style.display = "flex";
+    document.getElementById("studio-current-edit-version-title").textContent = studioCurrentEditingLanding.displayName;
+    document.getElementById("studio-version-display-name").value = studioCurrentEditingLanding.displayName;
     document.getElementById("studio-version-name").value = studioCurrentEditingLanding.id;
+    document.getElementById("studio-version-status").value = studioCurrentEditingLanding.status;
     document.getElementById("studio-version-title").value = studioCurrentEditingLanding.headerInfo?.title || "";
     document.getElementById("studio-version-theme").value = studioCurrentEditingLanding.theme || "dark";
     document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
@@ -5689,11 +5750,42 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     renderStudioLayoutManager();
   };
 
-  window.deleteStudioLanding = function(id) {
-    studioCampaignConfig.landings = studioCampaignConfig.landings.filter(function (l) { return l.id !== id; });
-    if (studioCampaignConfig.mainLandingId === id) {
-      studioCampaignConfig.mainLandingId = studioCampaignConfig.landings[0]?.id || "";
+  window.duplicateStudioLanding = function(id) {
+    var original = studioCampaignConfig.landings.find(function (l) { return l.id === id; });
+    if (!original) return;
+    var copy = JSON.parse(JSON.stringify(original));
+    copy.id = "version-" + Date.now();
+    copy.displayName = (original.displayName || original.id.replace("version-", "Version ")) + " (Copy)";
+    copy.status = "draft";
+    copy.updatedAt = new Date().toISOString();
+    studioCampaignConfig.landings.push(copy);
+    renderStudioVersionsList();
+    editStudioLanding(copy.id);
+  };
+
+  window.toggleArchiveStudioLanding = function(id) {
+    var landing = studioCampaignConfig.landings.find(function (l) { return l.id === id; });
+    if (!landing) return;
+    var isMain = studioCampaignConfig.mainLandingId === id;
+    if (isMain && landing.status !== "archived") {
+      alert("Cannot archive the Main landing version. Set another version as Main first.");
+      return;
     }
+    landing.status = landing.status === "archived" ? "draft" : "archived";
+    renderStudioVersionsList();
+    if (studioCurrentEditingLanding?.id === id) {
+      editStudioLanding(id);
+    }
+  };
+
+  window.deleteStudioLanding = function(id) {
+    var isMain = studioCampaignConfig.mainLandingId === id;
+    if (isMain) {
+      alert("Cannot delete the Main landing version. Set another version as Main first.");
+      return;
+    }
+    if (!confirm("Are you sure you want to delete this version?")) return;
+    studioCampaignConfig.landings = studioCampaignConfig.landings.filter(function (l) { return l.id !== id; });
     if (studioCurrentEditingLanding?.id === id) {
       document.getElementById("studio-builder-panel").style.display = "none";
       studioCurrentEditingLanding = null;
@@ -5746,6 +5838,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var id = "version-" + Date.now();
         var newL = {
           id: id,
+          displayName: "Version " + new Date().toLocaleDateString(),
+          status: "draft",
+          updatedAt: new Date().toISOString(),
           theme: "dark",
           headerInfo: { title: "New Landing Page Version" },
           layout: [],
@@ -5792,6 +5887,15 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
     // Dynamic field sync
     var fields = [
+      { id: "studio-version-display-name", prop: "displayName", cb: function() {
+          var titleEl = document.getElementById("studio-current-edit-version-title");
+          if (titleEl && studioCurrentEditingLanding) {
+            titleEl.textContent = studioCurrentEditingLanding.displayName;
+          }
+          renderStudioVersionsList();
+        } 
+      },
+      { id: "studio-version-status", prop: "status", cb: renderStudioVersionsList },
       { id: "studio-version-name", prop: "id", cb: renderStudioVersionsList },
       { id: "studio-version-title", prop: "title", nested: "headerInfo", cb: renderStudioVersionsList },
       { id: "studio-version-theme", prop: "theme" },
@@ -5953,6 +6057,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           saveVersionBtn.disabled = true;
           saveVersionBtn.textContent = "Saving Version...";
 
+          if (studioCurrentEditingLanding) {
+            studioCurrentEditingLanding.updatedAt = new Date().toISOString();
+          }
+
           // Save V2 Configuration (Landings layout updates)
           var v2Res = await apiFetch("/api/admin/campaign_v2", {
             method: "POST",
@@ -5962,6 +6070,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           if (v2Res.ok) {
             alert("Landing Version Saved Successfully!");
             await loadCampaignList();
+            renderStudioVersionsList();
           } else {
             var err = await v2Res.json();
             alert("Error saving: " + (err.error || "Unknown error"));
