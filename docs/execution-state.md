@@ -4,11 +4,11 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Decision Scoring Calibration** is currently **completed**. Calibrated client-side engagement scoring formula in `functions/_shared/hub-renderer.js` to require minimum scroll activity (>= 15%) before granting full time-on-page scoring weight. Prevents idle/inactive browser tabs from triggering false "hot visitor" state transitions.
+**Iterative Development Phase — Campaign & Landing Builder Integration** is currently **completed**. Integrated Landing Page Builder, versioning control, and layout editing tools directly into the Campaign details workspace (`functions/admin/campaign/[campaign].js`). Refactored `functions/_shared/runtime-repository.js` and `runtime-adapter.js` to dynamically resolve nested campaign landing versions with fallback logic.
 
 ## Production baseline
 
-- Last health-verified active production commit: `a87d36140b297220a04f5a4f53dcea9ed150f58d`
+- Last health-verified active production commit: `2f9baae5f4668766705ceb604d6ceb8ec01e8fb0`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
@@ -22,6 +22,7 @@
 - Campaign Runtime Improvements: `functions/c/[slug].js` canonical redirect active
 - E2E User Journey Validation: active and verified
 - Decision Scoring Calibration: calibrated and active
+- Campaign & Landing Builder Integration: integrated and active
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
