@@ -4,11 +4,11 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Campaign Runtime Improvements** is currently **completed**. Integrated `buildRedirectResponse` helper in `functions/c/[slug].js` for secure canonical campaign redirects with UTM parameters, decision metadata cookies, and Analytics Engine traffic memory telemetry. Unit test suite `tests/campaign-runtime.test.js` passing (2/2 tests).
+**Iterative Development Phase — E2E User Journey Validation** is currently **completed**. Resolved critical integration gaps across the end-to-end user journey: implemented visitor engagement signal case in `functions/api/decision/signal.js` and integrated `buildRedirectResponse` helper in landing route redirects (`functions/p/[slug].js`). Added comprehensive integration suites `tests/decision-signal.test.js`.
 
 ## Production baseline
 
-- Last health-verified active production commit: `c8f7cf75d986954acb2c108c33bf9d4808ba86d8`
+- Last health-verified active production commit: `fce76da85e0bc9494755648718c988f721b686f0`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
@@ -20,6 +20,7 @@
 - Journey Runtime: `functions/lib/journey-router.js` edge condition evaluation active
 - Intent Improvements: `calculateVisitorIntentLevel` and `getVisitorIntentSummary` active
 - Campaign Runtime Improvements: `functions/c/[slug].js` canonical redirect active
+- E2E User Journey Validation: active and verified
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
