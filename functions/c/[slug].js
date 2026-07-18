@@ -18,6 +18,7 @@ import { createDecisionShadowContext } from "../_shared/decision-shadow-context.
 import { applyDecisionAuthority, selectDecisionAuthority } from "../_shared/decision-authority.js";
 import { readCookie } from "../_shared/cookie-utils.js";
 import { parseUserState } from "../_shared/user-state.js";
+import { buildRedirectResponse } from "../_shared/redirect-runtime.js";
 
 const CONFIG_KEY = "hub_config";
 
@@ -299,13 +300,17 @@ export async function onRequestGet(context) {
     if (utmCampaign) redirectUrl.searchParams.set("utm_campaign", utmCampaign);
     
     redirectUrl.searchParams.set("cos_decision", decision.decisionId || "default");
-    redirectUrl.searchParams.set("cos_uid", decision.userState.uid);
+    if (decision.userState?.uid) {
+      redirectUrl.searchParams.set("cos_uid", decision.userState.uid);
+    }
     if (campaignData?.engineMapId) {
       redirectUrl.searchParams.set("cos_emap", campaignData.engineMapId);
     }
 
-    const redirectResHeaders = new Headers();
-    decision.cookies.forEach((c) => redirectResHeaders.append("Set-Cookie", c));
+    const redirectResHeaders = {};
+    if (Array.isArray(decision.cookies)) {
+      redirectResHeaders["Set-Cookie"] = decision.cookies;
+    }
     
     // ── Log Instant Redirect to AE Traffic Memory ────────────────────────────
     try {
@@ -319,13 +324,9 @@ export async function onRequestGet(context) {
       });
     } catch(e) {}
 
-    return new Response(null, {
-      status: 302,
-      headers: {
-        "Location": redirectUrl.toString(),
-        "Cache-Control": "no-store",
-        ...Object.fromEntries(redirectResHeaders.entries()),
-      }
+    return buildRedirectResponse(redirectUrl.toString(), {
+      statusCode: 302,
+      headers: redirectResHeaders
     });
   }
 
