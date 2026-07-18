@@ -69,7 +69,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
     <button class="tab-btn" data-tab="pages" style="display:none">Landings</button>
     <button class="tab-btn" data-tab="journeys">Map</button>
-    <button class="tab-btn" data-tab="campaigns">Campaigns</button>
+    <button class="tab-btn" data-tab="campaigns">Intents</button>
     
     <button class="tab-btn" data-tab="slugs">Nodes</button>
     <button class="tab-btn" data-tab="kartra">Funnel</button>
@@ -489,22 +489,110 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </div>
   </div>
 
-  <!-- ── Tab: Campaigns ───────────────────────────────── -->
+  <!-- ── Tab: Campaigns (Intents) ─────────────────────── -->
   <div id="tab-campaigns" class="tab-pane hidden">
-    <div class="layout-single">
-      <div class="card">
-        <div class="list-header">
-          <p class="card-title">Campaigns</p>
-          <div class="filter-row">
-            <label class="toggle-label">
+    <div class="layout" style="display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; max-width: 100%;">
+      <!-- Left Panel: Intent List -->
+      <div class="card" style="display: flex; flex-direction: column; gap: 1rem; height: fit-content;">
+        <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <p class="card-title">Intents</p>
+          </div>
+          <div class="filter-row" style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <label class="toggle-label" style="font-size: 0.75rem;">
               <input type="checkbox" id="show-archived" /> Show archived
             </label>
-            <label class="toggle-label">
+            <label class="toggle-label" style="font-size: 0.75rem;">
               <input type="checkbox" id="show-test-campaigns" /> Test campaigns
             </label>
           </div>
         </div>
-        <div id="campaign-list"><p class="empty-state">Loading…</p></div>
+        <div id="campaign-list" style="display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; max-height: 50vh;"><p class="empty-state">Loading…</p></div>
+      </div>
+
+      <!-- Right Panel: Selected Intent Workspace -->
+      <div id="intent-workspace" class="grid-layout" style="display: none; flex-direction: column; gap: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+          <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
+          <button id="btn-save-workspace-studio" class="btn-primary">Save Workspace Config</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Left sub-grid: Settings & Slugs -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="card">
+              <p class="card-title">Campaign Settings</p>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Workspace Alias
+                <input type="text" id="studio-campaign-alias" placeholder="e.g. ts-renew" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Journey Map
+                <select id="studio-journey-select">
+                  <option value="">Select Journey Map...</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="card">
+              <p class="card-title">Active Slugs</p>
+              <div id="studio-slug-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
+                <!-- Loaded via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right sub-grid: Landing Versions & Builder -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="card">
+              <p class="card-title">Landing Page Versions</p>
+              <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <!-- Loaded via JS -->
+              </div>
+              <button id="btn-studio-add-version" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ Create New Version</button>
+            </div>
+
+            <div class="card" id="studio-builder-panel" style="display: none;">
+              <p class="card-title">Edit Landing Version: <span id="studio-current-edit-version-id"></span></p>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Version Name / ID
+                <input type="text" id="studio-version-name" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Page Title
+                <input type="text" id="studio-version-title" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Theme
+                <select id="studio-version-theme">
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="system">System Default</option>
+                </select>
+              </label>
+
+              <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                <p class="card-title" style="font-size: 0.9rem;">Page Sections & Layout</p>
+                <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                  <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
+                  <select id="studio-comp-select" style="padding: 4px; font-size: 0.8rem;">
+                    <option value="">+ Add Component...</option>
+                  </select>
+                </div>
+              </div>
+
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Custom CSS
+                <textarea id="studio-version-css" rows="3" style="font-family: monospace;"></textarea>
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Custom JS
+                <textarea id="studio-version-js" rows="3" style="font-family: monospace;"></textarea>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1486,6 +1574,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if (target === "campaigns" && !campaignsTabLoaded) {
         campaignsTabLoaded = true;
         loadCampaignList();
+        initCampaignWorkspaceListeners();
       }
       if (target === "config" && !configTabLoaded) {
         configTabLoaded = true;
@@ -3713,9 +3802,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       return (
         '<div class="campaign-item" id="camp-item-' + esc(c.name) + '">' +
           '<div class="campaign-info">' +
-            // SECTION 5: campaign landing at /admin/campaign/ (requires auth token)
-            '<a class="campaign-name" href="/admin/campaign/' + esc(c.name) + '?token=' + encodeURIComponent(token) + '" ' +
-              'target="_blank" rel="noopener noreferrer">' + esc(c.name) + '</a>' +
+            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a>' +
             '<span class="campaign-meta">' + createdFmt + aliasText + wsText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
@@ -3745,6 +3832,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     });
     elCampaignList.querySelectorAll(".btn-del-camp:not([disabled])").forEach(function (btn) {
       btn.addEventListener("click", function () { deleteCampaign(btn.dataset.name); });
+    });
+    elCampaignList.querySelectorAll(".campaign-name").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        e.preventDefault();
+        selectCampaign(el.dataset.name);
+      });
     });
 
     /* ── Campaign alias edit buttons ────────────────────── */
@@ -5571,6 +5664,323 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
     });
   });
+
+  /* ── Campaign Workspace Studio Mode ──────────────── */
+  var currentSelectedCampaign = null;
+  var studioCampaignConfig = null;
+  var studioCurrentEditingLanding = null;
+
+  async function selectCampaign(campaignName) {
+    currentSelectedCampaign = campaignName;
+    document.getElementById("workspace-title").textContent = "Intent Workspace: " + campaignName;
+    document.getElementById("intent-workspace").style.display = "flex";
+
+    // Reset/hide builder
+    document.getElementById("studio-builder-panel").style.display = "none";
+    studioCurrentEditingLanding = null;
+
+    // Load Journeys
+    try {
+      var select = document.getElementById("studio-journey-select");
+      select.innerHTML = '<option value="">Select Journey Map...</option>';
+      var res = await apiFetch("/api/admin/journeys");
+      var data = await res.json();
+      (data.journeys || []).forEach(function (j) {
+        var opt = document.createElement("option");
+        opt.value = j.id;
+        opt.textContent = j.name || j.id;
+        select.appendChild(opt);
+      });
+    } catch(e){}
+
+    // Load campaign V2 config
+    try {
+      var res = await apiFetch("/api/admin/campaign_v2");
+      var data = await res.json();
+      var configs = data.campaigns || [];
+      studioCampaignConfig = configs.find(function (c) { return c.slug === campaignName; }) || {
+        slug: campaignName,
+        journeyId: "",
+        landings: [],
+        mainLandingId: ""
+      };
+      if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
+
+      // Set values
+      document.getElementById("studio-journey-select").value = studioCampaignConfig.journeyId || "";
+    } catch(e) {
+      studioCampaignConfig = {
+        slug: campaignName,
+        journeyId: "",
+        landings: [],
+        mainLandingId: ""
+      };
+    }
+
+    // Set Campaign index metadata settings
+    var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
+    document.getElementById("studio-campaign-alias").value = campIndex ? (campIndex.alias || "") : "";
+
+    // Load Slugs
+    var slugsContainer = document.getElementById("studio-slug-list-container");
+    slugsContainer.innerHTML = "";
+    var campSlugs = slugCache.filter(function (s) {
+      return s.campaign === campaignName && s.isActive !== false;
+    });
+    if (campSlugs.length === 0) {
+      slugsContainer.innerHTML = '<p class="hint">No active slugs.</p>';
+    } else {
+      campSlugs.forEach(function (s) {
+        var div = document.createElement("div");
+        div.className = "version-item";
+        div.innerHTML = '<div><strong>/c/' + esc(s.slug) + '</strong>' +
+          '<div style="font-size: 0.7rem; color: var(--text-m);">' + esc([s.defaults?.utm_source, s.defaults?.utm_medium].filter(Boolean).join(" / ")) + '</div></div>' +
+          '<a href="/c/' + esc(s.slug) + '" target="_blank" style="color: var(--accent); font-size: 0.75rem;">open &nearr;</a>';
+        slugsContainer.appendChild(div);
+      });
+    }
+
+    renderStudioVersionsList();
+  }
+
+  function renderStudioVersionsList() {
+    var container = document.getElementById("studio-version-list");
+    container.innerHTML = "";
+    if (studioCampaignConfig.landings.length === 0) {
+      container.innerHTML = "<p style='color: var(--text-m); font-style: italic;'>No landing versions created yet.</p>";
+      return;
+    }
+
+    studioCampaignConfig.landings.forEach(function (l) {
+      var div = document.createElement("div");
+      div.className = "version-item";
+      var isMain = studioCampaignConfig.mainLandingId === l.id;
+
+      div.innerHTML = '<div><strong>' + esc(l.id) + '</strong> ' +
+        (isMain ? '<span style="color: var(--success); font-weight: bold; margin-left: 5px;">[Main]</span>' : '') +
+        '<div style="font-size: 0.75rem; color: var(--text-m);">' + esc(l.headerInfo?.title || 'No Title') + '</div></div>' +
+        '<div style="display: flex; gap: 0.5rem;">' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\'' + esc(l.id) + '\')">Edit</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\'' + esc(l.id) + '\')" ' + (isMain ? 'disabled' : '') + '>Set Main</button>' +
+          '<button class="btn-danger btn-xs" onclick="deleteStudioLanding(\'' + esc(l.id) + '\')">Delete</button>' +
+        '</div>';
+      container.appendChild(div);
+    });
+  }
+
+  window.setStudioMainLanding = function(id) {
+    studioCampaignConfig.mainLandingId = id;
+    renderStudioVersionsList();
+  };
+
+  window.editStudioLanding = function(id) {
+    studioCurrentEditingLanding = studioCampaignConfig.landings.find(function (l) { return l.id === id; });
+    if (!studioCurrentEditingLanding) return;
+
+    document.getElementById("studio-builder-panel").style.display = "block";
+    document.getElementById("studio-current-edit-version-id").textContent = id;
+    document.getElementById("studio-version-name").value = studioCurrentEditingLanding.id;
+    document.getElementById("studio-version-title").value = studioCurrentEditingLanding.headerInfo?.title || "";
+    document.getElementById("studio-version-theme").value = studioCurrentEditingLanding.theme || "dark";
+    document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
+    document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
+
+    // Load Component options into builder selection
+    var compSelect = document.getElementById("studio-comp-select");
+    compSelect.innerHTML = '<option value="">+ Add Component...</option>';
+    componentFamilies.forEach(function (f) {
+      if (f.status !== "archived") {
+        var opt = document.createElement("option");
+        opt.value = f.family_id;
+        opt.textContent = f.family_name;
+        compSelect.appendChild(opt);
+      }
+    });
+
+    renderStudioLayoutManager();
+  };
+
+  window.deleteStudioLanding = function(id) {
+    studioCampaignConfig.landings = studioCampaignConfig.landings.filter(function (l) { return l.id !== id; });
+    if (studioCampaignConfig.mainLandingId === id) {
+      studioCampaignConfig.mainLandingId = studioCampaignConfig.landings[0]?.id || "";
+    }
+    if (studioCurrentEditingLanding?.id === id) {
+      document.getElementById("studio-builder-panel").style.display = "none";
+      studioCurrentEditingLanding = null;
+    }
+    renderStudioVersionsList();
+  };
+
+  function renderStudioLayoutManager() {
+    var container = document.getElementById("studio-layout-container");
+    container.innerHTML = "";
+    if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
+
+    studioCurrentEditingLanding.layout.forEach(function (item, idx) {
+      var row = document.createElement("div");
+      row.style = "display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem;";
+
+      var labelText = item.type === "component" ? "Component: " + item.id : "Custom HTML";
+
+      row.innerHTML = '<span style="font-size: 0.8rem; font-weight: bold; color: var(--text-m);">' + (idx + 1) + '. ' + esc(labelText) + '</span>' +
+        '<div style="display: flex; gap: 0.25rem;">' +
+          '<button class="btn-ghost btn-xs" style="padding: 2px 6px;" onclick="moveStudioItem(' + idx + ', -1)">&uarr;</button>' +
+          '<button class="btn-ghost btn-xs" style="padding: 2px 6px;" onclick="moveStudioItem(' + idx + ', 1)">&darr;</button>' +
+          '<button class="btn-danger btn-xs" onclick="removeStudioItem(' + idx + ')">&times;</button>' +
+        '</div>';
+      container.appendChild(row);
+    });
+  }
+
+  window.moveStudioItem = function(idx, dir) {
+    var layout = studioCurrentEditingLanding.layout;
+    var target = idx + dir;
+    if (target >= 0 && target < layout.length) {
+      var temp = layout[idx];
+      layout[idx] = layout[target];
+      layout[target] = temp;
+      renderStudioLayoutManager();
+    }
+  };
+
+  window.removeStudioItem = function(idx) {
+    studioCurrentEditingLanding.layout.splice(idx, 1);
+    renderStudioLayoutManager();
+  };
+
+  function initCampaignWorkspaceListeners() {
+    var addVersionBtn = document.getElementById("btn-studio-add-version");
+    if (addVersionBtn && !addVersionBtn.dataset.wired) {
+      addVersionBtn.dataset.wired = "1";
+      addVersionBtn.addEventListener("click", function () {
+        var id = "version-" + Date.now();
+        var newL = {
+          id: id,
+          theme: "dark",
+          headerInfo: { title: "New Landing Page Version" },
+          layout: [],
+          components: [],
+          customStyleCss: "",
+          customScript: ""
+        };
+        studioCampaignConfig.landings.push(newL);
+        if (!studioCampaignConfig.mainLandingId) studioCampaignConfig.mainLandingId = id;
+        renderStudioVersionsList();
+        editStudioLanding(id);
+      });
+    }
+
+    var addHtmlBtn = document.getElementById("btn-studio-add-html");
+    if (addHtmlBtn && !addHtmlBtn.dataset.wired) {
+      addHtmlBtn.dataset.wired = "1";
+      addHtmlBtn.addEventListener("click", function () {
+        if (!studioCurrentEditingLanding) return;
+        studioCurrentEditingLanding.layout.push({
+          type: "custom_html",
+          id: "html-" + Date.now(),
+          name: "Custom HTML",
+          content: ""
+        });
+        renderStudioLayoutManager();
+      });
+    }
+
+    var compSelect = document.getElementById("studio-comp-select");
+    if (compSelect && !compSelect.dataset.wired) {
+      compSelect.dataset.wired = "1";
+      compSelect.addEventListener("change", function (e) {
+        if (!studioCurrentEditingLanding || !e.target.value) return;
+        studioCurrentEditingLanding.layout.push({
+          type: "component",
+          id: e.target.value,
+          name: e.target.value
+        });
+        e.target.value = "";
+        renderStudioLayoutManager();
+      });
+    }
+
+    // Dynamic field sync
+    var fields = [
+      { id: "studio-version-name", prop: "id", cb: renderStudioVersionsList },
+      { id: "studio-version-title", prop: "title", nested: "headerInfo", cb: renderStudioVersionsList },
+      { id: "studio-version-theme", prop: "theme" },
+      { id: "studio-version-css", prop: "customStyleCss" },
+      { id: "studio-version-js", prop: "customScript" }
+    ];
+
+    fields.forEach(function (f) {
+      var el = document.getElementById(f.id);
+      if (el && !el.dataset.wired) {
+        el.dataset.wired = "1";
+        el.addEventListener("input", function (e) {
+          if (!studioCurrentEditingLanding) return;
+          if (f.nested) {
+            if (!studioCurrentEditingLanding[f.nested]) studioCurrentEditingLanding[f.nested] = {};
+            studioCurrentEditingLanding[f.nested][f.prop] = e.target.value;
+          } else {
+            studioCurrentEditingLanding[f.prop] = e.target.value;
+          }
+          if (f.cb) f.cb();
+        });
+        el.addEventListener("change", function (e) {
+          if (!studioCurrentEditingLanding) return;
+          if (f.nested) {
+            if (!studioCurrentEditingLanding[f.nested]) studioCurrentEditingLanding[f.nested] = {};
+            studioCurrentEditingLanding[f.nested][f.prop] = e.target.value;
+          } else {
+            studioCurrentEditingLanding[f.prop] = e.target.value;
+          }
+          if (f.cb) f.cb();
+        });
+      }
+    });
+
+    var saveBtn = document.getElementById("btn-save-workspace-studio");
+    if (saveBtn && !saveBtn.dataset.wired) {
+      saveBtn.dataset.wired = "1";
+      saveBtn.addEventListener("click", async function () {
+        var alias = document.getElementById("studio-campaign-alias").value.trim();
+        var journeyId = document.getElementById("studio-journey-select").value;
+
+        studioCampaignConfig.journeyId = journeyId;
+
+        try {
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Saving...";
+
+          // 1. Save Patch Campaign Index Metadata (Alias)
+          var patchRes = await apiFetch("/api/campaign/" + encodeURIComponent(currentSelectedCampaign), {
+            method: "PATCH",
+            body: JSON.stringify({ alias: alias || null })
+          });
+
+          // 2. Save V2 Configuration (Landings & Journey)
+          var v2Res = await apiFetch("/api/admin/campaign_v2", {
+            method: "POST",
+            body: JSON.stringify(studioCampaignConfig)
+          });
+
+          if (patchRes.ok && v2Res.ok) {
+            alert("Workspace Configuration Saved Successfully!");
+            await loadCampaignList();
+          } else {
+            var err = await v2Res.json();
+            alert("Error saving: " + (err.error || "Unknown error"));
+          }
+        } catch(e) {
+          alert("Failed to save: " + e.toString());
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = "Save Workspace Config";
+        }
+      });
+    }
+  }
+
+  // Globally expose for inline event binding support
+  window.selectCampaign = selectCampaign;
 
 }());
 </script>
