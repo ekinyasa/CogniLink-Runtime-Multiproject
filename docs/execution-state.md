@@ -8,7 +8,7 @@
 
 ## Production baseline
 
-- Last health-verified active production commit: `3aee70a9dc9eebe9eb912de474fcc6ea6bcf2471`
+- Last health-verified active production commit: `c6b1fd203406f3ace3e5de8747f05d2e2bdf82af`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
