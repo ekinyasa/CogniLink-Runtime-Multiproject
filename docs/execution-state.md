@@ -4,11 +4,11 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Redirect Runtime** is currently **completed**. Dedicated Redirect Runtime helper module (`functions/_shared/redirect-runtime.js`) implemented with open-redirect security guards (`isSafeRedirectTarget`), UTM search parameter preservation, and security header injection. Unit test suite `tests/redirect-runtime.test.js` passing (4/4 tests).
+**Iterative Development Phase — Journey Runtime** is currently **completed**. Enhanced `functions/lib/journey-router.js` with semantic edge condition evaluation (`tag`, `minScore`, `converted`, `hot`) and state-intent node prioritization. Unit test suite `tests/journey-runtime.test.js` passing (3/3 tests).
 
 ## Production baseline
 
-- Last health-verified active production commit: `3c10a486387c27ed5a10f5ed60b076b2b3c50e34`
+- Last health-verified active production commit: `590f7f737d0aee412ae41364a43b1e9b27c28f1a`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
@@ -17,6 +17,7 @@
 - Landing Analytics: `writePageViewEvent` and `writeLandingSignalEvent` active
 - Landing Form Runtime: `POST /api/lead` endpoint active
 - Redirect Runtime: `functions/_shared/redirect-runtime.js` active
+- Journey Runtime: `functions/lib/journey-router.js` edge condition evaluation active
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
@@ -26,6 +27,8 @@
 - Landing Runtime feature commit: `3ad940a2de044bd49ceb7e0dbb9443d91adefb85`
 - Landing Analytics feature commit: `5ad9616f58afe5e3d61078f7a690769efaac2a44`
 - Landing Form Runtime feature commit: `1c4dd13a928f026ef1403f4a6f57b2bf2c63bb61`
+- Redirect Runtime feature commit: `3c10a486387c27ed5a10f5ed60b076b2b3c50e34`
+- Journey Runtime feature commit: `590f7f737d0aee412ae41364a43b1e9b27c28f1a`
 - Redirect Runtime feature commit: `3c10a486387c27ed5a10f5ed60b076b2b3c50e34`
 - Landing Form Runtime feature commit: `1c4dd13a928f026ef1403f4a6f57b2bf2c63bb61`
 
