@@ -4,17 +4,18 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Landing Analytics** is currently **completed**. Telemetry helpers (`writePageViewEvent`, `writeLandingSignalEvent`) implemented in `analytics.js` and wired to `/api/decision/signal`. Unit test suite `tests/landing-analytics.test.js` created and passing (3/3 tests).
+**Iterative Development Phase — Landing Form Runtime** is currently **completed**. Dedicated lead capture endpoint `POST /api/lead` (`functions/api/lead.js`) implemented with input validation, `cos_state` user state cookie mutation (`c=1`, `lead_submitted` tag), and Analytics Engine conversion telemetry bridge. Unit test suite `tests/landing-form.test.js` passing (3/3 tests).
 
 ## Production baseline
 
-- Last health-verified active production commit: `5ad9616f58afe5e3d61078f7a690769efaac2a44`
+- Last health-verified active production commit: `1c4dd13a928f026ef1403f4a6f57b2bf2c63bb61`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
 - Decision response authority: Decision Engine V2 (with emergency legacy fallback)
 - Landing Runtime: `functions/p/[slug].js` dedicated route active
 - Landing Analytics: `writePageViewEvent` and `writeLandingSignalEvent` active
+- Landing Form Runtime: `POST /api/lead` endpoint active
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
@@ -23,6 +24,7 @@
 - M3B implementation commit: `21b5a494eecb814c8e920f6a995f663dbe01768f`
 - Landing Runtime feature commit: `3ad940a2de044bd49ceb7e0dbb9443d91adefb85`
 - Landing Analytics feature commit: `5ad9616f58afe5e3d61078f7a690769efaac2a44`
+- Landing Form Runtime feature commit: `1c4dd13a928f026ef1403f4a6f57b2bf2c63bb61`
 
 ## Read-only production evidence
 
