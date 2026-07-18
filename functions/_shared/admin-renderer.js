@@ -514,7 +514,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <div id="intent-workspace" class="grid-layout" style="display: none; flex-direction: column; gap: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
           <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
-          <button id="btn-save-workspace-studio" class="btn-primary">Save Workspace Config</button>
+          <button id="btn-studio-new-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto;">+ New Intent</button>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -592,6 +592,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               </label>
             </div>
           </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; width: 100%;">
+          <button id="btn-save-workspace-studio" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
         </div>
       </div>
     </div>
@@ -5937,6 +5940,38 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
     });
 
+    var newIntentBtn = document.getElementById("btn-studio-new-intent");
+    if (newIntentBtn && !newIntentBtn.dataset.wired) {
+      newIntentBtn.dataset.wired = "1";
+      newIntentBtn.addEventListener("click", async function () {
+        var name = prompt("Enter new Intent / Campaign name (lowercase, numbers, hyphens):");
+        if (!name) return;
+        name = name.trim().toLowerCase();
+        if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
+          alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
+          return;
+        }
+        try {
+          var createBody = { name: name };
+          if (selectedWorkspace) createBody.workspace = selectedWorkspace;
+          var res = await apiFetch("/api/campaign", {
+            method: "POST", body: JSON.stringify(createBody)
+          });
+          var data = await res.json();
+          if (!res.ok) { alert(data.error || "Failed."); return; }
+
+          var newCamp = data.campaign || { name: name, alias: null, isActive: true, createdAt: new Date().toISOString() };
+          campaigns.push(newCamp);
+          campaigns.sort(function (a, b) { return a.name.localeCompare(b.name); });
+          populateCampaignSelect();
+          renderCampaignList();
+          selectCampaign(name);
+        } catch (e) {
+          alert("Error: " + e.toString());
+        }
+      });
+    }
+
     var saveBtn = document.getElementById("btn-save-workspace-studio");
     if (saveBtn && !saveBtn.dataset.wired) {
       saveBtn.dataset.wired = "1";
@@ -5963,7 +5998,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           });
 
           if (patchRes.ok && v2Res.ok) {
-            alert("Workspace Configuration Saved Successfully!");
+            alert("Intent Saved Successfully!");
             await loadCampaignList();
           } else {
             var err = await v2Res.json();
@@ -5973,7 +6008,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           alert("Failed to save: " + e.toString());
         } finally {
           saveBtn.disabled = false;
-          saveBtn.textContent = "Save Workspace Config";
+          saveBtn.textContent = "Save Intent";
         }
       });
     }
