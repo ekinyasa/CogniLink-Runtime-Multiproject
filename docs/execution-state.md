@@ -4,16 +4,17 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Landing Runtime** is currently **completed**. Dedicated Landing Runtime handler (`functions/p/[slug].js`) is active. Terminology cleanup for Landing / Page architecture completed (`renderLanding`, `loadLandingConfig`).
+**Iterative Development Phase — Landing Analytics** is currently **completed**. Telemetry helpers (`writePageViewEvent`, `writeLandingSignalEvent`) implemented in `analytics.js` and wired to `/api/decision/signal`. Unit test suite `tests/landing-analytics.test.js` created and passing (3/3 tests).
 
 ## Production baseline
 
-- Last health-verified active production commit: `3ad940a2de044bd49ceb7e0dbb9443d91adefb85`
+- Last health-verified active production commit: `5ad9616f58afe5e3d61078f7a690769efaac2a44`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
 - Decision response authority: Decision Engine V2 (with emergency legacy fallback)
 - Landing Runtime: `functions/p/[slug].js` dedicated route active
+- Landing Analytics: `writePageViewEvent` and `writeLandingSignalEvent` active
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
@@ -21,6 +22,7 @@
 - `SHADOW_TELEMETRY_SAMPLE_RATE=0.1`: generic runtime-diff telemetry sampling rate
 - M3B implementation commit: `21b5a494eecb814c8e920f6a995f663dbe01768f`
 - Landing Runtime feature commit: `3ad940a2de044bd49ceb7e0dbb9443d91adefb85`
+- Landing Analytics feature commit: `5ad9616f58afe5e3d61078f7a690769efaac2a44`
 
 ## Read-only production evidence
 
