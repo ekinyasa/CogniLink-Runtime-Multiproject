@@ -267,3 +267,5 @@ export async function loadHubConfig(canonicalSlug, env, ttlMs) {
   cacheSet(cacheKey, null, ttlMs);
   return null;
 }
+
+export const loadLandingConfig = loadHubConfig;

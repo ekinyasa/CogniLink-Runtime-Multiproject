@@ -32,10 +32,10 @@
  *   Opt: ROUTE_CACHE_TTL, ALIAS_CACHE_TTL_MS, ENABLE_LEGACY_HUB_FALLBACK
  */
 
-import { parsePath, resolveAlias, loadHubConfig } from "./_shared/alias-router.js";
+import { parsePath, resolveAlias, loadHubConfig, loadLandingConfig } from "./_shared/alias-router.js";
 import { buildRouteKey }                           from "./_shared/alias-router.js";
 import { resolveLinks }                            from "./_shared/links.js";
-import { renderHub }                               from "./_shared/hub-renderer.js";
+import { renderHub, renderLanding }                from "./_shared/hub-renderer.js";
 import { createRuntimeRepository }                 from "./_shared/runtime-repository.js";
 import { resolveContext }                          from "./_shared/runtime-adapter.js";
 import { compareRuntime }                          from "./_shared/runtime-diff.js";

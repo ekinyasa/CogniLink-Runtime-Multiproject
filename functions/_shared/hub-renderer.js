@@ -660,3 +660,5 @@ a:not(.link-btn):not(.comp-cta-btn):hover{
   font-size:0.8rem;opacity:0.6;
 }
 `;
+
+export const renderLanding = renderHub;
