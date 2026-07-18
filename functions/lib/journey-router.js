@@ -29,22 +29,45 @@ export async function resolveJourneyDestination(journey, userState) {
   const outboundEdges = edges.filter(e => e.from === currentNode.id);
 
   if (outboundEdges.length > 0) {
+    // 1. Check explicit edge conditions
     for (const edge of outboundEdges) {
       const nextNode = nodes.find(n => n.id === edge.to);
       if (!nextNode) continue;
 
-      if (userState.c === 1 && (nextNode.type === "post" || nextNode.type === "conv")) {
-        targetNodeId = nextNode.id;
-        break;
+      if (edge.conditions && Array.isArray(edge.conditions) && edge.conditions.length > 0) {
+        const matches = edge.conditions.every(cond => {
+          if (cond.tag && Array.isArray(userState.t)) return userState.t.includes(cond.tag);
+          if (cond.minScore !== undefined) return (userState.e || 0) >= cond.minScore;
+          if (cond.converted !== undefined) return (userState.c === 1) === Boolean(cond.converted);
+          if (cond.hot !== undefined) return (userState.h === 1) === Boolean(cond.hot);
+          return true;
+        });
+        if (matches) {
+          targetNodeId = nextNode.id;
+          break;
+        }
       }
-      if (userState.h === 1 && (nextNode.type === "hot" || nextNode.type === "conv" || nextNode.type === "warm")) {
-        targetNodeId = nextNode.id;
-        break;
+    }
+
+    // 2. Default intent-prioritized fallback matching
+    if (targetNodeId === currentNode.id) {
+      const candidateNodes = outboundEdges
+        .map(e => nodes.find(n => n.id === e.to))
+        .filter(Boolean);
+
+      let matchedNode = null;
+      if (userState.c === 1) {
+        matchedNode = candidateNodes.find(n => n.type === "post" || n.type === "conv");
       }
-      // Warm condition
-      if (userState.v === 1 && userState.h !== 1 && userState.c !== 1 && nextNode.type === "warm") {
-         targetNodeId = nextNode.id;
-         break;
+      if (!matchedNode && userState.h === 1) {
+        matchedNode = candidateNodes.find(n => n.type === "hot") || candidateNodes.find(n => n.type === "conv" || n.type === "warm");
+      }
+      if (!matchedNode && userState.v === 1) {
+        matchedNode = candidateNodes.find(n => n.type === "warm");
+      }
+
+      if (matchedNode) {
+        targetNodeId = matchedNode.id;
       }
     }
   }
