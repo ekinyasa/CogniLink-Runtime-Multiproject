@@ -4,11 +4,11 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — E2E User Journey Validation** is currently **completed**. Resolved critical integration gaps across the end-to-end user journey: implemented visitor engagement signal case in `functions/api/decision/signal.js` and integrated `buildRedirectResponse` helper in landing route redirects (`functions/p/[slug].js`). Added comprehensive integration suites `tests/decision-signal.test.js`.
+**Iterative Development Phase — Decision Scoring Calibration** is currently **completed**. Calibrated client-side engagement scoring formula in `functions/_shared/hub-renderer.js` to require minimum scroll activity (>= 15%) before granting full time-on-page scoring weight. Prevents idle/inactive browser tabs from triggering false "hot visitor" state transitions.
 
 ## Production baseline
 
-- Last health-verified active production commit: `fce76da85e0bc9494755648718c988f721b686f0`
+- Last health-verified active production commit: `a87d36140b297220a04f5a4f53dcea9ed150f58d`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
@@ -21,6 +21,7 @@
 - Intent Improvements: `calculateVisitorIntentLevel` and `getVisitorIntentSummary` active
 - Campaign Runtime Improvements: `functions/c/[slug].js` canonical redirect active
 - E2E User Journey Validation: active and verified
+- Decision Scoring Calibration: calibrated and active
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
