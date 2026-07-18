@@ -456,9 +456,9 @@ ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
   // Periodically send engagement updates
   var engagementInterval = setInterval(function() {
     var elapsed = (Date.now() - start) / 1000;
-    // Score Formula: (Scroll % * 0.4) + (Min(Time, 60s) / 60 * 60)
-    // Simple but effective: caps at 100.
-    var score = Math.min(100, Math.floor((maxScroll * 0.4) + (Math.min(elapsed, 60))));
+    // Score Formula: (Scroll % * 0.4) + Time-based points (full weight only if scroll >= 15% to prevent idle bounce tab hot trigger)
+    var timeWeight = maxScroll >= 15 ? Math.min(elapsed, 60) : Math.min(elapsed, 60) * 0.2;
+    var score = Math.min(100, Math.floor((maxScroll * 0.4) + timeWeight));
     
     if (score > 10) { // Only report if there is some activity
       fetch("/api/decision/signal", {
