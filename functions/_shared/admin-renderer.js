@@ -5760,9 +5760,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         (isMain ? '<span style="color: var(--success); font-weight: bold; margin-left: 5px;">[Main]</span>' : '') +
         '<div style="font-size: 0.75rem; color: var(--text-m);">' + esc(l.headerInfo?.title || 'No Title') + '</div></div>' +
         '<div style="display: flex; gap: 0.5rem;">' +
-          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\x27' + esc(l.id) + '\x27)">Edit</button>' +
-          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\x27' + esc(l.id) + '\x27)" ' + (isMain ? 'disabled' : '') + '>Set Main</button>' +
-          '<button class="btn-danger btn-xs" onclick="deleteStudioLanding(\x27' + esc(l.id) + '\x27)">Delete</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\\x27' + esc(l.id) + '\\x27)">Edit</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled' : '') + '>Set Main</button>' +
+          '<button class="btn-danger btn-xs" onclick="deleteStudioLanding(\\x27' + esc(l.id) + '\\x27)">Delete</button>' +
         '</div>';
       container.appendChild(div);
     });
