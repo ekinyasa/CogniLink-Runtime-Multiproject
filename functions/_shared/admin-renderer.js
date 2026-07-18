@@ -517,95 +517,101 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <button id="btn-studio-new-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto;">+ New Intent</button>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-          <!-- Left sub-grid: Settings & Slugs -->
-          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <div class="card">
-              <p class="card-title">Campaign Settings</p>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Workspace Alias
-                <input type="text" id="studio-campaign-alias" placeholder="e.g. ts-renew" />
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Journey Map
-                <select id="studio-journey-select">
-                  <option value="">Select Journey Map...</option>
-                </select>
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Default Redirect Slug
-                <select id="studio-default-slug-select">
-                  <option value="">(first active slug)</option>
-                </select>
-              </label>
-            </div>
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
 
-            <div class="card">
-              <p class="card-title">Active Slugs</p>
-              <div id="studio-slug-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
-                <!-- Loaded via JS -->
+          <!-- 1. Intent Settings -->
+          <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
+            <p class="card-title">Intent Settings</p>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Workspace Alias
+              <input type="text" id="studio-campaign-alias" placeholder="e.g. ts-renew" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Journey Map
+              <select id="studio-journey-select">
+                <option value="">Select Journey Map...</option>
+              </select>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Default Redirect Slug
+              <select id="studio-default-slug-select">
+                <option value="">(first active slug)</option>
+              </select>
+            </label>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div style="display: flex; gap: 0.5rem;">
+                <button id="btn-studio-archive-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); color: var(--text);">Archive</button>
+                <button id="btn-studio-delete-intent" class="btn-danger btn-sm">Delete</button>
               </div>
+              <button id="btn-studio-save-intent" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
             </div>
           </div>
 
-          <!-- Right sub-grid: Landing Versions & Builder -->
-          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <div class="card">
-              <p class="card-title">Landing Page Versions</p>
-              <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <!-- Loaded via JS -->
+          <!-- 2. Landing Page Versions -->
+          <div class="card">
+            <p class="card-title">Landing Page Versions</p>
+            <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+              <!-- Loaded via JS -->
+            </div>
+            <button id="btn-studio-add-version" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ Create New Version</button>
+          </div>
+
+          <!-- 3. Edit Landing Version (builder) -->
+          <div class="card" id="studio-builder-panel" style="display: none; flex-direction: column; gap: 1rem;">
+            <p class="card-title">Edit Landing Version: <span id="studio-current-edit-version-id"></span></p>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Version Name / ID
+              <input type="text" id="studio-version-name" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Page Title
+              <input type="text" id="studio-version-title" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Theme
+              <select id="studio-version-theme">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="system">System Default</option>
+              </select>
+            </label>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <p class="card-title" style="font-size: 0.9rem;">Page Sections & Layout</p>
+              <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
+                <select id="studio-comp-select" style="padding: 4px; font-size: 0.8rem;">
+                  <option value="">+ Add Component...</option>
+                </select>
               </div>
-              <button id="btn-studio-add-version" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ Create New Version</button>
             </div>
 
-            <div class="card" id="studio-builder-panel" style="display: none;">
-              <p class="card-title">Edit Landing Version: <span id="studio-current-edit-version-id"></span></p>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Version Name / ID
-                <input type="text" id="studio-version-name" />
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Page Title
-                <input type="text" id="studio-version-title" />
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Theme
-                <select id="studio-version-theme">
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                  <option value="system">System Default</option>
-                </select>
-              </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Custom CSS
+              <textarea id="studio-version-css" rows="3" style="font-family: monospace;"></textarea>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Custom JS
+              <textarea id="studio-version-js" rows="3" style="font-family: monospace;"></textarea>
+            </label>
 
-              <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-                <p class="card-title" style="font-size: 0.9rem;">Page Sections & Layout</p>
-                <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                  <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
-                  <select id="studio-comp-select" style="padding: 4px; font-size: 0.8rem;">
-                    <option value="">+ Add Component...</option>
-                  </select>
-                </div>
-              </div>
-
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Custom CSS
-                <textarea id="studio-version-css" rows="3" style="font-family: monospace;"></textarea>
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Custom JS
-                <textarea id="studio-version-js" rows="3" style="font-family: monospace;"></textarea>
-              </label>
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <button id="btn-studio-save-version" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Version</button>
             </div>
           </div>
+
+          <!-- 4. Active Slugs -->
+          <div class="card">
+            <p class="card-title">Active Slugs</p>
+            <div id="studio-slug-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
+              <!-- Loaded via JS -->
+            </div>
+          </div>
+
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; width: 100%;">
-          <div style="display: flex; gap: 0.5rem;">
-            <button id="btn-studio-archive-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); color: var(--text);">Archive</button>
-            <button id="btn-studio-delete-intent" class="btn-danger btn-sm">Delete</button>
-          </div>
-          <button id="btn-save-workspace-studio" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
-        </div>
+      </div>
       </div>
     </div>
   </div>
@@ -5528,7 +5534,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   async function selectCampaign(campaignName) {
     currentSelectedCampaign = campaignName;
-    document.getElementById("workspace-title").textContent = "Intent Workspace: " + campaignName;
+    document.getElementById("workspace-title").textContent = campaignName;
     document.getElementById("intent-workspace").style.display = "flex";
 
     // Reset/hide builder
@@ -5897,10 +5903,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       });
     }
 
-    var saveBtn = document.getElementById("btn-save-workspace-studio");
-    if (saveBtn && !saveBtn.dataset.wired) {
-      saveBtn.dataset.wired = "1";
-      saveBtn.addEventListener("click", async function () {
+    var saveIntentBtn = document.getElementById("btn-studio-save-intent");
+    if (saveIntentBtn && !saveIntentBtn.dataset.wired) {
+      saveIntentBtn.dataset.wired = "1";
+      saveIntentBtn.addEventListener("click", async function () {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
         var journeyId = document.getElementById("studio-journey-select").value;
         var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
@@ -5908,8 +5914,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         studioCampaignConfig.journeyId = journeyId;
 
         try {
-          saveBtn.disabled = true;
-          saveBtn.textContent = "Saving...";
+          saveIntentBtn.disabled = true;
+          saveIntentBtn.textContent = "Saving...";
 
           // 1. Save Patch Campaign Index Metadata (Alias & defaultSlug)
           var patchRes = await apiFetch("/api/campaign/" + encodeURIComponent(currentSelectedCampaign), {
@@ -5917,14 +5923,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             body: JSON.stringify({ alias: alias || null, defaultSlug: defaultSlug })
           });
 
-          // 2. Save V2 Configuration (Landings & Journey)
+          // 2. Save V2 Configuration (Journey)
           var v2Res = await apiFetch("/api/admin/campaign_v2", {
             method: "POST",
             body: JSON.stringify(studioCampaignConfig)
           });
 
           if (patchRes.ok && v2Res.ok) {
-            alert("Intent Saved Successfully!");
+            alert("Intent Settings Saved Successfully!");
             await loadCampaignList();
           } else {
             var err = await v2Res.json();
@@ -5933,8 +5939,38 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         } catch(e) {
           alert("Failed to save: " + e.toString());
         } finally {
-          saveBtn.disabled = false;
-          saveBtn.textContent = "Save Intent";
+          saveIntentBtn.disabled = false;
+          saveIntentBtn.textContent = "Save Intent";
+        }
+      });
+    }
+
+    var saveVersionBtn = document.getElementById("btn-studio-save-version");
+    if (saveVersionBtn && !saveVersionBtn.dataset.wired) {
+      saveVersionBtn.dataset.wired = "1";
+      saveVersionBtn.addEventListener("click", async function () {
+        try {
+          saveVersionBtn.disabled = true;
+          saveVersionBtn.textContent = "Saving Version...";
+
+          // Save V2 Configuration (Landings layout updates)
+          var v2Res = await apiFetch("/api/admin/campaign_v2", {
+            method: "POST",
+            body: JSON.stringify(studioCampaignConfig)
+          });
+
+          if (v2Res.ok) {
+            alert("Landing Version Saved Successfully!");
+            await loadCampaignList();
+          } else {
+            var err = await v2Res.json();
+            alert("Error saving: " + (err.error || "Unknown error"));
+          }
+        } catch(e) {
+          alert("Failed to save version: " + e.toString());
+        } finally {
+          saveVersionBtn.disabled = false;
+          saveVersionBtn.textContent = "Save Version";
         }
       });
     }
