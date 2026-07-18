@@ -79,3 +79,39 @@ export function updateUserState(user, patch) {
     ts: Math.floor(Date.now() / 1000),
   };
 }
+
+/**
+ * Derives categorical visitor intent tier ("cold", "warm", "hot", "converted").
+ *
+ * @param {object} userState
+ * @returns {"cold" | "warm" | "hot" | "converted"}
+ */
+export function calculateVisitorIntentLevel(userState) {
+  if (!userState) return "cold";
+  if (userState.c === 1) return "converted";
+  if (userState.h === 1 || (userState.e || 0) >= 60) return "hot";
+  if (userState.v === 1 || (userState.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
+    return "warm";
+  }
+  return "cold";
+}
+
+/**
+ * Returns a structured intent summary object for Decision Engine evaluation.
+ *
+ * @param {object} userState
+ * @returns {object}
+ */
+export function getVisitorIntentSummary(userState) {
+  const state = userState || DEFAULT_USER_STATE;
+  const tier = calculateVisitorIntentLevel(state);
+  return {
+    tier,
+    score: Number(state.e) || 0,
+    isReturning: Number(state.v) === 1,
+    hasConverted: Number(state.c) === 1,
+    isHot: Number(state.h) === 1,
+    tags: Array.isArray(state.t) ? state.t : [],
+    lastSeen: Number(state.ts) || 0
+  };
+}
