@@ -2,25 +2,25 @@
 
 **Updated:** 2026-07-18
 
-### Active milestone
+### Active feature / milestone
 
-**M3B — Decision V2 full authority** is currently **completed**. Decision Engine V2 full authority model is implemented with documented emergency legacy fallback across all routes. Roadmap execution for the Decision Engine milestone series is complete.
+**Iterative Development Phase — Landing Runtime** is currently **completed**. Dedicated Landing Runtime handler (`functions/p/[slug].js`) is active. Terminology cleanup for Landing / Page architecture completed (`renderLanding`, `loadLandingConfig`).
 
 ## Production baseline
 
-- Last health-verified active production commit before the executable-roadmap documentation update: `64cdbc53d36249f421b1b8343d86f6687b9a864d`
+- Last health-verified active production commit: `3ad940a2de044bd49ceb7e0dbb9443d91adefb85`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
 - Decision response authority: Decision Engine V2 (with emergency legacy fallback)
-- Renderer authority: legacy `renderHub()`
+- Landing Runtime: `functions/p/[slug].js` dedicated route active
+- Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
 - `SHADOW_TELEMETRY_ENABLED=true`: generic runtime-diff telemetry is enabled
 - `SHADOW_TELEMETRY_SAMPLE_RATE=0.1`: generic runtime-diff telemetry sampling rate
-- M2B temporary configuration deployment commit: `6a6a6bbd680d515c15731821f846d0aa7d617dc4`
-- M3A active cutover deployment commit: `7ee7e0c6f194a7becc70e840d597d3bb18dab1d6`
-- M3A health-verified rollback active production commit: `a4d08740f39fa502f1765bd1b68fba1f4784e3a0`
+- M3B implementation commit: `21b5a494eecb814c8e920f6a995f663dbe01768f`
+- Landing Runtime feature commit: `3ad940a2de044bd49ceb7e0dbb9443d91adefb85`
 
 ## Read-only production evidence
 
