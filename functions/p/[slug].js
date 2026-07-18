@@ -15,6 +15,7 @@ import { readCookie } from "../_shared/cookie-utils.js";
 import { parseUserState } from "../_shared/user-state.js";
 import { deriveCampaignFromSlug } from "../_shared/slug-utils.js";
 import { handleDecision } from "../lib/decision-controller.js";
+import { buildRedirectResponse } from "../_shared/redirect-runtime.js";
 
 const SEC_HEADERS = {
   "X-Robots-Tag": "noindex,nofollow",
@@ -181,7 +182,14 @@ export async function onRequestGet(context) {
 
   // Handle decision redirect action
   if (activeDecision && activeDecision.action === "redirect" && activeDecision.target) {
-    return Response.redirect(activeDecision.target, activeDecision.statusCode || 302);
+    const redirectResHeaders = {};
+    if (Array.isArray(activeDecision.cookies)) {
+      redirectResHeaders["Set-Cookie"] = activeDecision.cookies;
+    }
+    return buildRedirectResponse(activeDecision.target, {
+      statusCode: activeDecision.statusCode || 302,
+      headers: redirectResHeaders
+    });
   }
 
   // Handle decision block action
