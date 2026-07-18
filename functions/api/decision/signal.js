@@ -125,6 +125,21 @@ export async function onRequestPost(context) {
         // No change
         break;
 
+      case "engagement":
+        if (body.score !== undefined) {
+          const clientScore = Number(body.score) || 0;
+          const newScore = Math.min(100, Math.max(user.e, clientScore));
+          if (newScore !== user.e) {
+            const updates = { e: newScore };
+            if (user.h === 0 && newScore >= HOT_LIMIT) {
+              updates.h = 1;
+            }
+            user = updateUserState(user, updates);
+            updated = true;
+          }
+        }
+        break;
+
       case "click_soft":
         bonus = points.click_soft !== undefined ? points.click_soft : 2;
         break;
