@@ -4,11 +4,11 @@
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Intent Improvements** is currently **completed**. Added `calculateVisitorIntentLevel` and `getVisitorIntentSummary` helpers in `functions/_shared/user-state.js` for structured visitor intent level categorization ("cold", "warm", "hot", "converted"). Unit test suite `tests/intent-improvements.test.js` passing (5/5 tests).
+**Iterative Development Phase — Campaign Runtime Improvements** is currently **completed**. Integrated `buildRedirectResponse` helper in `functions/c/[slug].js` for secure canonical campaign redirects with UTM parameters, decision metadata cookies, and Analytics Engine traffic memory telemetry. Unit test suite `tests/campaign-runtime.test.js` passing (2/2 tests).
 
 ## Production baseline
 
-- Last health-verified active production commit: `3c55cb820c64e2d62814f8ae063f7967dc82588f`
+- Last health-verified active production commit: `c8f7cf75d986954acb2c108c33bf9d4808ba86d8`
 - M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
 - M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
 - Health: router, KV, and Analytics Engine healthy
@@ -19,6 +19,7 @@
 - Redirect Runtime: `functions/_shared/redirect-runtime.js` active
 - Journey Runtime: `functions/lib/journey-router.js` edge condition evaluation active
 - Intent Improvements: `calculateVisitorIntentLevel` and `getVisitorIntentSummary` active
+- Campaign Runtime Improvements: `functions/c/[slug].js` canonical redirect active
 - Renderer authority: `renderLanding()` / legacy `renderHub()`
 - Runtime compatibility view: enabled
 - `REAL_RULE_SHADOW_ENABLED=false`: converted real-legacy-rule comparison is disabled because the production rule inventory is empty
@@ -31,8 +32,7 @@
 - Redirect Runtime feature commit: `3c10a486387c27ed5a10f5ed60b076b2b3c50e34`
 - Journey Runtime feature commit: `590f7f737d0aee412ae41364a43b1e9b27c28f1a`
 - Intent Improvements feature commit: `3c55cb820c64e2d62814f8ae063f7967dc82588f`
-- Journey Runtime feature commit: `590f7f737d0aee412ae41364a43b1e9b27c28f1a`
-- Redirect Runtime feature commit: `3c10a486387c27ed5a10f5ed60b076b2b3c50e34`
+- Campaign Runtime Improvements feature commit: `c8f7cf75d986954acb2c108c33bf9d4808ba86d8`
 - Landing Form Runtime feature commit: `1c4dd13a928f026ef1403f4a6f57b2bf2c63bb61`
 
 ## Read-only production evidence
