@@ -498,12 +498,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <p class="card-title">Intents</p>
           </div>
-          <div class="filter-row" style="display: flex; flex-direction: column; gap: 0.25rem;">
-            <label class="toggle-label" style="font-size: 0.75rem;">
-              <input type="checkbox" id="show-archived" /> Show archived
+          <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem;">
+            <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
+              <input type="checkbox" id="show-archived" /> Archived
             </label>
-            <label class="toggle-label" style="font-size: 0.75rem;">
-              <input type="checkbox" id="show-test-campaigns" /> Test campaigns
+            <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
+              <input type="checkbox" id="show-test-campaigns" /> Test
             </label>
           </div>
         </div>
@@ -530,6 +530,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                 Journey Map
                 <select id="studio-journey-select">
                   <option value="">Select Journey Map...</option>
+                </select>
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Default Redirect Slug
+                <select id="studio-default-slug-select">
+                  <option value="">(first active slug)</option>
                 </select>
               </label>
             </div>
@@ -593,7 +599,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
           </div>
         </div>
-        <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; width: 100%;">
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btn-studio-archive-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); color: var(--text);">Archive</button>
+            <button id="btn-studio-delete-intent" class="btn-danger btn-sm">Delete</button>
+          </div>
           <button id="btn-save-workspace-studio" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
         </div>
       </div>
@@ -3737,12 +3747,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   function renderCampaignList() {
     var items = campaigns.filter(function (c) {
-      // PART 8 — workspace filter
       if (!isCampaignInWorkspace(c)) return false;
       var isTest = c.name && c.name.startsWith("test-");
-      // Test mode: show ONLY test campaigns (regardless of active state)
       if (showTestCampaigns) return isTest;
-      // Normal mode: hide test campaigns, then apply archived filter
       if (isTest) return false;
       var active = c.isActive !== false;
       return showArchivedCampaigns ? !active : active;
@@ -3757,179 +3764,25 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
     elCampaignList.innerHTML = items.map(function (c) {
       var isActive   = c.isActive !== false;
-      var inGrace    = isWithinGraceWindow(c.createdAt);
       var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—";
-      // B.0: alias in meta as inline public link; no separate alias button
-      var aliasText   = c.alias
-        ? ' · <a href="/' + esc(c.alias) + '" target="_blank" rel="noopener noreferrer" ' +
-            'style="color:inherit"><code>' + esc(c.alias) + '</code></a>'
-        : '';
-      var wsName      = c.workspace || "default";
-      var wsText      = wsName !== "default" ? ' · ws: <code>' + esc(wsName) + '</code>' : '';
-
-      // B.1: default-slug selector — always rendered (no campSlugs.length gate).
-      // Populated from slugCache (may be empty if Campaign Links tab not yet loaded).
-      var campSlugs = slugCache.filter(function (s) {
-        return s.campaign === c.name && s.isActive !== false;
-      });
-      var defaultSlugOptions = '<option value="">(first active slug)</option>' +
-        campSlugs.map(function (s) {
-          var sel = c.defaultSlug === s.slug ? ' selected' : '';
-          return '<option value="' + esc(s.slug) + '"' + sel + '>' + esc(s.slug) + '</option>';
-        }).join('');
-
-      // B.0/B.1: unified edit panel — alias input + defaultSlug select + Save/Cancel
-      var editPanel =
-        '<div class="campaign-alias-edit hidden" id="camp-alias-row-' + esc(c.name) + '">' +
-          '<div style="margin-top:.4rem">' +
-            '<input type="text" class="camp-alias-input" placeholder="alias (optional)" ' +
-              'value="' + esc(c.alias || "") + '" maxlength="48" ' +
-              'data-original="' + esc(c.alias || "") + '" ' +
-              'style="font-size:.8rem;padding:.3rem .5rem;width:100%;max-width:220px" />' +
-          '</div>' +
-          '<p class="camp-alias-status field-hint hidden"></p>' +
-          '<div style="margin-top:.35rem">' +
-            '<span class="field-hint" style="display:block;font-size:.72rem;margin-bottom:.2rem">Default redirect slug</span>' +
-            '<select class="camp-default-slug-select" data-name="' + esc(c.name) + '" ' +
-              'data-original-default="' + esc(c.defaultSlug || "") + '" ' +
-              'style="font-size:.8rem;padding:.2rem .4rem;width:100%;max-width:280px">' +
-              defaultSlugOptions +
-            '</select>' +
-          '</div>' +
-          '<div class="inline-row" style="margin-top:.4rem;gap:.4rem">' +
-            '<button class="btn-ghost btn-xs btn-alias-save" data-name="' + esc(c.name) + '">Save</button>' +
-            '<button class="btn-ghost btn-xs btn-alias-cancel" data-name="' + esc(c.name) + '">Cancel</button>' +
-          '</div>' +
-        '</div>';
+      var aliasText   = c.alias ? ' · alias: <code>' + esc(c.alias) + '</code>' : '';
 
       return (
-        '<div class="campaign-item" id="camp-item-' + esc(c.name) + '">' +
-          '<div class="campaign-info">' +
+        '<div class="campaign-item" id="camp-item-' + esc(c.name) + '" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">' +
+          '<div class="campaign-info" style="display: flex; flex-direction: column; gap: 0.15rem;">' +
             '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a>' +
-            '<span class="campaign-meta">' + createdFmt + aliasText + wsText +
+            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + createdFmt + aliasText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
-            editPanel +
-          '</div>' +
-          '<div class="campaign-actions">' +
-            // B.0: no landing button, no alias link button; "Edit" replaces "Alias"
-            '<button class="btn-ghost btn-xs btn-edit-alias" data-name="' + esc(c.name) + '">Edit</button>' +
-            (isActive
-              ? '<button class="btn-ghost btn-xs btn-archive" data-name="' + esc(c.name) + '">Archive</button>'
-              : '<button class="btn-ghost btn-xs btn-restore" data-name="' + esc(c.name) + '">Restore</button>'
-            ) +
-            (inGrace
-              ? '<button class="btn-danger btn-xs btn-del-camp" data-name="' + esc(c.name) + '">Delete</button>'
-              : '<button class="btn-danger btn-xs btn-del-camp" data-name="' + esc(c.name) + '" disabled title="Grace window expired">Delete</button>'
-            ) +
           '</div>' +
         '</div>'
       );
     }).join("");
 
-    elCampaignList.querySelectorAll(".btn-archive").forEach(function (btn) {
-      btn.addEventListener("click", function () { setCampaignActive(btn.dataset.name, false); });
-    });
-    elCampaignList.querySelectorAll(".btn-restore").forEach(function (btn) {
-      btn.addEventListener("click", function () { setCampaignActive(btn.dataset.name, true); });
-    });
-    elCampaignList.querySelectorAll(".btn-del-camp:not([disabled])").forEach(function (btn) {
-      btn.addEventListener("click", function () { deleteCampaign(btn.dataset.name); });
-    });
     elCampaignList.querySelectorAll(".campaign-name").forEach(function (el) {
       el.addEventListener("click", function (e) {
         e.preventDefault();
         selectCampaign(el.dataset.name);
-      });
-    });
-
-    /* ── Campaign alias edit buttons ────────────────────── */
-    elCampaignList.querySelectorAll(".btn-edit-alias").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var row = $("camp-alias-row-" + btn.dataset.name);
-        if (!row) return;
-        if (row.classList.contains("hidden")) {
-          row.classList.remove("hidden");
-          var inp = row.querySelector(".camp-alias-input");
-          if (inp) inp.focus();
-          /* Wire alias blur for this input */
-          if (inp && !inp.dataset.blurWired) {
-            inp.dataset.blurWired = "1";
-            attachAliasBlur(inp, row.querySelector(".camp-alias-status"), function () {
-              return inp.dataset.original || null;
-            });
-          }
-        } else {
-          row.classList.add("hidden");
-        }
-      });
-    });
-
-    elCampaignList.querySelectorAll(".btn-alias-cancel").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var row = $("camp-alias-row-" + btn.dataset.name);
-        if (row) {
-          row.classList.add("hidden");
-          // Restore alias input to KV state
-          var inp = row.querySelector(".camp-alias-input");
-          if (inp) inp.value = inp.dataset.original || "";
-          // Restore defaultSlug select to KV state (B.1)
-          var sel = row.querySelector(".camp-default-slug-select");
-          if (sel) sel.value = sel.dataset.originalDefault || "";
-          var st  = row.querySelector(".camp-alias-status");
-          if (st) { hide(st); st.textContent = ""; }
-        }
-      });
-    });
-
-    // B.0/B.1/B.2: Save persists alias + defaultSlug together; triggers compile if either changed
-    elCampaignList.querySelectorAll(".btn-alias-save").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        var name = btn.dataset.name;
-        var row  = $("camp-alias-row-" + name);
-        if (!row) return;
-        var inp = row.querySelector(".camp-alias-input");
-        var sel = row.querySelector(".camp-default-slug-select");
-        var st  = row.querySelector(".camp-alias-status");
-        if (!inp) return;
-        var newAlias       = inp.value.trim().toLowerCase() || null;
-        var newDefaultSlug = sel ? (sel.value || null) : undefined;
-        // Send both alias and defaultSlug in one PATCH call
-        var body = { alias: newAlias };
-        if (sel) body.defaultSlug = newDefaultSlug;
-        btn.disabled = true;
-        btn.textContent = "Saving…";
-        try {
-          var res  = await apiFetch("/api/campaign/" + encodeURIComponent(name), {
-            method: "PATCH", body: JSON.stringify(body)
-          });
-          var data = await res.json();
-          if (!res.ok) {
-            if (st) { st.textContent = data.error || "Save failed."; st.className = "field-hint alias-err"; show(st); }
-            return;
-          }
-          /* Update local cache */
-          var idx = campaigns.findIndex(function (c) { return c.name === name; });
-          if (idx !== -1) {
-            campaigns[idx].alias       = newAlias;
-            if (sel) campaigns[idx].defaultSlug = newDefaultSlug;
-          }
-          // Update data-original attributes so Cancel restores to new saved state
-          inp.dataset.original = newAlias || "";
-          if (sel) sel.dataset.originalDefault = newDefaultSlug || "";
-          row.classList.add("hidden");
-          /* Show note if provided */
-          if (data.note && st) { st.textContent = "ℹ " + data.note; st.className = "field-hint"; show(st); }
-          // Refresh slugCache then re-render so the defaultSlug selector
-          // reflects any slugs created since the last load (SECTION 1+2).
-          await loadSlugs();
-          renderCampaignList();
-        } catch (err) {
-          if (err.message !== "401" && st) { st.textContent = "Request failed."; st.className = "field-hint alias-err"; show(st); }
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Save";
-        }
       });
     });
   }
@@ -5724,12 +5577,39 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
     document.getElementById("studio-campaign-alias").value = campIndex ? (campIndex.alias || "") : "";
 
+    // Set Archive/Restore and Delete states
+    var isActive = campIndex ? (campIndex.isActive !== false) : true;
+    var archiveBtn = document.getElementById("btn-studio-archive-intent");
+    if (archiveBtn) {
+      archiveBtn.textContent = isActive ? "Archive" : "Restore";
+    }
+    var deleteBtn = document.getElementById("btn-studio-delete-intent");
+    if (deleteBtn && campIndex) {
+      var inGrace = isWithinGraceWindow(campIndex.createdAt);
+      deleteBtn.disabled = !inGrace;
+      deleteBtn.title = inGrace ? "" : "Grace window expired";
+    }
+
     // Load Slugs
     var slugsContainer = document.getElementById("studio-slug-list-container");
     slugsContainer.innerHTML = "";
     var campSlugs = slugCache.filter(function (s) {
       return s.campaign === campaignName && s.isActive !== false;
     });
+
+    // Populate Default Slug drop down options
+    var defSelect = document.getElementById("studio-default-slug-select");
+    if (defSelect) {
+      defSelect.innerHTML = '<option value="">(first active slug)</option>';
+      campSlugs.forEach(function (s) {
+        var opt = document.createElement("option");
+        opt.value = s.slug;
+        opt.textContent = s.slug;
+        defSelect.appendChild(opt);
+      });
+      defSelect.value = campIndex ? (campIndex.defaultSlug || "") : "";
+    }
+
     if (campSlugs.length === 0) {
       slugsContainer.innerHTML = '<p class="hint">No active slugs.</p>';
     } else {
@@ -5972,12 +5852,58 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       });
     }
 
+    var archiveIntentBtn = document.getElementById("btn-studio-archive-intent");
+    if (archiveIntentBtn && !archiveIntentBtn.dataset.wired) {
+      archiveIntentBtn.dataset.wired = "1";
+      archiveIntentBtn.addEventListener("click", async function () {
+        if (!currentSelectedCampaign) return;
+        var campIndex = campaigns.find(function (c) { return c.name === currentSelectedCampaign; });
+        var currentActiveState = campIndex ? (campIndex.isActive !== false) : true;
+        var newActiveState = !currentActiveState;
+
+        archiveIntentBtn.disabled = true;
+        archiveIntentBtn.textContent = newActiveState ? "Restoring..." : "Archiving...";
+        try {
+          await setCampaignActive(currentSelectedCampaign, newActiveState);
+          await loadCampaignList();
+          await selectCampaign(currentSelectedCampaign);
+        } catch(e) {
+          alert("Failed: " + e.toString());
+        } finally {
+          archiveIntentBtn.disabled = false;
+        }
+      });
+    }
+
+    var deleteIntentBtn = document.getElementById("btn-studio-delete-intent");
+    if (deleteIntentBtn && !deleteIntentBtn.dataset.wired) {
+      deleteIntentBtn.dataset.wired = "1";
+      deleteIntentBtn.addEventListener("click", async function () {
+        if (!currentSelectedCampaign) return;
+        if (!confirm("Are you sure you want to delete intent: " + currentSelectedCampaign + "?")) return;
+
+        deleteIntentBtn.disabled = true;
+        deleteIntentBtn.textContent = "Deleting...";
+        try {
+          await deleteCampaign(currentSelectedCampaign);
+          document.getElementById("intent-workspace").style.display = "none";
+          currentSelectedCampaign = null;
+          await loadCampaignList();
+        } catch(e) {
+          alert("Failed to delete: " + e.toString());
+        } finally {
+          deleteIntentBtn.disabled = false;
+        }
+      });
+    }
+
     var saveBtn = document.getElementById("btn-save-workspace-studio");
     if (saveBtn && !saveBtn.dataset.wired) {
       saveBtn.dataset.wired = "1";
       saveBtn.addEventListener("click", async function () {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
         var journeyId = document.getElementById("studio-journey-select").value;
+        var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
 
         studioCampaignConfig.journeyId = journeyId;
 
@@ -5985,10 +5911,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           saveBtn.disabled = true;
           saveBtn.textContent = "Saving...";
 
-          // 1. Save Patch Campaign Index Metadata (Alias)
+          // 1. Save Patch Campaign Index Metadata (Alias & defaultSlug)
           var patchRes = await apiFetch("/api/campaign/" + encodeURIComponent(currentSelectedCampaign), {
             method: "PATCH",
-            body: JSON.stringify({ alias: alias || null })
+            body: JSON.stringify({ alias: alias || null, defaultSlug: defaultSlug })
           });
 
           // 2. Save V2 Configuration (Landings & Journey)
