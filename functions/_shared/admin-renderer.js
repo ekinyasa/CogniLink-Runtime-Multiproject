@@ -42,7 +42,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 <!-- ── Main Panel ──────────────────────────────────────── -->
 <div id="panel" class="screen hidden">
-  <div class="topbar">
+  <div class="header-container" id="header-container">
+  <div class="topbar" id="main-topbar">
     <span class="topbar-title">${panelLogo}<small> <span style="color: var(--text-m)">${panelTitle}</span></small></span>
     <div class="sw-toolbar" id="sw-toolbar" style="display:flex;align-items:center;gap:0.75rem">
       <div id="sw-display-wrap" class="sw-display-oval" title="Start / Stop — click to toggle">
@@ -77,6 +78,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <button class="tab-btn" data-tab="config">Settings</button>
     <button class="tab-btn" data-tab="diagnostics">Health</button>
   </div>
+  </div> <!-- end header-container -->
 
   <!-- ── Tab: Analytics ───────────────────────────────── -->
   <div id="tab-analytics" class="tab-pane">
@@ -616,7 +618,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
           <!-- 4. Active Slugs -->
           <div class="card">
-            <p class="card-title">Active Slugs</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <p class="card-title" style="margin: 0;">Active Slugs</p>
+              <button id="btn-studio-new-slug" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ New Slug</button>
+            </div>
             <div id="studio-slug-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
               <!-- Loaded via JS -->
             </div>
@@ -724,25 +729,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         </div>
       </div>
 
-      <!-- ── Section E: Conversion Signals ── -->
-      <div class="card">
-        <p class="card-title">Conversion Signals</p>
-        <p class="hint" style="margin-bottom:.75rem">Generate a tracking snippet for a specific conversion event (e.g. <code>purchase</code>, <code>lead</code>). Place this code on your thank-you page.</p>
-        
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-          <input id="conv-event-name" type="text" placeholder="purchase" 
-            style="width:140px;flex:0 0 auto" autocomplete="off" />
-          <button type="button" id="btn-conv-gen" class="btn-ghost btn-sm">Generate Snippet</button>
-        </div>
-
-        <div id="conv-snippet-wrap" class="hidden" style="margin-top:1rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-             <span class="hint" style="font-weight:600">JS Snippet</span>
-             <button id="btn-conv-copy" class="btn-ghost btn-sm">Copy Code</button>
-          </div>
-          <pre id="conv-snippet" style="margin:0;font-size:.78rem;font-family:ui-monospace,'SF Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .75rem;overflow:auto;white-space:pre-wrap"></pre>
-        </div>
-      </div>
+      
 
     </div>
   </div>
@@ -912,6 +899,27 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <button type="submit" class="btn-primary" id="btn-save-config">Save Config</button>
         </div>
       </div>
+
+      <!-- Card C: Tracking & Integrations -->
+      <div class="card">
+        <p class="card-title">Tracking & Integrations</p>
+        <p class="hint" style="margin-bottom:.75rem">Generate a tracking snippet for a specific conversion event (e.g. <code>purchase</code>, <code>lead</code>). Place this code on your thank-you page.</p>
+        
+        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
+          <input id="conv-event-name" type="text" placeholder="purchase" 
+            style="width:140px;flex:0 0 auto" autocomplete="off" />
+          <button type="button" id="btn-conv-gen" class="btn-ghost btn-sm">Generate Snippet</button>
+        </div>
+
+        <div id="conv-snippet-wrap" class="hidden" style="margin-top:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+             <span class="hint" style="font-weight:600">JS Snippet</span>
+             <button type="button" id="btn-conv-copy" class="btn-ghost btn-sm">Copy Code</button>
+          </div>
+          <pre id="conv-snippet" style="margin:0;font-size:.78rem;font-family:ui-monospace,'SF Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .75rem;overflow:auto;white-space:pre-wrap"></pre>
+        </div>
+      </div>
+
 
     </form>
   </div>
@@ -5621,6 +5629,21 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     // Load Slugs
     var slugsContainer = document.getElementById("studio-slug-list-container");
     slugsContainer.innerHTML = "";
+    var newSlugBtn = document.getElementById("btn-studio-new-slug");
+    if (newSlugBtn && !newSlugBtn.dataset.bound) {
+      newSlugBtn.dataset.bound = "true";
+      newSlugBtn.addEventListener("click", function() {
+        if (typeof resetForm === "function") resetForm();
+        var campSel = document.getElementById("f-campaign");
+        if (campSel && studioCampaignConfig && studioCampaignConfig.name) {
+           campSel.value = studioCampaignConfig.name;
+        }
+        var tabs = document.querySelectorAll(".tab-btn");
+        for (var i = 0; i < tabs.length; i++) {
+          if (tabs[i].dataset.tab === "slugs") tabs[i].click();
+        }
+      });
+    }
     var campSlugs = slugCache.filter(function (s) {
       return s.campaign === campaignName && s.isActive !== false;
     });
@@ -5645,8 +5668,33 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var div = document.createElement("div");
         div.className = "version-item";
         div.innerHTML = '<div><strong>/c/' + esc(s.slug) + '</strong>' +
-          '<div style="font-size: 0.7rem; color: var(--text-m);">' + esc([s.defaults?.utm_source, s.defaults?.utm_medium].filter(Boolean).join(" / ")) + '</div></div>' +
-          '<a href="/c/' + esc(s.slug) + '" target="_blank" style="color: var(--accent); font-size: 0.75rem;">open &nearr;</a>';
+          '<div style="font-size: 0.7rem; color: var(--text-m);">' + esc([s.defaults?.utm_source, s.defaults?.utm_medium].filter(Boolean).join(" / ")) + '</div></div>';
+        
+        var actionsDiv = document.createElement("div");
+        actionsDiv.style.display = "flex";
+        actionsDiv.style.gap = "0.75rem";
+        actionsDiv.style.alignItems = "center";
+        
+        var editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn-ghost btn-sm";
+        editBtn.textContent = "Edit";
+        editBtn.style.padding = "0.25rem 0.5rem";
+        editBtn.style.fontSize = "0.75rem";
+        editBtn.addEventListener("click", function() {
+           editSlug(s.slug);
+        });
+        actionsDiv.appendChild(editBtn);
+        
+        var openLink = document.createElement("a");
+        openLink.href = "/c/" + esc(s.slug);
+        openLink.target = "_blank";
+        openLink.style.color = "var(--accent)";
+        openLink.style.fontSize = "0.75rem";
+        openLink.innerHTML = "open &nearr;";
+        actionsDiv.appendChild(openLink);
+        
+        div.appendChild(actionsDiv);
         slugsContainer.appendChild(div);
       });
     }
@@ -6101,6 +6149,32 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   window.selectCampaign = selectCampaign;
 
 }());
+
+  // 6. Header Collapse Logic
+  var headerContainer = document.getElementById("header-container");
+  var mainTopbar = document.getElementById("main-topbar");
+  var lastScrollY = window.scrollY;
+  if (headerContainer && mainTopbar) {
+    window.addEventListener("scroll", function() {
+      if (window.innerWidth > 800) return; // Only apply on mobile
+      var currentY = window.scrollY;
+      if (currentY > lastScrollY && currentY > 50) {
+        mainTopbar.classList.add("collapsed");
+      } else {
+        mainTopbar.classList.remove("collapsed");
+      }
+      lastScrollY = currentY <= 0 ? 0 : currentY;
+    }, { passive: true });
+    
+    // Un-collapse when a tab is clicked
+    var tabBtns = document.querySelectorAll(".tab-btn");
+    tabBtns.forEach(function(btn) {
+      btn.addEventListener("click", function() {
+         mainTopbar.classList.remove("collapsed");
+      });
+    });
+  }
+
 </script>
     <script>
       window.VISUAL_MAPPER_HTML = decodeURIComponent(escape(atob("${VISUAL_MAPPER_HTML_B64}")));
@@ -6495,6 +6569,80 @@ textarea:focus{border-color:var(--accent)}
   .ws-selector {
     display: none !important;
   }
+}
+
+/* --- Mobile Fixes --- */
+@media (max-width: 800px) {
+  /* 2. Mobile Viewport & Inputs (prevent auto-zoom) */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* 4. Intent Workspace Mobile Grid */
+  #tab-campaigns .layout {
+    grid-template-columns: 1fr !important;
+  }
+  #intent-workspace {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #intent-workspace > div {
+    min-width: 0;
+  }
+  .card {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* 5. Tab bar scrolling */
+  .tab-bar {
+    display: flex;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 3. Pulse Responsive Overflow */
+.dash-chart-container {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.dash-chart-container canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+.pulse-section-b, .pulse-section-c, .pulse-section-d, .pulse-section-e, .pulse-section-f {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* 6. Header Collapse setup */
+.header-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+}
+.topbar {
+  transition: transform 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+  transform-origin: top;
+}
+.topbar.collapsed {
+  transform: translateY(-100%);
+  margin-bottom: -64px; /* compensate for height */
+  opacity: 0;
+  pointer-events: none;
 }
 `;
 
