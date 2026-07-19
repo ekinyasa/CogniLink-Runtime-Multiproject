@@ -65,6 +65,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </button>
   </div>
 
+  <!-- Drawer Handle -->
+  <button id="mobile-drawer-handle" class="mobile-only" style="display:none; width: 100%; border: none; background: var(--surface); padding: 8px 0 4px 0; cursor: pointer; text-align: center; border-bottom: none; border-top: 1px solid var(--border);">
+    <div style="width: 40px; height: 4px; background: var(--border); border-radius: 4px; display: inline-block;"></div>
+  </button>
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
@@ -549,7 +553,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <div style="display: flex; gap: 0.5rem;">
                 <button id="btn-studio-archive-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); color: var(--text);">Archive</button>
-                <button id="btn-studio-delete-intent" class="btn-danger btn-sm">Delete</button>
+                <button id="btn-studio-delete-intent" class="btn-danger btn-sm" disabled title="Permanent delete is not available; archive this intent instead." style="cursor: not-allowed; opacity: 0.5;">Delete</button>
               </div>
               <button id="btn-studio-save-intent" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
             </div>
@@ -681,8 +685,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <p id="exp-alias-info" class="hint hidden" style="margin-bottom:.375rem;line-height:1.5"></p>
         <p id="exp-error" class="error hidden"></p>
         <p id="exp-winner" class="hidden" style="font-size:.8125rem;font-weight:600;color:var(--success,#1a7f37);margin-bottom:.5rem"></p>
-        <div id="exp-results" class="hidden">
-          <table class="analytics-table" style="width:100%;margin-top:.5rem">
+        <div id="exp-results" class="hidden" style="max-width: 100%; overflow-x: auto;">
+          <table class="analytics-table" style="width:100%; margin-top:.5rem; min-width: 500px;">
             <thead>
               <tr>
                 <th>Variant</th>
@@ -6680,6 +6684,25 @@ textarea:focus{border-color:var(--accent)}
   .version-item > div:last-child {
     width: 100%;
     justify-content: flex-start;
+  }
+  
+  .slug-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .slug-info {
+    width: 100%;
+  }
+  a.slug-name {
+    word-break: normal;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .slug-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
   }
   
   /* 7. Health Manual Validation overflow */
