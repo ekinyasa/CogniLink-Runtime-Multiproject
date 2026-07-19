@@ -44,7 +44,7 @@ import { compileRoutes }                          from "../../_shared/route-comp
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   // Read last compile metadata
   let lastMeta = null;
@@ -103,7 +103,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   // Optional dryRun flag in request body
   let dryRun = false;

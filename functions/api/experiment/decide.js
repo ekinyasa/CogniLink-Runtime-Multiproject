@@ -42,7 +42,7 @@ function json(body, status = 200) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   // ── Parse body ────────────────────────────────────────────────────────────
   let body;

@@ -18,7 +18,7 @@ async function listAllKeys(env, prefix) {
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const families = [];
   const versions = [];
@@ -76,7 +76,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   try {
     const data = await request.json();
@@ -139,7 +139,7 @@ export async function onRequestPost(context) {
 
 export async function onRequestPut(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   try {
     const data = await request.json();
@@ -377,7 +377,7 @@ export async function onRequestPut(context) {
 
 export async function onRequestDelete(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   try {
     const url = new URL(request.url);

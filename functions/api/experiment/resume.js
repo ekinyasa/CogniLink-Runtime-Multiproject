@@ -22,6 +22,6 @@ import { applyLifecycleTransition }  from "./_lifecycle.js";
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   return applyLifecycleTransition(request, env, "RUNNING", ["PAUSED"]);
 }

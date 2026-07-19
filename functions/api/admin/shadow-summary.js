@@ -43,7 +43,7 @@ async function aeQuery(accountId, apiToken, sql) {
 export async function onRequestGet(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const url = new URL(request.url);
   const windowParam = url.searchParams.get("window") || "1h";

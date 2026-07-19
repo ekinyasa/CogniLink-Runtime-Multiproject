@@ -36,7 +36,7 @@ export async function onRequestGet(context) {
   if (tokenQuery) {
     if (tokenQuery !== env.ADMIN_TOKEN) return unauthorized();
   } else {
-    if (!verifyToken(request, env)) return unauthorized();
+    if (!(await verifyToken(request, env))) return unauthorized();
   }
 
   const results = {};

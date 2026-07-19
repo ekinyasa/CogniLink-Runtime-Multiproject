@@ -3,7 +3,7 @@ import { renderHub } from "../../_shared/hub-renderer.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const results = [];
   const runTest = (name, fn) => {

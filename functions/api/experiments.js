@@ -151,7 +151,7 @@ async function loadAEBreakdowns(accountId, apiToken, alias, datasetEvt) {
 export async function onRequestGet(context) {
   const { request, env } = context;
   try {
-    if (!verifyToken(request, env)) return unauthorized();
+    if (!(await verifyToken(request, env))) return unauthorized();
 
     const url   = new URL(request.url);
     const alias = (url.searchParams.get("alias") || "").toLowerCase().trim();

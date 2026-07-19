@@ -283,7 +283,7 @@ async function runBackgroundTest(env, baseUrl) {
 export async function onRequest(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const method = request.method;
 

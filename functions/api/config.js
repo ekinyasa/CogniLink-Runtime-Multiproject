@@ -37,7 +37,7 @@ const BASE_LINK_IDS = ["official", "programs", "release", "newsletter"];
 /* ── GET /api/config ──────────────────────────────────────────────── */
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const cfg = await env.LANDING_CONFIG.get(CONFIG_KEY, { type: "json" }) || {};
 
@@ -55,7 +55,7 @@ export async function onRequestGet(context) {
 /* ── PUT /api/config ──────────────────────────────────────────────── */
 export async function onRequestPut(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   let body;
   try { body = await request.json(); } catch {

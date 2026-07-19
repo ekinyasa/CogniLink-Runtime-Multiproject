@@ -5,7 +5,7 @@ import { compileRoutes }  from "../../_shared/route-compiler.js";
 /* ── GET /api/slug/:slug ────────────────────────────────────────── */
 export async function onRequestGet(context) {
   const { request, env, params } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   const slug = params.slug || "";
   const slugErr = validateSlug(slug);
   if (slugErr) return new Response(JSON.stringify({ error: slugErr }), { status: 400, headers: jsonHeaders() });
@@ -17,7 +17,7 @@ export async function onRequestGet(context) {
 /* ── PUT /api/slug/:slug ────────────────────────────────────────── */
 export async function onRequestPut(context) {
   const { request, env, params } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   const slug = params.slug || "";
   const slugErr = validateSlug(slug);
   if (slugErr) return new Response(JSON.stringify({ error: slugErr }), { status: 400, headers: jsonHeaders() });
@@ -188,7 +188,7 @@ export async function onRequestPut(context) {
 /* ── PATCH /api/slug/:slug ──────────────────────────────────────── */
 export async function onRequestPatch(context) {
   const { request, env, params } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   const slug = params.slug || "";
   const slugErr = validateSlug(slug);
   if (slugErr) return new Response(JSON.stringify({ error: slugErr }), { status: 400, headers: jsonHeaders() });
@@ -218,7 +218,7 @@ export async function onRequestPatch(context) {
 /* ── DELETE /api/slug/:slug ─────────────────────────────────────── */
 export async function onRequestDelete(context) {
   const { request, env, params } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const slug = params.slug || "";
   const slugErr = validateSlug(slug);

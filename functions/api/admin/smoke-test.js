@@ -39,7 +39,7 @@ export async function onRequest(context) {
     );
   }
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const t0 = Date.now();
 

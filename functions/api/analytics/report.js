@@ -18,7 +18,7 @@ const JSON_HEADERS = {
 export async function onRequestGet(context) {
   const { request, env } = context;
   
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const accountId = env.CF_ACCOUNT_ID;
   const apiToken  = env.CF_AE_API_TOKEN;

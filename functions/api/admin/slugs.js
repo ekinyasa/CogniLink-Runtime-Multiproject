@@ -28,7 +28,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const url      = new URL(request.url);
   const campaign = (url.searchParams.get("campaign") || "").toLowerCase().trim();

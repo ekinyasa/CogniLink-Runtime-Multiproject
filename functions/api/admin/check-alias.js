@@ -27,7 +27,7 @@ import { validateAlias }                          from "../../_shared/validators
 export async function onRequestGet(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const url   = new URL(request.url);
   const value = (url.searchParams.get("value") || "").toLowerCase().trim();

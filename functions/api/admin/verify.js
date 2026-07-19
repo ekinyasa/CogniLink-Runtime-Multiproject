@@ -95,7 +95,7 @@ async function loadGlobalConfig(env, ttlMs) {
 export async function onRequestGet(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const url      = new URL(request.url);
   const rawAlias = (url.searchParams.get("alias") || "").toLowerCase().trim();

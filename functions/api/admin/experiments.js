@@ -22,7 +22,7 @@ import { getExpState }                            from "../../_shared/ab-router.
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const experiments = [];
 

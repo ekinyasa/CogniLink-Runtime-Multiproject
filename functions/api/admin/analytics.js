@@ -180,7 +180,7 @@ async function handleGet(context) {
     });
   }
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const accountId = (env.CF_ACCOUNT_ID   || "").trim();
   const apiToken  = (env.CF_AE_API_TOKEN || "").trim();

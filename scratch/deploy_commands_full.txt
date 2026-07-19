@@ -1,0 +1,88 @@
+STEP 53: find . -type f -not -path '*/.*' -o -path './.*' -not -path './.git/*' -not -path './.wrangler/*'
+STEP 54: find . -type f -not -path '*/.*' -o -path './.*' -not -path './.git/*' -not -path './.wrangler/*'
+STEP 80: find /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app /Users/ekinyasa/.gemini/antigravity -mmin -120 -type f -not -path "*/.git/*" -not -path "*/.wrangler/*" -not -path "*/conversations/*"
+STEP 81: find /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app /Users/ekinyasa/.gemini/antigravity -mmin -120 -type f -not -path "*/.git/*" -not -path "*/.wrangler/*" -not -path "*/conversations/*"
+STEP 95: grep -rnwl "m2-shadow-probe" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 96: grep -rnwl "m2-shadow-probe" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 108: grep -rnwl "m2-shadow-probe" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 155: find .wrangler -type f
+STEP 156: find .wrangler -type f
+STEP 168: find /Users/ekinyasa/Coding/projects/claude -mtime -1 -type f -not -path "*/.git/*" -not -path "*/.wrangler/*"
+STEP 169: find /Users/ekinyasa/Coding/projects/claude -mtime -1 -type f -not -path "*/.git/*" -not -path "*/.wrangler/*"
+STEP 172: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 173: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 186: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 187: head -n 20 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/KvBackup/kv_telemetry.txt
+STEP 188: head -n 20 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/KvBackup/kv_telemetry.txt
+STEP 194: npx wrangler kv:namespace list
+STEP 195: npx wrangler kv:namespace list
+STEP 196: npx wrangler whoami
+STEP 197: npx wrangler whoami
+STEP 228: curl -i -H "Authorization: Bearer O+nAq0Kpgq+6zJsIdeU3JYNi2bwx4zDadrk+uaoq6jsXaqgzgMlNvn0m9tJPCP4m" "https://links.niluferormanli.studio/api/admin/pages"
+STEP 229: curl -i -H "Authorization: Bearer O+nAq0Kpgq+6zJsIdeU3JYNi2bwx4zDadrk+uaoq6jsXaqgzgMlNvn0m9tJPCP4m" "https://links.niluferormanli.studio/api/admin/pages"
+STEP 252: npx wrangler pages project list
+STEP 253: npx wrangler pages project list
+STEP 256: zsh -l -c "npx wrangler whoami"
+STEP 257: zsh -l -c "npx wrangler whoami"
+STEP 260: curl -i "https://cognilink-runtime-pages.pages.dev/api/admin/health"
+STEP 261: curl -i "https://cognilink-runtime-pages.pages.dev/api/admin/health"
+STEP 262: host cognilink-runtime-pages.pages.dev
+STEP 263: host cognilink-runtime-pages.pages.dev
+STEP 264: curl -i -k "https://cognilink-runtime-pages.pages.dev/api/admin/health"
+STEP 265: curl -i -k "https://cognilink-runtime-pages.pages.dev/api/admin/health"
+STEP 266: node -e "fetch('https://cognilink-runtime-pages.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text }))).then(console.log).catch(console.error)"
+STEP 267: node -e "fetch('https://cognilink-runtime-pages.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text }))).then(console.log).catch(console.error)"
+STEP 268: node -e "fetch('http://cognilink-runtime-pages.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text }))).then(console.log).catch(console.error)"
+STEP 269: node -e "fetch('http://cognilink-runtime-pages.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text }))).then(console.log).catch(console.error)"
+STEP 292: node -e "fetch('http://campaign-os.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 1000) }))).then(console.log).catch(console.error)"
+STEP 293: node -e "fetch('http://campaign-os.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 1000) }))).then(console.log).catch(console.error)"
+STEP 294: node -e "fetch('http://links-ekinyasa-online.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 1000) }))).then(console.log).catch(console.error)"
+STEP 295: node -e "fetch('http://links-ekinyasa-online.pages.dev/api/admin/health').then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 1000) }))).then(console.log).catch(console.error)"
+STEP 298: node -e "\nfetch('http://cognilink-runtime-pages.pages.dev/api/admin/health')\n  .then(res =\u003e {\n    const cookie = res.headers.get('set-cookie') || 'sto-idd=0cf000cf324198ac';\n    console.log('Initial Cookie:', cookie);\n    return fetch('http://cognilink-runtime-pages.pages.dev/api/admin/health', {\n      headers: { 'Cookie': cookie }\n    });\n  })\n  .then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 500) })))\n  .then(console.log)\n  .catch(console.error)\n"
+STEP 299: node -e "\nfetch('http://cognilink-runtime-pages.pages.dev/api/admin/health')\n  .then(res =\u003e {\n    const cookie = res.headers.get('set-cookie') || 'sto-idd=0cf000cf324198ac';\n    console.log('Initial Cookie:', cookie);\n    return fetch('http://cognilink-runtime-pages.pages.dev/api/admin/health', {\n      headers: { 'Cookie': cookie }\n    });\n  })\n  .then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 500) })))\n  .then(console.log)\n  .catch(console.error)\n"
+STEP 300: node -e "\nfetch('http://cognilink-runtime-pages.pages.dev/api/admin/health')\n  .then(res =\u003e res.text())\n  .then(text =\u003e {\n    const match = text.match(/document\\.cookie=\\"([^\\"]+)\\"/);\n    if (!match) throw new Error('No cookie match in: ' + text);\n    const cookie = match[1].split(';')[0];\n    console.log('Parsed Cookie:', cookie);\n    return fetch('http://cognilink-runtime-pages.pages.dev/api/admin/health', {\n      headers: { 'Cookie': cookie }\n    });\n  })\n  .then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 1000) })))\n  .then(console.log)\n  .catch(console.error)\n"
+STEP 301: node -e "\nfetch('http://cognilink-runtime-pages.pages.dev/api/admin/health')\n  .then(res =\u003e res.text())\n  .then(text =\u003e {\n    const match = text.match(/document\\.cookie=\\"([^\\"]+)\\"/);\n    if (!match) throw new Error('No cookie match in: ' + text);\n    const cookie = match[1].split(';')[0];\n    console.log('Parsed Cookie:', cookie);\n    return fetch('http://cognilink-runtime-pages.pages.dev/api/admin/health', {\n      headers: { 'Cookie': cookie }\n    });\n  })\n  .then(res =\u003e res.text().then(text =\u003e ({ status: res.status, text: text.slice(0, 1000) })))\n  .then(console.log)\n  .catch(console.error)\n"
+STEP 302: git log --all --oneline -- "*wrangler-ekin.toml"
+STEP 303: git log --all --oneline -- "*wrangler-ekin.toml"
+STEP 304: git show main:wrangler-ekin.toml
+STEP 305: git show main:wrangler-ekin.toml
+STEP 308: git log -p -- .github/workflows/deploy.yml
+STEP 309: git log -p -- .github/workflows/deploy.yml
+STEP 419: "git add wrangler.toml && git commit -m \\"soak: start 24h real rule shadow observation\\" && git push"
+STEP 435: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 435: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 449: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 449: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 449: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2\u003e/dev/null
+STEP 463: curl -i -H "Authorization: Bearer O+nAq0Kpgq+6zJsIdeU3JYNi2bwx4zDadrk+uaoq6jsXaqgzgMlNvn0m9tJPCP4m" "https://links.niluferormanli.studio/api/admin/pages"
+STEP 463: curl -i -H "Authorization: Bearer O+nAq0Kpgq+6zJsIdeU3JYNi2bwx4zDadrk+uaoq6jsXaqgzgMlNvn0m9tJPCP4m" "https://links.niluferormanli.studio/api/admin/pages"
+STEP 474: python3 /Users/ekinyasa/.gemini/antigravity/brain/14625cdf-bba2-42d1-bed9-e08e17726f73/scratch/search_wrangler.py
+STEP 475: python3 /Users/ekinyasa/.gemini/antigravity/brain/14625cdf-bba2-42d1-bed9-e08e17726f73/scratch/search_wrangler.py
+STEP 478: python3 /Users/ekinyasa/.gemini/antigravity/brain/14625cdf-bba2-42d1-bed9-e08e17726f73/scratch/search_all_wrangler.py
+STEP 479: python3 /Users/ekinyasa/.gemini/antigravity/brain/14625cdf-bba2-42d1-bed9-e08e17726f73/scratch/search_all_wrangler.py
+STEP 500: npx wrangler pages project list
+STEP 501: npx wrangler pages project list
+STEP 506: npx wrangler pages project list
+STEP 525: git show origin/main:wrangler-ekin.toml 2\u003e/dev/null || git show main:wrangler-ekin.toml 2\u003e/dev/null
+STEP 526: git show origin/main:wrangler-ekin.toml 2\u003e/dev/null || git show main:wrangler-ekin.toml 2\u003e/dev/null
+STEP 595: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_exact_preimage.py
+STEP 596: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_exact_preimage.py
+STEP 601: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_preimage_no_rules.py
+STEP 602: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_preimage_no_rules.py
+STEP 604: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2>/dev/null
+STEP 604: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2>/dev/null
+STEP 604: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2>/dev/null
+STEP 604: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2>/dev/null
+STEP 604: grep -rnwl "test-1783922084893-igbio" /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/ /Users/ekinyasa/.gemini/antigravity/ 2>/dev/null
+STEP 709: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_command.py
+STEP 710: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_command.py
+STEP 713: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_details.py
+STEP 714: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_details.py
+STEP 714: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_command.py
+STEP 714: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_command.py
+STEP 714: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_details.py
+STEP 714: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_details.py
+STEP 717: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_commands_only.py
+STEP 718: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_commands_only.py
+STEP 721: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_commands_full.py
+STEP 722: python3 /Users/ekinyasa/Coding/projects/claude/cognilink-runtime-pages-app/scratch/find_deploy_commands_full.py

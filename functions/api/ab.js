@@ -49,7 +49,7 @@ function json(body, status = 200) {
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const url   = new URL(request.url);
   const alias = (url.searchParams.get("alias") || "").toLowerCase().trim();
@@ -73,7 +73,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPut(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   if (!env.CAMPAIGN_AB_ALIAS_INDEX)    return json({ error: "ALIAS_REGISTRY_not_bound" },    503);
   if (!env.AB_INDEX) return json({ error: "CAMPAIGN_REGISTRY_not_bound" }, 503);
@@ -185,7 +185,7 @@ export async function onRequestPut(context) {
 
 export async function onRequestDelete(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const url   = new URL(request.url);
   const alias = (url.searchParams.get("alias") || "").toLowerCase().trim();

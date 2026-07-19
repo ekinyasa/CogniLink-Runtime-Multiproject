@@ -4,7 +4,7 @@ const ROUTES_KEY = "kartra_routes";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const routes = await env.LANDING_CONFIG.get(ROUTES_KEY, { type: "json" }) || {};
   const engine = await env.LANDING_CONFIG.get("engine_config", { type: "json" }) || {};
@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPut(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   let body;
   try { body = await request.json(); } catch {

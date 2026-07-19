@@ -26,7 +26,7 @@ const RESPONSE_HEADERS = {
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const enabled = String(env.SHADOW_TELEMETRY_ENABLED) === "true";
   if (!enabled) {

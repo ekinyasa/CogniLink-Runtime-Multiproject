@@ -45,7 +45,7 @@ const HUB_PROBE_ALIAS = "nb";
 export async function onRequest(context) {
   const { request, env } = context;
 
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   if (request.method !== "POST") {
     return new Response(

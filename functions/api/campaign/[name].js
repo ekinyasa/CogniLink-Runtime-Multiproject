@@ -16,7 +16,7 @@ const GRACE_WINDOW_MS = 5 * 60 * 1000;
  */
 export async function onRequestPatch(context) {
   const { request, env, params } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const name = (params.name || "").trim().toLowerCase();
   if (!name) {
@@ -170,7 +170,7 @@ export async function onRequestPatch(context) {
  */
 export async function onRequestDelete(context) {
   const { request, env, params } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   const name = (params.name || "").trim().toLowerCase();
   if (!name) {

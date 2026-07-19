@@ -4,7 +4,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
 // just like legacy slugs, so the renderer natively supports them.
 export async function onRequestGet(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   
   const results = [];
   if (env.APP_CONFIG) {
@@ -25,7 +25,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   try {
     const data = await request.json(); 
     if (!data.id) throw new Error("Missing Page ID");
@@ -41,7 +41,7 @@ export async function onRequestPost(context) {
 
 export async function onRequestDelete(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   if (id && env.APP_CONFIG) {

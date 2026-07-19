@@ -92,13 +92,19 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <p class="hint" style="margin-bottom:0;font-size:0.75rem" id="analytics-freshness-text">Real-time data from Analytics Engine</p>
           </div>
           <div class="dash-header-meta" id="analytics-generated" style="position:absolute;top:1rem;right:1.5rem"></div>
-          <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.25rem">
-            <div class="filter-bar" id="analytics-time-filters">
+          <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.25rem;flex-wrap:wrap">
+            <div class="filter-bar desktop-only" id="analytics-time-filters">
               <button type="button" class="filter-btn" data-window="1h">1H</button>
               <button type="button" class="filter-btn" data-window="24h">24H</button>
               <button type="button" class="filter-btn" data-window="7d">7D</button>
               <button type="button" class="filter-btn" data-window="30d">30D</button>
             </div>
+            <select id="analytics-time-select" class="mobile-only filter-select" style="padding:0.25rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8rem;outline:none;display:none;">
+              <option value="1h">1H</option>
+              <option value="24h">24H</option>
+              <option value="7d">7D</option>
+              <option value="30d">30D</option>
+            </select>
             <div class="date-input-group">
               <input type="date" id="analytics-start-date" class="date-input" title="Start Date" />
               <span style="font-size:0.7rem;color:var(--text-dim)">-</span>
@@ -1385,37 +1391,26 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   };
 
   /* ── Token helpers ───────────────────────────────────── */
-  // localStorage key: "admin_token" (canonical name — must NOT be renamed again,
-  // renaming causes all active sessions to lose auth on next page load).
   var TOKEN_KEY = "admin_token";
   function loadToken() {
     try {
-      // One-time migration: port token from legacy "_sp_tok" key (written by panel
-      // versions before Prompt 28). Runs once at boot; noop on every load thereafter.
-      var legacy = localStorage.getItem("_sp_tok") || "";
-      if (legacy && !localStorage.getItem(TOKEN_KEY)) {
-        localStorage.setItem(TOKEN_KEY, legacy);
-        localStorage.removeItem("_sp_tok");
-      }
-      token = localStorage.getItem(TOKEN_KEY) || "";
-      if (token) window.ADMIN_TOKEN = token; 
+      // Clear legacy plain text token
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem("_sp_tok");
     } catch (e) {}
-    return token;
+    return ""; // Token is now in HttpOnly cookie
   }
   function saveToken(t) {
-    token = t;
-    window.ADMIN_TOKEN = t; // Expose to iframes
-    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+    // No-op. Session is managed by backend cookie.
   }
   function clearToken() {
-    token = "";
-    window.ADMIN_TOKEN = "";
-    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    // No-op.
   }
 
   /* ── API helpers ─────────────────────────────────────── */
   function authHeaders() {
-    return { "Authorization": "Bearer " + token, "Content-Type": "application/json" };
+    // Fetch automatically sends same-origin cookies, so we just need Content-Type
+    return { "Content-Type": "application/json" };
   }
   async function apiFetch(path, opts) {
     opts = Object.assign({ headers: {} }, opts || {});
@@ -1578,6 +1573,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var isWinMatch = b.getAttribute("data-window") === analyticsWindow;
       b.classList.toggle("active", isWinMatch && !analyticsStartDate && !analyticsEndDate);
     });
+    // Sync mobile select
+    var sel = document.getElementById("analytics-time-select");
+    if (sel && !analyticsStartDate && !analyticsEndDate) {
+      sel.value = analyticsWindow;
+    }
 
     loadAnalytics();
     // Also prime slug form data in background
@@ -2492,6 +2492,29 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   }
 
   // Time window filters
+  var elTimeSelect = $("analytics-time-select");
+  if (elTimeSelect) {
+    elTimeSelect.addEventListener("change", function(e) {
+      var win = e.target.value;
+      if (!win) return;
+      analyticsWindow = win;
+      localStorage.setItem("analyticsWindow", win);
+      
+      analyticsStartDate = "";
+      analyticsEndDate   = "";
+      localStorage.removeItem("analyticsStartDate");
+      localStorage.removeItem("analyticsEndDate");
+      if ($("analytics-start-date")) $("analytics-start-date").value = "";
+      if ($("analytics-end-date")) $("analytics-end-date").value = "";
+      
+      // Update desktop buttons too
+      document.querySelectorAll("#analytics-time-filters .filter-btn").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-window") === win);
+      });
+      loadAnalytics();
+    });
+  }
+
   var elTimeFilters = $("analytics-time-filters");
   if (elTimeFilters) {
     elTimeFilters.addEventListener("click", function (e) {
@@ -3844,7 +3867,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     try {
       var res  = await apiFetch("/api/campaign/" + encodeURIComponent(name), { method: "DELETE" });
       var data = await res.json();
-      if (!res.ok) { alert("Delete failed."); return; }
+      if (!res.ok) { 
+        var errStr = data.error || "Delete failed.";
+        alert(errStr); 
+        throw new Error(errStr); 
+      }
 
       // Remove cascade-deleted slugs from local cache
       var deletedSlugs = Array.isArray(data.deletedSlugs) ? data.deletedSlugs : [];
@@ -6002,7 +6029,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           return;
         }
         try {
-          var createBody = { name: name };
+          var createBody = { name: name, alias: name };
           if (selectedWorkspace) createBody.workspace = selectedWorkspace;
           var res = await apiFetch("/api/campaign", {
             method: "POST", body: JSON.stringify(createBody)
@@ -6010,7 +6037,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           var data = await res.json();
           if (!res.ok) { alert(data.error || "Failed."); return; }
 
-          var newCamp = data.campaign || { name: name, alias: null, isActive: true, createdAt: new Date().toISOString() };
+          var newCamp = data.campaign || { name: name, alias: name, isActive: true, createdAt: new Date().toISOString() };
           campaigns.push(newCamp);
           campaigns.sort(function (a, b) { return a.name.localeCompare(b.name); });
           populateCampaignSelect();
@@ -6150,29 +6177,41 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 }());
 
-  // 6. Header Collapse Logic
+  // 2. Mobile Drawer Logic (Drag to open/close header)
   var headerContainer = document.getElementById("header-container");
   var mainTopbar = document.getElementById("main-topbar");
-  var lastScrollY = window.scrollY;
+  
   if (headerContainer && mainTopbar) {
-    window.addEventListener("scroll", function() {
-      if (window.innerWidth > 800) return; // Only apply on mobile
-      var currentY = window.scrollY;
-      if (currentY > lastScrollY && currentY > 50) {
-        mainTopbar.classList.add("collapsed");
-      } else {
-        mainTopbar.classList.remove("collapsed");
-      }
-      lastScrollY = currentY <= 0 ? 0 : currentY;
+    var startY = 0;
+    var currentY = 0;
+    var isDragging = false;
+    
+    headerContainer.addEventListener("touchstart", function(e) {
+      if (window.innerWidth > 800) return;
+      startY = e.touches[0].clientY;
+      isDragging = true;
     }, { passive: true });
     
-    // Un-collapse when a tab is clicked
-    var tabBtns = document.querySelectorAll(".tab-btn");
-    tabBtns.forEach(function(btn) {
-      btn.addEventListener("click", function() {
-         mainTopbar.classList.remove("collapsed");
-      });
-    });
+    headerContainer.addEventListener("touchmove", function(e) {
+      if (!isDragging || window.innerWidth > 800) return;
+      currentY = e.touches[0].clientY;
+      var diffY = currentY - startY;
+      
+      // If dragging up, and currently open, we close it
+      if (diffY < -30 && !mainTopbar.classList.contains("collapsed")) {
+        mainTopbar.classList.add("collapsed");
+        isDragging = false;
+      }
+      // If dragging down, and currently closed, we open it
+      else if (diffY > 30 && mainTopbar.classList.contains("collapsed")) {
+        mainTopbar.classList.remove("collapsed");
+        isDragging = false;
+      }
+    }, { passive: true });
+    
+    headerContainer.addEventListener("touchend", function() {
+      isDragging = false;
+    }, { passive: true });
   }
 
 </script>
@@ -6578,6 +6617,42 @@ textarea:focus{border-color:var(--accent)}
     font-size: 16px !important;
   }
   
+  .desktop-only { display: none !important; }
+  .mobile-only { display: inline-block !important; }
+  .date-input-group { flex-wrap: wrap; gap: 0.25rem; }
+  
+  /* 6. Campaign Links Mobile Stack */
+  .version-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+  .version-item > div:first-child {
+    width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .version-item > div:last-child {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  /* 7. Health Manual Validation overflow */
+  #manual-result {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .analytics-table {
+    width: 100%;
+    max-width: none !important;
+  }
+  pre, code {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  
   /* 4. Intent Workspace Mobile Grid */
   #tab-campaigns .layout {
     grid-template-columns: 1fr !important;
@@ -6635,14 +6710,29 @@ textarea:focus{border-color:var(--accent)}
   background: var(--bg);
 }
 .topbar {
-  transition: transform 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+  transition: margin-top 0.3s ease, opacity 0.3s ease;
   transform-origin: top;
 }
 .topbar.collapsed {
-  transform: translateY(-100%);
-  margin-bottom: -64px; /* compensate for height */
+  margin-top: -64px; /* hide by negative top margin */
   opacity: 0;
   pointer-events: none;
+}
+/* Add a small handle to tab-bar for visibility */
+@media (max-width: 800px) {
+  .header-container::after {
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    opacity: 0.5;
+  }
 }
 `;
 

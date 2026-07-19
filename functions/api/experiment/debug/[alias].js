@@ -41,7 +41,7 @@ export async function onRequestGet(context) {
   const { request, env, params } = context;
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   if (!env.AB_INDEX)  return json({ error: "CAMPAIGN_REGISTRY_not_bound"  }, 503);
   if (!env.ANALITICS_DATA) return json({ error: "TELEMETRY_REGISTRY_not_bound" }, 503);

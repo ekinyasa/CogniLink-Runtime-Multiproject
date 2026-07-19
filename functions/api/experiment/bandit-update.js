@@ -49,7 +49,7 @@ function json(body, status = 200) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  if (!verifyToken(request, env)) return unauthorized();
+  if (!(await verifyToken(request, env))) return unauthorized();
 
   if (!env.AB_INDEX) return json({ error: "CAMPAIGN_REGISTRY_not_bound" }, 503);
 
