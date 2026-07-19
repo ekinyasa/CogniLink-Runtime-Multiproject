@@ -65,10 +65,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </button>
   </div>
 
-  <!-- Drawer Handle -->
-  <button id="mobile-drawer-handle" class="mobile-only" style="display:none; width: 100%; border: none; background: var(--surface); padding: 8px 0 4px 0; cursor: pointer; text-align: center; border-bottom: none; border-top: 1px solid var(--border);">
-    <div style="width: 40px; height: 4px; background: var(--border); border-radius: 4px; display: inline-block;"></div>
-  </button>
+
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
@@ -552,8 +549,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <div style="display: flex; gap: 0.5rem;">
-                <button id="btn-studio-archive-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); color: var(--text);">Archive</button>
-                <button id="btn-studio-delete-intent" class="btn-danger btn-sm" disabled title="Permanent delete is not available; archive this intent instead." style="cursor: not-allowed; opacity: 0.5;">Delete</button>
+                <button id="btn-studio-archive-intent" class="btn-danger btn-sm">Archive</button>
               </div>
               <button id="btn-studio-save-intent" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
             </div>
@@ -5695,12 +5691,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (archiveBtn) {
       archiveBtn.textContent = isActive ? "Archive" : "Restore";
     }
-    var deleteBtn = document.getElementById("btn-studio-delete-intent");
-    if (deleteBtn && campIndex) {
-      var inGrace = isWithinGraceWindow(campIndex.createdAt);
-      deleteBtn.disabled = !inGrace;
-      deleteBtn.title = inGrace ? "" : "Grace window expired";
-    }
 
     // Load Slugs
     var slugsContainer = document.getElementById("studio-slug-list-container");
@@ -6163,18 +6153,30 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             body: JSON.stringify({ alias: alias || null, defaultSlug: defaultSlug })
           });
 
-          // 2. Save V2 Configuration (Journey)
-          var v2Res = await apiFetch("/api/admin/campaign_v2", {
-            method: "POST",
-            body: JSON.stringify(studioCampaignConfig)
-          });
+          // 2. Save V2 Configuration (Journey) - Optional Binding
+          var v2Ok = true;
+          var v2ErrMsg = "";
+          
+          if (studioCampaignConfig.slug && studioCampaignConfig.journeyId) {
+            var v2Res = await apiFetch("/api/admin/campaign_v2", {
+              method: "POST",
+              body: JSON.stringify(studioCampaignConfig)
+            });
+            v2Ok = v2Res.ok;
+            if (!v2Res.ok) {
+              var err = await v2Res.json();
+              v2ErrMsg = err.error || "Unknown error";
+            }
+          }
 
-          if (patchRes.ok && v2Res.ok) {
+          if (patchRes.ok && v2Ok) {
             alert("Intent Settings Saved Successfully!");
             await loadCampaignList();
+          } else if (patchRes.ok && !v2Ok) {
+            alert("Intent settings saved, but Journey assignment failed: " + v2ErrMsg);
+            await loadCampaignList();
           } else {
-            var err = await v2Res.json();
-            alert("Error saving: " + (err.error || "Unknown error"));
+            alert("Error saving Intent Settings.");
           }
         } catch(e) {
           alert("Failed to save: " + e.toString());
@@ -6226,41 +6228,25 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 }());
 
-  // 2. Mobile Drawer Logic (Drag to open/close header)
-  var headerContainer = document.getElementById("header-container");
+  // 2. Mobile Drawer Logic (Tap to toggle header with dynamic height calculation)
+  var drawerHandle = document.getElementById("mobile-drawer-handle");
   var mainTopbar = document.getElementById("main-topbar");
   
-  if (headerContainer && mainTopbar) {
-    var startY = 0;
-    var currentY = 0;
-    var isDragging = false;
-    
-    headerContainer.addEventListener("touchstart", function(e) {
+  if (drawerHandle && mainTopbar) {
+    drawerHandle.addEventListener("click", function(e) {
+      e.preventDefault();
       if (window.innerWidth > 800) return;
-      startY = e.touches[0].clientY;
-      isDragging = true;
-    }, { passive: true });
-    
-    headerContainer.addEventListener("touchmove", function(e) {
-      if (!isDragging || window.innerWidth > 800) return;
-      currentY = e.touches[0].clientY;
-      var diffY = currentY - startY;
       
-      // If dragging up, and currently open, we close it
-      if (diffY < -30 && !mainTopbar.classList.contains("collapsed")) {
+      var isCol = mainTopbar.classList.contains("collapsed");
+      if (!isCol) {
+        var h = mainTopbar.offsetHeight;
+        mainTopbar.style.marginTop = "-" + h + "px";
         mainTopbar.classList.add("collapsed");
-        isDragging = false;
-      }
-      // If dragging down, and currently closed, we open it
-      else if (diffY > 30 && mainTopbar.classList.contains("collapsed")) {
+      } else {
+        mainTopbar.style.marginTop = "0px";
         mainTopbar.classList.remove("collapsed");
-        isDragging = false;
       }
-    }, { passive: true });
-    
-    headerContainer.addEventListener("touchend", function() {
-      isDragging = false;
-    }, { passive: true });
+    });
   }
 
 </script>
@@ -6782,7 +6768,7 @@ textarea:focus{border-color:var(--accent)}
   transform-origin: top;
 }
 .topbar.collapsed {
-  margin-top: -64px; /* hide by negative top margin */
+  
   opacity: 0;
   pointer-events: none;
 }
