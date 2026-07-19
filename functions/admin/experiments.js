@@ -685,7 +685,38 @@ elBtnLogout.addEventListener('click', function(){
 function showDash(){
   hide(elGate);
   show(elDash);
-  loadAliases();
+  
+  // Custom hook: Load aliases list first
+  authFetch('/api/admin/experiments')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if (!data || !Array.isArray(data.experiments)) return;
+      var prev = elAliasSel.value;
+      elAliasSel.innerHTML = '<option value="">Select experiment\u2026</option>';
+      data.experiments.forEach(function(exp){
+        var opt = document.createElement('option');
+        opt.value = exp.alias;
+        opt.textContent = exp.alias + ' \u2014 ' + (exp.state || '?');
+        elAliasSel.appendChild(opt);
+      });
+      if (prev) elAliasSel.value = prev;
+
+      // Auto-load query param alias if present
+      var paramAlias = new URLSearchParams(window.location.search).get('alias') || new URLSearchParams(window.location.search).get('experimentId');
+      if (paramAlias) {
+        elAliasSel.value = paramAlias.trim().toLowerCase();
+        if (elAliasSel.value !== paramAlias.trim().toLowerCase()) {
+          var opt = document.createElement('option');
+          opt.value = paramAlias.trim().toLowerCase();
+          opt.textContent = paramAlias.trim().toLowerCase() + ' (auto-loaded)';
+          elAliasSel.appendChild(opt);
+          elAliasSel.value = paramAlias.trim().toLowerCase();
+        }
+        loadExperiment();
+      }
+    })
+    .catch(function(){});
+
   loadCampaigns();
 }
 

@@ -68,14 +68,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
     <button class="tab-btn" data-tab="pages" style="display:none">Landings</button>
-    <button class="tab-btn" data-tab="journeys">Map</button>
+    <button class="tab-btn" data-tab="journeys" style="display:none!important">Map</button>
     <button class="tab-btn" data-tab="campaigns">Intents</button>
-    
-    <button class="tab-btn" data-tab="slugs">Nodes</button>
-    <button class="tab-btn" data-tab="kartra">Funnel</button>
-    <button class="tab-btn" data-tab="config">Config</button>
-    <button class="tab-btn" data-tab="components">Components</button>
-    <button class="tab-btn" data-tab="routing">Paths</button>
+    <button class="tab-btn" data-tab="slugs" style="display:none!important">Nodes</button>
+    <button class="tab-btn" data-tab="kartra">Journeys</button>
+    <button class="tab-btn" data-tab="routing">Traffic</button>
+    <button class="tab-btn" data-tab="components">Library</button>
+    <button class="tab-btn" data-tab="config">Settings</button>
     <button class="tab-btn" data-tab="diagnostics">Health</button>
   </div>
 
@@ -967,12 +966,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   </div>
 
   <div id="tab-kartra" class="tab-pane hidden">
-    <!-- Global Engine config card -->
-    <div class="layout" style="padding-bottom: 0;">
-      <div class="card" style="grid-column: 1 / -1; border:1px solid var(--border);">
+    <div class="landings-grid">
+      
+      <!-- Card 1: Decision Defaults -->
+      <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
           <div>
-            <p class="card-title">Decision Engine Logic</p>
+            <p class="card-title">Decision Defaults</p>
             <p class="hint" style="margin:0;">Configure global traffic thresholds and auto-routing destinations.</p>
           </div>
           <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -981,7 +981,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           </div>
         </div>
         
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:2rem;">
+        <div style="display:grid; grid-template-columns: 1fr; gap:1.5rem;">
           <!-- Redirects -->
           <div class="landing-fields">
             <p class="dash-card-label" style="margin-bottom:0.75rem;">Global Redirects</p>
@@ -1029,101 +1029,105 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
           </div>
         </div>
-
-        
-        <!-- Custom Funnel Maps -->
-        <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px dashed var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-             <div>
-               <p class="card-title" style="font-size:1rem;">Custom Engine Maps <span class="badge badge-success" style="font-size:0.6rem;">NEW</span></p>
-               <p class="hint" style="margin:0;">Create specific routing flows to assign directly to campaigns (e.g. "BF_Sale", "VIP_Exclusive") overriding the global redirects above.</p>
-             </div>
-             <div style="display:flex; gap:0.5rem; align-items:center;">
-               <button type="button" class="btn-ghost btn-sm" id="btn-add-engine-map">+ New Map</button>
-               <button type="button" class="btn-primary btn-sm" id="btn-save-custom-maps" style="white-space:nowrap;">Deploy Maps</button>
-             </div>
-          </div>
-          <div id="engine-custom-maps-wrap" style="display:flex; flex-direction:column; gap:1rem;"></div>
-          <p id="custom-maps-status" class="hint hidden" style="margin-top:1rem;"></p>
-        </div>
-        
         <p id="engine-status" class="hint hidden" style="margin-top:1rem;"></p>
       </div>
-    </div>
 
-    <div class="layout" style="padding-top: 1rem;">
-      <!-- Left: Active Rules List -->
-      <div class="card list-card">
-        <div class="list-header" style="margin-bottom:1rem;">
-          <p class="card-title">Funnel Page Definition Rules</p>
-          <button type="button" class="btn-ghost btn-sm" id="btn-funnel-refresh">Refresh</button>
+      <!-- Card 2: Journey Strategies -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+           <div>
+             <p class="card-title" style="font-size:1rem;">Journey Strategy Library</p>
+             <p class="hint" style="margin:0;">Create specific routing flows to assign directly to campaigns overriding the global redirects.</p>
+           </div>
+           <div style="display:flex; gap:0.5rem; align-items:center;">
+             <button type="button" class="btn-ghost btn-sm" id="btn-add-engine-map">+ New Strategy</button>
+             <button type="button" class="btn-primary btn-sm" id="btn-save-custom-maps" style="white-space:nowrap;">Deploy Strategies</button>
+           </div>
         </div>
-        <p class="hint" style="margin-bottom:1.5rem">Note: The Engine uses Zero-Config Heuristics by default. Use these manual rules only for overrides or complex structural differences.</p>
-        
-        <div id="funnel-list-wrap">
-          <table class="analytics-table" style="width:100%;">
-            <thead><tr><th>URL Rule</th><th>Type</th><th>Actions</th></tr></thead>
-            <tbody id="funnel-list-body">
-              <tr><td colspan="3" class="empty-state">Loading...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="engine-custom-maps-wrap" style="display:flex; flex-direction:column; gap:1rem;"></div>
+        <p id="custom-maps-status" class="hint hidden" style="margin-top:1rem;"></p>
       </div>
 
-      <!-- Right: Create/Edit Funnel Rule -->
-      <div class="card form-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <p class="card-title">New Page Definition Rule</p>
-          <button type="button" class="btn-ghost btn-sm" id="btn-funnel-toggle-json">JSON Editor</button>
-        </div>
+      <!-- Collapsible: Legacy Page Rules (Advanced) -->
+      <details class="card" style="grid-column: 1 / -1; margin-top: 0.5rem;">
+        <summary class="card-title" style="cursor:pointer; font-weight:600; outline:none; user-select:none; margin-bottom:0;">Legacy Page Rules (Advanced)</summary>
         
-        <form id="funnel-form" autocomplete="off">
-          <label for="f-funnel-url">Page URL / Path <span class="req">*</span></label>
-          <input id="f-funnel-url" type="text" placeholder="/program" required />
-          
-          <label for="f-funnel-type">Page Type</label>
-          <select id="f-funnel-type">
-            <option value="product">Product (Landing Page)</option>
-            <option value="checkout">Checkout</option>
-            <option value="thank_you">Thank You</option>
-            <option value="upsell">Upsell</option>
-            <option value="newsletter">Newsletter</option>
-          </select>
-          
-          <details class="landing-section" style="margin-top:1rem; border:1px solid var(--border); border-radius:var(--radius-sm);">
-            <summary style="background:var(--surface);">Advanced Config (Selectors & Routing)</summary>
-            <div class="landing-fields" style="background:var(--bg);">
-              <label for="f-funnel-hardcta">Hard CTA Selectors (CSS query)</label>
-              <input id="f-funnel-hardcta" type="text" placeholder=".kartra_button1, .ozel-buton" />
-              
-              <label for="f-funnel-softcta">Soft CTA Selectors</label>
-              <input id="f-funnel-softcta" type="text" placeholder="a.scroll-link" />
-              
-              <label for="f-funnel-hot">Hot Redirect URL (Skip to checkout)</label>
-              <input id="f-funnel-hot" type="url" placeholder="https://pages.domain.com/checkout" />
+        <div class="layout" style="padding: 1.5rem 0 0 0; border-top: 1px solid var(--border); margin-top: 1rem;">
+          <!-- Left: Active Rules List -->
+          <div class="card list-card" style="box-shadow: none; border: none; padding: 0;">
+            <div class="list-header" style="margin-bottom:1rem;">
+              <p class="card-title">Funnel Page Definition Rules <span class="badge badge-warning" style="font-size:0.65rem; margin-left:6px;">Legacy</span></p>
+              <button type="button" class="btn-ghost btn-sm" id="btn-funnel-refresh">Refresh</button>
             </div>
-          </details>
-
-          <p id="funnel-form-error" class="error hidden"></p>
-          <p id="funnel-form-success" class="success hidden"></p>
-          <div class="form-actions" style="margin-top:1rem;">
-            <button type="submit" class="btn-primary" id="btn-save-funnel">Deploy Rule</button>
-            <button type="button" class="btn-ghost hidden" id="btn-cancel-funnel">Cancel</button>
+            <p class="hint" style="margin-bottom:1.5rem">Note: The Engine uses Zero-Config Heuristics by default. Use these manual rules only for overrides or complex structural differences.</p>
+            
+            <div id="funnel-list-wrap">
+              <table class="analytics-table" style="width:100%;">
+                <thead><tr><th>URL Rule</th><th>Type</th><th>Actions</th></tr></thead>
+                <tbody id="funnel-list-body">
+                  <tr><td colspan="3" class="empty-state">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </form>
 
-        <div id="funnel-json-wrap" class="hidden" style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed var(--border);">
-          <p class="card-title" style="font-size:0.8rem;">Raw JSON Overrides</p>
-          <textarea id="kartra-json" spellcheck="false" style="width:100%; height:200px; font-family:ui-monospace, monospace; font-size:.8rem; padding:.75rem; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); white-space: pre-wrap; margin-top:0.5rem;"></textarea>
-          <div style="display:flex; justify-content:space-between; margin-top:0.5rem;">
-            <button id="btn-kartra-format" class="btn-ghost btn-sm">Format</button>
-            <button id="btn-kartra-save" class="btn-primary btn-sm">Force Sync JSON</button>
+          <!-- Right: Create/Edit Funnel Rule -->
+          <div class="card form-card" style="box-shadow: none; border: none; padding: 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <p class="card-title">New Page Definition Rule</p>
+              <button type="button" class="btn-ghost btn-sm" id="btn-funnel-toggle-json">JSON Editor</button>
+            </div>
+            
+            <form id="funnel-form" autocomplete="off">
+              <label for="f-funnel-url">Page URL / Path <span class="req">*</span></label>
+              <input id="f-funnel-url" type="text" placeholder="/program" required />
+              
+              <label for="f-funnel-type">Page Type</label>
+              <select id="f-funnel-type">
+                <option value="product">Product (Landing Page)</option>
+                <option value="checkout">Checkout</option>
+                <option value="thank_you">Thank You</option>
+                <option value="upsell">Upsell</option>
+                <option value="newsletter">Newsletter</option>
+              </select>
+              
+              <details class="landing-section" style="margin-top:1rem; border:1px solid var(--border); border-radius:var(--radius-sm);">
+                <summary style="background:var(--surface);">Advanced Config (Selectors & Routing)</summary>
+                <div class="landing-fields" style="background:var(--bg);">
+                  <label for="f-funnel-hardcta">Hard CTA Selectors (CSS query)</label>
+                  <input id="f-funnel-hardcta" type="text" placeholder=".kartra_button1, .ozel-buton" />
+                  
+                  <label for="f-funnel-softcta">Soft CTA Selectors</label>
+                  <input id="f-funnel-softcta" type="text" placeholder="a.scroll-link" />
+                  
+                  <label for="f-funnel-hot">Hot Redirect URL (Skip to checkout)</label>
+                  <input id="f-funnel-hot" type="url" placeholder="https://pages.domain.com/checkout" />
+                </div>
+              </details>
+
+              <p id="funnel-form-error" class="error hidden"></p>
+              <p id="funnel-form-success" class="success hidden"></p>
+              <div class="form-actions" style="margin-top:1rem;">
+                <button type="submit" class="btn-primary" id="btn-save-funnel">Deploy Rule</button>
+                <button type="button" class="btn-ghost hidden" id="btn-cancel-funnel">Cancel</button>
+              </div>
+            </form>
+
+            <div id="funnel-json-wrap" class="hidden" style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed var(--border);">
+              <p class="card-title" style="font-size:0.8rem;">Raw JSON Overrides</p>
+              <textarea id="kartra-json" spellcheck="false" style="width:100%; height:200px; font-family:ui-monospace, monospace; font-size:.8rem; padding:.75rem; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); white-space: pre-wrap; margin-top:0.5rem;"></textarea>
+              <div style="display:flex; justify-content:space-between; margin-top:0.5rem;">
+                <button id="btn-kartra-format" class="btn-ghost btn-sm">Format</button>
+                <button id="btn-kartra-save" class="btn-primary btn-sm">Force Sync JSON</button>
+              </div>
+              <p id="kartra-error" class="error hidden"></p>
+              <p id="kartra-success" class="success hidden" style="color:#1a7f37;"></p>
+            </div>
           </div>
-          <p id="kartra-error" class="error hidden"></p>
-          <p id="kartra-success" class="success hidden" style="color:#1a7f37;"></p>
         </div>
-      </div>
+      </details>
     </div>
+  </div>
   </div>
 
 </div>
@@ -1343,6 +1347,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var elExpResults     = $("exp-results");
   var elExpRows        = $("exp-rows");
   var elExpWeightNote  = $("exp-weight-note");
+  var elLnkOpenInLab   = $("lnk-open-in-lab");
 
   /* Conversion Signals DOM refs */
   var elConvEventName   = $("conv-event-name");
@@ -4832,6 +4837,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (elExpWinner)     hide(elExpWinner);
     if (elExpAliasInfo)  hide(elExpAliasInfo);
     if (elExpWeightNote) elExpWeightNote.style.display = "none";
+    if (elLnkOpenInLab)  hide(elLnkOpenInLab);
     if (elExpStatus) { elExpStatus.textContent = "Loading..."; show(elExpStatus); }
     if (elBtnExpLoad) elBtnExpLoad.disabled = true;
     try {
@@ -4845,6 +4851,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
       var variants = data.variants || [];
       if (!variants.length) { showErr(elExpError, "No data yet."); return; }
+
+      if (elLnkOpenInLab) {
+        elLnkOpenInLab.href = "/admin/experiments?alias=" + encodeURIComponent(alias);
+        elLnkOpenInLab.style.display = "inline-flex";
+        elLnkOpenInLab.classList.remove("hidden");
+      }
 
       /* Alias info line — clickable hub link + state + routing note */
       if (elExpAliasInfo) {
@@ -6445,6 +6457,45 @@ textarea:focus{border-color:var(--accent)}
 .exp-card{border:1px solid var(--border);border-radius:var(--radius);padding:1rem;background:var(--surface);display:flex;flex-direction:column;gap:.75rem}
 .btn-exp-toggle{background:var(--bg);border:1px solid var(--border);color:var(--accent);font-size:.7rem;font-weight:600;padding:.4rem .8rem;border-radius:20px;cursor:pointer;display:block;margin:.5rem auto 0;transition:all .2s}
 .btn-exp-toggle:hover{border-color:var(--accent);background:rgba(59,130,246,.05)}
+
+/* ── Mobile & Responsive Styling ── */
+@media(max-width: 800px) {
+  .tab-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 0.6rem 0.8rem;
+  }
+  .topbar {
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: auto;
+  }
+  .topbar-title {
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: center;
+  }
+  .sw-toolbar {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.25rem;
+  }
+  .btn-lab-link {
+    padding: 0.4em 0.8em !important;
+    font-size: 0.75rem !important;
+  }
+  .ws-selector {
+    display: none !important;
+  }
+}
 `;
 
 
