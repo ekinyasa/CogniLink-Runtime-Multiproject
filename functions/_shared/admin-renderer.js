@@ -1414,6 +1414,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   }
   async function apiFetch(path, opts) {
     opts = Object.assign({ headers: {} }, opts || {});
+    if (opts.credentials === undefined) opts.credentials = "same-origin";
     opts.headers = Object.assign({}, authHeaders(), opts.headers);
     var res = await fetch(path, opts);
     if (res.status === 401) {
@@ -1657,16 +1658,49 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     hideErr(elGateError);
     var t = elTokenInput.value.trim();
     if (!t) return;
-    saveToken(t);
+    
+    var btn = elGateForm.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    
     try {
+      // Call the login endpoint
+      var loginRes = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: t }),
+        credentials: "same-origin"
+      });
+      
+      if (!loginRes.ok) {
+        showErr(elGateError, "Invalid password — try again.");
+        if (btn) btn.disabled = false;
+        return;
+      }
+      
+      // Cookie is now set, verify access
       var res = await apiFetch("/api/slugs");
-      if (res.ok) { showPanel(); }
-      else { clearToken(); showErr(elGateError, "Invalid token — try again."); }
+      if (res.ok) { 
+        showPanel(); 
+      }
+      else { 
+        showErr(elGateError, "Session error — try again."); 
+      }
     } catch (err) {
       if (err.message !== "401") showErr(elGateError, "Connection error. Try again.");
+    } finally {
+      if (btn) btn.disabled = false;
     }
   });
-  elBtnLogout.addEventListener("click", function () { clearToken(); showGate(); });
+
+  elBtnLogout.addEventListener("click", async function () { 
+    var btn = elBtnLogout;
+    btn.disabled = true;
+    try {
+      await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
+    } catch(e) {}
+    btn.disabled = false;
+    showGate(); 
+  });
 
   /* ── Pages ───────────────────────────────────────────── */
   var pagesStore = [];
@@ -5560,20 +5594,31 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   /* ── Boot ────────────────────────────────────────────── */
   window.CUSTOM_DOMAIN = "${customDomain}"; 
-  loadToken();
-  if (token) { 
-    window.ADMIN_TOKEN = token; // Ensure global exposure on boot
-    showPanel(); 
-    // Proactively push token to the journeys iframe if it's already there
-    setTimeout(function() {
-      var iframe = document.querySelector("#tab-journeys iframe");
-      if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({ type: "SET_TOKEN", token: window.ADMIN_TOKEN }, "*");
+  loadToken(); // Clears legacy token
+
+  (async function initAuth() {
+    try {
+      // Validate session via protected endpoint silently (avoid apiFetch side effects on 401)
+      var res = await fetch("/api/slugs?limit=1", { credentials: "same-origin" });
+      if (res.ok) {
+        token = "session";
+        window.ADMIN_TOKEN = token; // Maintain global exposure for iframes
+        showPanel(); 
+        
+        // Proactively push token to the journeys iframe if it's already there
+        setTimeout(function() {
+          var iframe = document.querySelector("#tab-journeys iframe");
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: "SET_TOKEN", token: window.ADMIN_TOKEN }, "*");
+          }
+        }, 1000);
+      } else {
+        showGate();
       }
-    }, 1000);
-  } else { 
-    showGate(); 
-  }
+    } catch (e) {
+      showGate();
+    }
+  })();
 
   // Also push token whenever a tab switch happens to Journeys
   document.querySelectorAll(".tab-btn").forEach(function(btn) {
