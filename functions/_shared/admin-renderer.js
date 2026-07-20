@@ -535,9 +535,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 }'></textarea>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Default Redirect Slug
-              <select id="studio-default-slug-select">
-                <option value="">(first active slug)</option>
+              Default Landing Version
+              <select id="studio-default-version-select">
               </select>
             </label>
 
@@ -5006,18 +5005,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       return s.campaign === campaignName && s.isActive !== false;
     });
 
-    // Populate Default Slug drop down options
-    var defSelect = document.getElementById("studio-default-slug-select");
-    if (defSelect) {
-      defSelect.innerHTML = '<option value="">(first active slug)</option>';
-      campSlugs.forEach(function (s) {
-        var opt = document.createElement("option");
-        opt.value = s.slug;
-        opt.textContent = s.slug;
-        defSelect.appendChild(opt);
-      });
-      defSelect.value = campIndex ? (campIndex.defaultSlug || "") : "";
-    }
+    // removed obsolete default slug selector population
 
     if (campSlugs.length === 0) {
       slugsContainer.innerHTML = '<p class="hint">No active slugs.</p>';
@@ -5087,6 +5075,22 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   function renderStudioVersionsList() {
     var container = document.getElementById("studio-version-list");
+    var defSelect = document.getElementById("studio-default-version-select");
+
+    if (defSelect) {
+      defSelect.innerHTML = '';
+      studioCampaignConfig.landings.forEach(function (l) {
+        var opt = document.createElement("option");
+        opt.value = l.id;
+        opt.textContent = (l.displayName || l.id) + (l.id === studioCampaignConfig.mainLandingId ? " (Main)" : "");
+        defSelect.appendChild(opt);
+      });
+      defSelect.value = studioCampaignConfig.mainLandingId || "";
+      defSelect.onchange = function(e) {
+        setStudioMainLanding(e.target.value);
+      };
+    }
+
     container.innerHTML = "";
     if (studioCampaignConfig.landings.length === 0) {
       container.innerHTML = "<p style='color: var(--text-m); font-style: italic;'>No landing versions created yet.</p>";
@@ -5135,8 +5139,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   window.previewStudioLanding = function(id) {
     if (!studioCampaignConfig) return;
-    var defSlugEl = document.getElementById("studio-default-slug-select");
-    var slug = defSlugEl && defSlugEl.value ? defSlugEl.value : studioCampaignConfig.slug;
+    var campSlugs = slugCache.filter(function (s) {
+      return s.campaign === studioCampaignConfig.name && s.isActive !== false;
+    });
+    var slug = campSlugs.length > 0 ? campSlugs[0].slug : studioCampaignConfig.slug;
     var isMain = studioCampaignConfig.mainLandingId === id;
     var url = "/c/" + encodeURIComponent(slug);
     if (!isMain) {
@@ -5166,8 +5172,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
-    var defSlugEl = document.getElementById("studio-default-slug-select");
-    var slugForUrl = defSlugEl && defSlugEl.value ? defSlugEl.value : studioCampaignConfig.slug;
+    var campSlugs = slugCache.filter(function (s) {
+      return s.campaign === studioCampaignConfig.name && s.isActive !== false;
+    });
+    var slugForUrl = campSlugs.length > 0 ? campSlugs[0].slug : studioCampaignConfig.slug;
     var isMainForUrl = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
     var previewUrlPath = "/c/" + encodeURIComponent(slugForUrl);
     if (!isMainForUrl) previewUrlPath += "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id);
@@ -5492,7 +5500,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       saveIntentBtn.dataset.wired = "1";
       saveIntentBtn.addEventListener("click", async function () {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
-        var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
+        var defaultSlug = null; // No longer used, handled by Intent mainLandingId
 
         var routingConfig = null;
         var rawRouting = document.getElementById("studio-routing-config") ? document.getElementById("studio-routing-config").value.trim() : "";

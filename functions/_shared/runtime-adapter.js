@@ -144,13 +144,16 @@ function normalizeLegacy(rawLegacyData, options = {}) {
   const utmDefaults = (data.defaults && typeof data.defaults === 'object') ? data.defaults : {};
   const status = data.isActive === false ? "inactive" : "active";
 
-  // Normalize components (no null, no duplicate, valid strings)
-  const rawComponents = Array.isArray(data.components) ? data.components : [];
-  const components = [...new Set(rawComponents.filter(c => typeof c === 'string' && c.trim() !== ''))];
-
   // Normalize layout
   let layout = Array.isArray(data.layout) ? data.layout : [];
   layout = layout.filter(item => item && typeof item === 'object' && item.id);
+
+  // Normalize components (no null, no duplicate, valid strings)
+  const rawComponents = Array.isArray(data.components) ? data.components : [];
+  layout.forEach(item => {
+    if (item.type === "component" && item.id) rawComponents.push(item.id);
+  });
+  const components = [...new Set(rawComponents.filter(c => typeof c === 'string' && c.trim() !== ''))];
 
   // Normalize links (no null, duplicate IDs, disabled/inactive, missing href)
   const rawLinks = Array.isArray(data.links) ? data.links : [];
@@ -193,6 +196,7 @@ function normalizeLegacy(rawLegacyData, options = {}) {
       components: components,
       custom_css: customCss,
       custom_html: customHtml,
+      custom_js: data.customScript || data.custom_js || "",
       redirect: data.redirect || null,
       theme: data.theme || null
     },
@@ -217,13 +221,16 @@ function normalizeV2(rawV2Data, options = {}) {
   const campaign = data.campaign || {};
   const page = data.page || {};
 
-  // Normalize components
-  const rawComponents = Array.isArray(page.components) ? page.components : [];
-  const components = [...new Set(rawComponents.filter(c => typeof c === 'string' && c.trim() !== ''))];
-
   // Normalize layout
   let layout = Array.isArray(page.layout) ? page.layout : [];
   layout = layout.filter(item => item && typeof item === 'object' && item.id);
+
+  // Normalize components
+  const rawComponents = Array.isArray(page.components) ? page.components : [];
+  layout.forEach(item => {
+    if (item.type === "component" && item.id) rawComponents.push(item.id);
+  });
+  const components = [...new Set(rawComponents.filter(c => typeof c === 'string' && c.trim() !== ''))];
 
   // Normalize links
   const rawLinks = Array.isArray(page.links) ? page.links : [];
@@ -256,6 +263,7 @@ function normalizeV2(rawV2Data, options = {}) {
       components: components,
       custom_css: page.custom_css || "",
       custom_html: page.custom_html || "",
+      custom_js: page.custom_js || "",
       redirect: page.redirect || null,
       theme: page.theme || null
     },

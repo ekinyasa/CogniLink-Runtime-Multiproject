@@ -31,6 +31,7 @@ export function renderHub({
   expToken = "",          // A/B exposure token (Prompt 130)
   utmVariant = "",          // A/B selected variant slug
   components = [],          // Live KV components (Prompt 140)
+  isPreview = false,        // Admin preview mode flag
 } = {}) {
   const cfg = config || {};
 
@@ -77,9 +78,11 @@ export function renderHub({
   if (hasCustomLayout) {
     slugData.layout.forEach(function (item) {
       if (item.type === "component") {
-        var c = allowedComps.find(function (x) { return x.family_id === item.id; });
+        var c = allowedComps.find(function (x) { return x.family_id === item.id || x.family_key === item.id; });
         if (c) {
           layoutHtml += renderComponentHtml(c);
+        } else if (isPreview) {
+          layoutHtml += '<div style="border:1px dashed #ff4444; padding:15px; margin: 10px 0; background:rgba(255,0,0,0.05); color:#ff4444; text-align:center; font-family:monospace; font-size:12px; border-radius:4px;">[Preview Mode] Component Not Found or Inactive: ' + escHtml(item.id) + '</div>';
         }
       } else if (item.type === "custom_html") {
         layoutHtml += item.content || "";
@@ -226,7 +229,7 @@ ${themeCssLink}${globalCssBlock}${pageCssBlock}
 ${bodyTag}
 ${renderedContent}
 
-${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
+${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugData.customScript.replace(/<\/script>/gi, "<\\/script>")}\n</script>` : ""}
 
 <script>
 (function () {

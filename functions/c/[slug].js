@@ -365,6 +365,7 @@ export async function onRequestGet(context) {
     slug,                            // for CSS scoping
     slugData:    campaignData,       // for per-slug landing customization
     components:  liveComponents,
+    isPreview:   isAdminPreview
   });
 
 

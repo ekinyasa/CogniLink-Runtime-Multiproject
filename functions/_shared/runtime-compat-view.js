@@ -77,6 +77,11 @@ export function createLegacyCompatibleView(runtimeContext, legacyObject) {
     view.redirectUrl = ctx.pageContent.redirect;
   }
 
+  // 12. Custom JS
+  if (ctx.pageContent?.custom_js !== undefined) {
+    view.customScript = ctx.pageContent.custom_js;
+  }
+
   // Unverified fields like isActive, modifier, engineMapId, etc., remain from the legacy clone.
 
   return view;

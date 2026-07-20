@@ -90,6 +90,7 @@ export function createRuntimeRepository(env) {
         links: Array.isArray(sourcePage.links) ? sourcePage.links : [],
         custom_css: typeof sourcePage.customStyleCss === 'string' ? sourcePage.customStyleCss : "",
         custom_html: customHtml,
+        custom_js: typeof sourcePage.customScript === 'string' ? sourcePage.customScript : (typeof sourcePage.custom_js === 'string' ? sourcePage.custom_js : ""),
         redirect: sourcePage.redirectUrl || sourcePage.redirect || null,
         theme: sourcePage.theme || null,
         metadata: sourcePage.metadata || {},

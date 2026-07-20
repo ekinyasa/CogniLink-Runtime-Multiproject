@@ -223,7 +223,9 @@ export async function onRequestGet(context) {
     notFound: false,
     config,
     slug,
-    slugData: campaignDataVal
+    slugData: campaignDataVal,
+    components: liveComponents,
+    isPreview: isAdminPreview
   });
 
   return new Response(html, {
