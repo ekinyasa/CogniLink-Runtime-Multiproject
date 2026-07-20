@@ -5915,8 +5915,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       saveIntentBtn.dataset.wired = "1";
       saveIntentBtn.addEventListener("click", async function () {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
-                var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
+        var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
 
+        var routingConfig = null;
+        var rawRouting = document.getElementById("studio-routing-config") ? document.getElementById("studio-routing-config").value.trim() : "";
+        if (rawRouting) {
+          try {
+            routingConfig = JSON.parse(rawRouting);
+          } catch(e) {
+            alert("Invalid JSON in Routing & Behavior Configuration: " + e.message);
+            return;
+          }
+        }
 
         try {
           saveIntentBtn.disabled = true;
@@ -5928,20 +5938,21 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             body: JSON.stringify({ alias: alias || null, defaultSlug: defaultSlug })
           });
 
-          // 2. Save V2 Configuration (Journey) - Optional Binding
+          // 2. Save Routing Configuration
           var v2Ok = true;
           var v2ErrMsg = "";
 
-          if (studioCampaignConfig.slug && studioCampaignConfig.journeyId) {
-            var v2Res = await apiFetch("/api/admin/campaign_v2", {
-              method: "POST",
-              body: JSON.stringify(studioCampaignConfig)
-            });
-            v2Ok = v2Res.ok;
-            if (!v2Res.ok) {
-              var err = await v2Res.json();
-              v2ErrMsg = err.error || "Unknown error";
-            }
+          studioCampaignConfig.slug = currentSelectedCampaign;
+          studioCampaignConfig.routing = routingConfig;
+
+          var v2Res = await apiFetch("/api/admin/intent-routing", {
+            method: "POST",
+            body: JSON.stringify(studioCampaignConfig)
+          });
+          v2Ok = v2Res.ok;
+          if (!v2Res.ok) {
+            var err = await v2Res.json();
+            v2ErrMsg = err.error || "Unknown error";
           }
 
           if (patchRes.ok && v2Ok) {
