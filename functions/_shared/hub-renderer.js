@@ -259,7 +259,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
   var INTENT_CONFIG  = JSON.parse('${escJsString(intentConfigJson)}');
   var CAMPAIGN       = JSON.parse('${escJsString(campaignJson)}');
   var MODIFIER       = JSON.parse('${escJsString(modifierJson)}');
-  var LINKS_META     = [];
+  var LINKS_META     = JSON.parse('${escJsString(JSON.stringify(links || []))}');
   var CONTEXT_TYPE   = JSON.parse('${escJsString(ctxTypeEsc)}');
   var CONTEXT_ID     = JSON.parse('${escJsString(ctxIdEsc)}');
   var EXP_TOKEN      = ${JSON.stringify(expToken || defaultUtms.exp_token || "")};
@@ -452,6 +452,29 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
       }).catch(function() {});
     });
   });
+
+  /* ── TEMP: Hot Redirect Test ── */
+  var testBtn = document.getElementById("routing-test-button");
+  if (testBtn) {
+    testBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      fetch("/api/decision/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ 
+          type: "click_hard", 
+          link_id: "routing-test-button",
+          meta: {
+            source: CONTEXT_ID,
+            campaign: CAMPAIGN || getMerged().utm_campaign || ""
+          }
+        })
+      }).then(function() {
+        setTimeout(function() { window.location.reload(); }, 500);
+      }).catch(function() {});
+    });
+  }
 
 
   /* 8. Engagement & Scroll Tracking (Phase 3) ─────────────────────────

@@ -96,18 +96,19 @@ export async function onRequestGet(context) {
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
 
-  // Fetch Intent (Campaign V2 config) to act as the unified routing source
-  let intentData = null;
-  if (campaignDataVal && campaignDataVal.campaign && env.APP_CONFIG) {
-    try {
-      intentData = await env.APP_CONFIG.get(`campaign:${campaignDataVal.campaign}`, { type: "json" });
-    } catch(e) {}
-  }
-
   // Pre-calculate inputs for legacy decision
   const utmSource   = url.searchParams.get("utm_source")   || "";
   const utmMedium   = url.searchParams.get("utm_medium")   || "";
   const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug);
+
+  // Fetch Intent (Campaign V2 config) to act as the unified routing source
+  let intentData = null;
+  if (utmCampaign && env.APP_CONFIG) {
+    try {
+      intentData = await env.APP_CONFIG.get(`campaign:${utmCampaign}`, { type: "json" });
+    } catch(e) {}
+  }
+
   const decisionInputState = parseUserState(readCookie(request, "cos_state"));
   const decisionShadowContext = createDecisionShadowContext(runtimeContext, {
     source: utmSource,
