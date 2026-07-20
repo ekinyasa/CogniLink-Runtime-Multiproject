@@ -174,6 +174,18 @@ export async function onRequestGet(context) {
   const t0 = Date.now();
   const url = new URL(request.url);
 
+  // --- Auth Check for Preview ---
+  const previewVersion = url.searchParams.get("preview_version");
+  let isAdminPreview = false;
+  if (previewVersion) {
+    const { verifyToken } = await import("./_shared/auth.js");
+    const isAuthorized = await verifyToken(request, env);
+    if (!isAuthorized) {
+      return new Response("Unauthorized for preview", { status: 401, headers: SEC_HEADERS });
+    }
+    isAdminPreview = true;
+  }
+
   // ── Step -1: Canonical URL Forcing ──────────────────────────────────────
   // Enforce https://www... for production traffic to unify analytics.
   if (
@@ -364,7 +376,10 @@ export async function onRequestGet(context) {
       const repo = createRuntimeRepository(env);
       const rawLegacy = await repo.fetchLegacy(targetPageId);
       const rawV2 = await repo.fetchV2(targetPageId);
-      const runtimeContext = await resolveContext(targetPageId, repo, { render_mode: abActive ? "experiment" : "canonical" });
+      
+      const fetchIdentifier = isAdminPreview ? `${targetPageId}:${previewVersion}` : targetPageId;
+      const rMode = isAdminPreview ? "preview" : (abActive ? "experiment" : "canonical");
+      const runtimeContext = await resolveContext(fetchIdentifier, repo, { render_mode: rMode });
       
       return { rawLegacy, rawV2, context: runtimeContext };
     })()

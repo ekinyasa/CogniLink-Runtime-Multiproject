@@ -96,7 +96,9 @@ export async function onRequestGet(context) {
       source: utmSource,
       medium: utmMedium,
       campaign: utmCampaign,
-      decisionRules: intentData?.routing?.rules || campaignDataVal?.decision_rules || config?.decision_rules || [],
+      decisionRules: intentData?.rules || campaignDataVal?.decision_rules || config?.decision_rules || [],
+      intentDestinations: intentData?.destinations || null,
+      intentEvaluation: intentData?.evaluation || null,
       engineConfig,
       engineMapId: campaignDataVal?.engineMapId || null,
     });

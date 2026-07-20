@@ -116,6 +116,24 @@ export async function onRequestPost(context) {
       if (customConfig.points && Object.keys(customConfig.points).length > 0) points = { ...points, ...customConfig.points };
       if (customConfig.thresholds && Object.keys(customConfig.thresholds).length > 0) thresholds = { ...thresholds, ...customConfig.thresholds };
     }
+
+    // 2b. Priority Intent Evaluation (Campaign V2)
+    const campaignId = body.meta ? body.meta.campaign : null;
+    if (campaignId && context.env.APP_CONFIG) {
+      try {
+        const intentData = await context.env.APP_CONFIG.get(`campaign:${campaignId}`, { type: "json" });
+        if (intentData && intentData.evaluation) {
+          const evalCfg = intentData.evaluation;
+          if (evalCfg.hotThreshold !== undefined) thresholds.hot_engagement = evalCfg.hotThreshold;
+          if (evalCfg.hardClickPoints !== undefined) points.click_hard = evalCfg.hardClickPoints;
+          if (evalCfg.softClickPoints !== undefined) points.click_soft = evalCfg.softClickPoints;
+          // Semantic mismatch: Intent uses *Seconds, but signal expects *Pts. Mapping them as points directly.
+          if (evalCfg.hardTimeSeconds !== undefined) points.time_hard_pts = evalCfg.hardTimeSeconds;
+          if (evalCfg.softTimeSeconds !== undefined) points.time_soft_pts = evalCfg.softTimeSeconds;
+        }
+      } catch(e) {}
+    }
+
     const HOT_LIMIT = thresholds.hot_engagement || 60;
 
     let bonus = 0;

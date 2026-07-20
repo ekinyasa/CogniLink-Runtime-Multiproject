@@ -30,7 +30,7 @@ import { evaluateRules } from "./decision-engine.js";
  * }>}
  */
 export async function handleDecision(request, env, opts) {
-  const { source = "", medium = "", campaign = "", decisionRules = [], engineConfig = null } = opts;
+  const { source = "", medium = "", campaign = "", decisionRules = [], engineConfig = null, intentDestinations = null, intentEvaluation = null } = opts;
 
   // 1. Read existing state
   const rawState = readCookie(request, "cos_state");
@@ -52,40 +52,48 @@ export async function handleDecision(request, env, opts) {
   let decisionMatch = null;
   const contextCtx = { source, medium, campaign };
 
-  // 3a. Priorities Global Engine Configuration from Funnels > Dashboard (Hard Overrides)
-  if (engineConfig) {
-    let checkRedirects = engineConfig.redirects;
-    
-    if (checkRedirects) {
-      // 1. Dynamic Infinite Tag-Based Rules (Evaluate First)
-      if (Array.isArray(checkRedirects.rules) && checkRedirects.rules.length > 0) {
-        const uTags = Array.isArray(userState.t) ? userState.t : [];
-        for (const rule of checkRedirects.rules) {
-          let match = true;
-          if (Array.isArray(rule.hasTags) && rule.hasTags.length > 0) {
-            if (rule.hasTags.some(t => !uTags.includes(t))) match = false;
-          }
-          if (match && Array.isArray(rule.notTags) && rule.notTags.length > 0) {
-            if (rule.notTags.some(t => uTags.includes(t))) match = false;
-          }
-          if (match && rule.url) {
-            decisionMatch = { action: "redirect", target: rule.url, id: `engine_tag_${rule.id || 'rule'}` };
-            break;
-          }
-        }
+  // 3a. Priority 1: Dynamic Infinite Tag-Based Rules from Engine Config
+  if (engineConfig && engineConfig.redirects && Array.isArray(engineConfig.redirects.rules) && engineConfig.redirects.rules.length > 0) {
+    const uTags = Array.isArray(userState.t) ? userState.t : [];
+    for (const rule of engineConfig.redirects.rules) {
+      let match = true;
+      if (Array.isArray(rule.hasTags) && rule.hasTags.length > 0) {
+        if (rule.hasTags.some(t => !uTags.includes(t))) match = false;
       }
+      if (match && Array.isArray(rule.notTags) && rule.notTags.length > 0) {
+        if (rule.notTags.some(t => uTags.includes(t))) match = false;
+      }
+      if (match && rule.url) {
+        decisionMatch = { action: "redirect", target: rule.url, id: `engine_tag_${rule.id || 'rule'}` };
+        break;
+      }
+    }
+  }
 
-      // 2. Legacy Hardcoded Rules (Fallback)
-      if (!decisionMatch) {
-        if (userState.c === 1) {
-          if (userState.u === 1 && checkRedirects.post) {
-            decisionMatch = { action: "redirect", target: checkRedirects.post, id: "engine_post_override" };
-          } else if (checkRedirects.converted) {
-            decisionMatch = { action: "redirect", target: checkRedirects.converted, id: "engine_converted_override" };
-          }
-        } else if (userState.h === 1 && checkRedirects.hot) {
-          decisionMatch = { action: "redirect", target: checkRedirects.hot, id: "engine_hot_override" };
-        }
+  // 3b. Priority 2: Intent-specific Destinations (Campaign V2) OR Legacy Engine Config
+  if (!decisionMatch) {
+    const checkRedirects = (engineConfig && engineConfig.redirects) ? engineConfig.redirects : {};
+    
+    // Resolve effective destinations (Intent wins over Global Engine Config)
+    const effectiveDestinations = {
+      post:      (intentDestinations && intentDestinations.postConversion) ? intentDestinations.postConversion : checkRedirects.post,
+      converted: (intentDestinations && intentDestinations.converted) ? intentDestinations.converted : checkRedirects.converted,
+      hot:       (intentDestinations && intentDestinations.hot) ? intentDestinations.hot : checkRedirects.hot,
+      warm:      (intentDestinations && intentDestinations.warm) ? intentDestinations.warm : null
+    };
+
+    if (userState.c === 1) {
+      if (userState.u === 1 && effectiveDestinations.post) {
+        decisionMatch = { action: "redirect", target: effectiveDestinations.post, id: "intent_post_override" };
+      } else if (effectiveDestinations.converted) {
+        decisionMatch = { action: "redirect", target: effectiveDestinations.converted, id: "intent_converted_override" };
+      }
+    } else if (userState.h === 1 && effectiveDestinations.hot) {
+      decisionMatch = { action: "redirect", target: effectiveDestinations.hot, id: "intent_hot_override" };
+    } else if (effectiveDestinations.warm) {
+      // Intent warm destination check based on userState fields (v=1 or e>=20 or tags exist)
+      if (userState.v === 1 || (userState.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
+        decisionMatch = { action: "redirect", target: effectiveDestinations.warm, id: "intent_warm_override" };
       }
     }
   }
