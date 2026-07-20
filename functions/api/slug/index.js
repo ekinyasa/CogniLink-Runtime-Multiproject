@@ -116,7 +116,7 @@ export async function onRequestPost(context) {
     context:          ctx || "campaign",
     defaults:         sanitizeUtm(defaults || {}),
     overrides:        overridesResult.data,
-    links:            linksResult.data:      typeof engineMapId === "string" && engineMapId.trim() ? engineMapId.trim() : null,
+    links:            linksResult.data,
     customHeaderHtml: sanitizeHtmlField(customHeaderHtml),
     customFooterHtml: sanitizeHtmlField(customFooterHtml),
     customStyleCss:   sanitizeCssField(customStyleCss),
