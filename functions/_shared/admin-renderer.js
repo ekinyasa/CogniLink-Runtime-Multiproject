@@ -1430,8 +1430,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       btn.classList.add("active");
       $("tab-" + target).classList.remove("hidden");
 
-            }
-
       if (target === "analytics" && !analyticsTabLoaded) {
         analyticsTabLoaded = true;
         loadAnalytics();
