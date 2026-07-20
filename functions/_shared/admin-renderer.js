@@ -5417,11 +5417,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         token = "session";
         window.ADMIN_TOKEN = token; // Maintain global exposure for iframes
         showPanel();
-
-        ();
-
-  ;
-  });
+      } else {
+        showGate();
+      }
+    } catch (e) {
+      showGate();
+    }
+  })();
 
   /* ── Campaign Workspace Studio Mode ──────────────── */
   var currentSelectedCampaign = null;
