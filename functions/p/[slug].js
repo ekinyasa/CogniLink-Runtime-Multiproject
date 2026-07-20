@@ -97,9 +97,9 @@ export async function onRequestGet(context) {
       source: utmSource,
       medium: utmMedium,
       campaign: utmCampaign,
-      decisionRules: intentData?.rules || campaignDataVal?.decision_rules || config?.decision_rules || [],
-      intentDestinations: intentData?.destinations || null,
-      intentEvaluation: intentData?.evaluation || null,
+      decisionRules: intentData?.rules || intentData?.routing?.rules || campaignDataVal?.decision_rules || config?.decision_rules || [],
+      intentDestinations: intentData?.destinations || intentData?.routing?.destinations || null,
+      intentEvaluation: intentData?.evaluation || intentData?.routing?.evaluation || null,
       engineConfig,
       engineMapId: campaignDataVal?.engineMapId || null,
     });

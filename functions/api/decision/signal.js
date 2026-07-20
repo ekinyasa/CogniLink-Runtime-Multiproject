@@ -122,9 +122,9 @@ export async function onRequestPost(context) {
     if (campaignId && context.env.APP_CONFIG) {
       try {
         const intentData = await context.env.APP_CONFIG.get(`campaign:${campaignId}`, { type: "json" });
-        if (intentData && intentData.evaluation) {
-          const evalCfg = intentData.evaluation;
-          if (evalCfg.hotThreshold !== undefined) thresholds.hot_engagement = evalCfg.hotThreshold;
+        const evalCfg = intentData?.evaluation || intentData?.routing?.evaluation;
+        if (evalCfg) {
+          if (evalCfg.hotThreshold !== undefined) thresholds.hot_engagement = Number(evalCfg.hotThreshold);
           if (evalCfg.hardClickPoints !== undefined) points.click_hard = evalCfg.hardClickPoints;
           if (evalCfg.softClickPoints !== undefined) points.click_soft = evalCfg.softClickPoints;
           // Semantic mismatch: Intent uses *Seconds, but signal expects *Pts. Mapping them as points directly.
