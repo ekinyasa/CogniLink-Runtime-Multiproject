@@ -5436,9 +5436,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     document.getElementById("workspace-title").textContent = campaignName;
     document.getElementById("intent-workspace").style.display = "flex";
 
-
-    } catch(e){}
-
     // Load campaign V2 config
     try {
       var res = await apiFetch("/api/admin/campaign_v2");
