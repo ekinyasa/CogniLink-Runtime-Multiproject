@@ -32,10 +32,12 @@ export function renderHub({
   utmVariant = "",          // A/B selected variant slug
   components = [],          // Live KV components (Prompt 140)
   isPreview = false,        // Admin preview mode flag
+  intentConfig = {},        // Routing & Behavior JSON (Campaign V2)
 } = {}) {
   const cfg = config || {};
 
   const utmsJson = JSON.stringify(defaultUtms);
+  const intentConfigJson = JSON.stringify(intentConfig || {});
   const campaignJson = JSON.stringify(campaign || "");
   const modifierJson = JSON.stringify(modifier || "");
   const ctxTypeEsc = JSON.stringify(contextType);
@@ -253,7 +255,8 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
   }
 
   /* ── Config injected server-side ──────────────────────── */
-  var ROUTE_DEFAULTS = JSON.parse('${escJsString(utmsJson)}');
+  var UTM_DEFAULTS   = JSON.parse('${escJsString(utmsJson)}');
+  var INTENT_CONFIG  = JSON.parse('${escJsString(intentConfigJson)}');
   var CAMPAIGN       = JSON.parse('${escJsString(campaignJson)}');
   var MODIFIER       = JSON.parse('${escJsString(modifierJson)}');
   var LINKS_META     = [];
@@ -286,7 +289,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
    *    Priority (highest → lowest):
    *      a) CAMPAIGN (record.campaign) — always wins on campaign pages
    *      b) inbound URL params          — win over route defaults
-   *      c) ROUTE_DEFAULTS              — fallback
+   *      c) UTM_DEFAULTS                — fallback
    *    utm_content is always overridden per-link below.
    */
   function getMerged() {
@@ -294,7 +297,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
     try {
       stored = JSON.parse(sessionStorage.getItem("tracking_context") || "{}");
     } catch (e) {}
-    var merged = Object.assign({}, ROUTE_DEFAULTS, stored);
+    var merged = Object.assign({}, UTM_DEFAULTS, stored);
     // Campaign pages: utm_campaign is authoritative from the record, not from URL
     if (CAMPAIGN) merged.utm_campaign = CAMPAIGN;
     return merged;
@@ -376,17 +379,32 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
     } catch (e) {}
   }
 
+  /* ── 8. Expose A/B info in global so tracking can pick it up ──
+   * EXP_TOKEN logic handles exposure mapping if there is an active A/B testing token.
+   * If not explicitly provided by the runtime injection, it defaults to the legacy
+   * UTM_DEFAULTS (i.e. the hub page is part of a running experiment).
+   */
+  window.__COGNILINK_AB_INFO = (function() {
+    var exp = UTM_DEFAULTS.utm_experiment;
+    var v   = UTM_DEFAULTS.utm_variant;
+    if (EXP_TOKEN && UTM_VARIANT) {
+      exp = EXP_TOKEN;
+      v = UTM_VARIANT;
+    }
+    return { experiment: exp, variant: v };
+  })();
+
   /* 6. Experiment click telemetry beacon ──────────────────────────────────
    * Fires GET /t?e=click&exp=<utm_experiment>&v=<utm_variant> on every
    * outbound link click.  Uses navigator.sendBeacon when available so the
    * ping survives page navigation.  Falls back to fetch + keepalive.
    * Only fires when both utm_experiment and utm_variant are present in
-   * ROUTE_DEFAULTS (i.e. the hub page is part of a running experiment).
+   * UTM_DEFAULTS (i.e. the hub page is part of a running experiment).
    * Wrapped in try/catch — telemetry must never throw or block navigation.
    */
   function fireTelemetryClick() {
-    var exp = ROUTE_DEFAULTS.utm_experiment;
-    var v   = ROUTE_DEFAULTS.utm_variant;
+    var exp = UTM_DEFAULTS.utm_experiment;
+    var v   = UTM_DEFAULTS.utm_variant;
     if (!exp || !v) return;
     var url = "/t?e=click"
       + "&exp=" + encodeURIComponent(exp)
@@ -434,6 +452,29 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
       }).catch(function() {});
     });
   });
+
+  /* ── TEMP: Hot Redirect Test ── */
+  var testBtn = document.getElementById("routing-test-button");
+  if (testBtn) {
+    testBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      fetch("/api/decision/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ 
+          type: "click_hard", 
+          link_id: "routing-test-button",
+          meta: {
+            source: CONTEXT_ID,
+            campaign: CAMPAIGN || getMerged().utm_campaign || ""
+          }
+        })
+      }).then(function() {
+        setTimeout(function() { window.location.reload(); }, 500);
+      }).catch(function() {});
+    });
+  }
 
   /* 8. Engagement & Scroll Tracking (Phase 3) ─────────────────────────
    * Calculates a "Warmth" score based on scroll depth and time.

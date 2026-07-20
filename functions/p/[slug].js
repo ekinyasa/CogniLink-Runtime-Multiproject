@@ -34,7 +34,16 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
   const previewVersion = url.searchParams.get("preview_version");
-  const isAdminPreview = previewVersion && await verifyToken(request, env);
+  let isAdminPreview = false;
+  
+  if (previewVersion) {
+    const isAuthorized = await verifyToken(request, env);
+    if (!isAuthorized) {
+      return new Response("Unauthorized for preview", { status: 401 });
+    }
+    isAdminPreview = true;
+  }
+  
   const fetchIdentifier = isAdminPreview ? `${slug}:${previewVersion}` : slug;
 
   // Parallel lookup of runtime context, configs, and components
@@ -225,7 +234,8 @@ export async function onRequestGet(context) {
     slug,
     slugData: campaignDataVal,
     components: liveComponents,
-    isPreview: isAdminPreview
+    isPreview: isAdminPreview,
+    intentConfig: intentData || {}
   });
 
   return new Response(html, {
