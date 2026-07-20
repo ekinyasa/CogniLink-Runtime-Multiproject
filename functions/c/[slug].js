@@ -99,7 +99,7 @@ export async function onRequestGet(context) {
   // Pre-calculate inputs for legacy decision
   const utmSource   = url.searchParams.get("utm_source")   || "";
   const utmMedium   = url.searchParams.get("utm_medium")   || "";
-  const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug);
+  const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug) || slug;
 
   // Fetch Intent (Campaign V2 config) to act as the unified routing source
   let intentData = null;
