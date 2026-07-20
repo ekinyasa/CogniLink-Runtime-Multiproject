@@ -279,33 +279,12 @@ export async function onRequestGet(context) {
   }
 
   if (!notFound) {
-    if (!campaignData || campaignData.isActive === false) {
+    if (!campaignData && !intentData) {
+      notFound = true;
+    } else if (campaignData && campaignData.isActive === false) {
       notFound = true;
     }
   }
-
-  if (notFound) {
-    const html = renderHub({ notFound: true, config });
-    return new Response(html, {
-      status: 404,
-      headers: {
-        "Content-Type":           "text/html;charset=UTF-8",
-        "Cache-Control":          "no-store",
-        "X-Robots-Tag":           "noindex,nofollow",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  }
-
-  // Resolve link hrefs (BASE_LINKS with global config + per-slug overrides + custom links)
-  const links = resolveLinks(campaignData, config);
-
-  // defaultUtms carries source + medium + any other stored defaults.
-  const defaultUtms = (campaignData.defaults && typeof campaignData.defaults === "object")
-    ? { ...campaignData.defaults }
-    : {};
-
-  const campaign = campaignData.campaign || deriveCampaignFromSlug(slug);
 
   // ── Step 3: Decision Engine (Invisible Router - Unified) ─────────────────
   // Evaluate behavior-driven rules in the /c/ entry point.
@@ -367,6 +346,29 @@ export async function onRequestGet(context) {
     });
   }
 
+  if (notFound) {
+    const html = renderHub({ notFound: true, config });
+    return new Response(html, {
+      status: 404,
+      headers: {
+        "Content-Type":           "text/html;charset=UTF-8",
+        "Cache-Control":          "no-store",
+        "X-Robots-Tag":           "noindex,nofollow",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
+  // Resolve link hrefs (BASE_LINKS with global config + per-slug overrides + custom links)
+  const links = resolveLinks(campaignData, config);
+
+  // defaultUtms carries source + medium + any other stored defaults.
+  const defaultUtms = (campaignData.defaults && typeof campaignData.defaults === "object")
+    ? { ...campaignData.defaults }
+    : {};
+
+  const campaign = campaignData?.campaign || deriveCampaignFromSlug(slug) || slug;
+
   const html = renderHub({
     contextType: "campaign",
     contextId:   slug,
@@ -382,8 +384,6 @@ export async function onRequestGet(context) {
     isPreview:   isAdminPreview,
     intentConfig: intentData || {}
   });
-
-
 
   const resHeaders = new Headers({
     "Content-Type":           "text/html;charset=UTF-8",
