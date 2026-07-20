@@ -1415,6 +1415,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     loadAnalytics();
     // Also prime slug form data in background
     loadCampaigns();
+    loadComponents();
   }
 
   /* ── Tabs ────────────────────────────────────────────── */
@@ -4932,23 +4933,36 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
     // Load campaign V2 config
     try {
-      var res = await apiFetch("/api/admin/campaign_v2");
+      var res = await apiFetch("/api/admin/intent-routing");
       var data = await res.json();
       var configs = data.campaigns || [];
       studioCampaignConfig = configs.find(function (c) { return c.slug === campaignName; }) || {
         slug: campaignName,
-                landings: [],
+        routing: null,
+        landings: [],
         mainLandingId: ""
       };
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
+      var routingEl = document.getElementById("studio-routing-config");
+      if (routingEl) {
+        if (studioCampaignConfig.routing && Object.keys(studioCampaignConfig.routing).length > 0) {
+          routingEl.value = JSON.stringify(studioCampaignConfig.routing, null, 2);
+        } else {
+          routingEl.value = "";
+        }
+      }
+
       // Set values
-          } catch(e) {
+    } catch(e) {
       studioCampaignConfig = {
         slug: campaignName,
-                landings: [],
+        routing: null,
+        landings: [],
         mainLandingId: ""
       };
+      var routingEl = document.getElementById("studio-routing-config");
+      if (routingEl) routingEl.value = "";
     }
 
     // Set Campaign index metadata settings
@@ -5196,19 +5210,33 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
     studioCurrentEditingLanding.layout.forEach(function (item, idx) {
       var row = document.createElement("div");
-      row.style = "display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem;";
+      row.style = "display: flex; flex-direction: column; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem; margin-bottom: 0.5rem;";
 
-      var labelText = item.type === "component" ? "Component: " + item.id : "Custom HTML";
+      var labelText = item.type === "component" ? "Component: " + (item.family ? item.family + " v" + item.version : item.id) : "Custom HTML";
 
-      row.innerHTML = '<span style="font-size: 0.8rem; font-weight: bold; color: var(--text-m);">' + (idx + 1) + '. ' + esc(labelText) + '</span>' +
+      var contentArea = "";
+      if (item.type === "custom_html") {
+        contentArea = '<div style="margin-top: 8px;"><textarea onchange="updateStudioHtmlContent(' + idx + ', this.value)" rows="5" placeholder="Enter custom HTML..." style="width:100%; font-family:monospace; font-size:12px; padding:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); border-radius:4px; resize:vertical;">' + esc(item.content || "") + '</textarea><p style="margin:4px 0 0 0; font-size:11px; color:var(--text-m);">HTML content rendered in page order</p></div>';
+      }
+
+      row.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+        '<span style="font-size: 0.8rem; font-weight: bold; color: var(--text-m);">' + (idx + 1) + '. ' + esc(labelText) + '</span>' +
         '<div style="display: flex; gap: 0.25rem;">' +
           '<button class="btn-ghost btn-xs" style="padding: 2px 6px;" onclick="moveStudioItem(' + idx + ', -1)">&uarr;</button>' +
           '<button class="btn-ghost btn-xs" style="padding: 2px 6px;" onclick="moveStudioItem(' + idx + ', 1)">&darr;</button>' +
           '<button class="btn-danger btn-xs" onclick="removeStudioItem(' + idx + ')">&times;</button>' +
-        '</div>';
+        '</div>' +
+      '</div>' + contentArea;
+      
       container.appendChild(row);
     });
   }
+
+  window.updateStudioHtmlContent = function(idx, val) {
+    if (studioCurrentEditingLanding && studioCurrentEditingLanding.layout[idx]) {
+      studioCurrentEditingLanding.layout[idx].content = val;
+    }
+  };
 
   window.moveStudioItem = function(idx, dir) {
     var layout = studioCurrentEditingLanding.layout;
@@ -5479,7 +5507,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           }
 
           // Save V2 Configuration (Landings layout updates)
-          var v2Res = await apiFetch("/api/admin/campaign_v2", {
+          var v2Res = await apiFetch("/api/admin/intent-routing", {
             method: "POST",
             body: JSON.stringify(studioCampaignConfig)
           });
