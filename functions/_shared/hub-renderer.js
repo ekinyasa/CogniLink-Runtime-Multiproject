@@ -453,30 +453,6 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
     });
   });
 
-  /* ── TEMP: Hot Redirect Test ── */
-  var testBtn = document.getElementById("routing-test-button");
-  if (testBtn) {
-    testBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      fetch("/api/decision/signal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({ 
-          type: "click_hard", 
-          link_id: "routing-test-button",
-          meta: {
-            source: CONTEXT_ID,
-            campaign: CAMPAIGN || getMerged().utm_campaign || ""
-          }
-        })
-      }).then(function() {
-        setTimeout(function() { window.location.reload(); }, 500);
-      }).catch(function() {});
-    });
-  }
-
-
   /* 8. Engagement & Scroll Tracking (Phase 3) ─────────────────────────
    * Calculates a "Warmth" score based on scroll depth and time.
    * Reports to /api/decision/signal.
