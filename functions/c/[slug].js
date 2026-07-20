@@ -12,6 +12,7 @@ import { createRuleRepository } from "../_shared/rule-repository.js";
 import { emitShadowTelemetry } from "../_shared/shadow-telemetry.js";
 import { createLegacyCompatibleView } from "../_shared/runtime-compat-view.js";
 import { verifyAdminDebug }          from "../_shared/runtime-debug-auth.js";
+import { verifyToken }               from "../_shared/auth.js";
 import { normalizeRules } from "../_shared/rule-compat.js";
 import { compareDecisions } from "../_shared/decision-comparator.js";
 import { createDecisionShadowContext } from "../_shared/decision-shadow-context.js";
@@ -35,6 +36,11 @@ export async function onRequestGet(context) {
     notFound = true;
   }
 
+  const url = new URL(request.url);
+  const previewVersion = url.searchParams.get("preview_version");
+  const isAdminPreview = previewVersion && await verifyToken(request, env);
+  const fetchIdentifier = isAdminPreview ? `${slug}:${previewVersion}` : slug;
+
   // Fetch slug + config + engine_config in parallel
   const [slugResult, configResult, engineResult, liveComponentsResult, shadowResult] = await Promise.allSettled([
     slug ? env.SLUG_LINKS.get(slug, { type: "json" }) : Promise.resolve(null),
@@ -51,8 +57,18 @@ export async function onRequestGet(context) {
       // Evaluates the new decoupled pipeline. Does not affect legacy flow.
       const repo = createRuntimeRepository(env);
       const rawLegacy = await repo.fetchLegacy(slug);
-      const rawV2 = await repo.fetchV2(slug);
-      const runtimeContext = await resolveContext(slug, repo, { render_mode: "canonical" });
+      
+      // Use fetchIdentifier for preview support in V2
+      let rawV2CampaignId = slug;
+      let rawV2PageId = slug;
+      if (fetchIdentifier.includes(":")) {
+        const parts = fetchIdentifier.split(":");
+        rawV2CampaignId = parts[0];
+        rawV2PageId = parts[1];
+      }
+      const rawV2 = await repo.fetchV2(rawV2CampaignId, rawV2PageId);
+      
+      const runtimeContext = await resolveContext(fetchIdentifier, repo, { render_mode: isAdminPreview ? "preview" : "canonical" });
       
       return { rawLegacy, rawV2, context: runtimeContext };
     })()
@@ -80,7 +96,6 @@ export async function onRequestGet(context) {
   }
 
   // Pre-calculate inputs for legacy decision
-  const url         = new URL(request.url);
   const utmSource   = url.searchParams.get("utm_source")   || "";
   const utmMedium   = url.searchParams.get("utm_medium")   || "";
   const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug);

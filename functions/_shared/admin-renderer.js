@@ -571,6 +571,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <input type="text" id="studio-version-name" readonly style="opacity: 0.7; cursor: not-allowed;" />
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Landing URL
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="text" id="studio-version-url" readonly style="flex: 1; font-family: monospace; opacity: 0.7; cursor: not-allowed; font-size: 0.75rem;" />
+                <button id="btn-studio-copy-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">Copy</button>
+                <button id="btn-studio-open-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border); color: var(--accent);">Open &nearr;</button>
+              </div>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Status
               <select id="studio-version-status">
                 <option value="draft">Draft</option>
@@ -5110,6 +5118,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         '</div>' +
         '<div class="version-actions" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\\x27' + esc(l.id) + '\\x27)">Edit</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="previewStudioLanding(\\x27' + esc(l.id) + '\\x27)">Preview</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled' : '') + '>Set as Main</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="duplicateStudioLanding(\\x27' + esc(l.id) + '\\x27)">Duplicate</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="toggleArchiveStudioLanding(\\x27' + esc(l.id) + '\\x27)">' + (l.status === "archived" ? "Restore" : "Archive") + '</button>' +
@@ -5122,6 +5131,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   window.setStudioMainLanding = function(id) {
     studioCampaignConfig.mainLandingId = id;
     renderStudioVersionsList();
+  };
+
+  window.previewStudioLanding = function(id) {
+    if (!studioCampaignConfig) return;
+    var defSlugEl = document.getElementById("studio-default-slug-select");
+    var slug = defSlugEl && defSlugEl.value ? defSlugEl.value : studioCampaignConfig.slug;
+    var isMain = studioCampaignConfig.mainLandingId === id;
+    var url = "/c/" + encodeURIComponent(slug);
+    if (!isMain) {
+      url += "?preview_version=" + encodeURIComponent(id);
+    }
+    window.open(url, "_blank");
   };
 
   window.editStudioLanding = function(id) {
@@ -5144,6 +5165,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     document.getElementById("studio-version-theme").value = studioCurrentEditingLanding.theme || "dark";
     document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
+
+    var defSlugEl = document.getElementById("studio-default-slug-select");
+    var slugForUrl = defSlugEl && defSlugEl.value ? defSlugEl.value : studioCampaignConfig.slug;
+    var isMainForUrl = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
+    var previewUrlPath = "/c/" + encodeURIComponent(slugForUrl);
+    if (!isMainForUrl) previewUrlPath += "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id);
+    var fullPreviewUrl = "https://" + window.CUSTOM_DOMAIN + previewUrlPath;
+    document.getElementById("studio-version-url").value = fullPreviewUrl;
 
     // Load Component options into builder selection
     var compSelect = document.getElementById("studio-comp-select");
@@ -5306,6 +5335,33 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         });
         e.target.value = "";
         renderStudioLayoutManager();
+      });
+    }
+
+    var btnCopyUrl = document.getElementById("btn-studio-copy-url");
+    if (btnCopyUrl && !btnCopyUrl.dataset.wired) {
+      btnCopyUrl.dataset.wired = "1";
+      btnCopyUrl.addEventListener("click", function () {
+        var input = document.getElementById("studio-version-url");
+        if (!input || !input.value) return;
+        var ta = document.createElement("textarea");
+        ta.value = input.value;
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        document.body.removeChild(ta);
+        btnCopyUrl.textContent = "Copied!";
+        setTimeout(function () { btnCopyUrl.textContent = "Copy"; }, 2000);
+      });
+    }
+
+    var btnOpenUrl = document.getElementById("btn-studio-open-url");
+    if (btnOpenUrl && !btnOpenUrl.dataset.wired) {
+      btnOpenUrl.dataset.wired = "1";
+      btnOpenUrl.addEventListener("click", function () {
+        var input = document.getElementById("studio-version-url");
+        if (input && input.value) {
+          window.open(input.value, "_blank");
+        }
       });
     }
 

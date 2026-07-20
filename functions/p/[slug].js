@@ -11,6 +11,7 @@ import { verifyAdminDebug } from "../_shared/runtime-debug-auth.js";
 import { compareDecisions } from "../_shared/decision-comparator.js";
 import { createDecisionShadowContext } from "../_shared/decision-shadow-context.js";
 import { applyDecisionAuthority, selectDecisionAuthority } from "../_shared/decision-authority.js";
+import { verifyToken } from "../_shared/auth.js";
 import { readCookie } from "../_shared/cookie-utils.js";
 import { parseUserState } from "../_shared/user-state.js";
 import { deriveCampaignFromSlug } from "../_shared/slug-utils.js";
@@ -31,6 +32,11 @@ export async function onRequestGet(context) {
     return new Response("Not Found", { status: 404, headers: SEC_HEADERS });
   }
 
+  const url = new URL(request.url);
+  const previewVersion = url.searchParams.get("preview_version");
+  const isAdminPreview = previewVersion && await verifyToken(request, env);
+  const fetchIdentifier = isAdminPreview ? `${slug}:${previewVersion}` : slug;
+
   // Parallel lookup of runtime context, configs, and components
   const [slugResult, configResult, engineResult, liveComponentsResult, shadowResult] = await Promise.allSettled([
     env.SLUG_LINKS ? env.SLUG_LINKS.get(slug, { type: "json" }) : Promise.resolve(null),
@@ -39,7 +45,7 @@ export async function onRequestGet(context) {
     env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([]),
     (async () => {
       const runtimeRepo = createRuntimeRepository(env);
-      const runtimeContext = await resolveContext(runtimeRepo, "p", slug, { env });
+      const runtimeContext = await resolveContext(fetchIdentifier, runtimeRepo, { render_mode: isAdminPreview ? "preview" : "canonical" });
       return {
         context: runtimeContext,
         rawLegacy: runtimeContext ? runtimeContext.pageContent : null
@@ -63,7 +69,6 @@ export async function onRequestGet(context) {
   }
 
   // Pre-calculate inputs for decision engine
-  const url = new URL(request.url);
   const utmSource = url.searchParams.get("utm_source") || "";
   const utmMedium = url.searchParams.get("utm_medium") || "";
   const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug);
