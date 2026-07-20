@@ -55,9 +55,6 @@ export async function handleDecision(request, env, opts) {
   // 3a. Priorities Global Engine Configuration from Funnels > Dashboard (Hard Overrides)
   if (engineConfig) {
     let checkRedirects = engineConfig.redirects;
-    if (opts.engineMapId && engineConfig.customMaps && engineConfig.customMaps[opts.engineMapId]) {
-      checkRedirects = engineConfig.customMaps[opts.engineMapId];
-    }
     
     if (checkRedirects) {
       // 1. Dynamic Infinite Tag-Based Rules (Evaluate First)

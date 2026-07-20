@@ -30,7 +30,7 @@ export async function onRequestPost(context) {
 
   const {
     slug, campaign, context: ctx, defaults, overrides, links,
-    alias, engineMapId,
+    alias,
     customHeaderHtml, customFooterHtml, customStyleCss,
   } = body || {};
 
@@ -116,8 +116,7 @@ export async function onRequestPost(context) {
     context:          ctx || "campaign",
     defaults:         sanitizeUtm(defaults || {}),
     overrides:        overridesResult.data,
-    links:            linksResult.data,
-    engineMapId:      typeof engineMapId === "string" && engineMapId.trim() ? engineMapId.trim() : null,
+    links:            linksResult.data:      typeof engineMapId === "string" && engineMapId.trim() ? engineMapId.trim() : null,
     customHeaderHtml: sanitizeHtmlField(customHeaderHtml),
     customFooterHtml: sanitizeHtmlField(customFooterHtml),
     customStyleCss:   sanitizeCssField(customStyleCss),

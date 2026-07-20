@@ -74,7 +74,6 @@
     source: override.source || central.source || "kartra",
     campaign: override.campaign || new URLSearchParams(window.location.search).get("utm_campaign") || "organic",
     alias: override.alias || central.alias || "",
-    engineMapId: override.engineMapId || central.engineMapId || new URLSearchParams(window.location.search).get("cos_emap") || "",
     addTag: override.addTag || central.addTag || "",
     endpoints: override.endpoints || central.endpoints || { signal: "https://your-runtime-domain.com/api/decision/signal" },
     selectors: S,
@@ -130,9 +129,7 @@
           source: C.source, 
           campaign: C.campaign, 
           alias: C.alias, 
-          page_type: C.pageType, 
-          engineMapId: C.engineMapId 
-        }
+          page_type: C.pageType,}
       };
 
       if (explicitTag) payload.meta.tag = explicitTag;

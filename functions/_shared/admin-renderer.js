@@ -70,11 +70,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="analytics">Pulse</button>
     <button class="tab-btn" data-tab="pages" style="display:none">Landings</button>
-    <button class="tab-btn" data-tab="journeys" style="display:none!important">Map</button>
-    <button class="tab-btn" data-tab="campaigns">Intents</button>
+        <button class="tab-btn" data-tab="campaigns">Intents</button>
     <button class="tab-btn" data-tab="slugs" style="display:none!important">Nodes</button>
-    <button class="tab-btn" data-tab="kartra">Journeys</button>
-    <button class="tab-btn" data-tab="routing">Traffic</button>
+        <button class="tab-btn" data-tab="routing">Traffic</button>
     <button class="tab-btn" data-tab="components">Library</button>
     <button class="tab-btn" data-tab="config">Settings</button>
     <button class="tab-btn" data-tab="diagnostics">Health</button>
@@ -84,7 +82,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <!-- ── Tab: Analytics ───────────────────────────────── -->
   <div id="tab-analytics" class="tab-pane">
     <div class="pulse-grid">
-      
+
       <!-- A: Header (Full Width) -->
       <div class="pulse-section-a card">
         <div class="dash-header">
@@ -116,7 +114,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         </div>
 
         <div id="analytics-status" class="hint" style="margin:1rem 0">Loading…</div>
-        
+
         <div id="stat-conv-rate-wrap" class="dash-grid hidden" style="margin-top:1rem">
           <div class="dash-card">
             <span class="dash-card-label">Total Clicks</span>
@@ -231,7 +229,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
           <p class="card-title" style="font-size:13px; font-weight:600; margin-bottom:10px;">Page Sections & Layout Manager</p>
           <p class="hint" style="margin-top:-5px; margin-bottom:15px; font-size:0.75rem;">Arrange the order of components, links, and custom HTML sections. You can add multiple custom sections and position them anywhere.</p>
-          
+
           <div id="page-layout-container" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;"></div>
 
           <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:10px; margin-bottom:20px;">
@@ -279,11 +277,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       </div> <!-- closes card list-card -->
     </div> <!-- closes layout -->
   </div> <!-- closes tab-pages -->
-
-  <!-- ── Tab: Journeys ────────────────────────────────── -->
-  <div id="tab-journeys" class="tab-pane hidden" style="padding: 0; display:flex; flex-direction:column; height: 85vh;">
-    <iframe id="journeys-iframe" src="about:blank" style="width:100%; height:100%; border:none; border-radius: var(--radius);"></iframe>
-  </div>
 
   <!-- ── Tab: Campaign Links ──────────────────────────── -->
   <div id="tab-slugs" class="tab-pane hidden">
@@ -533,12 +526,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Workspace Alias
               <input type="text" id="studio-campaign-alias" placeholder="e.g. ts-renew" />
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Journey Map
-              <select id="studio-journey-select">
-                <option value="">Select Journey Map...</option>
-              </select>
+            </label>            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Routing & Behavior Configuration (JSON)
+              <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
+  "destinations": [],
+  "evaluation": "sequential",
+  "rules": []
+}'></textarea>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Default Redirect Slug
@@ -735,7 +729,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         </div>
       </div>
 
-      
+
 
     </div>
   </div>
@@ -884,18 +878,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <div id="tab-config" class="tab-pane hidden">
     <p class="analytics-section-title" style="margin:1.25rem 1.25rem 0 1.25rem">Default Landing Page Configuration</p>
     <form id="config-form" class="landings-grid" autocomplete="off" novalidate>
-      
+
       <!-- Card B: General Settings -->
       <div class="card">
         <p class="card-title">General Settings</p>
         <p class="hint">Changes apply globally to rendered pages without redeployment.</p>
-        
+
         <label for="cfg-page-title">Default Page Title <span class="hint-inline">(shown in browser tab)</span></label>
         <input id="cfg-page-title" type="text" placeholder="Official Links" maxlength="200" />
-        
+
         <label for="cfg-css">External CSS URL <span class="hint-inline">(optional; https only)</span></label>
         <input id="cfg-css" type="url" placeholder="https://cdn.example.com/theme.css" />
-        
+
         <label for="cfg-custom-css">Global Custom CSS <span class="hint-inline">(injected as &lt;style&gt; block)</span></label>
         <textarea id="cfg-custom-css" rows="3" placeholder=".hub-header { color: red; }" maxlength="10000"></textarea>
 
@@ -910,9 +904,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <div class="card">
         <p class="card-title">Tracking & Integrations</p>
         <p class="hint" style="margin-bottom:.75rem">Generate a tracking snippet for a specific conversion event (e.g. <code>purchase</code>, <code>lead</code>). Place this code on your thank-you page.</p>
-        
+
         <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-          <input id="conv-event-name" type="text" placeholder="purchase" 
+          <input id="conv-event-name" type="text" placeholder="purchase"
             style="width:140px;flex:0 0 auto" autocomplete="off" />
           <button type="button" id="btn-conv-gen" class="btn-ghost btn-sm">Generate Snippet</button>
         </div>
@@ -979,169 +973,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </div>
   </div>
 
-  <div id="tab-kartra" class="tab-pane hidden">
-    <div class="landings-grid">
-      
-      <!-- Card 1: Decision Defaults -->
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <p class="card-title">Decision Defaults</p>
-            <p class="hint" style="margin:0;">Configure global traffic thresholds and auto-routing destinations.</p>
-          </div>
-          <div style="display:flex; gap:0.5rem; align-items:center;">
-             <button type="button" class="btn-ghost" id="btn-global-visual-map" style="color:var(--accent); font-size:0.85rem; padding:6px 12px;">⊞ Visual Map</button>
-             <button type="button" class="btn-primary" id="btn-save-engine" style="white-space: nowrap; width: auto; flex: unset;">Deploy Engine Rules</button>
-          </div>
-        </div>
-        
-        <div style="display:grid; grid-template-columns: 1fr; gap:1.5rem;">
-          <!-- Redirects -->
-          <div class="landing-fields">
-            <p class="dash-card-label" style="margin-bottom:0.75rem;">Global Redirects</p>
-            <label for="e-redir-hot">Hot Traffic Redirect</label>
-            <input id="e-redir-hot" type="url" placeholder="https://${customDomain}/checkout" style="margin-bottom:12px;" />
-            <label for="e-redir-conv">Converted Traffic Redirect</label>
-            <input id="e-redir-conv" type="url" placeholder="https://${customDomain}/tesekkurler" />
-          </div>
 
-          <!-- Engagement State Machine -->
-          <div class="landing-fields">
-            <p class="dash-card-label" style="margin-bottom:0.75rem;">Engagement State Machine</p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem 1.5rem; align-items:start;">
-               <div style="display:flex; flex-direction:column; grid-column: 1 / -1; margin-bottom: 0.25rem;">
-                 <label for="e-thresh-hot">Hot Threshold (Engagement Limit)</label>
-                 <input id="e-thresh-hot" type="number" min="1" max="100" placeholder="60">
-               </div>
-               
-               <!-- Hard Time (Kartra) -->
-               <div style="display:flex; flex-direction:column; background:rgba(0,0,0,0.02); padding:0.5rem; border-radius:4px; border:1px solid var(--border);">
-                 <p style="font-size:0.7rem; font-weight:700; color:var(--danger); margin-bottom:0.4rem; text-transform:uppercase;">Hard Time (Kartra/Sales)</p>
-                 <label for="e-freq-time-hard">Sıklık (Saniye)</label>
-                 <input id="e-freq-time-hard" type="number" min="1" max="300" placeholder="10" style="margin-bottom:0.5rem;">
-                 <label for="e-pt-time-hard">Puan (pts)</label>
-                 <input id="e-pt-time-hard" type="number" min="0" max="100" placeholder="5">
-               </div>
-
-               <!-- Soft Time (Hub) -->
-               <div style="display:flex; flex-direction:column; background:rgba(0,0,0,0.02); padding:0.5rem; border-radius:4px; border:1px solid var(--border);">
-                 <p style="font-size:0.7rem; font-weight:700; color:var(--accent); margin-bottom:0.4rem; text-transform:uppercase;">Soft Time (Hub/Landing)</p>
-                 <label for="e-freq-time-soft">Sıklık (Saniye)</label>
-                 <input id="e-freq-time-soft" type="number" min="1" max="300" placeholder="30" style="margin-bottom:0.5rem;">
-                 <label for="e-pt-time-soft">Puan (pts)</label>
-                 <input id="e-pt-time-soft" type="number" min="0" max="100" placeholder="2">
-               </div>
-
-               <div style="display:flex; flex-direction:column;">
-                 <label for="e-pt-click-hard">Click Hard (pts)</label>
-                 <input id="e-pt-click-hard" type="number" min="0" max="100" placeholder="10">
-               </div>
-               <div style="display:flex; flex-direction:column;">
-                 <label for="e-pt-click-soft">Click Soft (pts)</label>
-                 <input id="e-pt-click-soft" type="number" min="0" max="100" placeholder="2">
-               </div>
-            </div>
-          </div>
-        </div>
-        <p id="engine-status" class="hint hidden" style="margin-top:1rem;"></p>
-      </div>
-
-      <!-- Card 2: Journey Strategies -->
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
-           <div>
-             <p class="card-title" style="font-size:1rem;">Journey Strategy Library</p>
-             <p class="hint" style="margin:0;">Create specific routing flows to assign directly to campaigns overriding the global redirects.</p>
-           </div>
-           <div style="display:flex; gap:0.5rem; align-items:center;">
-             <button type="button" class="btn-ghost btn-sm" id="btn-add-engine-map">+ New Strategy</button>
-             <button type="button" class="btn-primary btn-sm" id="btn-save-custom-maps" style="white-space:nowrap;">Deploy Strategies</button>
-           </div>
-        </div>
-        <div id="engine-custom-maps-wrap" style="display:flex; flex-direction:column; gap:1rem;"></div>
-        <p id="custom-maps-status" class="hint hidden" style="margin-top:1rem;"></p>
-      </div>
-
-      <!-- Collapsible: Legacy Page Rules (Advanced) -->
-      <details class="card" style="grid-column: 1 / -1; margin-top: 0.5rem;">
-        <summary class="card-title" style="cursor:pointer; font-weight:600; outline:none; user-select:none; margin-bottom:0;">Legacy Page Rules (Advanced)</summary>
-        
-        <div class="layout" style="padding: 1.5rem 0 0 0; border-top: 1px solid var(--border); margin-top: 1rem;">
-          <!-- Left: Active Rules List -->
-          <div class="card list-card" style="box-shadow: none; border: none; padding: 0;">
-            <div class="list-header" style="margin-bottom:1rem;">
-              <p class="card-title">Funnel Page Definition Rules <span class="badge badge-warning" style="font-size:0.65rem; margin-left:6px;">Legacy</span></p>
-              <button type="button" class="btn-ghost btn-sm" id="btn-funnel-refresh">Refresh</button>
-            </div>
-            <p class="hint" style="margin-bottom:1.5rem">Note: The Engine uses Zero-Config Heuristics by default. Use these manual rules only for overrides or complex structural differences.</p>
-            
-            <div id="funnel-list-wrap">
-              <table class="analytics-table" style="width:100%;">
-                <thead><tr><th>URL Rule</th><th>Type</th><th>Actions</th></tr></thead>
-                <tbody id="funnel-list-body">
-                  <tr><td colspan="3" class="empty-state">Loading...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Right: Create/Edit Funnel Rule -->
-          <div class="card form-card" style="box-shadow: none; border: none; padding: 0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-              <p class="card-title">New Page Definition Rule</p>
-              <button type="button" class="btn-ghost btn-sm" id="btn-funnel-toggle-json">JSON Editor</button>
-            </div>
-            
-            <form id="funnel-form" autocomplete="off">
-              <label for="f-funnel-url">Page URL / Path <span class="req">*</span></label>
-              <input id="f-funnel-url" type="text" placeholder="/program" required />
-              
-              <label for="f-funnel-type">Page Type</label>
-              <select id="f-funnel-type">
-                <option value="product">Product (Landing Page)</option>
-                <option value="checkout">Checkout</option>
-                <option value="thank_you">Thank You</option>
-                <option value="upsell">Upsell</option>
-                <option value="newsletter">Newsletter</option>
-              </select>
-              
-              <details class="landing-section" style="margin-top:1rem; border:1px solid var(--border); border-radius:var(--radius-sm);">
-                <summary style="background:var(--surface);">Advanced Config (Selectors & Routing)</summary>
-                <div class="landing-fields" style="background:var(--bg);">
-                  <label for="f-funnel-hardcta">Hard CTA Selectors (CSS query)</label>
-                  <input id="f-funnel-hardcta" type="text" placeholder=".kartra_button1, .ozel-buton" />
-                  
-                  <label for="f-funnel-softcta">Soft CTA Selectors</label>
-                  <input id="f-funnel-softcta" type="text" placeholder="a.scroll-link" />
-                  
-                  <label for="f-funnel-hot">Hot Redirect URL (Skip to checkout)</label>
-                  <input id="f-funnel-hot" type="url" placeholder="https://pages.domain.com/checkout" />
-                </div>
-              </details>
-
-              <p id="funnel-form-error" class="error hidden"></p>
-              <p id="funnel-form-success" class="success hidden"></p>
-              <div class="form-actions" style="margin-top:1rem;">
-                <button type="submit" class="btn-primary" id="btn-save-funnel">Deploy Rule</button>
-                <button type="button" class="btn-ghost hidden" id="btn-cancel-funnel">Cancel</button>
-              </div>
-            </form>
-
-            <div id="funnel-json-wrap" class="hidden" style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed var(--border);">
-              <p class="card-title" style="font-size:0.8rem;">Raw JSON Overrides</p>
-              <textarea id="kartra-json" spellcheck="false" style="width:100%; height:200px; font-family:ui-monospace, monospace; font-size:.8rem; padding:.75rem; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); white-space: pre-wrap; margin-top:0.5rem;"></textarea>
-              <div style="display:flex; justify-content:space-between; margin-top:0.5rem;">
-                <button id="btn-kartra-format" class="btn-ghost btn-sm">Format</button>
-                <button id="btn-kartra-save" class="btn-primary btn-sm">Force Sync JSON</button>
-              </div>
-              <p id="kartra-error" class="error hidden"></p>
-              <p id="kartra-success" class="success hidden" style="color:#1a7f37;"></p>
-            </div>
-          </div>
-        </div>
-      </details>
-    </div>
-  </div>
   </div>
 
 </div>
@@ -1151,7 +983,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   "use strict";
 
   /* ── State ──────────────────────────────────────────── */
-  
+
   function formatLocalTime(raw) {
     if (!raw) return "—";
     var iso = String(raw).replace(" ", "T");
@@ -1166,7 +998,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     return day + " " + month + " " + year + ", " + hr + ":" + min;
   }
   var token                 = "";      // session Bearer token
-  var analyticsWindow       = localStorage.getItem("analyticsWindow") || "24h"; 
+  var analyticsWindow       = localStorage.getItem("analyticsWindow") || "24h";
   var rawAnalyticsSummary   = null;    // { conversions, total_clicks, active_experiments, sources }
   var rawAnalyticsSources   = [];      // source breakdown
   var pageCampaigns         = 1;
@@ -1202,7 +1034,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var showAllExperiments        = false;
   var analyticsStartDate    = localStorage.getItem("analyticsStartDate") || "";
   var analyticsEndDate      = localStorage.getItem("analyticsEndDate") || "";
-  
+
   // Dynamic "Today" persistence (Prompt 124)
   var todayStr = new Date().toISOString().split("T")[0];
   if (analyticsEndDate && analyticsEndDate >= (localStorage.getItem("analyticsEndDateSavedAs") || "9999-12-31")) {
@@ -1560,7 +1392,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   function showPanel() {
     hide(elGate); show(elPanel);
     analyticsTabLoaded = true;
-    
+
     // Load persisted filters (already partially loaded at top of script, but sync to UI here)
     if (analyticsStartDate && $("analytics-start-date")) {
       $("analytics-start-date").value = analyticsStartDate;
@@ -1568,7 +1400,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (analyticsEndDate && $("analytics-end-date")) {
       $("analytics-end-date").value = analyticsEndDate;
     }
-    
+
     // Sync active class on buttons - ONLY if no custom date range is set
     document.querySelectorAll("#analytics-time-filters .filter-btn").forEach(function (b) {
       var isWinMatch = b.getAttribute("data-window") === analyticsWindow;
@@ -1587,8 +1419,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   /* ── Tabs ────────────────────────────────────────────── */
   var pagesTabLoaded = false;
-  var journeysTabLoaded = false;
-  var tabBtns  = document.querySelectorAll(".tab-btn");
+    var tabBtns  = document.querySelectorAll(".tab-btn");
   var tabPanes = document.querySelectorAll(".tab-pane");
 
   tabBtns.forEach(function (btn) {
@@ -1599,15 +1430,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       btn.classList.add("active");
       $("tab-" + target).classList.remove("hidden");
 
-      if (target === "journeys" && !journeysTabLoaded) {
-        journeysTabLoaded = true;
-        var iframe = document.getElementById("journeys-iframe");
-        if (iframe && window.VISUAL_MAPPER_HTML) {
-          var blob = new Blob([window.VISUAL_MAPPER_HTML], { type: "text/html" });
-          iframe.src = URL.createObjectURL(blob);
-          // Token will be pushed by the message listener or next postMessage call
-        }
-      }
+            }
 
       if (target === "analytics" && !analyticsTabLoaded) {
         analyticsTabLoaded = true;
@@ -1645,11 +1468,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         diagnosticsTabLoaded = true;
         loadBgTestLast();   // PART 6 — show last background test timestamp on first open
       }
-      if (target === "kartra" && !kartraTabLoaded) {
-        kartraTabLoaded = true;
-        loadKartra();
-      }
-    });
+          });
   });
 
   /* ── Gate form ───────────────────────────────────────── */
@@ -1658,10 +1477,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     hideErr(elGateError);
     var t = elTokenInput.value.trim();
     if (!t) return;
-    
+
     var btn = elGateForm.querySelector('button[type="submit"]');
     if (btn) btn.disabled = true;
-    
+
     try {
       // Call the login endpoint
       var loginRes = await fetch("/api/admin/login", {
@@ -1670,20 +1489,20 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         body: JSON.stringify({ password: t }),
         credentials: "same-origin"
       });
-      
+
       if (!loginRes.ok) {
         showErr(elGateError, "Invalid password — try again.");
         if (btn) btn.disabled = false;
         return;
       }
-      
+
       // Cookie is now set, verify access
       var res = await apiFetch("/api/slugs");
-      if (res.ok) { 
-        showPanel(); 
+      if (res.ok) {
+        showPanel();
       }
-      else { 
-        showErr(elGateError, "Session error — try again."); 
+      else {
+        showErr(elGateError, "Session error — try again.");
       }
     } catch (err) {
       if (err.message !== "401") showErr(elGateError, "Connection error. Try again.");
@@ -1692,14 +1511,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     }
   });
 
-  elBtnLogout.addEventListener("click", async function () { 
+  elBtnLogout.addEventListener("click", async function () {
     var btn = elBtnLogout;
     btn.disabled = true;
     try {
       await fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" });
     } catch(e) {}
     btn.disabled = false;
-    showGate(); 
+    showGate();
   });
 
   /* ── Pages ───────────────────────────────────────────── */
@@ -1714,7 +1533,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
     } catch(e) { console.error("Failed loading pages", e); }
   }
-  
+
   function renderPages() {
     var tbody = $("tbl-pages").querySelector("tbody");
     tbody.innerHTML = "";
@@ -1732,7 +1551,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         "</div></td>";
       tbody.appendChild(tr);
     });
-    
+
     document.querySelectorAll(".btn-edit-page").forEach(function(btn) {
       btn.addEventListener("click", function() { editPage(this.dataset.id); });
     });
@@ -1778,7 +1597,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
     $("page-form-title").textContent = "Editing: " + id;
     $("btn-cancel-page").classList.remove("hidden");
-    
+
     var formCard = document.querySelector("#tab-pages .form-card");
     if (formCard) formCard.scrollIntoView({ behavior: "smooth" });
   }
@@ -1789,7 +1608,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("f-page-id").disabled = false;
     $("page-form-title").textContent = "New Landing Page";
     $("btn-cancel-page").classList.add("hidden");
-    
+
     pageLayoutItems = getDefaultLayout();
     renderPageLayoutEditor();
   });
@@ -1800,7 +1619,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       e.preventDefault();
       $("btn-save-page").disabled = true;
       hideErr($("page-form-error")); hideErr($("page-form-success"));
-      
+
       var payload = {
         id: $("f-page-id").value.trim(),
         theme: $("f-page-theme").value,
@@ -1820,7 +1639,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         layout: pageLayoutItems
       };
       if ($("f-page-url").value.trim()) payload.redirectUrl = $("f-page-url").value.trim();
-      
+
       try {
         var res = await apiFetch("/api/admin/pages", {
           method: "POST",
@@ -1843,7 +1662,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           $("f-page-id").disabled = false;
           $("page-form-title").textContent = "New Landing Page";
           $("btn-cancel-page").classList.add("hidden");
-          
+
           pageLayoutItems = getDefaultLayout();
           renderPageLayoutEditor();
 
@@ -1919,7 +1738,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var layout = [];
     var comps = Array.isArray(p.components) ? p.components : [];
     var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "cta": 5, "legal": 6, "footer": 7 };
-    
+
     var resolvedComps = comps.map(function(fid) {
       return componentFamilies.find(function(f) { return f.family_id === fid || f.family_key === fid; });
     }).filter(Boolean);
@@ -1953,7 +1772,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var select = $("add-layout-comp-select");
     if (!select) return;
     select.innerHTML = '<option value="">+ Add Component...</option>';
-    
+
     var sorted = componentFamilies.slice().sort(function(a, b) {
       return a.family_name.localeCompare(b.family_name);
     });
@@ -1978,10 +1797,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var isFirst = idx === 0;
       var isLast = idx === pageLayoutItems.length - 1;
       var cardStyle = "display:flex; flex-direction:column; gap:8px; padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); position:relative;";
-      
+
       var upBtn = '<button type="button" class="btn-layout-move" data-idx="' + idx + '" data-dir="up" ' + (isFirst ? 'disabled style="opacity:0.2;cursor:default;"' : '') + ' style="border:none; background:transparent; cursor:pointer; padding:2px 6px; font-weight:bold; color:var(--text);">&#9650;</button>';
       var downBtn = '<button type="button" class="btn-layout-move" data-idx="' + idx + '" data-dir="down" ' + (isLast ? 'disabled style="opacity:0.2;cursor:default;"' : '') + ' style="border:none; background:transparent; cursor:pointer; padding:2px 6px; font-weight:bold; color:var(--text);">&#9660;</button>';
-      
+
       var orderControls = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; border-right:1px solid var(--border); padding-right:10px; gap:4px;">' +
                             upBtn +
                             '<span style="font-size:0.75rem; font-weight:bold; opacity:0.6;">' + (idx + 1) + '</span>' +
@@ -1995,11 +1814,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var name = f ? f.family_name : "Component: " + item.id;
         var key = f ? f.family_key : item.id;
         var status = f ? f.status : "unknown";
-        var statusBadge = status === "active" 
+        var statusBadge = status === "active"
           ? '<span style="font-size:0.7rem; background:rgba(0,128,0,0.1); color:green; padding:1px 5px; border-radius:3px; text-transform:uppercase; font-weight:bold;">active</span>'
           : '<span style="font-size:0.7rem; background:var(--border); color:var(--text-m); padding:1px 5px; border-radius:3px; text-transform:uppercase;">' + esc(status) + '</span>';
 
-        html += 
+        html +=
           '<div style="' + cardStyle + '">' +
             '<div style="display:flex; align-items:center; justify-content:space-between; width:100%;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
@@ -2016,7 +1835,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             '</div>' +
           '</div>';
       } else if (item.type === "links") {
-        html += 
+        html +=
           '<div style="' + cardStyle + '">' +
             '<div style="display:flex; align-items:center; justify-content:space-between; width:100%;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
@@ -2031,7 +1850,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '</div>';
       } else {
         var sectionName = item.name || "Custom HTML Section";
-        html += 
+        html +=
           '<div style="' + cardStyle + '">' +
             '<div style="display:flex; align-items:flex-start; justify-content:space-between; width:100%; gap:10px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex:1;">' +
@@ -2117,9 +1936,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var ts = formatLocalTime(rawTs);
       var evType = r.event_type || "click";
       var mod = r.modifier && r.modifier !== "direct" ? ' <small style="opacity:0.6">(' + esc(r.modifier) + ")</small>" : "";
-      
+
       var badgeClass = evType === "click" ? "badge-neutral" : "badge-success";
-      
+
       return '<tr>' +
         '<td>' + esc(ts) + '</td>' +
         '<td>' + esc(r.alias    || "—") + '</td>' +
@@ -2138,16 +1957,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var sectionF = $("analytics-content-f");
       if (sectionF) sectionF.appendChild(pagWrap);
     }
-    
+
     if (totalPages <= 1) {
       pagWrap.classList.add("hidden");
     } else {
       pagWrap.classList.remove("hidden");
-      pagWrap.innerHTML = 
+      pagWrap.innerHTML =
         '<button type="button" class="btn-ghost btn-xs" id="btn-recent-prev" ' + (recentEventsPage === 0 ? 'disabled' : '') + '>Previous</button>' +
         '<span class="hint" style="font-size:0.75rem">Page ' + (recentEventsPage + 1) + ' of ' + totalPages + '</span>' +
         '<button type="button" class="btn-ghost btn-xs" id="btn-recent-next" ' + (recentEventsPage >= totalPages - 1 ? 'disabled' : '') + '>Next</button>';
-      
+
       $("btn-recent-prev").onclick = function() { recentEventsPage--; renderRecentTable(rows); };
       $("btn-recent-next").onclick = function() { recentEventsPage++; renderRecentTable(rows); };
     }
@@ -2291,10 +2110,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   function renderDashboardSummary() {
     if (!rawAnalyticsSummary) return;
     var s = rawAnalyticsSummary;
-    
+
     if ($("stat-clicks"))      $("stat-clicks").textContent      = s.total_clicks.toLocaleString();
     if ($("stat-conversions")) $("stat-conversions").textContent = s.conversions.toLocaleString();
-    
+
     var cr = s.total_clicks > 0 ? (s.conversions / s.total_clicks * 100).toFixed(1) + "%" : "0%";
     if ($("stat-conv-rate"))   $("stat-conv-rate").textContent   = cr;
 
@@ -2308,7 +2127,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       wrap.classList.add("hidden");
     } else {
       wrap.classList.remove("hidden");
-      
+
       // Threshold: If <= 9, show all. If > 9, show 8 + toggle card (fills 3x3 grid).
       var visibleExps = showAllExperiments ? exps : (exps.length <= 9 ? exps : exps.slice(0, 8));
       var hasMore = exps.length > 9;
@@ -2318,8 +2137,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
             '<div>' +
               '<p style="font-weight:700;font-size:0.8rem;margin:0">/' + esc(e.alias) + '</p>' +
-              '<span class="badge ' + (e.state === 'RUNNING' ? 'badge-success' : 'badge-neutral') + '" style="font-size:0.6rem;display:inline-flex;align-items:center;gap:3px">' + 
-                 (e.state === 'DECIDED' ? '<span class="material-symbols-outlined" style="font-size:11px">lock</span> LOCKED' : (e.state === 'RUNNING' ? 'OPTIMIZING' : esc(e.state))) + 
+              '<span class="badge ' + (e.state === 'RUNNING' ? 'badge-success' : 'badge-neutral') + '" style="font-size:0.6rem;display:inline-flex;align-items:center;gap:3px">' +
+                 (e.state === 'DECIDED' ? '<span class="material-symbols-outlined" style="font-size:11px">lock</span> LOCKED' : (e.state === 'RUNNING' ? 'OPTIMIZING' : esc(e.state))) +
               '</span>' +
             '</div>' +
             '<div style="text-align:right">' +
@@ -2345,7 +2164,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
 
       list.innerHTML = html;
-      
+
       var btnToggle = $("btn-toggle-experiments");
       if (btnToggle) {
         btnToggle.onclick = function() {
@@ -2401,7 +2220,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       tbody.innerHTML = html;
     }
 
-    pag.innerHTML = 
+    pag.innerHTML =
       '<button type="button" class="mini-btn prev" ' + (currentPage <= 1 ? "disabled" : "") + '>&lsaquo;</button>' +
       '<span>' + currentPage + ' / ' + totalPages + '</span>' +
       '<button type="button" class="mini-btn next" ' + (currentPage >= totalPages ? "disabled" : "") + '>&rsaquo;</button>';
@@ -2420,21 +2239,21 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
       return;
     }
-    
+
     var ctx = $("dash-chart").getContext("2d");
     if (dashChart) dashChart.destroy();
-    
+
     dashChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: series.map(function(d) { 
-          var s = String(d.t); 
+        labels: series.map(function(d) {
+          var s = String(d.t);
           if (s.includes(" ")) {
             var parts = s.split(" ");
             // If it's midnight exactly, show the date. Otherwise show the time.
             return parts[1] === "00:00:00" ? parts[0] : parts[1].slice(0, 5);
           }
-          return s; 
+          return s;
         }),
         datasets: [
           {
@@ -2477,7 +2296,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var s = rawAnalyticsSources;
     var ctxEl = $("dash-source-chart");
     if (!s || s.length === 0 || !ctxEl || typeof Chart === "undefined") return;
-    
+
     if (dashSourceChart) dashSourceChart.destroy();
     dashSourceChart = new Chart(ctxEl.getContext("2d"), {
       type: "bar",
@@ -2533,14 +2352,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if (!win) return;
       analyticsWindow = win;
       localStorage.setItem("analyticsWindow", win);
-      
+
       analyticsStartDate = "";
       analyticsEndDate   = "";
       localStorage.removeItem("analyticsStartDate");
       localStorage.removeItem("analyticsEndDate");
       if ($("analytics-start-date")) $("analytics-start-date").value = "";
       if ($("analytics-end-date")) $("analytics-end-date").value = "";
-      
+
       // Update desktop buttons too
       document.querySelectorAll("#analytics-time-filters .filter-btn").forEach(function (b) {
         b.classList.toggle("active", b.getAttribute("data-window") === win);
@@ -2554,13 +2373,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     elTimeFilters.addEventListener("click", function (e) {
       var btn = e.target.closest(".filter-btn");
       if (!btn) return;
-      
+
       var win = btn.getAttribute("data-window");
       if (!win) return;
-      
+
       analyticsWindow = win;
       localStorage.setItem("analyticsWindow", win);
-      
+
       // Clear custom date range when quick-filter is clicked
       analyticsStartDate = "";
       analyticsEndDate   = "";
@@ -2569,12 +2388,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       localStorage.removeItem("analyticsEndDateSavedAs");
       if (elStartDate) elStartDate.value = "";
       if (elEndDate)   elEndDate.value = "";
-      
+
       // Update UI active state
       elTimeFilters.querySelectorAll(".filter-btn").forEach(function (b) {
         b.classList.toggle("active", b === btn);
       });
-      
+
       loadAnalytics();
     });
   }
@@ -2587,18 +2406,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       analyticsStartDate = elStartDate.value;
       analyticsEndDate   = elEndDate.value;
       var today = new Date().toISOString().split("T")[0];
-      
+
       localStorage.setItem("analyticsStartDate", analyticsStartDate);
       localStorage.setItem("analyticsEndDate",   analyticsEndDate);
       if (analyticsEndDate) {
         localStorage.setItem("analyticsEndDateSavedAs", analyticsEndDate >= today ? today : analyticsEndDate);
       }
-      
+
       // Deactivate quick-filter buttons when custom date is used
       if (elTimeFilters) {
         elTimeFilters.querySelectorAll(".filter-btn").forEach(function(b) { b.classList.remove("active"); });
       }
-      
+
       loadAnalytics();
     };
     elStartDate.addEventListener("change", onDateChange);
@@ -2771,7 +2590,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         if (str.indexOf('{') !== -1) {
           str = str.substring(str.indexOf('{'));
         }
-        
+
         var obj = JSON.parse(str);
         elStateResult.classList.remove("hidden");
         var html = '<ul style="padding-left:1.2rem; margin:0; list-style-type:square; display:flex; flex-direction:column; gap:0.4rem;">';
@@ -2781,7 +2600,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         if (obj.h !== undefined)   html += '<li><strong style="color:var(--text);display:inline-block;width:200px;">Hot Intent (h):</strong> <span style="font-weight:bold; color:' + (obj.h===1?'var(--danger)':'var(--text)') + '">' + obj.h + (obj.h===1?' (Eligible for checkout routing)':'') + '</span></li>';
         if (obj.e !== undefined)   html += '<li><strong style="color:var(--text);display:inline-block;width:200px;">Engagement Point (e):</strong> ' + obj.e + '/100</li>';
         if (obj.t !== undefined && Array.isArray(obj.t)) {
-          var tagsHtml = obj.t.length > 0 
+          var tagsHtml = obj.t.length > 0
             ? obj.t.map(function(t){ return '<span class="badge badge-success" style="margin-right:4px;">' + esc(t) + '</span>'; }).join('')
             : '<span class="hint-inline" style="font-style:italic;">None</span>';
           html += '<li><strong style="color:var(--text);display:inline-block;width:200px;">Active Tags (t):</strong> ' + tagsHtml + '</li>';
@@ -3535,7 +3354,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var customHeaderHtml = $("f-custom-header-html").value.trim() || null;
     var customFooterHtml = $("f-custom-footer-html").value.trim() || null;
     var customStyleCss   = $("f-custom-css").value.trim()         || null;
-    var engineMapId      = $("f-engine-map-id") ? ($("f-engine-map-id").value || null) : null;
 
     var aliasVal = elSlugAlias.value.trim().toLowerCase() || null;
 
@@ -3547,7 +3365,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       overrides: overrides,
       links:     links,
       alias:     aliasVal,
-      engineMapId:      engineMapId,
       customHeaderHtml: customHeaderHtml,
       customFooterHtml: customFooterHtml,
       customStyleCss:   customStyleCss,
@@ -3658,7 +3475,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       $("f-lang").disabled = !grace;
       $("f-market").value = marketVal;
       $("f-market").disabled = !grace;
-      
+
       if ($("f-cos-win")) {
         $("f-cos-win").value = cosWinVal;
         $("f-cos-win").disabled = !grace;
@@ -3695,8 +3512,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       $("f-custom-header-html").value = data.customHeaderHtml || "";
       $("f-custom-footer-html").value = data.customFooterHtml || "";
       $("f-custom-css").value         = data.customStyleCss   || "";
-
-      /* Populate engineMapId field */
       if ($("f-engine-map-id")) {
         populateEngineMapSelect();
         $("f-engine-map-id").value = data.engineMapId || "";
@@ -3901,10 +3716,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     try {
       var res  = await apiFetch("/api/campaign/" + encodeURIComponent(name), { method: "DELETE" });
       var data = await res.json();
-      if (!res.ok) { 
+      if (!res.ok) {
         var errStr = data.error || "Delete failed.";
-        alert(errStr); 
-        throw new Error(errStr); 
+        alert(errStr);
+        throw new Error(errStr);
       }
 
       // Remove cascade-deleted slugs from local cache
@@ -3974,12 +3789,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
       componentFamilies = data.families || [];
       componentVersions = data.versions || [];
-      
+
       if (selectedFamilyId && !componentFamilies.some(function(f) { return f.family_id === selectedFamilyId; })) {
         selectedFamilyId = null;
         selectedVersionNumber = null;
       }
-      
+
       renderComponentList();
       renderComponentEditor();
 
@@ -4025,22 +3840,22 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No matching components found.</td></tr>';
       return;
     }
-    
+
     tbody.innerHTML = "";
     filteredFamilies.forEach(function(family) {
       var familyVersions = componentVersions.filter(function(v) { return v.family_id === family.family_id; });
-      
+
       var liveVerObj = familyVersions.find(function(v) { return v.is_live; });
       var liveVer = liveVerObj ? "v" + liveVerObj.version_number : '<span style="color:var(--text-m)">None</span>';
-      
+
       var maxVer = 0;
       familyVersions.forEach(function(v) {
         if (v.version_number > maxVer) maxVer = v.version_number;
       });
       var latestVer = maxVer > 0 ? "v" + maxVer : "—";
-      
+
       var modifiedDate = family.updated_at ? new Date(family.updated_at).toLocaleString("tr-TR") : "—";
-      
+
       var statusBadge = "";
       if (family.status === "active") {
         statusBadge = '<span class="badge-active">active</span>';
@@ -4049,21 +3864,21 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       } else {
         statusBadge = '<span class="badge-inactive">archived</span>';
       }
-      
+
       var tr = document.createElement("tr");
       tr.style.cursor = "pointer";
       if (selectedFamilyId === family.family_id) {
         tr.style.background = "var(--bg)";
         tr.style.fontWeight = "600";
       }
-      
+
       tr.innerHTML = '<td><div style="font-weight:600;">' + esc(family.family_name) + '</div>' +
                      '<div style="font-size:0.75rem;color:var(--text-m);font-family:monospace;">' + esc(family.family_key) + '</div></td>' +
                      '<td>' + liveVer + '</td>' +
                      '<td>' + latestVer + '</td>' +
                      '<td>' + statusBadge + '</td>' +
                      '<td style="font-size:0.8rem;white-space:nowrap;">' + modifiedDate + '</td>';
-      
+
       tr.addEventListener("click", function() {
         selectedFamilyId = family.family_id;
         var liveV = familyVersions.find(function(v) { return v.is_live; });
@@ -4077,7 +3892,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         renderComponentList();
         renderComponentEditor();
       });
-      
+
       tbody.appendChild(tr);
     });
   }
@@ -4085,7 +3900,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   function renderComponentEditor() {
     var container = document.getElementById("component-editor-container");
     if (!container) return;
-    
+
     // Wire up "New Family" button at the list top
     var btnNewFamily = document.getElementById("btn-new-family");
     if (btnNewFamily) {
@@ -4098,7 +3913,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     }
 
     if (!selectedFamilyId) {
-      container.innerHTML = 
+      container.innerHTML =
         '<p class="card-title">New Component Family</p>' +
         '<form id="comp-family-create-form" autocomplete="off">' +
           '<label for="c-family-key">Family Slug / Key <span class="req">*</span></label>' +
@@ -4142,13 +3957,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<p id="c-create-error" class="error hidden" style="margin-top: 10px;"></p>' +
           '<button type="submit" class="btn-primary" style="margin-top: 15px; width: 100%;">Create Component Family</button>' +
         '</form>';
-      
+
       var form = document.getElementById("comp-family-create-form");
       form.addEventListener("submit", async function(e) {
         e.preventDefault();
         var errEl = document.getElementById("c-create-error");
         errEl.classList.add("hidden");
-        
+
         var payload = {
           family_key: document.getElementById("c-family-key").value,
           family_name: document.getElementById("c-family-name").value,
@@ -4162,7 +3977,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           priority: parseInt(document.getElementById("c-version-priority").value) || 0,
           notes: document.getElementById("c-version-notes").value
         };
-        
+
         try {
           var res = await apiFetch("/api/admin/components", {
             method: "POST",
@@ -4174,7 +3989,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             errEl.classList.remove("hidden");
             return;
           }
-          
+
           selectedFamilyId = data.family_id;
           selectedVersionNumber = 1;
           loadComponents();
@@ -4185,7 +4000,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       });
       return;
     }
-    
+
     var family = componentFamilies.find(function(f) { return f.family_id === selectedFamilyId; });
     if (!family) {
       selectedFamilyId = null;
@@ -4193,14 +4008,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       renderComponentEditor();
       return;
     }
-    
+
     var familyVersions = componentVersions.filter(function(v) { return v.family_id === selectedFamilyId; });
     var version = familyVersions.find(function(v) { return v.version_number === selectedVersionNumber; });
     if (!version && familyVersions.length > 0) {
       version = familyVersions[familyVersions.length - 1];
       selectedVersionNumber = version.version_number;
     }
-    
+
     var versionTabsHtml = "";
     familyVersions.forEach(function(v) {
       var isSelected = v.version_number === selectedVersionNumber;
@@ -4208,16 +4023,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var style = isSelected ? "background:var(--accent);color:var(--accent-t);font-weight:bold;" : "background:var(--bg);color:var(--text);";
       var liveBadge = isLive ? ' <span style="font-size:0.65rem;background:var(--success);color:white;padding:1px 4px;border-radius:3px;margin-left:4px;">LIVE</span>' : "";
       var statusBadge = v.status === "archived" ? ' <span style="font-size:0.65rem;opacity:0.6;">(archived)</span>' : ((v.status === "inactive" || v.status === "draft") ? ' <span style="font-size:0.65rem;opacity:0.6;">(inactive)</span>' : "");
-      versionTabsHtml += 
+      versionTabsHtml +=
         '<button type="button" class="btn-version-pill" data-ver="' + v.version_number + '" style="border:none;padding:6px 12px;border-radius:20px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;' + style + '">' +
           'v' + v.version_number + liveBadge + statusBadge +
         '</button>';
     });
-    
+
     var isVersionLive = version ? version.is_live : false;
     var isVersionArchived = version ? version.status === "archived" : false;
-    
-    container.innerHTML = 
+
+    container.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">' +
         '<p class="card-title" style="margin-bottom:0;">Edit Component Family</p>' +
         '<button type="button" id="btn-back-to-new" class="btn-ghost btn-sm" style="font-size:0.8rem;">+ New Family</button>' +
@@ -4257,7 +4072,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         '</div>' +
       '</div>' +
 
-      (version ? 
+      (version ?
         '<form id="comp-version-edit-form" autocomplete="off">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
             '<p class="card-title" style="font-size:13px;opacity:0.8;margin-bottom:0;">Editing Version v' + version.version_number + '</p>' +
@@ -4306,12 +4121,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">' +
             '<button type="submit" class="btn-primary" style="grid-column: 1 / -1;">Save Version</button>' +
             '<button type="button" id="btn-duplicate-ver" class="btn-ghost btn-sm" style="background:var(--bg);flex:1;">Duplicate v' + version.version_number + ' → v' + (version.version_number + 1) + '</button>' +
-            (!isVersionLive && !isVersionArchived ? 
+            (!isVersionLive && !isVersionArchived ?
               '<button type="button" id="btn-set-live" class="btn-ghost btn-sm" style="color:var(--success);border-color:var(--success);background:transparent;flex:1;">Make Live/Default</button>' : "") +
             '<button type="button" id="btn-delete-ver" class="btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger);background:transparent;flex:1;grid-column:1/-1;">Delete Version v' + version.version_number + '</button>' +
           '</div>' +
         '</form>' : '<p class="hint">No version found.</p>');
-    
+
     var btnBack = document.getElementById("btn-back-to-new");
     if (btnBack) {
       btnBack.addEventListener("click", function() {
@@ -4321,14 +4136,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         renderComponentEditor();
       });
     }
-    
+
     container.querySelectorAll(".btn-version-pill").forEach(function(btn) {
       btn.addEventListener("click", function() {
         selectedVersionNumber = parseInt(btn.dataset.ver);
         renderComponentEditor();
       });
     });
-    
+
     var familyForm = document.getElementById("comp-family-edit-form");
     if (familyForm) {
       familyForm.addEventListener("submit", async function(e) {
@@ -4337,7 +4152,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var succEl = document.getElementById("c-family-edit-success");
         errEl.classList.add("hidden");
         succEl.classList.add("hidden");
-        
+
         var payload = {
           action: "update_family",
           family_id: selectedFamilyId,
@@ -4346,7 +4161,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           type: "block",
           status: document.getElementById("e-family-status").value
         };
-        
+
         try {
           var res = await apiFetch("/api/admin/components", {
             method: "PUT",
@@ -4367,7 +4182,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         }
       });
     }
-    
+
     var versionForm = document.getElementById("comp-version-edit-form");
     if (versionForm && version) {
       versionForm.addEventListener("submit", async function(e) {
@@ -4376,7 +4191,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var succEl = document.getElementById("c-version-edit-success");
         errEl.classList.add("hidden");
         succEl.classList.add("hidden");
-        
+
         var payload = {
           action: "update_version",
           family_id: selectedFamilyId,
@@ -4391,7 +4206,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           priority: parseInt(document.getElementById("c-ver-priority").value) || 0,
           notes: document.getElementById("c-ver-notes").value
         };
-        
+
         try {
           var res = await apiFetch("/api/admin/components", {
             method: "PUT",
@@ -4411,13 +4226,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           errEl.classList.remove("hidden");
         }
       });
-      
+
       var btnDuplicate = document.getElementById("btn-duplicate-ver");
       if (btnDuplicate) {
         btnDuplicate.addEventListener("click", async function() {
           var errEl = document.getElementById("c-version-edit-error");
           errEl.classList.add("hidden");
-          
+
           try {
             var res = await apiFetch("/api/admin/components", {
               method: "PUT",
@@ -4441,13 +4256,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           }
         });
       }
-      
+
       var btnSetLive = document.getElementById("btn-set-live");
       if (btnSetLive) {
         btnSetLive.addEventListener("click", async function() {
           var errEl = document.getElementById("c-version-edit-error");
           errEl.classList.add("hidden");
-          
+
           try {
             var res = await apiFetch("/api/admin/components", {
               method: "PUT",
@@ -4480,7 +4295,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           var matchingSlugs = slugCache.filter(function(s) {
             return Array.isArray(s.components) && s.components.indexOf(family.family_id) !== -1;
           }).map(function(s) { return s.slug; });
-          
+
           var msg = "Are you sure you want to delete the component family '" + family.family_name + "'?\\nThis will hard-delete the family and all its versions.";
           var totalUsage = matchingPages.length + matchingSlugs.length;
           if (totalUsage > 0) {
@@ -4488,9 +4303,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                    (matchingPages.length ? "- Pages: " + matchingPages.join(", ") + "\\n" : "") +
                    (matchingSlugs.length ? "- Slugs: " + matchingSlugs.join(", ") : "");
           }
-          
+
           if (!confirm(msg)) return;
-          
+
           try {
             var res = await apiFetch("/api/admin/components?family_id=" + encodeURIComponent(family.family_id), {
               method: "DELETE"
@@ -4519,7 +4334,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             msg += "\\nThis is the last version, so the entire component family will be deleted.";
           }
           if (!confirm(msg)) return;
-          
+
           try {
             var res = await apiFetch("/api/admin/components?family_id=" + encodeURIComponent(family.family_id) + "&version_number=" + version.version_number, {
               method: "DELETE"
@@ -4529,7 +4344,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               alert(data.error || "Delete failed");
               return;
             }
-            
+
             if (familyVersions.length === 1) {
               selectedFamilyId = null;
               selectedVersionNumber = null;
@@ -4932,7 +4747,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         var stateIcon = '';
         if (data.state === 'DECIDED') stateIcon = '<span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;margin-right:2px;color:var(--success)">lock</span>';
         else if (data.state === 'RUNNING') stateIcon = '<span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;margin-right:2px;color:var(--warn)">play_arrow</span>';
-        
+
         var stateLabel = data.state ? ' &nbsp;<span style="color:var(--text-m);font-weight:600;display:inline-flex;align-items:center">' + stateIcon + esc(data.state) + '</span>' : '';
         elExpAliasInfo.innerHTML =
           'Hub: <a href="/' + esc(alias) + '" target="_blank" rel="noopener" ' +
@@ -5033,12 +4848,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     var originUrl = window.location.origin;
     var sTop = String.fromCharCode(60) + "script" + String.fromCharCode(62);
     var sEnd = String.fromCharCode(60) + "/script" + String.fromCharCode(62);
-    
+
     var snipLanding = "(function(){function p(n){return new URLSearchParams(window.location.search).get(n);}var e=p('cos_exp'),v=p('cos_var'),c=p('cos_cid'),w=p('cos_win');if(e||v||c){try{var dys=parseInt(w)||7;var t=Date.now()+(dys*86400000);localStorage.setItem('cos_data',JSON.stringify({exp:e||'',var:v||'',cid:c||'',expTime:t}));}catch(err){}}})();";
 
     var snipThankYou = "(function(){var d={exp:'organic',var:'direct',cid:''};try{var s=JSON.parse(localStorage.getItem('cos_data'));if(s&&s.exp&&s.expTime>Date.now())d=s;}catch(e){}var u='" + originUrl + "/t?e=conversion&ev=" + evName + "&exp='+encodeURIComponent(d.exp)+'&v='+encodeURIComponent(d.var)+'&cid='+encodeURIComponent(d.cid);fetch(u,{mode:'no-cors'});})();";
 
-    elConvSnippet.textContent = 
+    elConvSnippet.textContent =
       "<!-- 1. KARTRA LANDING PAGE SCRIPT (Cross-Domain Tracker) -->\\n" +
       "<!-- Ilk inilen sayfanin <head> veya <body> kismina ekleyin -->\\n" +
       sTop + "\\n" + snipLanding + "\\n" + sEnd + "\\n\\n" +
@@ -5050,7 +4865,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   }
 
   if (elBtnConvGen) elBtnConvGen.addEventListener("click", genConvSnippet);
-  
+
   if (elBtnConvCopy) {
     elBtnConvCopy.addEventListener("click", function() {
       var code = elConvSnippet.textContent;
@@ -5103,7 +4918,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         delete funnelStore.visuals;
         engineStore = data.engine || {};
         visualStore = data.visuals || {};
-        
+
         $("kartra-json").value = JSON.stringify(funnelStore, null, 2);
         renderFunnelTable();
         populateEngineForm();
@@ -5128,7 +4943,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     $("e-thresh-hot").value = thresh.hot_engagement !== undefined ? thresh.hot_engagement : 60;
     $("e-pt-click-hard").value = points.click_hard !== undefined ? points.click_hard : 10;
     $("e-pt-click-soft").value = points.click_soft !== undefined ? points.click_soft : 2;
-    
+
     // Time split loading logic (v2)
     var timing = engine.timing || {};
     $("e-freq-time-hard").value = timing.time_hard_freq || 10;
@@ -5194,7 +5009,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var rulesHtml = '';
       if (Array.isArray(map.rules) && map.rules.length > 0) {
         map.rules.forEach(function(r) {
-          rulesHtml += 
+          rulesHtml +=
             '<div class="map-rule-row" style="display:flex; gap:0.5rem; margin-top:0.75rem; align-items:flex-end;">' +
               '<div style="flex:1;"><label style="font-size:0.75rem;">Rule Name</label><input type="text" class="rule-name" value="' + esc(r.name || "") + '" placeholder="e.g. VIP"></div>' +
               '<div style="flex:1;"><label style="font-size:0.75rem;">Has Tags</label><input type="text" class="rule-has" value="' + esc((r.hasTags || []).join(",")) + '" placeholder="e.g. music"></div>' +
@@ -5209,7 +5024,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       div.className = "dash-card map-card";
       div.style.padding = "1rem";
       div.dataset.id = key;
-      div.innerHTML = 
+      div.innerHTML =
         '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">' +
           '<input type="text" class="map-id-input" placeholder="Map Display Name" style="font-weight:700; width:50%; margin:0; border:1px solid transparent; border-bottom:1px solid var(--border);" value="' + esc(map.name || key) + '">' +
           '<div>' +
@@ -5241,7 +5056,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           '</div>' +
         '</details>';
       wrap.appendChild(div);
-      
+
       div.querySelector(".btn-del-map").addEventListener("click", function() {
         if(confirm("Delete this Custom Map? Any campaigns using it will fallback to Global defaults.")) {
           delete engineStore.customMaps[key];
@@ -5303,7 +5118,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   function openVisualMapper(mapId) {
     if (!visualStore[mapId]) visualStore[mapId] = {}; // Initialize if blank
-    
+
     var activeDataObj = visualStore[mapId];
     var cmap = engineStore.customMaps[mapId];
 
@@ -5316,7 +5131,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
       var h = shortUrl(cmap.hot) || "/hot";
       var c = shortUrl(cmap.converted) || "/conv";
-      
+
       var tN = [
         {id:'n1', name:'Source', url:'*/*', type:'cold', goal:'Entry point', x:40, y:180, w:150, h:85},
         {id:'n2', name:'Router', url:'Edge', type:'support', goal:'Tag and decide route', x:260, y:180, w:150, h:85},
@@ -5328,7 +5143,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         {from:'n2',to:'n3',label:'Score < threshold'},
         {from:'n2',to:'n4',label:'Score >= threshold'}
       ];
-      
+
       if (cmap.warm) {
         tN.push({id:'n5', name:'Nurture', url:shortUrl(cmap.warm), type:'warm', goal:'Opt-in or assist', x:500, y: -20, w:150, h:85});
         tE.push({from:'n2',to:'n5',label:'Cold fallback'});
@@ -5346,7 +5161,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           if (!r.url) return;
           var nId = 'n_rule_' + rIdx;
           tN.push({id: nId, name: (r.name || ('Policy ' + rIdx)), url: shortUrl(r.url), type: 'post', goal: 'Dynamic logic', x: 500, y: yOff, w: 150, h:85});
-          
+
           var hasL = (r.hasTags && r.hasTags.length) ? '+[' + r.hasTags.join() + ']' : '';
           var notL = (r.notTags && r.notTags.length) ? '-[' + r.notTags.join() + ']' : '';
           var eLabel = [hasL, notL].filter(Boolean).join(" ");
@@ -5360,27 +5175,27 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
       activeDataObj = { nodes: tN, edges: tE };
     }
-    
+
     // Create Modal Container
     var modal = document.createElement("div");
     modal.className = "visual-mapper-modal";
     modal.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999; background:var(--bg); display:flex; flex-direction:column;";
-    
+
     // Create Header
     var header = document.createElement("div");
     header.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--surface); border-bottom:1px solid var(--border);";
-    
+
     var titleText = mapId === "global" ? "Decision Engine Logic" : ((cmap || {}).name || mapId);
     var title = document.createElement("div");
     title.innerHTML = "<h3 style='margin:0; font-size:16px;'><span style='color:var(--accent);margin-right:6px;'>⊞</span>Visual Planner: " + esc(titleText) + "</h3>";
-    
+
     var closeBtn = document.createElement("button");
     closeBtn.textContent = "Close Planner (Discard unsaved)";
     closeBtn.className = "btn-ghost";
     closeBtn.addEventListener("click", function() {
       document.body.removeChild(modal);
     });
-    
+
     header.appendChild(title);
     header.appendChild(closeBtn);
     modal.appendChild(header);
@@ -5388,7 +5203,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     // Create iframe
     var iframe = document.createElement("iframe");
     iframe.style.cssText = "flex:1; width:100%; height:100%; border:none;";
-    
+
     // Replace script data with active map context
     var activeDataStr = JSON.stringify(activeDataObj);
     var blobHtml = window.VISUAL_MAPPER_HTML
@@ -5412,11 +5227,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       visualStore[mapId] = event.data.data;
       var currentCards = document.body.querySelector(".visual-mapper-modal");
       if (currentCards) document.body.removeChild(currentCards);
-      
+
       var statusId = mapId === "global" ? "engine-status" : "custom-maps-status";
-      
+
       await forceSyncFunnelStore();
-      
+
       $(statusId).textContent = "Visual Canvas saved & Engine deployed.";
       $(statusId).classList.remove("hidden");
       $(statusId).classList.add("success");
@@ -5427,7 +5242,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   $("btn-save-engine").addEventListener("click", async function() {
     var btn = $("btn-save-engine");
     btn.disabled = true; btn.textContent = "Deploying...";
-    
+
     engineStore.redirects = {
       hot: $("e-redir-hot").value.trim(),
       converted: $("e-redir-conv").value.trim()
@@ -5485,19 +5300,19 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (!funnelStore[url]) return;
     $("f-funnel-url").value = url;
     $("f-funnel-type").value = funnelStore[url].pageType || "product";
-    
+
     $("f-funnel-hardcta").value = "";
     $("f-funnel-softcta").value = "";
     if (funnelStore[url].selectors) {
       if (funnelStore[url].selectors.hardCta) $("f-funnel-hardcta").value = funnelStore[url].selectors.hardCta.join(", ");
       if (funnelStore[url].selectors.softCta) $("f-funnel-softcta").value = funnelStore[url].selectors.softCta.join(", ");
     }
-    
+
     $("f-funnel-hot").value = "";
     if (funnelStore[url].redirects && funnelStore[url].redirects.hot) {
       $("f-funnel-hot").value = funnelStore[url].redirects.hot;
     }
-    
+
     $("btn-cancel-funnel").classList.remove("hidden");
     $("f-funnel-url").focus();
   }
@@ -5514,29 +5329,29 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     hideErr($("funnel-form-error"));
     hideErr($("funnel-form-success"));
     var btn = $("btn-save-funnel");
-    
+
     var url = $("f-funnel-url").value.trim().toLowerCase();
     if (!url) { showErr($("funnel-form-error"), "URL is required."); return; }
-    
+
     var pageType = $("f-funnel-type").value;
     var conf = { pageType: pageType };
-    
+
     var hardCta = $("f-funnel-hardcta").value.trim();
     var softCta = $("f-funnel-softcta").value.trim();
     if (hardCta || softCta) conf.selectors = {};
     if (hardCta) conf.selectors.hardCta = hardCta.split(",").map(function(s) { return s.trim(); }).filter(Boolean);
     if (softCta) conf.selectors.softCta = softCta.split(",").map(function(s) { return s.trim(); }).filter(Boolean);
-    
+
     var hRedirect = $("f-funnel-hot").value.trim();
     if (hRedirect) conf.redirects = { hot: hRedirect };
 
     funnelStore[url] = conf;
-    
+
     btn.disabled = true;
     btn.textContent = "Deploying...";
-    
+
     await forceSyncFunnelStore();
-    
+
     $("funnel-form").reset();
     $("btn-cancel-funnel").classList.add("hidden");
     btn.disabled = false;
@@ -5593,7 +5408,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   });
 
   /* ── Boot ────────────────────────────────────────────── */
-  window.CUSTOM_DOMAIN = "${customDomain}"; 
+  window.CUSTOM_DOMAIN = "${customDomain}";
   loadToken(); // Clears legacy token
 
   (async function initAuth() {
@@ -5603,33 +5418,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if (res.ok) {
         token = "session";
         window.ADMIN_TOKEN = token; // Maintain global exposure for iframes
-        showPanel(); 
-        
-        // Proactively push token to the journeys iframe if it's already there
-        setTimeout(function() {
-          var iframe = document.querySelector("#tab-journeys iframe");
-          if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage({ type: "SET_TOKEN", token: window.ADMIN_TOKEN }, "*");
-          }
-        }, 1000);
-      } else {
-        showGate();
-      }
-    } catch (e) {
-      showGate();
-    }
-  })();
+        showPanel();
 
-  // Also push token whenever a tab switch happens to Journeys
-  document.querySelectorAll(".tab-btn").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      if (this.dataset.tab === "journeys") {
-        var iframe = document.querySelector("#tab-journeys iframe");
-        if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage({ type: "SET_TOKEN", token: window.ADMIN_TOKEN }, "*");
-        }
-      }
-    });
+        ();
+
+  ;
   });
 
   /* ── Campaign Workspace Studio Mode ──────────────── */
@@ -5643,18 +5436,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     document.getElementById("workspace-title").textContent = campaignName;
     document.getElementById("intent-workspace").style.display = "flex";
 
-    // Load Journeys
-    try {
-      var select = document.getElementById("studio-journey-select");
-      select.innerHTML = '<option value="">Select Journey Map...</option>';
-      var res = await apiFetch("/api/admin/journeys");
-      var data = await res.json();
-      (data.journeys || []).forEach(function (j) {
-        var opt = document.createElement("option");
-        opt.value = j.id;
-        opt.textContent = j.name || j.id;
-        select.appendChild(opt);
-      });
+
     } catch(e){}
 
     // Load campaign V2 config
@@ -5664,19 +5446,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var configs = data.campaigns || [];
       studioCampaignConfig = configs.find(function (c) { return c.slug === campaignName; }) || {
         slug: campaignName,
-        journeyId: "",
-        landings: [],
+                landings: [],
         mainLandingId: ""
       };
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
       // Set values
-      document.getElementById("studio-journey-select").value = studioCampaignConfig.journeyId || "";
-    } catch(e) {
+          } catch(e) {
       studioCampaignConfig = {
         slug: campaignName,
-        journeyId: "",
-        landings: [],
+                landings: [],
         mainLandingId: ""
       };
     }
@@ -5735,12 +5514,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         div.className = "version-item";
         div.innerHTML = '<div><strong>/c/' + esc(s.slug) + '</strong>' +
           '<div style="font-size: 0.7rem; color: var(--text-m);">' + esc([s.defaults?.utm_source, s.defaults?.utm_medium].filter(Boolean).join(" / ")) + '</div></div>';
-        
+
         var actionsDiv = document.createElement("div");
         actionsDiv.style.display = "flex";
         actionsDiv.style.gap = "0.75rem";
         actionsDiv.style.alignItems = "center";
-        
+
         var editBtn = document.createElement("button");
         editBtn.type = "button";
         editBtn.className = "btn-ghost btn-sm";
@@ -5751,7 +5530,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
            editSlug(s.slug);
         });
         actionsDiv.appendChild(editBtn);
-        
+
         var openLink = document.createElement("a");
         openLink.href = "/c/" + esc(s.slug);
         openLink.target = "_blank";
@@ -5759,7 +5538,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         openLink.style.fontSize = "0.75rem";
         openLink.innerHTML = "open &nearr;";
         actionsDiv.appendChild(openLink);
-        
+
         div.appendChild(actionsDiv);
         slugsContainer.appendChild(div);
       });
@@ -5813,7 +5592,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       div.className = "version-item";
       div.style = "padding: 0.75rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.35rem;";
 
-      div.innerHTML = 
+      div.innerHTML =
         '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
           '<div>' +
             '<div style="font-weight: bold; font-size: 0.95rem; color: var(--text);">' + esc(l.displayName) + '</div>' +
@@ -6019,7 +5798,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             titleEl.textContent = studioCurrentEditingLanding.displayName;
           }
           renderStudioVersionsList();
-        } 
+        }
       },
       { id: "studio-version-status", prop: "status", cb: renderStudioVersionsList },
       { id: "studio-version-name", prop: "id", cb: renderStudioVersionsList },
@@ -6138,10 +5917,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       saveIntentBtn.dataset.wired = "1";
       saveIntentBtn.addEventListener("click", async function () {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
-        var journeyId = document.getElementById("studio-journey-select").value;
-        var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
+                var defaultSlug = document.getElementById("studio-default-slug-select").value || null;
 
-        studioCampaignConfig.journeyId = journeyId;
 
         try {
           saveIntentBtn.disabled = true;
@@ -6156,7 +5933,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           // 2. Save V2 Configuration (Journey) - Optional Binding
           var v2Ok = true;
           var v2ErrMsg = "";
-          
+
           if (studioCampaignConfig.slug && studioCampaignConfig.journeyId) {
             var v2Res = await apiFetch("/api/admin/campaign_v2", {
               method: "POST",
@@ -6173,7 +5950,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             alert("Intent Settings Saved Successfully!");
             await loadCampaignList();
           } else if (patchRes.ok && !v2Ok) {
-            alert("Intent settings saved, but Journey assignment failed: " + v2ErrMsg);
+            alert("Intent metadata saved, but routing assignment failed: " + v2ErrMsg);
             await loadCampaignList();
           } else {
             alert("Error saving Intent Settings.");
@@ -6231,12 +6008,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   // 2. Mobile Drawer Logic (Tap to toggle header with dynamic height calculation)
   var drawerHandle = document.getElementById("mobile-drawer-handle");
   var mainTopbar = document.getElementById("main-topbar");
-  
+
   if (drawerHandle && mainTopbar) {
     drawerHandle.addEventListener("click", function(e) {
       e.preventDefault();
       if (window.innerWidth > 800) return;
-      
+
       var isCol = mainTopbar.classList.contains("collapsed");
       if (!isCol) {
         var h = mainTopbar.offsetHeight;
@@ -6251,8 +6028,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 </script>
     <script>
-      window.VISUAL_MAPPER_HTML = decodeURIComponent(escape(atob("${VISUAL_MAPPER_HTML_B64}")));
-    </script>
+          </script>
   </body>
 </html>`;
 }
@@ -6651,11 +6427,11 @@ textarea:focus{border-color:var(--accent)}
   input, select, textarea {
     font-size: 16px !important;
   }
-  
+
   .desktop-only { display: none !important; }
   .mobile-only { display: inline-block !important; }
   .date-input-group { flex-wrap: wrap; gap: 0.25rem; }
-  
+
   /* 6. Campaign Links Mobile Stack */
   .version-item {
     flex-direction: column;
@@ -6671,7 +6447,7 @@ textarea:focus{border-color:var(--accent)}
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .slug-item {
     flex-direction: column;
     align-items: flex-start !important;
@@ -6690,7 +6466,7 @@ textarea:focus{border-color:var(--accent)}
     flex-wrap: wrap;
     margin-top: 0.5rem;
   }
-  
+
   /* 7. Health Manual Validation overflow */
   #manual-result {
     max-width: 100%;
@@ -6706,7 +6482,7 @@ textarea:focus{border-color:var(--accent)}
     white-space: pre-wrap;
     word-break: break-word;
   }
-  
+
   /* 4. Intent Workspace Mobile Grid */
   #tab-campaigns .layout {
     grid-template-columns: 1fr !important;
@@ -6724,7 +6500,7 @@ textarea:focus{border-color:var(--accent)}
     max-width: 100%;
     overflow-x: hidden;
   }
-  
+
   /* 5. Tab bar scrolling */
   .tab-bar {
     display: flex;
@@ -6768,7 +6544,7 @@ textarea:focus{border-color:var(--accent)}
   transform-origin: top;
 }
 .topbar.collapsed {
-  
+
   opacity: 0;
   pointer-events: none;
 }
@@ -6793,5 +6569,4 @@ textarea:focus{border-color:var(--accent)}
 
 
 
-const VISUAL_MAPPER_HTML_B64 = "PGh0bWwgbGFuZz0idHIiPjxoZWFkPgo8bWV0YSBjaGFyc2V0PSJVVEYtOCI+CjxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGluaXRpYWwtc2NhbGU9MS4wIj4KPHRpdGxlPk5pbMO8ZmVyIE9ybWFubMSxIOKAlCBGdW5uZWwgTWFwPC90aXRsZT4KPHN0eWxlPgogICosICo6OmJlZm9yZSwgKjo6YWZ0ZXIgeyBib3gtc2l6aW5nOiBib3JkZXItYm94OyBtYXJnaW46IDA7IHBhZGRpbmc6IDA7IH0KICA6cm9vdCB7CiAgICAtLWJnOiAjZjdmNmYyOyAtLXN1cmZhY2U6ICNmZmZmZmY7IC0tc3VyZmFjZTI6ICNmMWVmZTg7CiAgICAtLWJvcmRlcjogcmdiYSgwLDAsMCwwLjEyKTsgLS1ib3JkZXIyOiByZ2JhKDAsMCwwLDAuMjIpOwogICAgLS10ZXh0OiAjMWExYTE4OyAtLXRleHQyOiAjNWY1ZTVhOyAtLXRleHQzOiAjODg4NzgwOwogICAgLS1hY2NlbnQ6ICM1MzRhYjc7IC0tYWNjZW50LWJnOiAjZWVlZGZlOyAtLXJhZGl1czogOHB4OyAtLXJhZGl1cy1sZzogMTRweDsKICB9CiAgQG1lZGlhIChwcmVmZXJzLWNvbG9yLXNjaGVtZTogZGFyaykgewogICAgOnJvb3QgewogICAgICAtLWJnOiMxYTFhMTg7IC0tc3VyZmFjZTojMjQyNDIyOyAtLXN1cmZhY2UyOiMyYzJjMmE7CiAgICAgIC0tYm9yZGVyOnJnYmEoMjU1LDI1NSwyNTUsMC4xKTsgLS1ib3JkZXIyOnJnYmEoMjU1LDI1NSwyNTUsMC4yKTsKICAgICAgLS10ZXh0OiNlOGU2ZGU7IC0tdGV4dDI6I2I0YjJhOTsgLS10ZXh0MzojODg4NzgwOwogICAgICAtLWFjY2VudDojYWZhOWVjOyAtLWFjY2VudC1iZzojMjYyMTVjOwogICAgfQogIH0KICBib2R5IHsgYmFja2dyb3VuZDp2YXIoLS1iZyk7IGNvbG9yOnZhcigtLXRleHQpOyBmb250LWZhbWlseTotYXBwbGUtc3lzdGVtLCdTZWdvZSBVSScsc2Fucy1zZXJpZjsgaGVpZ2h0OjEwMHZoOyBkaXNwbGF5OmZsZXg7IGZsZXgtZGlyZWN0aW9uOmNvbHVtbjsgb3ZlcmZsb3c6aGlkZGVuOyB1c2VyLXNlbGVjdDpub25lOyB9CgogICNoZWFkZXIgeyBkaXNwbGF5OmZsZXg7IGFsaWduLWl0ZW1zOmNlbnRlcjsgZ2FwOjhweDsgcGFkZGluZzo4cHggMTRweDsgYmFja2dyb3VuZDp2YXIoLS1zdXJmYWNlKTsgYm9yZGVyLWJvdHRvbTowLjVweCBzb2xpZCB2YXIoLS1ib3JkZXIpOyBmbGV4LXNocmluazowOyBmbGV4LXdyYXA6d3JhcDsgfQogICNoZWFkZXIgLmxvZ28geyBmb250LXNpemU6MTNweDsgZm9udC13ZWlnaHQ6NjAwOyBjb2xvcjp2YXIoLS10ZXh0KTsgbGV0dGVyLXNwYWNpbmc6LTAuM3B4OyBwYWRkaW5nLXJpZ2h0OjEycHg7IGJvcmRlci1yaWdodDowLjVweCBzb2xpZCB2YXIoLS1ib3JkZXIpOyBtYXJnaW4tcmlnaHQ6NHB4OyB3aGl0ZS1zcGFjZTpub3dyYXA7IH0KICAjaGVhZGVyIC5sb2dvIHNwYW4geyBjb2xvcjp2YXIoLS1hY2NlbnQpOyB9CiAgLnRvb2wtZ3JvdXAgeyBkaXNwbGF5OmZsZXg7IGdhcDozcHg7IHBhZGRpbmctcmlnaHQ6MTBweDsgYm9yZGVyLXJpZ2h0OjAuNXB4IHNvbGlkIHZhcigtLWJvcmRlcik7IH0KICAudG9vbC1ncm91cDpsYXN0LWNoaWxkIHsgYm9yZGVyLXJpZ2h0Om5vbmU7IH0KICBidXR0b24geyBmb250LXNpemU6MTEuNXB4OyBmb250LWZhbWlseTppbmhlcml0OyBwYWRkaW5nOjVweCAxMHB4OyBib3JkZXItcmFkaXVzOnZhcigtLXJhZGl1cyk7IGJvcmRlcjowLjVweCBzb2xpZCB2YXIoLS1ib3JkZXIyKTsgYmFja2dyb3VuZDp2YXIoLS1zdXJmYWNlKTsgY29sb3I6dmFyKC0tdGV4dDIpOyBjdXJzb3I6cG9pbnRlcjsgdHJhbnNpdGlvbjphbGwgMC4xNXM7IHdoaXRlLXNwYWNlOm5vd3JhcDsgfQogIGJ1dHRvbjpob3ZlciB7IGJhY2tncm91bmQ6dmFyKC0tc3VyZmFjZTIpOyBjb2xvcjp2YXIoLS10ZXh0KTsgfQogIGJ1dHRvbi5hY3RpdmUgeyBiYWNrZ3JvdW5kOnZhcigtLWFjY2VudC1iZyk7IGNvbG9yOnZhcigtLWFjY2VudCk7IGJvcmRlci1jb2xvcjp2YXIoLS1hY2NlbnQpOyB9CiAgYnV0dG9uLmRhbmdlciB7IGNvbG9yOiNhMzJkMmQ7IGJvcmRlci1jb2xvcjojZjA5NTk1OyB9CiAgYnV0dG9uLmRhbmdlcjpob3ZlciB7IGJhY2tncm91bmQ6I2ZjZWJlYjsgfQogIGJ1dHRvbi5wcmltYXJ5IHsgYmFja2dyb3VuZDp2YXIoLS1hY2NlbnQpOyBjb2xvcjojZmZmOyBib3JkZXItY29sb3I6dmFyKC0tYWNjZW50KTsgfQogIGJ1dHRvbi5wcmltYXJ5OmhvdmVyIHsgb3BhY2l0eTowLjk7IH0KICBidXR0b24uZGltIHsgb3BhY2l0eTowLjM4OyBwb2ludGVyLWV2ZW50czpub25lOyB9CiAgI21vZGUtaGludCB7IGZvbnQtc2l6ZToxMC41cHg7IGNvbG9yOnZhcigtLXRleHQzKTsgbWFyZ2luLWxlZnQ6YXV0bzsgZm9udC1zdHlsZTppdGFsaWM7IH0KCiAgI2NhbnZhcy13cmFwIHsgZmxleDoxOyBvdmVyZmxvdzpoaWRkZW47IHBvc2l0aW9uOnJlbGF0aXZlOyB9CiAgY2FudmFzIHsgZGlzcGxheTpibG9jazsgd2lkdGg6MTAwJTsgaGVpZ2h0OjEwMCU7IH0KCiAgI2xlZ2VuZCB7IHBvc2l0aW9uOmFic29sdXRlOyBib3R0b206MTZweDsgbGVmdDoxNnB4OyBiYWNrZ3JvdW5kOnZhcigtLXN1cmZhY2UpOyBib3JkZXI6MC41cHggc29saWQgdmFyKC0tYm9yZGVyKTsgYm9yZGVyLXJhZGl1czp2YXIoLS1yYWRpdXMpOyBwYWRkaW5nOjlweCAxM3B4OyBkaXNwbGF5OmZsZXg7IGdhcDoxMnB4OyBmbGV4LXdyYXA6d3JhcDsgZm9udC1zaXplOjEwLjVweDsgY29sb3I6dmFyKC0tdGV4dDMpOyBwb2ludGVyLWV2ZW50czpub25lOyB9CiAgI2xlZ2VuZCBzcGFuIHsgZGlzcGxheTpmbGV4OyBhbGlnbi1pdGVtczpjZW50ZXI7IGdhcDo1cHg7IH0KICAuZG90IHsgd2lkdGg6OXB4OyBoZWlnaHQ6OXB4OyBib3JkZXItcmFkaXVzOjNweDsgZGlzcGxheTppbmxpbmUtYmxvY2s7IGZsZXgtc2hyaW5rOjA7IH0KCiAgI3pvb20tYmFyIHsgcG9zaXRpb246YWJzb2x1dGU7IGJvdHRvbToxNnB4OyByaWdodDoxNnB4OyBiYWNrZ3JvdW5kOnZhcigtLXN1cmZhY2UpOyBib3JkZXI6MC41cHggc29saWQgdmFyKC0tYm9yZGVyKTsgYm9yZGVyLXJhZGl1czp2YXIoLS1yYWRpdXMpOyBkaXNwbGF5OmZsZXg7IGFsaWduLWl0ZW1zOmNlbnRlcjsgZ2FwOjJweDsgcGFkZGluZzozcHggNnB4OyB9CiAgI3pvb20tYmFyIGJ1dHRvbiB7IGJvcmRlcjpub25lOyBiYWNrZ3JvdW5kOm5vbmU7IHBhZGRpbmc6NHB4IDhweDsgZm9udC1zaXplOjE1cHg7IGNvbG9yOnZhcigtLXRleHQyKTsgfQogICN6b29tLWJhciBidXR0b246aG92ZXIgeyBiYWNrZ3JvdW5kOnZhcigtLXN1cmZhY2UyKTsgYm9yZGVyLXJhZGl1czo0cHg7IH0KICAjem9vbS1sYWJlbCB7IGZvbnQtc2l6ZToxMXB4OyBjb2xvcjp2YXIoLS10ZXh0Myk7IG1pbi13aWR0aDozNnB4OyB0ZXh0LWFsaWduOmNlbnRlcjsgfQoKICAjb3ZlcmxheSB7IGRpc3BsYXk6bm9uZTsgcG9zaXRpb246Zml4ZWQ7IGluc2V0OjA7IGJhY2tncm91bmQ6cmdiYSgwLDAsMCwwLjQpOyB6LWluZGV4OjEwMDsgYmFja2Ryb3AtZmlsdGVyOmJsdXIoMnB4KTsgfQogICNvdmVybGF5Lm9wZW4geyBkaXNwbGF5OmJsb2NrOyB9CgogIC5wYW5lbCB7IGRpc3BsYXk6bm9uZTsgcG9zaXRpb246Zml4ZWQ7IHRvcDo1MCU7IGxlZnQ6NTAlOyB0cmFuc2Zvcm06dHJhbnNsYXRlKC01MCUsLTUwJSk7IGJhY2tncm91bmQ6dmFyKC0tc3VyZmFjZSk7IGJvcmRlcjowLjVweCBzb2xpZCB2YXIoLS1ib3JkZXIyKTsgYm9yZGVyLXJhZGl1czp2YXIoLS1yYWRpdXMtbGcpOyBwYWRkaW5nOjIycHg7IHotaW5kZXg6MTAxOyBtYXgtd2lkdGg6OTV2dzsgfQogIC5wYW5lbC5vcGVuIHsgZGlzcGxheTpibG9jazsgfQogIC5wYW5lbCBoMyB7IGZvbnQtc2l6ZToxNHB4OyBmb250LXdlaWdodDo2MDA7IG1hcmdpbi1ib3R0b206MTZweDsgY29sb3I6dmFyKC0tdGV4dCk7IH0KICAjZWRpdC1wYW5lbCB7IHdpZHRoOjM2MHB4OyB9CiAgI2VkZ2UtcGFuZWwgeyB3aWR0aDoyODBweDsgfQogICNzaG9ydGN1dHMtcGFuZWwgeyB3aWR0aDozODBweDsgfQoKICAuZmllbGQgeyBtYXJnaW4tYm90dG9tOjExcHg7IH0KICAuZmllbGQgbGFiZWwgeyBmb250LXNpemU6MTBweDsgY29sb3I6dmFyKC0tdGV4dDMpOyB0ZXh0LXRyYW5zZm9ybTp1cHBlcmNhc2U7IGxldHRlci1zcGFjaW5nOjAuNXB4OyBkaXNwbGF5OmJsb2NrOyBtYXJnaW4tYm90dG9tOjRweDsgfQogIC5maWVsZCBpbnB1dCwuZmllbGQgc2VsZWN0LC5maWVsZCB0ZXh0YXJlYSB7IHdpZHRoOjEwMCU7IGZvbnQtc2l6ZToxM3B4OyBmb250LWZhbWlseTppbmhlcml0OyBwYWRkaW5nOjdweCA5cHg7IGJvcmRlcjowLjVweCBzb2xpZCB2YXIoLS1ib3JkZXIyKTsgYm9yZGVyLXJhZGl1czp2YXIoLS1yYWRpdXMpOyBiYWNrZ3JvdW5kOnZhcigtLXN1cmZhY2UyKTsgY29sb3I6dmFyKC0tdGV4dCk7IG91dGxpbmU6bm9uZTsgfQogIC5maWVsZCBpbnB1dDpmb2N1cywuZmllbGQgc2VsZWN0OmZvY3VzLC5maWVsZCB0ZXh0YXJlYTpmb2N1cyB7IGJvcmRlci1jb2xvcjp2YXIoLS1hY2NlbnQpOyBiYWNrZ3JvdW5kOnZhcigtLXN1cmZhY2UpOyB9CiAgLmZpZWxkIHRleHRhcmVhIHsgcmVzaXplOnZlcnRpY2FsOyBtaW4taGVpZ2h0OjY4cHg7IGxpbmUtaGVpZ2h0OjEuNTsgfQogIC5maWVsZCBzZWxlY3Qgb3B0aW9uIHsgYmFja2dyb3VuZDp2YXIoLS1zdXJmYWNlKTsgfQogIC5idG4tcm93IHsgZGlzcGxheTpmbGV4OyBnYXA6OHB4OyBtYXJnaW4tdG9wOjE4cHg7IH0KICAuYnRuLXJvdyBidXR0b24geyBmbGV4OjE7IHBhZGRpbmc6OHB4OyBmb250LXNpemU6MTNweDsgfQoKICAjc2hvcnRjdXRzLXBhbmVsIHRhYmxlIHsgd2lkdGg6MTAwJTsgYm9yZGVyLWNvbGxhcHNlOmNvbGxhcHNlOyBmb250LXNpemU6MTJweDsgfQogICNzaG9ydGN1dHMtcGFuZWwgdGQgeyBwYWRkaW5nOjZweCAwOyB2ZXJ0aWNhbC1hbGlnbjptaWRkbGU7IH0KICAjc2hvcnRjdXRzLXBhbmVsIHRkOmZpcnN0LWNoaWxkIHsgZm9udC1mYW1pbHk6bW9ub3NwYWNlOyBmb250LXNpemU6MTAuNXB4OyBiYWNrZ3JvdW5kOnZhcigtLXN1cmZhY2UyKTsgYm9yZGVyLXJhZGl1czo0cHg7IHBhZGRpbmc6M3B4IDhweDsgY29sb3I6dmFyKC0tYWNjZW50KTsgd2hpdGUtc3BhY2U6bm93cmFwOyB3aWR0aDoxJTsgfQogICNzaG9ydGN1dHMtcGFuZWwgdGQrdGQgeyBwYWRkaW5nLWxlZnQ6MTJweDsgY29sb3I6dmFyKC0tdGV4dDIpOyB9CiAgI3Nob3J0Y3V0cy1wYW5lbCB0ciB7IGJvcmRlci1ib3R0b206MC41cHggc29saWQgdmFyKC0tYm9yZGVyKTsgfQogICNzaG9ydGN1dHMtcGFuZWwgdHI6bGFzdC1jaGlsZCB7IGJvcmRlci1ib3R0b206bm9uZTsgfQoKICAjdG9hc3QgeyBwb3NpdGlvbjpmaXhlZDsgYm90dG9tOjU2cHg7IGxlZnQ6NTAlOyB0cmFuc2Zvcm06dHJhbnNsYXRlWCgtNTAlKTsgYmFja2dyb3VuZDp2YXIoLS10ZXh0KTsgY29sb3I6dmFyKC0tYmcpOyBmb250LXNpemU6MTEuNXB4OyBwYWRkaW5nOjZweCAxNXB4OyBib3JkZXItcmFkaXVzOjIwcHg7IG9wYWNpdHk6MDsgdHJhbnNpdGlvbjpvcGFjaXR5IDAuMjVzOyBwb2ludGVyLWV2ZW50czpub25lOyB6LWluZGV4OjIwMDsgd2hpdGUtc3BhY2U6bm93cmFwOyB9CiAgI3RvYXN0LnNob3cgeyBvcGFjaXR5OjE7IH0KPC9zdHlsZT4KPC9oZWFkPgo8Ym9keT4KCjxkaXYgaWQ9ImhlYWRlciI+CiAgPGRpdiBjbGFzcz0ibG9nbyI+Tmlsw7xmZXIgT3JtYW5sxLEgPHNwYW4+LyBGdW5uZWw8L3NwYW4+PC9kaXY+CiAgPGRpdiBjbGFzcz0idG9vbC1ncm91cCI+CiAgICA8YnV0dG9uIGlkPSJidG4tc2VsZWN0IiBjbGFzcz0iYWN0aXZlIiBvbmNsaWNrPSJzZXRNb2RlKCdzZWxlY3QnKSI+4oaWIFNlbGVjdCA8c21hbGwgc3R5bGU9Im9wYWNpdHk6MC40NSI+Vjwvc21hbGw+PC9idXR0b24+CiAgICA8YnV0dG9uIGlkPSJidG4tY29ubmVjdCIgb25jbGljaz0iY29ubmVjdENsaWNrKGV2ZW50KSI+4qSzIENvbm5lY3Q8L2J1dHRvbj4KICA8L2Rpdj4KICA8ZGl2IGNsYXNzPSJ0b29sLWdyb3VwIj4KICAgIDxidXR0b24gaWQ9ImJ0bi11bmRvIiBjbGFzcz0iIiBvbmNsaWNrPSJ1bmRvKCkiPuKGqSBVbmRvPC9idXR0b24+CiAgICA8YnV0dG9uIGlkPSJidG4tcmVkbyIgY2xhc3M9ImRpbSIgb25jbGljaz0icmVkbygpIj7ihqogUmVkbzwvYnV0dG9uPgogIDwvZGl2PgogIDxkaXYgY2xhc3M9InRvb2wtZ3JvdXAiPgogICAgPGJ1dHRvbiBvbmNsaWNrPSJhZGROb2RlQ2VudGVyKCkiPisgQWRkIFBhZ2U8L2J1dHRvbj4KICAgIDxidXR0b24gY2xhc3M9ImRhbmdlciIgb25jbGljaz0iZGVsZXRlU2VsZWN0ZWROb2RlcygpIj7wn5eRIERlbGV0ZTwvYnV0dG9uPgogIDwvZGl2PgogIDxkaXYgY2xhc3M9InRvb2wtZ3JvdXAiPgogICAgPGJ1dHRvbiBvbmNsaWNrPSJpbXBvcnRKU09OKCkiPuKGkSBMb2FkIEpTT048L2J1dHRvbj4KICAgIDxidXR0b24gY2xhc3M9InByaW1hcnkiIG9uY2xpY2s9InNhdmVWaXN1YWxNYXAoKSI+8J+SviBTYXZlIE1hcDwvYnV0dG9uPgogIDwvZGl2PgogIDxkaXYgY2xhc3M9InRvb2wtZ3JvdXAiPgogICAgPGJ1dHRvbiBvbmNsaWNrPSJvcGVuUGFuZWwoJ3Nob3J0Y3V0cy1wYW5lbCcpIj7ijKggS2V5czwvYnV0dG9uPgogIDwvZGl2PgogIDxzcGFuIGlkPSJtb2RlLWhpbnQiPkRvdWJsZS1jbGljayA9IGVkaXQgwrcgU3BhY2UgPSBwYW4gwrcgU2hpZnQrY2xpY2sgPSBtdWx0aS1zZWxlY3Q8L3NwYW4+CjwvZGl2PgoKPGRpdiBpZD0iY2FudmFzLXdyYXAiPgogIDxjYW52YXMgaWQ9ImN2IiB3aWR0aD0iNDQ3OCIgaGVpZ2h0PSIyODAzIiBzdHlsZT0id2lkdGg6IDIyMzlweDsgaGVpZ2h0OiAxNDAxLjVweDsgY3Vyc29yOiBkZWZhdWx0OyI+PC9jYW52YXM+CiAgPGRpdiBpZD0ibGVnZW5kIj4KICAgIDxzcGFuPjxzcGFuIGNsYXNzPSJkb3QiIHN0eWxlPSJiYWNrZ3JvdW5kOiM3Zjc3ZGQiPjwvc3Bhbj5Db2xkIHRyYWZmaWM8L3NwYW4+CiAgICA8c3Bhbj48c3BhbiBjbGFzcz0iZG90IiBzdHlsZT0iYmFja2dyb3VuZDojMWQ5ZTc1Ij48L3NwYW4+V2FybSAvIE51cnR1cmU8L3NwYW4+CiAgICA8c3Bhbj48c3BhbiBjbGFzcz0iZG90IiBzdHlsZT0iYmFja2dyb3VuZDojZDg1YTMwIj48L3NwYW4+Q29udmVyc2lvbjwvc3Bhbj4KICAgIDxzcGFuPjxzcGFuIGNsYXNzPSJkb3QiIHN0eWxlPSJiYWNrZ3JvdW5kOiNkNDUzN2UiPjwvc3Bhbj5Qb3N0LWNvbnYgLyBVcHNlbGw8L3NwYW4+CiAgICA8c3Bhbj48c3BhbiBjbGFzcz0iZG90IiBzdHlsZT0iYmFja2dyb3VuZDojODg4NzgwIj48L3NwYW4+U3VwcG9ydDwvc3Bhbj4KICA8L2Rpdj4KICA8ZGl2IGlkPSJ6b29tLWJhciI+CiAgICA8YnV0dG9uIG9uY2xpY2s9Inpvb21CeSgtMC4xNSkiPuKIkjwvYnV0dG9uPgogICAgPHNwYW4gaWQ9Inpvb20tbGFiZWwiPjEwMCU8L3NwYW4+CiAgICA8YnV0dG9uIG9uY2xpY2s9Inpvb21CeSgwLjE1KSI+KzwvYnV0dG9uPgogICAgPGJ1dHRvbiBvbmNsaWNrPSJyZXNldFZpZXcoKSIgc3R5bGU9ImZvbnQtc2l6ZToxMXB4O3BhZGRpbmc6NHB4IDhweCI+UmVzZXQ8L2J1dHRvbj4KICA8L2Rpdj4KPC9kaXY+Cgo8ZGl2IGlkPSJvdmVybGF5IiBvbmNsaWNrPSJjbG9zZUFsbCgpIiBjbGFzcz0iIj48L2Rpdj4KCjxkaXYgaWQ9ImVkaXQtcGFuZWwiIGNsYXNzPSJwYW5lbCI+CiAgPGgzPkVkaXQgUGFnZTwvaDM+CiAgPGRpdiBjbGFzcz0iZmllbGQiPjxsYWJlbD5QYWdlIE5hbWU8L2xhYmVsPjxpbnB1dCBpZD0iZXAtbmFtZSIgdHlwZT0idGV4dCIgcGxhY2Vob2xkZXI9Ik1haW4gTGFuZGluZyI+PC9kaXY+CiAgPGRpdiBjbGFzcz0iZmllbGQiPjxsYWJlbD5VUkw8L2xhYmVsPjxpbnB1dCBpZD0iZXAtdXJsIiB0eXBlPSJ0ZXh0IiBwbGFjZWhvbGRlcj0iL2hvbWUiPjwvZGl2PgogIDxkaXYgY2xhc3M9ImZpZWxkIj4KICAgIDxsYWJlbD5UeXBlIC8gQ29sb3I8L2xhYmVsPgogICAgPHNlbGVjdCBpZD0iZXAtdHlwZSI+CiAgICAgIDxvcHRpb24gdmFsdWU9ImNvbGQiPkNvbGQgdHJhZmZpYzwvb3B0aW9uPgogICAgICA8b3B0aW9uIHZhbHVlPSJ3YXJtIj5XYXJtIC8gTnVydHVyZTwvb3B0aW9uPgogICAgICA8b3B0aW9uIHZhbHVlPSJjb252Ij5Db252ZXJzaW9uPC9vcHRpb24+CiAgICAgIDxvcHRpb24gdmFsdWU9InBvc3QiPlBvc3QtY29udiAvIFVwc2VsbDwvb3B0aW9uPgogICAgICA8b3B0aW9uIHZhbHVlPSJzdXBwb3J0Ij5TdXBwb3J0PC9vcHRpb24+CiAgICA8L3NlbGVjdD4KICA8L2Rpdj4KICA8ZGl2IGNsYXNzPSJmaWVsZCI+PGxhYmVsPkdvYWw8L2xhYmVsPjx0ZXh0YXJlYSBpZD0iZXAtZ29hbCIgcGxhY2Vob2xkZXI9IldoYXQgdGhpcyBwYWdlIGRvZXMuLi4iPjwvdGV4dGFyZWE+PC9kaXY+CiAgPGRpdiBjbGFzcz0iYnRuLXJvdyI+CiAgICA8YnV0dG9uIG9uY2xpY2s9ImNsb3NlQWxsKCkiPkNhbmNlbDwvYnV0dG9uPgogICAgPGJ1dHRvbiBjbGFzcz0icHJpbWFyeSIgb25jbGljaz0ic2F2ZU5vZGUoKSI+U2F2ZTwvYnV0dG9uPgogIDwvZGl2Pgo8L2Rpdj4KCjxkaXYgaWQ9ImVkZ2UtcGFuZWwiIGNsYXNzPSJwYW5lbCI+CiAgPGgzPkNvbm5lY3Rpb24gTGFiZWw8L2gzPgogIDxkaXYgY2xhc3M9ImZpZWxkIj48bGFiZWw+TGFiZWwgKG9wdGlvbmFsKTwvbGFiZWw+PGlucHV0IGlkPSJlZGdlLWxhYmVsLWlucHV0IiB0eXBlPSJ0ZXh0IiBwbGFjZWhvbGRlcj0iZS5nLiBFbWFpbCBmdW5uZWwsIENUQS4uLiI+PC9kaXY+CiAgPGRpdiBjbGFzcz0iYnRuLXJvdyI+CiAgICA8YnV0dG9uIGNsYXNzPSJkYW5nZXIiIG9uY2xpY2s9ImRlbGV0ZUVkZ2VDdXJyZW50KCkiPkRlbGV0ZTwvYnV0dG9uPgogICAgPGJ1dHRvbiBvbmNsaWNrPSJjbG9zZUFsbCgpIj5DYW5jZWw8L2J1dHRvbj4KICAgIDxidXR0b24gY2xhc3M9InByaW1hcnkiIG9uY2xpY2s9InNhdmVFZGdlKCkiPlNhdmU8L2J1dHRvbj4KICA8L2Rpdj4KPC9kaXY+Cgo8ZGl2IGlkPSJzaG9ydGN1dHMtcGFuZWwiIGNsYXNzPSJwYW5lbCI+CiAgPGgzPktleWJvYXJkIFNob3J0Y3V0czwvaDM+CiAgPHRhYmxlPgogICAgPHRib2R5Pjx0cj48dGQ+VjwvdGQ+PHRkPlNlbGVjdCB0b29sIChkZWZhdWx0KTwvdGQ+PC90cj4KICAgIDx0cj48dGQ+U3BhY2UgKGhvbGQpPC90ZD48dGQ+VGVtcG9yYXJpbHkgcGFuIGNhbnZhczwvdGQ+PC90cj4KICAgIDx0cj48dGQ+U2hpZnQgKyBjbGljayBub2RlPC90ZD48dGQ+QWRkIC8gcmVtb3ZlIGZyb20gbXVsdGktc2VsZWN0PC90ZD48L3RyPgogICAgPHRyPjx0ZD5Db25uZWN0IGJ0bjwvdGQ+PHRkPklmIDIrIHNlbGVjdGVkOiBjb25uZWN0IGxlZnQg4oaSIHJpZ2h0IChuYXR1cmFsIGZsb3cpPC90ZD48L3RyPgogICAgPHRyPjx0ZD5TaGlmdCArIENvbm5lY3QgYnRuPC90ZD48dGQ+SWYgMisgc2VsZWN0ZWQ6IGNvbm5lY3QgcmlnaHQg4oaSIGxlZnQgKHJldmVyc2UpPC90ZD48L3RyPgogICAgPHRyPjx0ZD5BbHQvT3B0ICsgQ29ubmVjdCBidG48L3RkPjx0ZD5JZiAyKyBzZWxlY3RlZDogcmVtb3ZlIGVkZ2VzIGJldHdlZW4gdGhlbTwvdGQ+PC90cj4KICAgIDx0cj48dGQ+4oyYL0N0cmwgKyBjbGljayAoY2FudmFzKTwvdGQ+PHRkPkFkZCBuZXcgcGFnZSBhdCBjdXJzb3I8L3RkPjwvdHI+CiAgICA8dHI+PHRkPuKMmC9DdHJsICsgU2hpZnQgKyBjbGljayAobm9kZSk8L3RkPjx0ZD5EZWxldGUgdGhhdCBub2RlIGluc3RhbnRseTwvdGQ+PC90cj4KICAgIDx0cj48dGQ+4oyYL0N0cmwgKyBTaGlmdCArIGNsaWNrIChhcnJvdyk8L3RkPjx0ZD5EZWxldGUgdGhhdCBjb25uZWN0aW9uIGluc3RhbnRseTwvdGQ+PC90cj4KICAgIDx0cj48dGQ+RG91YmxlLWNsaWNrIG5vZGU8L3RkPjx0ZD5FZGl0IG5vZGUgZGV0YWlsczwvdGQ+PC90cj4KICAgIDx0cj48dGQ+RG91YmxlLWNsaWNrIGFycm93PC90ZD48dGQ+RWRpdCBjb25uZWN0aW9uIGxhYmVsPC90ZD48L3RyPgogICAgPHRyPjx0ZD5EZWxldGUgLyBCYWNrc3BhY2U8L3RkPjx0ZD5EZWxldGUgc2VsZWN0ZWQgbm9kZXM8L3RkPjwvdHI+CiAgICA8dHI+PHRkPkVzYzwvdGQ+PHRkPkRlc2VsZWN0IGFsbCAvIGNhbmNlbDwvdGQ+PC90cj4KICAgIDx0cj48dGQ+4oyYWiAvIOKMmOKHp1o8L3RkPjx0ZD5VbmRvIC8gUmVkbzwvdGQ+PC90cj4KICA8L3Rib2R5PjwvdGFibGU+CiAgPGRpdiBjbGFzcz0iYnRuLXJvdyIgc3R5bGU9Im1hcmdpbi10b3A6MTZweCI+PGJ1dHRvbiBvbmNsaWNrPSJjbG9zZUFsbCgpIj5DbG9zZTwvYnV0dG9uPjwvZGl2Pgo8L2Rpdj4KCjxkaXYgaWQ9InRvYXN0IiBjbGFzcz0iIj5EZWxldGVkIDEgcGFnZTwvZGl2Pgo8aW5wdXQgdHlwZT0iZmlsZSIgaWQ9ImZpbGUtaW5wdXQiIGFjY2VwdD0iLmpzb24iIHN0eWxlPSJkaXNwbGF5Om5vbmUiIG9uY2hhbmdlPSJoYW5kbGVGaWxlSW1wb3J0KGV2ZW50KSI+Cgo8c2NyaXB0Pgpjb25zdCBDViAgID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2N2Jyk7CmNvbnN0IGN0eCAgPSBDVi5nZXRDb250ZXh0KCcyZCcpOwpjb25zdCBXUkFQID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2NhbnZhcy13cmFwJyk7Cgpjb25zdCBUWVBFUyA9IHsKICBjb2xkOiAgICB7Ymc6JyNlZWVkZmUnLHN0cm9rZTonIzdmNzdkZCcsaGVhZGVyOicjN2Y3N2RkJyx0ZXh0OicjM2MzNDg5J30sCiAgd2FybTogICAge2JnOicjZTFmNWVlJyxzdHJva2U6JyMxZDllNzUnLGhlYWRlcjonIzFkOWU3NScsdGV4dDonIzA4NTA0MSd9LAogIGNvbnY6ICAgIHtiZzonI2ZhZWNlNycsc3Ryb2tlOicjZDg1YTMwJyxoZWFkZXI6JyNkODVhMzAnLHRleHQ6JyM0YTFiMGMnfSwKICBwb3N0OiAgICB7Ymc6JyNmYmVhZjAnLHN0cm9rZTonI2Q0NTM3ZScsaGVhZGVyOicjZDQ1MzdlJyx0ZXh0OicjNGIxNTI4J30sCiAgc3VwcG9ydDoge2JnOicjZjFlZmU4JyxzdHJva2U6JyM4ODg3ODAnLGhlYWRlcjonIzg4ODc4MCcsdGV4dDonIzJjMmMyYSd9Cn07CgovLyDilIDilIDilIAgU1RBVEUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmxldCBtb2RlICAgICAgID0gJ3NlbGVjdCc7CmxldCBub2RlcyAgICAgID0gW10sIGVkZ2VzID0gW107CmxldCBzZWxlY3RlZCAgID0gbmV3IFNldCgpOwpsZXQgaG92ZXJlZEVkZ2UgPSAtMTsKbGV0IGRyYWdnaW5nICAgPSBudWxsLCBkcmFnT2ZmID0ge3g6MCx5OjB9LCBkcmFnTW92ZWQgPSBmYWxzZTsKbGV0IGRyYWdHcm91cFN0YXJ0ID0ge307ICAgICAvLyBpZCAtPiB7eCx5fSBzbmFwc2hvdCB3aGVuIGRyYWcgYmVnaW5zCmxldCBjb25uZWN0RnJvbSA9IG51bGw7CmxldCBlZGl0SWQgICAgICA9IG51bGwsIGVkaXRFZGdlSWR4ID0gbnVsbDsKbGV0IHBhbiAgICAgICAgID0ge3g6NDAseTo0MH0sIHNjYWxlID0gMTsKbGV0IFcgPSAwLCBIID0gMDsKbGV0IGlzUGFubmluZyAgID0gZmFsc2UsIHBhblN0YXJ0ID0ge3g6MCx5OjB9OwpsZXQgc3BhY2VEb3duICAgPSBmYWxzZTsKbGV0IGxhc3RNb3VzZSAgID0ge3g6MCx5OjB9OwpsZXQgaWRDb3VudGVyICAgPSAxMDA7CgovLyDilIDilIDilIAgVU5ETyAvIFJFRE8g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmxldCBoaXN0b3J5ID0gW10sIGhpc3RJZHggPSAtMTsKCmZ1bmN0aW9uIHNuYXBzaG90KCkgewogIGNvbnN0IHMgPSBKU09OLnN0cmluZ2lmeSh7bm9kZXMsIGVkZ2VzfSk7CiAgaWYgKGhpc3RvcnlbaGlzdElkeF0gPT09IHMpIHJldHVybjsKICBoaXN0b3J5ID0gaGlzdG9yeS5zbGljZSgwLCBoaXN0SWR4KzEpOwogIGhpc3RvcnkucHVzaChzKTsKICBpZiAoaGlzdG9yeS5sZW5ndGggPiA4MCkgaGlzdG9yeS5zaGlmdCgpOyBlbHNlIGhpc3RJZHgrKzsKICB1cGRhdGVVbmRvQnV0dG9ucygpOwp9CmZ1bmN0aW9uIGFwcGx5U25hcHNob3QocykgewogIGNvbnN0IGQgPSBKU09OLnBhcnNlKHMpOyBub2RlcyA9IGQubm9kZXM7IGVkZ2VzID0gZC5lZGdlczsgc2VsZWN0ZWQuY2xlYXIoKTsKfQpmdW5jdGlvbiB1bmRvKCkgewogIGlmIChoaXN0SWR4IDw9IDApIHJldHVybjsKICBoaXN0SWR4LS07CiAgYXBwbHlTbmFwc2hvdChoaXN0b3J5W2hpc3RJZHhdKTsKICBkcmF3KCk7IHVwZGF0ZVVuZG9CdXR0b25zKCk7IHRvYXN0KCdVbmRvJyk7Cn0KZnVuY3Rpb24gcmVkbygpIHsKICBpZiAoaGlzdElkeCA+PSBoaXN0b3J5Lmxlbmd0aC0xKSByZXR1cm47CiAgaGlzdElkeCsrOwogIGFwcGx5U25hcHNob3QoaGlzdG9yeVtoaXN0SWR4XSk7CiAgZHJhdygpOyB1cGRhdGVVbmRvQnV0dG9ucygpOyB0b2FzdCgnUmVkbycpOwp9CmZ1bmN0aW9uIHVwZGF0ZVVuZG9CdXR0b25zKCkgewogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdidG4tdW5kbycpLmNsYXNzTGlzdC50b2dnbGUoJ2RpbScsIGhpc3RJZHggPD0gMCk7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2J0bi1yZWRvJykuY2xhc3NMaXN0LnRvZ2dsZSgnZGltJywgaGlzdElkeCA+PSBoaXN0b3J5Lmxlbmd0aC0xKTsKfQoKLy8g4pSA4pSA4pSAIERFRkFVTFQgREFUQSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZnVuY3Rpb24gZGVmYXVsdERhdGEoKSB7IAogIGlmICh3aW5kb3cuSU5KRUNURURfTUFQX0RBVEEpIHsKICAgIG5vZGVzID0gd2luZG93LklOSkVDVEVEX01BUF9EQVRBLm5vZGVzIHx8IFtdOwogICAgZWRnZXMgPSB3aW5kb3cuSU5KRUNURURfTUFQX0RBVEEuZWRnZXMgfHwgW107CiAgICBpZiAobm9kZXMubGVuZ3RoKSB7CiAgICAgIGlkQ291bnRlciA9IE1hdGgubWF4KDEwMCwgLi4ubm9kZXMubWFwKG4gPT4gcGFyc2VJbnQobi5pZC5yZXBsYWNlKC9cRC9nLCcnKSkgfHwgMCkpOwogICAgICByZXR1cm47CiAgICB9CiAgfQoKICBpZENvdW50ZXIgPSAxMDA7CiAgbm9kZXMgPSBbCiAgICB7aWQ6J24xJywgbmFtZTonQ29nbmlMaW5rIFJvdXRlcicsICB1cmw6J25pbHVmZXJvcm1hbmxpLmNvbScsICB0eXBlOidjb2xkJywgICAgZ29hbDonV2VsY29tZSBjb2xkIHZpc2l0b3JzLCB0YWcgYnkgc291cmNlLCByb3V0ZSB0byBjb3JyZWN0IHBhZ2UnLCAgeDozMCwgIHk6MjIwLCB3OjE2MiwgaDo5MH0sCiAgICB7aWQ6J24yJywgbmFtZTonTWFpbiBMYW5kaW5nJywgICAgICB1cmw6Jy9ob21lJywgICAgICAgICAgICAgICB0eXBlOidjb2xkJywgICAgZ29hbDonQnJhbmQgaW50cm8sIGN1cmlvc2l0eSwgc29mdCB3YWl0bGlzdCBlbnRyeScsICAgICAgICAgICAgICAgICAgeDoyNjAsIHk6NjAsICB3OjE1NSwgaDo4NX0sCiAgICB7aWQ6J24zJywgbmFtZTonUHJvZHVjdCBQYWdlJywgICAgICB1cmw6Jy92b2ljZS1hcmNoaXRlY3R1cmUnLCB0eXBlOid3YXJtJywgICAgZ29hbDonRXhwbGFpbiBwcm9kdWN0LCBidWlsZCB0cnVzdCwgd2FybSB3aXRoIHZpZGVvLCBwdXNoIHRvIENUQScsICAgeDo0NzgsIHk6NjAsICB3OjE1NSwgaDo4NX0sCiAgICB7aWQ6J240JywgbmFtZTonTmV3c2xldHRlcicsICAgICAgICB1cmw6Jy9zdWJzY3JpYmUnLCAgICAgICAgICB0eXBlOid3YXJtJywgICAgZ29hbDonR3JvdyBlbWFpbCBsaXN0LCBkZWxpdmVyIGxlYWQgbWFnbmV0LCBzdGFydCBsb25nLXRlcm0gbnVydHVyZScsIHg6NzAwLCB5OjYwLCAgdzoxNDgsIGg6ODV9LAogICAge2lkOiduNScsIG5hbWU6J0Jsb2cgLyBDb250ZW50JywgICAgdXJsOicvYmxvZycsICAgICAgICAgICAgICAgdHlwZTond2FybScsICAgIGdvYWw6J09yZ2FuaWMgdHJhZmZpYywgU0VPLCB0cnVzdCBidWlsZGluZywgYnJpZGdlIHRvIHByb2R1Y3QgcGFnZScsICB4OjI2MCwgeToyMTAsIHc6MTU1LCBoOjg1fSwKICAgIHtpZDonbjYnLCBuYW1lOidGQVEgLyBTdXBwb3J0JywgICAgIHVybDonL2ZhcScsICAgICAgICAgICAgICAgIHR5cGU6J3N1cHBvcnQnLCBnb2FsOidBbnN3ZXIgcHJlLXNhbGUgcXVlc3Rpb25zLCByZW1vdmUgb2JqZWN0aW9ucywgc3VwcG9ydCBjb252JywgICAgeDo0NzgsIHk6MjEwLCB3OjE1NSwgaDo4NX0sCiAgICB7aWQ6J243JywgbmFtZTonQ29udmVyc2lvbiBQYWdlJywgICB1cmw6Jy9qb2luJywgICAgICAgICAgICAgICB0eXBlOidjb252JywgICAgZ29hbDonU2VsbCwgdGFrZSBwYXltZW50LCByZW1vdmUgZG91YnQsIHNlbmQgdG8gY2hlY2tvdXQnLCAgICAgICAgICAgIHg6MjYwLCB5OjM3MCwgdzoxNjAsIGg6ODV9LAogICAge2lkOiduOCcsIG5hbWU6J1RoYW5rIFlvdScsICAgICAgICAgdXJsOicvd2VsY29tZScsICAgICAgICAgICAgdHlwZToncG9zdCcsICAgIGdvYWw6J0NvbmZpcm0gcHVyY2hhc2UsIHdlbGNvbWUgdG8gY29tbXVuaXR5LCByb3V0ZSB0byB1cHNlbGwnLCAgICAgICB4OjQ3OCwgeTozNzAsIHc6MTUyLCBoOjg1fSwKICAgIHtpZDonbjknLCBuYW1lOidVcHNlbGwgUGFnZScsICAgICAgIHVybDonL2FkdmFuY2VkJywgICAgICAgICAgIHR5cGU6J3Bvc3QnLCAgICBnb2FsOidTZWxsIG5leHQgcHJvZHVjdCwgaW5jcmVhc2UgUk9JLCBtb3ZlIHRvIGFkdmFuY2VkIG9mZmVyJywgICAgICAgeDo2OTUsIHk6MzcwLCB3OjE1NSwgaDo4NX0sCiAgICB7aWQ6J24xMCcsbmFtZTonVXBzZWxsIFdhaXRsaXN0JywgICB1cmw6Jy9jb21pbmctc29vbicsICAgICAgICB0eXBlOidzdXBwb3J0JywgZ29hbDonS2VlcCBidXllciB3YXJtIHdoZW4gcHJvZHVjdCBub3QgcmVhZHksIHRlYXNlIG5leHQgb2ZmZXInLCAgICAgIHg6Njk1LCB5OjIxMCwgdzoxNTUsIGg6ODV9LAogIF07CiAgZWRnZXMgPSBbCiAgICB7ZnJvbTonbjEnLHRvOiduMicsbGFiZWw6J0ZpcnN0IHZpc2l0J30sCiAgICB7ZnJvbTonbjEnLHRvOiduMycsbGFiZWw6J1dhcm0gdHJhZmZpYyd9LAogICAge2Zyb206J24xJyx0bzonbjcnLGxhYmVsOidIb3QgdHJhZmZpYyd9LAogICAge2Zyb206J24yJyx0bzonbjMnLGxhYmVsOicnfSwKICAgIHtmcm9tOiduMicsdG86J241JyxsYWJlbDonJ30sCiAgICB7ZnJvbTonbjMnLHRvOiduNCcsbGFiZWw6Jyd9LAogICAge2Zyb206J24zJyx0bzonbjcnLGxhYmVsOidDVEEnfSwKICAgIHtmcm9tOiduNScsdG86J242JyxsYWJlbDonJ30sCiAgICB7ZnJvbTonbjUnLHRvOiduNycsbGFiZWw6Jyd9LAogICAge2Zyb206J242Jyx0bzonbjcnLGxhYmVsOicnfSwKICAgIHtmcm9tOiduNCcsdG86J243JyxsYWJlbDonRW1haWwgZnVubmVsJ30sCiAgICB7ZnJvbTonbjcnLHRvOiduOCcsbGFiZWw6Jyd9LAogICAge2Zyb206J244Jyx0bzonbjknLGxhYmVsOicnfSwKICAgIHtmcm9tOiduOCcsdG86J24xMCcsbGFiZWw6J05vIHByb2R1Y3QgeWV0J30sCiAgICB7ZnJvbTonbjEwJyx0bzonbjknLGxhYmVsOidQcm9kdWN0IHJlYWR5J30sCiAgICB7ZnJvbTonbjknLHRvOiduNCcsbGFiZWw6J1JlLWVuZ2FnZSd9LAogIF07Cn0KCi8vIOKUgOKUgOKUgCBSRVNJWkUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIHJlc2l6ZSgpIHsKICBjb25zdCByID0gV1JBUC5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKTsKICBDVi53aWR0aCAgPSByLndpZHRoICAqIGRldmljZVBpeGVsUmF0aW87CiAgQ1YuaGVpZ2h0ID0gci5oZWlnaHQgKiBkZXZpY2VQaXhlbFJhdGlvOwogIENWLnN0eWxlLndpZHRoICA9IHIud2lkdGggICsgJ3B4JzsKICBDVi5zdHlsZS5oZWlnaHQgPSByLmhlaWdodCArICdweCc7CiAgVyA9IHIud2lkdGg7IEggPSByLmhlaWdodDsKICBjdHguc2NhbGUoZGV2aWNlUGl4ZWxSYXRpbywgZGV2aWNlUGl4ZWxSYXRpbyk7CiAgZHJhdygpOwp9CgovLyDilIDilIDilIAgRFJBVyDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZnVuY3Rpb24gZHJhdygpIHsKICBjdHguY2xlYXJSZWN0KDAsIDAsIFcqZGV2aWNlUGl4ZWxSYXRpbywgSCpkZXZpY2VQaXhlbFJhdGlvKTsKICBjdHguc2F2ZSgpOwogIGN0eC5zZXRUcmFuc2Zvcm0oZGV2aWNlUGl4ZWxSYXRpbywwLDAsZGV2aWNlUGl4ZWxSYXRpbywwLDApOwogIGN0eC50cmFuc2xhdGUocGFuLngsIHBhbi55KTsKICBjdHguc2NhbGUoc2NhbGUsIHNjYWxlKTsKCiAgLy8gRHJhdyBlZGdlcwogIGVkZ2VzLmZvckVhY2goKGUsIGlkeCkgPT4gewogICAgY29uc3QgYSA9IG5vZGVzLmZpbmQobj0+bi5pZD09PWUuZnJvbSksIGIgPSBub2Rlcy5maW5kKG49Pm4uaWQ9PT1lLnRvKTsKICAgIGlmICghYXx8IWIpIHJldHVybjsKICAgIGNvbnN0IGF4PWEueCthLncvMiwgYXk9YS55K2EuaC8yLCBieD1iLngrYi53LzIsIGJ5PWIueStiLmgvMjsKICAgIGNvbnN0IGR4PWJ4LWF4LCBkeT1ieS1heSwgbGVuPU1hdGguc3FydChkeCpkeCtkeSpkeSk7CiAgICBpZiAoIWxlbikgcmV0dXJuOwogICAgY29uc3QgdXg9ZHgvbGVuLCB1eT1keS9sZW47CiAgICBjb25zdCBzeD1heCt1eCooYS53LzIrMyksIHN5PWF5K3V5KihhLmgvMiszKTsKICAgIGNvbnN0IGV4PWJ4LXV4KihiLncvMisxMyksIGV5PWJ5LXV5KihiLmgvMisxMyk7CiAgICBjb25zdCBpc0hvdiAgICA9IGhvdmVyZWRFZGdlPT09aWR4OwogICAgY29uc3QgYm90aFNlbCAgPSBzZWxlY3RlZC5oYXMoZS5mcm9tKSAmJiBzZWxlY3RlZC5oYXMoZS50byk7CgogICAgY3R4LmJlZ2luUGF0aCgpOyBjdHgubW92ZVRvKHN4LHN5KTsgY3R4LmxpbmVUbyhleCxleSk7CiAgICBjdHguc3Ryb2tlU3R5bGUgPSBpc0hvdiA/ICcjNTM0YWI3JyA6IGJvdGhTZWwgPyAnIzdmNzdkZCcgOiAnI2M0YzJiOCc7CiAgICBjdHgubGluZVdpZHRoICAgPSAoaXNIb3Z8fGJvdGhTZWwpID8gMiA6IDEuMjsKICAgIGN0eC5zZXRMaW5lRGFzaChbXSk7CiAgICBjdHguc3Ryb2tlKCk7CgogICAgY29uc3QgYW5nID0gTWF0aC5hdGFuMihleS1zeSwgZXgtc3gpOwogICAgY3R4LnNhdmUoKTsgY3R4LnRyYW5zbGF0ZShleCxleSk7IGN0eC5yb3RhdGUoYW5nKTsKICAgIGN0eC5iZWdpblBhdGgoKTsgY3R4Lm1vdmVUbygtMTEsLTUpOyBjdHgubGluZVRvKDAsMCk7IGN0eC5saW5lVG8oLTExLDUpOwogICAgY3R4LnN0cm9rZVN0eWxlID0gKGlzSG92fHxib3RoU2VsKSA/ICcjNTM0YWI3JyA6ICcjODg4NzgwJzsKICAgIGN0eC5saW5lV2lkdGggICA9IChpc0hvdnx8Ym90aFNlbCkgPyAyIDogMS4yOwogICAgY3R4LnN0cm9rZSgpOyBjdHgucmVzdG9yZSgpOwoKICAgIGlmIChlLmxhYmVsKSB7CiAgICAgIGNvbnN0IG14PShzeCtleCkvMiwgbXk9KHN5K2V5KS8yOwogICAgICBjdHguZm9udD0nMTBweCAtYXBwbGUtc3lzdGVtLHNhbnMtc2VyaWYnOwogICAgICBjb25zdCB0dz1jdHgubWVhc3VyZVRleHQoZS5sYWJlbCkud2lkdGgrMTA7CiAgICAgIGN0eC5maWxsU3R5bGU9J3JnYmEoMjQ3LDI0NiwyNDIsMC45MiknOwogICAgICBjdHguYmVnaW5QYXRoKCk7IGN0eC5yb3VuZFJlY3QobXgtdHcvMixteS0xMCx0dywxNiw0KTsgY3R4LmZpbGwoKTsKICAgICAgY3R4LmZpbGxTdHlsZT0oaXNIb3Z8fGJvdGhTZWwpPycjNTM0YWI3JzonIzg4ODc4MCc7CiAgICAgIGN0eC50ZXh0QWxpZ249J2NlbnRlcic7IGN0eC5maWxsVGV4dChlLmxhYmVsLG14LG15KzIpOwogICAgfQogIH0pOwoKICAvLyBDb25uZWN0IHByZXZpZXcKICBpZiAoY29ubmVjdEZyb20pIHsKICAgIGNvbnN0IGEgPSBub2Rlcy5maW5kKG49Pm4uaWQ9PT1jb25uZWN0RnJvbSk7CiAgICBpZiAoYSkgewogICAgICBjdHguYmVnaW5QYXRoKCk7IGN0eC5tb3ZlVG8oYS54K2Eudy8yLGEueSthLmgvMik7IGN0eC5saW5lVG8obGFzdE1vdXNlLngsbGFzdE1vdXNlLnkpOwogICAgICBjdHguc3Ryb2tlU3R5bGU9JyM3Zjc3ZGQnOyBjdHgubGluZVdpZHRoPTEuNTsgY3R4LnNldExpbmVEYXNoKFs1LDRdKTsgY3R4LnN0cm9rZSgpOyBjdHguc2V0TGluZURhc2goW10pOwogICAgfQogIH0KCiAgLy8gRHJhdyBub2RlcwogIG5vZGVzLmZvckVhY2gobiA9PiB7CiAgICBjb25zdCBjPVRZUEVTW24udHlwZV0sIGlzU2VsPXNlbGVjdGVkLmhhcyhuLmlkKSwgcj05OwogICAgaWYgKGlzU2VsKSB7CiAgICAgIGN0eC5iZWdpblBhdGgoKTsgcm91bmRSZWN0KGN0eCxuLngtNCxuLnktNCxuLncrOCxuLmgrOCxyKzQpOwogICAgICBjdHguZmlsbFN0eWxlPWMuc3Ryb2tlKycyYSc7IGN0eC5maWxsKCk7CiAgICAgIGN0eC5zdHJva2VTdHlsZT1jLnN0cm9rZTsgY3R4LmxpbmVXaWR0aD0xLjg7IGN0eC5zdHJva2UoKTsKICAgIH0KICAgIGN0eC5iZWdpblBhdGgoKTsgcm91bmRSZWN0KGN0eCxuLngsbi55LG4udyxuLmgscik7CiAgICBjdHguZmlsbFN0eWxlPWMuYmc7IGN0eC5maWxsKCk7CiAgICBjdHguc3Ryb2tlU3R5bGU9aXNTZWw/Yy5zdHJva2U6J3JnYmEoMCwwLDAsMC4xKSc7IGN0eC5saW5lV2lkdGg9aXNTZWw/MS44OjAuNzsgY3R4LnN0cm9rZSgpOwoKICAgIGN0eC5zYXZlKCk7IGN0eC5iZWdpblBhdGgoKTsgcm91bmRSZWN0KGN0eCxuLngsbi55LG4udywyMix7dGw6cix0cjpyLGJyOjAsYmw6MH0pOwogICAgY3R4LmZpbGxTdHlsZT1jLmhlYWRlcjsgY3R4LmZpbGwoKTsgY3R4LnJlc3RvcmUoKTsKCiAgICBjdHguZm9udD0nNTAwIDEwcHggLWFwcGxlLXN5c3RlbSxzYW5zLXNlcmlmJzsgY3R4LmZpbGxTdHlsZT0ncmdiYSgyNTUsMjU1LDI1NSwwLjkyKSc7CiAgICBjdHgudGV4dEFsaWduPSdjZW50ZXInOyBjdHguZmlsbFRleHQodHJ1bmNhdGUobi51cmwsbi53LTE0LGN0eCksbi54K24udy8yLG4ueSsxNSk7CgogICAgY3R4LmZvbnQ9JzYwMCAxMnB4IC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZic7IGN0eC5maWxsU3R5bGU9Yy50ZXh0OyBjdHgudGV4dEFsaWduPSdjZW50ZXInOwogICAgY29uc3Qgbmw9d3JhcFRleHQoY3R4LG4ubmFtZSxuLnctMTQsMik7CiAgICBubC5mb3JFYWNoKChsbixpKT0+Y3R4LmZpbGxUZXh0KGxuLG4ueCtuLncvMixuLnkrMzQraSoxNCkpOwoKICAgIGN0eC5mb250PScxMHB4IC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZic7IGN0eC5maWxsU3R5bGU9Yy50ZXh0OyBjdHguZ2xvYmFsQWxwaGE9MC42NTsKICAgIGNvbnN0IGd5PW4ueSszNCtubC5sZW5ndGgqMTQrMjsKICAgIHdyYXBUZXh0KGN0eCxuLmdvYWwsbi53LTE0LDMpLmZvckVhY2goKGxuLGkpPT5jdHguZmlsbFRleHQobG4sbi54K24udy8yLGd5K2kqMTEuNSkpOwogICAgY3R4Lmdsb2JhbEFscGhhPTE7CiAgfSk7CiAgY3R4LnJlc3RvcmUoKTsKfQoKLy8g4pSA4pSA4pSAIFVUSUxTIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApmdW5jdGlvbiByb3VuZFJlY3QoYyx4LHksdyxoLHIpewogIGlmKHR5cGVvZiByPT09J251bWJlcicpIHI9e3RsOnIsdHI6cixicjpyLGJsOnJ9OwogIGMubW92ZVRvKHgrci50bCx5KTsgYy5saW5lVG8oeCt3LXIudHIseSk7IGMucXVhZHJhdGljQ3VydmVUbyh4K3cseSx4K3cseStyLnRyKTsKICBjLmxpbmVUbyh4K3cseStoLXIuYnIpOyBjLnF1YWRyYXRpY0N1cnZlVG8oeCt3LHkraCx4K3ctci5icix5K2gpOwogIGMubGluZVRvKHgrci5ibCx5K2gpOyBjLnF1YWRyYXRpY0N1cnZlVG8oeCx5K2gseCx5K2gtci5ibCk7CiAgYy5saW5lVG8oeCx5K3IudGwpOyBjLnF1YWRyYXRpY0N1cnZlVG8oeCx5LHgrci50bCx5KTsgYy5jbG9zZVBhdGgoKTsKfQpmdW5jdGlvbiB3cmFwVGV4dChjLHRleHQsbWF4VyxtYXhMaW5lcyl7CiAgaWYoIXRleHQpIHJldHVybiBbJyddOwogIGNvbnN0IHdvcmRzPXRleHQuc3BsaXQoJyAnKTsgbGV0IGxpbmU9JycsbGluZXM9W107CiAgZm9yKGxldCB3IG9mIHdvcmRzKXtjb25zdCB0PWxpbmU/bGluZSsnICcrdzp3O2lmKGMubWVhc3VyZVRleHQodCkud2lkdGg+bWF4VyYmbGluZSl7bGluZXMucHVzaChsaW5lKTtsaW5lPXc7fWVsc2UgbGluZT10O30KICBpZihsaW5lKSBsaW5lcy5wdXNoKGxpbmUpOyByZXR1cm4gbGluZXMuc2xpY2UoMCxtYXhMaW5lcyk7Cn0KZnVuY3Rpb24gdHJ1bmNhdGUodGV4dCxtYXhXLGMpewogIGlmKGMubWVhc3VyZVRleHQodGV4dCkud2lkdGg8PW1heFcpIHJldHVybiB0ZXh0OwogIGxldCB0PXRleHQ7IHdoaWxlKHQubGVuZ3RoPjEmJmMubWVhc3VyZVRleHQodCsn4oCmJykud2lkdGg+bWF4VykgdD10LnNsaWNlKDAsLTEpOyByZXR1cm4gdCsn4oCmJzsKfQpmdW5jdGlvbiB3b3JsZFB0KGUpewogIGNvbnN0IHI9Q1YuZ2V0Qm91bmRpbmdDbGllbnRSZWN0KCksIHRvdWNoPWUudG91Y2hlcz9lLnRvdWNoZXNbMF06ZTsKICByZXR1cm4ge3g6KHRvdWNoLmNsaWVudFgtci5sZWZ0LXBhbi54KS9zY2FsZSwgeToodG91Y2guY2xpZW50WS1yLnRvcC1wYW4ueSkvc2NhbGV9Owp9CmZ1bmN0aW9uIGhpdE5vZGUocCl7CiAgcmV0dXJuIG5vZGVzLnNsaWNlKCkucmV2ZXJzZSgpLmZpbmQobj0+cC54Pj1uLngmJnAueDw9bi54K24udyYmcC55Pj1uLnkmJnAueTw9bi55K24uaCk7Cn0KZnVuY3Rpb24gaGl0RWRnZShwKXsKICBmb3IobGV0IGk9ZWRnZXMubGVuZ3RoLTE7aT49MDtpLS0pewogICAgY29uc3QgZT1lZGdlc1tpXSxhPW5vZGVzLmZpbmQobj0+bi5pZD09PWUuZnJvbSksYj1ub2Rlcy5maW5kKG49Pm4uaWQ9PT1lLnRvKTsKICAgIGlmKCFhfHwhYikgY29udGludWU7CiAgICBjb25zdCBteD0oYS54K2Eudy8yK2IueCtiLncvMikvMixteT0oYS55K2EuaC8yK2IueStiLmgvMikvMjsKICAgIGlmKE1hdGguaHlwb3QocC54LW14LHAueS1teSk8MTQpIHJldHVybiBpOwogIH0KICByZXR1cm4gLTE7Cn0KZnVuY3Rpb24gc29ydGVkQnlYKGlkcyl7CiAgcmV0dXJuIFsuLi5pZHNdLnNvcnQoKGEsYik9PnsKICAgIGNvbnN0IG5hPW5vZGVzLmZpbmQobj0+bi5pZD09PWEpLCBuYj1ub2Rlcy5maW5kKG49Pm4uaWQ9PT1iKTsKICAgIHJldHVybiAobmE/Lnh8fDApLShuYj8ueHx8MCk7CiAgfSk7Cn0KCi8vIOKUgOKUgOKUgCBDT05ORUNUIEJVVFRPTiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZnVuY3Rpb24gY29ubmVjdENsaWNrKGV2dCkgewogIGNvbnN0IGlkcyA9IFsuLi5zZWxlY3RlZF07CiAgaWYgKGlkcy5sZW5ndGggPj0gMikgewogICAgc25hcHNob3QoKTsKICAgIGlmIChldnQuYWx0S2V5KSB7CiAgICAgIC8vIEFsdCtDb25uZWN0IOKGkiByZW1vdmUgZWRnZXMgYmV0d2VlbiBzZWxlY3RlZAogICAgICBsZXQgcmVtb3ZlZD0wOwogICAgICBlZGdlcyA9IGVkZ2VzLmZpbHRlcihlPT57CiAgICAgICAgaWYoc2VsZWN0ZWQuaGFzKGUuZnJvbSkmJnNlbGVjdGVkLmhhcyhlLnRvKSl7cmVtb3ZlZCsrO3JldHVybiBmYWxzZTt9CiAgICAgICAgcmV0dXJuIHRydWU7CiAgICAgIH0pOwogICAgICB0b2FzdChyZW1vdmVkID8gYFJlbW92ZWQgJHtyZW1vdmVkfSBjb25uZWN0aW9uJHtyZW1vdmVkPjE/J3MnOicnfWAgOiAnTm8gY29ubmVjdGlvbnMgYmV0d2VlbiBzZWxlY3RlZCBwYWdlcycpOwogICAgfSBlbHNlIHsKICAgICAgY29uc3Qgc29ydGVkID0gZXZ0LnNoaWZ0S2V5ID8gc29ydGVkQnlYKGlkcykucmV2ZXJzZSgpIDogc29ydGVkQnlYKGlkcyk7CiAgICAgIGxldCBhZGRlZD0wOwogICAgICBmb3IobGV0IGk9MDtpPHNvcnRlZC5sZW5ndGgtMTtpKyspewogICAgICAgIGNvbnN0IGZyb209c29ydGVkW2ldLHRvPXNvcnRlZFtpKzFdOwogICAgICAgIGlmKCFlZGdlcy5maW5kKGU9PmUuZnJvbT09PWZyb20mJmUudG89PT10bykpe2VkZ2VzLnB1c2goe2Zyb20sdG8sbGFiZWw6Jyd9KTthZGRlZCsrO30KICAgICAgfQogICAgICB0b2FzdChhZGRlZCA/IGBDb25uZWN0ZWQgJHthZGRlZH0gcGFpciR7YWRkZWQ+MT8ncyc6Jyd9JHtldnQuc2hpZnRLZXk/JyAocmV2ZXJzZWQpJzonJ31gIDogJ0FscmVhZHkgY29ubmVjdGVkJyk7CiAgICB9CiAgICBkcmF3KCk7IHJldHVybjsKICB9CiAgLy8gRmFsbGJhY2s6IDItY2xpY2sgY29ubmVjdAogIHNldE1vZGUoJ2Nvbm5lY3QnKTsKICB0b2FzdCgnQ2xpY2sgZmlyc3Qgbm9kZSwgdGhlbiBzZWNvbmQgdG8gY29ubmVjdCcpOwp9CgovLyDilIDilIDilIAgTU9VU0UgRVZFTlRTIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApDVi5hZGRFdmVudExpc3RlbmVyKCdtb3VzZWRvd24nLCBlID0+IHsKICBjb25zdCBwID0gd29ybGRQdChlKTsKICBjb25zdCBoaXQgPSBoaXROb2RlKHApOwogIGNvbnN0IGlzTWV0YSA9IGUubWV0YUtleSB8fCBlLmN0cmxLZXk7CgogIC8vIOKMmCtTaGlmdCtjbGljayBvbiBub2RlIOKGkiBpbnN0YW50IGRlbGV0ZQogIGlmIChpc01ldGEgJiYgZS5zaGlmdEtleSAmJiBoaXQpIHsKICAgIHNuYXBzaG90KCk7CiAgICBub2RlcyA9IG5vZGVzLmZpbHRlcihuPT5uLmlkIT09aGl0LmlkKTsKICAgIGVkZ2VzID0gZWRnZXMuZmlsdGVyKGVkPT5lZC5mcm9tIT09aGl0LmlkJiZlZC50byE9PWhpdC5pZCk7CiAgICBzZWxlY3RlZC5kZWxldGUoaGl0LmlkKTsgZHJhdygpOyB0b2FzdCgnUGFnZSBkZWxldGVkJyk7IHJldHVybjsKICB9CiAgLy8g4oyYK1NoaWZ0K2NsaWNrIG9uIGVkZ2Ug4oaSIGluc3RhbnQgZGVsZXRlCiAgaWYgKGlzTWV0YSAmJiBlLnNoaWZ0S2V5ICYmICFoaXQpIHsKICAgIGNvbnN0IGVpID0gaGl0RWRnZShwKTsKICAgIGlmIChlaT49MCl7IHNuYXBzaG90KCk7IGVkZ2VzLnNwbGljZShlaSwxKTsgZHJhdygpOyB0b2FzdCgnQ29ubmVjdGlvbiBkZWxldGVkJyk7IHJldHVybjsgfQogIH0KICAvLyDijJgrY2xpY2sgb24gZW1wdHkgY2FudmFzIOKGkiBhZGQgbm9kZQogIGlmIChpc01ldGEgJiYgIWUuc2hpZnRLZXkgJiYgIWhpdCkgewogICAgYWRkTm9kZUF0KHAueC03NywgcC55LTQyKTsgcmV0dXJuOwogIH0KCiAgLy8gU3BhY2UgaGVsZCA9IHBhbgogIGlmIChzcGFjZURvd24pIHsKICAgIGlzUGFubmluZz10cnVlOyBwYW5TdGFydD17eDplLmNsaWVudFgtcGFuLngseTplLmNsaWVudFktcGFuLnl9OwogICAgQ1Yuc3R5bGUuY3Vyc29yPSdncmFiYmluZyc7IHJldHVybjsKICB9CgogIC8vIENvbm5lY3QgbW9kZSAoMi1jbGljayBmYWxsYmFjaykKICBpZiAobW9kZT09PSdjb25uZWN0JykgewogICAgaWYgKGhpdCkgewogICAgICBpZiAoIWNvbm5lY3RGcm9tKSB7IGNvbm5lY3RGcm9tPWhpdC5pZDsgZHJhdygpOyB9CiAgICAgIGVsc2UgaWYgKGhpdC5pZCE9PWNvbm5lY3RGcm9tKSB7CiAgICAgICAgc25hcHNob3QoKTsgZWRnZXMucHVzaCh7ZnJvbTpjb25uZWN0RnJvbSx0bzpoaXQuaWQsbGFiZWw6Jyd9KTsKICAgICAgICBjb25uZWN0RnJvbT1udWxsOyBzZXRNb2RlKCdzZWxlY3QnKTsgZHJhdygpOyB0b2FzdCgnQ29ubmVjdGVkJyk7CiAgICAgIH0KICAgIH0gZWxzZSB7IGNvbm5lY3RGcm9tPW51bGw7IHNldE1vZGUoJ3NlbGVjdCcpOyBkcmF3KCk7IH0KICAgIHJldHVybjsKICB9CgogIC8vIE5vcm1hbCBzZWxlY3QgbW9kZQogIGlmIChoaXQpIHsKICAgIGlmIChlLnNoaWZ0S2V5KSB7CiAgICAgIGlmIChzZWxlY3RlZC5oYXMoaGl0LmlkKSkgc2VsZWN0ZWQuZGVsZXRlKGhpdC5pZCk7IGVsc2Ugc2VsZWN0ZWQuYWRkKGhpdC5pZCk7CiAgICAgIGRyYXcoKTsgcmV0dXJuOwogICAgfQogICAgaWYgKCFzZWxlY3RlZC5oYXMoaGl0LmlkKSkgeyBzZWxlY3RlZC5jbGVhcigpOyBzZWxlY3RlZC5hZGQoaGl0LmlkKTsgfQogICAgLy8gQ2FwdHVyZSBzdGFydGluZyBwb3NpdGlvbnMgb2YgYWxsIHNlbGVjdGVkIG5vZGVzIGZvciBncm91cCBkcmFnCiAgICBkcmFnR3JvdXBTdGFydCA9IHt9OwogICAgc2VsZWN0ZWQuZm9yRWFjaChpZD0+e2NvbnN0IG49bm9kZXMuZmluZChuPT5uLmlkPT09aWQpO2lmKG4pZHJhZ0dyb3VwU3RhcnRbaWRdPXt4Om4ueCx5Om4ueX07fSk7CiAgICBkcmFnZ2luZz1oaXQ7IGRyYWdPZmY9e3g6cC54LWhpdC54LHk6cC55LWhpdC55fTsgZHJhZ01vdmVkPWZhbHNlOwogICAgZHJhdygpOwogIH0gZWxzZSB7CiAgICBjb25zdCBlaSA9IGhpdEVkZ2UocCk7CiAgICBpZiAoZWk+PTApIHsKICAgICAgaWYgKCFlLnNoaWZ0S2V5KSBzZWxlY3RlZC5jbGVhcigpOwogICAgICBob3ZlcmVkRWRnZT1laTsgZHJhdygpOwogICAgfSBlbHNlIHsKICAgICAgaWYgKCFlLnNoaWZ0S2V5KSBzZWxlY3RlZC5jbGVhcigpOwogICAgICBpc1Bhbm5pbmc9dHJ1ZTsgcGFuU3RhcnQ9e3g6ZS5jbGllbnRYLXBhbi54LHk6ZS5jbGllbnRZLXBhbi55fTsKICAgICAgZHJhdygpOwogICAgfQogIH0KfSk7CgpDVi5hZGRFdmVudExpc3RlbmVyKCdkYmxjbGljaycsIGU9PnsKICBjb25zdCBwPXdvcmxkUHQoZSksIGhpdD1oaXROb2RlKHApOwogIGlmIChoaXQpIHsgb3Blbk5vZGVQYW5lbChoaXQuaWQpOyByZXR1cm47IH0KICBjb25zdCBlaT1oaXRFZGdlKHApOwogIGlmIChlaT49MCkgb3BlbkVkZ2VQYW5lbChlaSk7Cn0pOwoKQ1YuYWRkRXZlbnRMaXN0ZW5lcignbW91c2Vtb3ZlJywgZT0+ewogIGNvbnN0IHA9d29ybGRQdChlKTsgbGFzdE1vdXNlPXA7CiAgaWYgKGlzUGFubmluZyl7CiAgICBwYW4ueD1lLmNsaWVudFgtcGFuU3RhcnQueDsgcGFuLnk9ZS5jbGllbnRZLXBhblN0YXJ0Lnk7IGRyYXcoKTsgcmV0dXJuOwogIH0KICBpZiAoZHJhZ2dpbmcpIHsKICAgIGNvbnN0IGR4PXAueC1kcmFnT2ZmLngtZHJhZ2dpbmcueCwgZHk9cC55LWRyYWdPZmYueS1kcmFnZ2luZy55OwogICAgaWYgKE1hdGguYWJzKGR4KStNYXRoLmFicyhkeSk+MikgZHJhZ01vdmVkPXRydWU7CiAgICBpZiAoc2VsZWN0ZWQuc2l6ZT4xICYmIHNlbGVjdGVkLmhhcyhkcmFnZ2luZy5pZCkpIHsKICAgICAgLy8gR3JvdXAgbW92ZTogb2Zmc2V0IGFsbCBzZWxlY3RlZCBieSBkZWx0YSBmcm9tIGRyYWcgb3JpZ2luCiAgICAgIGNvbnN0IHN0YXJ0RHJhZz1kcmFnR3JvdXBTdGFydFtkcmFnZ2luZy5pZF07CiAgICAgIGlmIChzdGFydERyYWcpIHsKICAgICAgICBjb25zdCBveD1wLngtZHJhZ09mZi54LXN0YXJ0RHJhZy54LCBveT1wLnktZHJhZ09mZi55LXN0YXJ0RHJhZy55OwogICAgICAgIHNlbGVjdGVkLmZvckVhY2goaWQ9PnsKICAgICAgICAgIGNvbnN0IG49bm9kZXMuZmluZChuPT5uLmlkPT09aWQpLCBzPWRyYWdHcm91cFN0YXJ0W2lkXTsKICAgICAgICAgIGlmKG4mJnMpe24ueD1zLngrb3g7bi55PXMueStveTt9CiAgICAgICAgfSk7CiAgICAgIH0KICAgIH0gZWxzZSB7CiAgICAgIGRyYWdnaW5nLng9cC54LWRyYWdPZmYueDsgZHJhZ2dpbmcueT1wLnktZHJhZ09mZi55OwogICAgfQogICAgZHJhdygpOyByZXR1cm47CiAgfQogIGlmIChtb2RlPT09J2Nvbm5lY3QnJiZjb25uZWN0RnJvbSl7ZHJhdygpO3JldHVybjt9CiAgY29uc3QgaGl0PWhpdE5vZGUocCksIG9sZEhvdj1ob3ZlcmVkRWRnZTsKICBob3ZlcmVkRWRnZT1oaXQ/LTE6aGl0RWRnZShwKTsKICBDVi5zdHlsZS5jdXJzb3I9c3BhY2VEb3duPydncmFiJzooaGl0PydncmFiJzooaG92ZXJlZEVkZ2U+PTA/J3BvaW50ZXInOidkZWZhdWx0JykpOwogIGlmKG9sZEhvdiE9PWhvdmVyZWRFZGdlKSBkcmF3KCk7Cn0pOwoKQ1YuYWRkRXZlbnRMaXN0ZW5lcignbW91c2V1cCcsICgpPT57CiAgaWYoZHJhZ2dpbmcmJmRyYWdNb3ZlZCkgc25hcHNob3QoKTsKICBkcmFnZ2luZz1udWxsOyBkcmFnTW92ZWQ9ZmFsc2U7IGRyYWdHcm91cFN0YXJ0PXt9OwogIGlzUGFubmluZz1mYWxzZTsKICBpZighc3BhY2VEb3duKSBDVi5zdHlsZS5jdXJzb3I9J2RlZmF1bHQnOwp9KTsKCkNWLmFkZEV2ZW50TGlzdGVuZXIoJ3doZWVsJywgZT0+ewogIGUucHJldmVudERlZmF1bHQoKTsKICB6b29tQnkoZS5kZWx0YVk+MD8tMC4xOjAuMSwgZS5jbGllbnRYLCBlLmNsaWVudFkpOwp9LHtwYXNzaXZlOmZhbHNlfSk7CgovLyDilIDilIDilIAgS0VZQk9BUkQg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLCBlPT57CiAgY29uc3QgdGFnPWRvY3VtZW50LmFjdGl2ZUVsZW1lbnQudGFnTmFtZTsKICBpZihbJ0lOUFVUJywnVEVYVEFSRUEnLCdTRUxFQ1QnXS5pbmNsdWRlcyh0YWcpKSByZXR1cm47CgogIGlmKGUuY29kZT09PSdTcGFjZScmJiFzcGFjZURvd24pewogICAgZS5wcmV2ZW50RGVmYXVsdCgpOyBzcGFjZURvd249dHJ1ZTsgQ1Yuc3R5bGUuY3Vyc29yPSdncmFiJzsgcmV0dXJuOwogIH0KICBpZihlLmtleT09PSdFc2NhcGUnKXtjbG9zZUFsbCgpO2Nvbm5lY3RGcm9tPW51bGw7c2VsZWN0ZWQuY2xlYXIoKTtzZXRNb2RlKCdzZWxlY3QnKTtkcmF3KCk7cmV0dXJuO30KICBpZihlLmtleS50b0xvd2VyQ2FzZSgpPT09J3YnJiYhZS5tZXRhS2V5JiYhZS5jdHJsS2V5KXtzZXRNb2RlKCdzZWxlY3QnKTtyZXR1cm47fQogIGlmKChlLmtleT09PSdEZWxldGUnfHxlLmtleT09PSdCYWNrc3BhY2UnKSYmc2VsZWN0ZWQuc2l6ZSl7ZGVsZXRlU2VsZWN0ZWROb2RlcygpO3JldHVybjt9CiAgaWYoKGUubWV0YUtleXx8ZS5jdHJsS2V5KSYmZS5rZXk9PT0neicmJiFlLnNoaWZ0S2V5KXtlLnByZXZlbnREZWZhdWx0KCk7dW5kbygpO3JldHVybjt9CiAgaWYoKGUubWV0YUtleXx8ZS5jdHJsS2V5KSYmKGUua2V5PT09J3knfHwoZS5rZXk9PT0neicmJmUuc2hpZnRLZXkpKSl7ZS5wcmV2ZW50RGVmYXVsdCgpO3JlZG8oKTtyZXR1cm47fQp9KTsKCmRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2tleXVwJywgZT0+ewogIGlmKGUuY29kZT09PSdTcGFjZScpewogICAgc3BhY2VEb3duPWZhbHNlOwogICAgaWYoIWlzUGFubmluZykgQ1Yuc3R5bGUuY3Vyc29yPSdkZWZhdWx0JzsKICB9Cn0pOwoKLy8g4pSA4pSA4pSAIE1PREUg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIHNldE1vZGUobSl7CiAgbW9kZT1tOyBjb25uZWN0RnJvbT1udWxsOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdidG4tc2VsZWN0JykuY2xhc3NMaXN0LnRvZ2dsZSgnYWN0aXZlJyxtPT09J3NlbGVjdCcpOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdidG4tY29ubmVjdCcpLmNsYXNzTGlzdC50b2dnbGUoJ2FjdGl2ZScsbT09PSdjb25uZWN0Jyk7CiAgQ1Yuc3R5bGUuY3Vyc29yPW09PT0nY29ubmVjdCc/J2Nyb3NzaGFpcic6J2RlZmF1bHQnOwogIGRyYXcoKTsKfQoKLy8g4pSA4pSA4pSAIFpPT00g4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIHpvb21CeShkZWx0YSxjeCxjeSl7CiAgY3g9Y3g/P1cvMjsgY3k9Y3k/P0gvMjsKICBjb25zdCBucz1NYXRoLm1pbigyLjUsTWF0aC5tYXgoMC4yNSxzY2FsZStkZWx0YSkpOwogIHBhbi54PWN4LShjeC1wYW4ueCkqKG5zL3NjYWxlKTsgcGFuLnk9Y3ktKGN5LXBhbi55KSoobnMvc2NhbGUpOwogIHNjYWxlPW5zOyBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnem9vbS1sYWJlbCcpLnRleHRDb250ZW50PU1hdGgucm91bmQoc2NhbGUqMTAwKSsnJSc7IGRyYXcoKTsKfQpmdW5jdGlvbiByZXNldFZpZXcoKXtwYW49e3g6NDAseTo0MH07c2NhbGU9MTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnem9vbS1sYWJlbCcpLnRleHRDb250ZW50PScxMDAlJztkcmF3KCk7fQoKLy8g4pSA4pSA4pSAIEFERCAvIERFTEVURSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZnVuY3Rpb24gYWRkTm9kZUF0KHgseSl7CiAgY29uc3QgaWQ9J24nKygrK2lkQ291bnRlcik7CiAgbm9kZXMucHVzaCh7aWQsbmFtZTonTmV3IFBhZ2UnLHVybDonL25ldycsdHlwZTonY29sZCcsZ29hbDonRGVzY3JpYmUgd2hhdCB0aGlzIHBhZ2UgZG9lcycseCx5LHc6MTU1LGg6ODV9KTsKICBzZWxlY3RlZC5jbGVhcigpOyBzZWxlY3RlZC5hZGQoaWQpOyBzbmFwc2hvdCgpOyBkcmF3KCk7IG9wZW5Ob2RlUGFuZWwoaWQpOwp9CmZ1bmN0aW9uIGFkZE5vZGVDZW50ZXIoKXsKICBhZGROb2RlQXQoKFcvMi1wYW4ueCkvc2NhbGUtNzcsKEgvMi1wYW4ueSkvc2NhbGUtNDIpOwp9CmZ1bmN0aW9uIGRlbGV0ZVNlbGVjdGVkTm9kZXMoKXsKICBpZighc2VsZWN0ZWQuc2l6ZSl7dG9hc3QoJ1NlbGVjdCBhIHBhZ2UgZmlyc3QnKTtyZXR1cm47fQogIHNuYXBzaG90KCk7CiAgY29uc3QgaWRzPW5ldyBTZXQoc2VsZWN0ZWQpOwogIG5vZGVzPW5vZGVzLmZpbHRlcihuPT4haWRzLmhhcyhuLmlkKSk7CiAgZWRnZXM9ZWRnZXMuZmlsdGVyKGU9PiFpZHMuaGFzKGUuZnJvbSkmJiFpZHMuaGFzKGUudG8pKTsKICBzZWxlY3RlZC5jbGVhcigpOyBkcmF3KCk7IHRvYXN0KGBEZWxldGVkICR7aWRzLnNpemV9IHBhZ2Uke2lkcy5zaXplPjE/J3MnOicnfWApOwp9CgovLyDilIDilIDilIAgUEFORUxTIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApmdW5jdGlvbiBvcGVuUGFuZWwoaWQpewogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlkKS5jbGFzc0xpc3QuYWRkKCdvcGVuJyk7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ292ZXJsYXknKS5jbGFzc0xpc3QuYWRkKCdvcGVuJyk7Cn0KZnVuY3Rpb24gb3Blbk5vZGVQYW5lbChpZCl7CiAgZWRpdElkPWlkOyBjb25zdCBuPW5vZGVzLmZpbmQobj0+bi5pZD09PWlkKTsgaWYoIW4pIHJldHVybjsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZXAtbmFtZScpLnZhbHVlPW4ubmFtZTsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZXAtdXJsJykudmFsdWU9bi51cmw7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VwLXR5cGUnKS52YWx1ZT1uLnR5cGU7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VwLWdvYWwnKS52YWx1ZT1uLmdvYWw7CiAgb3BlblBhbmVsKCdlZGl0LXBhbmVsJyk7Cn0KZnVuY3Rpb24gc2F2ZU5vZGUoKXsKICBjb25zdCBuPW5vZGVzLmZpbmQobj0+bi5pZD09PWVkaXRJZCk7IGlmKCFuKSByZXR1cm47CiAgc25hcHNob3QoKTsKICBuLm5hbWU9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VwLW5hbWUnKS52YWx1ZS50cmltKCl8fG4ubmFtZTsKICBuLnVybCA9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VwLXVybCcpLnZhbHVlLnRyaW0oKSB8fG4udXJsOwogIG4udHlwZT1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZXAtdHlwZScpLnZhbHVlOwogIG4uZ29hbD1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZXAtZ29hbCcpLnZhbHVlLnRyaW0oKTsKICBjbG9zZUFsbCgpOyBkcmF3KCk7IHRvYXN0KCdTYXZlZCcpOwp9CmZ1bmN0aW9uIG9wZW5FZGdlUGFuZWwoaWR4KXsKICBlZGl0RWRnZUlkeD1pZHg7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VkZ2UtbGFiZWwtaW5wdXQnKS52YWx1ZT1lZGdlc1tpZHhdPy5sYWJlbHx8Jyc7CiAgb3BlblBhbmVsKCdlZGdlLXBhbmVsJyk7Cn0KZnVuY3Rpb24gc2F2ZUVkZ2UoKXsKICBpZihlZGl0RWRnZUlkeD09PW51bGwpIHJldHVybjsKICBzbmFwc2hvdCgpOyBlZGdlc1tlZGl0RWRnZUlkeF0ubGFiZWw9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VkZ2UtbGFiZWwtaW5wdXQnKS52YWx1ZS50cmltKCk7CiAgZWRpdEVkZ2VJZHg9bnVsbDsgY2xvc2VBbGwoKTsgZHJhdygpOyB0b2FzdCgnTGFiZWwgdXBkYXRlZCcpOwp9CmZ1bmN0aW9uIGRlbGV0ZUVkZ2VDdXJyZW50KCl7CiAgaWYoZWRpdEVkZ2VJZHg9PT1udWxsKSByZXR1cm47CiAgc25hcHNob3QoKTsgZWRnZXMuc3BsaWNlKGVkaXRFZGdlSWR4LDEpOyBlZGl0RWRnZUlkeD1udWxsOwogIGNsb3NlQWxsKCk7IGRyYXcoKTsgdG9hc3QoJ0Nvbm5lY3Rpb24gZGVsZXRlZCcpOwp9CmZ1bmN0aW9uIGNsb3NlQWxsKCl7CiAgWydlZGl0LXBhbmVsJywnZWRnZS1wYW5lbCcsJ3Nob3J0Y3V0cy1wYW5lbCddLmZvckVhY2goaWQ9PmRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlkKS5jbGFzc0xpc3QucmVtb3ZlKCdvcGVuJykpOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdvdmVybGF5JykuY2xhc3NMaXN0LnJlbW92ZSgnb3BlbicpOwp9CgovLyDilIDilIDilIAgSU1QT1JUIC8gRVhQT1JUIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgApmdW5jdGlvbiBleHBvcnRKU09OKCl7CiAgY29uc3QgYmxvYj1uZXcgQmxvYihbSlNPTi5zdHJpbmdpZnkoe25vZGVzLGVkZ2VzfSxudWxsLDIpXSx7dHlwZTonYXBwbGljYXRpb24vanNvbid9KTsKICBjb25zdCBhPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2EnKTsgYS5ocmVmPVVSTC5jcmVhdGVPYmplY3RVUkwoYmxvYik7IGEuZG93bmxvYWQ9J25pbHVmZXItZnVubmVsLmpzb24nOyBhLmNsaWNrKCk7CiAgdG9hc3QoJ0pTT04gZG93bmxvYWRlZCcpOwp9CmZ1bmN0aW9uIGltcG9ydEpTT04oKXtkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZmlsZS1pbnB1dCcpLmNsaWNrKCk7fQpmdW5jdGlvbiBoYW5kbGVGaWxlSW1wb3J0KGV2dCl7CiAgY29uc3QgZmlsZT1ldnQudGFyZ2V0LmZpbGVzWzBdOyBpZighZmlsZSkgcmV0dXJuOwogIGNvbnN0IHJlYWRlcj1uZXcgRmlsZVJlYWRlcigpOwogIHJlYWRlci5vbmxvYWQ9ZXY9PnsKICAgIHRyeXsKICAgICAgY29uc3QgZD1KU09OLnBhcnNlKGV2LnRhcmdldC5yZXN1bHQpOwogICAgICBpZihkLm5vZGVzJiZkLmVkZ2VzKXsKICAgICAgICBub2Rlcz1kLm5vZGVzOyBlZGdlcz1kLmVkZ2VzOyBzZWxlY3RlZC5jbGVhcigpOwogICAgICAgIGlkQ291bnRlcj1NYXRoLm1heCgxMDAsLi4ubm9kZXMubWFwKG49PnBhcnNlSW50KG4uaWQucmVwbGFjZSgvXEQvZywnJykpfHwwKSk7CiAgICAgICAgc25hcHNob3QoKTsgZHJhdygpOyB0b2FzdCgnTG9hZGVkOiAnK2ZpbGUubmFtZSk7CiAgICAgIH0gZWxzZSB0b2FzdCgnSW52YWxpZCBKU09OJyk7CiAgICB9IGNhdGNoe3RvYXN0KCdKU09OIHBhcnNlIGVycm9yJyk7fQogIH07CiAgcmVhZGVyLnJlYWRBc1RleHQoZmlsZSk7IGV2dC50YXJnZXQudmFsdWU9Jyc7Cn0KZnVuY3Rpb24gc2F2ZVZpc3VhbE1hcCgpewogIGlmICh3aW5kb3cucGFyZW50ICYmIHdpbmRvdy5wYXJlbnQgIT09IHdpbmRvdykgewogICAgd2luZG93LnBhcmVudC5wb3N0TWVzc2FnZSh7IHR5cGU6ICJTQVZFX1ZJU1VBTF9NQVAiLCBtYXBJZDogd2luZG93LklOSkVDVEVEX01BUF9JRCwgZGF0YTogeyBub2RlcywgZWRnZXMgfSB9LCAiKiIpOwogICAgdG9hc3QoJ1NhdmVkIHRvIEFkbWluIFNldHRpbmdzJyk7CiAgfSBlbHNlIHsKICAgIGNvbnN0IGRhdGFTdHI9SlNPTi5zdHJpbmdpZnkoe25vZGVzLGVkZ2VzfSk7CiAgICBjb25zdCBpbmplY3RlZD1kb2N1bWVudC5kb2N1bWVudEVsZW1lbnQub3V0ZXJIVE1MLnJlcGxhY2UoCiAgICAgICc8c2NyaXB0PicsCiAgICAgIGA8c2NyaXB0PiB3aW5kb3cuSU5KRUNURURfTUFQX0RBVEE9JHtkYXRhU3RyfTtcbmAKICAgICk7CiAgICBjb25zdCBibG9iPW5ldyBCbG9iKFtpbmplY3RlZF0se3R5cGU6J3RleHQvaHRtbCd9KTsKICAgIGNvbnN0IGE9ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnYScpOyBhLmhyZWY9VVJMLmNyZWF0ZU9iamVjdFVSTChibG9iKTsgYS5kb3dubG9hZD0nbmlsdWZlci1mdW5uZWwtZWRpdG9yLmh0bWwnOyBhLmNsaWNrKCk7CiAgICB0b2FzdCgnU2F2ZWQgbG9jYWxseSBhcyBIVE1MJyk7CiAgfQp9CgovLyDilIDilIDilIAgVE9BU1Qg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACmZ1bmN0aW9uIHRvYXN0KG1zZyl7CiAgY29uc3QgZWw9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3RvYXN0Jyk7CiAgZWwudGV4dENvbnRlbnQ9bXNnOyBlbC5jbGFzc0xpc3QuYWRkKCdzaG93Jyk7CiAgY2xlYXJUaW1lb3V0KHRvYXN0Ll90KTsgdG9hc3QuX3Q9c2V0VGltZW91dCgoKT0+ZWwuY2xhc3NMaXN0LnJlbW92ZSgnc2hvdycpLDIyMDApOwp9CgovLyDilIDilIDilIAgSU5JVCDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAKZGVmYXVsdERhdGEoKTsKc25hcHNob3QoKTsKd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ3Jlc2l6ZScscmVzaXplKTsKcmVzaXplKCk7Cjwvc2NyaXB0PgoKCjwvYm9keT48L2h0bWw+";
 

@@ -25,8 +25,8 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   if (!(await verifyToken(request, env))) return unauthorized();
   try {
-    const data = await request.json(); // { slug, journeyId, utms... }
-    if (!data.slug || !data.journeyId) throw new Error("Missing slug or journeyId");
+    const data = await request.json(); // { slug, destinations, evaluation, rules... }
+    if (!data.slug) throw new Error("Missing slug");
     
     const slug = data.slug.toLowerCase().trim();
     if (env.APP_CONFIG) {

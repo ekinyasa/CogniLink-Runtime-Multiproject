@@ -99,11 +99,7 @@ export function createRuleRepository(env) {
         let engineSourceId = null;
 
         if (engineConfig) {
-          if (legacyObject.engineMapId && engineConfig.customMaps && engineConfig.customMaps[legacyObject.engineMapId]) {
-            checkRedirects = engineConfig.customMaps[legacyObject.engineMapId];
-            engineSource = "engine_config_map";
-            engineSourceId = legacyObject.engineMapId;
-          } else if (engineConfig.redirects) {
+          if (engineConfig.redirects) {
             checkRedirects = engineConfig.redirects;
             engineSource = "engine_config_global";
             engineSourceId = "global";

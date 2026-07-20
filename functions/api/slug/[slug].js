@@ -35,7 +35,7 @@ export async function onRequestPut(context) {
 
   const {
     campaign, context: ctx, defaults, overrides, links,
-    alias, engineMapId,
+    alias,
     customHeaderHtml, customFooterHtml, customStyleCss,
   } = body || {};
 
@@ -109,8 +109,7 @@ export async function onRequestPut(context) {
     context:          ctx ?? existing.context,
     defaults:         sanitizeUtm(defaults  ?? existing.defaults  ?? {}),
     overrides:        overridesResult.data,
-    links:            linksResult.data,
-    engineMapId:      "engineMapId" in (body || {}) ? (typeof engineMapId === "string" && engineMapId.trim() ? engineMapId.trim() : null) : (existing.engineMapId ?? null),
+    links:            linksResult.data:      "engineMapId" in (body || {}) ? (typeof engineMapId === "string" && engineMapId.trim() ? engineMapId.trim() : null) : (existing.engineMapId ?? null),
     customHeaderHtml: "customHeaderHtml" in (body || {}) ? sanitizeHtmlField(customHeaderHtml) : (existing.customHeaderHtml ?? null),
     customFooterHtml: "customFooterHtml" in (body || {}) ? sanitizeHtmlField(customFooterHtml) : (existing.customFooterHtml ?? null),
     customStyleCss:   "customStyleCss"   in (body || {}) ? sanitizeCssField(customStyleCss)    : (existing.customStyleCss   ?? null),

@@ -39,7 +39,6 @@ export function renderHub({
   const modifierJson = JSON.stringify(modifier || "");
   const ctxTypeEsc = JSON.stringify(contextType);
   const ctxIdEsc = JSON.stringify(contextId);
-  const engineMapIdEsc = JSON.stringify(slugData?.engineMapId || "");
 
   // Compile component HTML sections (Prompt 140 / User Request)
   var allowedComps = (components || []);
@@ -245,7 +244,6 @@ ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
           meta: {
             source: ${JSON.stringify(contextId)},
             campaign: ${JSON.stringify(campaign || "")},
-            engineMapId: ${JSON.stringify(slugData?.engineMapId || "")}
           }
         })
       }).catch(function() {});
@@ -258,7 +256,6 @@ ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
   var LINKS_META     = [];
   var CONTEXT_TYPE   = JSON.parse('${escJsString(ctxTypeEsc)}');
   var CONTEXT_ID     = JSON.parse('${escJsString(ctxIdEsc)}');
-  var ENGINE_MAP     = JSON.parse('${escJsString(engineMapIdEsc)}');
   var EXP_TOKEN      = ${JSON.stringify(expToken || defaultUtms.exp_token || "")};
   var UTM_VARIANT    = ${JSON.stringify(utmVariant || defaultUtms.utm_variant || "")};
   var TRACKING_KEYS  = [
@@ -428,8 +425,7 @@ ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
           link_id: meta.id,
           meta: {
             source: CONTEXT_ID,
-            campaign: CAMPAIGN || getMerged().utm_campaign || "",
-            engineMapId: ENGINE_MAP
+            campaign: CAMPAIGN || getMerged().utm_campaign || ""
           }
         })
       }).catch(function() {});
@@ -470,8 +466,7 @@ ${slugData?.customScript ? `<script>${slugData.customScript}</script>` : ""}
           score: score,
           meta: {
             source: CONTEXT_ID,
-            campaign: CAMPAIGN || getMerged().utm_campaign || "",
-            engineMapId: ENGINE_MAP
+            campaign: CAMPAIGN || getMerged().utm_campaign || ""
           }
         })
       }).catch(function() {});

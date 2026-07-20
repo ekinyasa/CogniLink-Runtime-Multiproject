@@ -71,6 +71,14 @@ export async function onRequestGet(context) {
   const shadowData = shadowResult.status === "fulfilled" ? (shadowResult.value || null) : null;
   const runtimeContext = shadowData?.context || null;
 
+  // Fetch Intent (Campaign V2 config) to act as the unified routing source
+  let intentData = null;
+  if (campaignDataVal && campaignDataVal.campaign && env.APP_CONFIG) {
+    try {
+      intentData = await env.APP_CONFIG.get(`campaign:${campaignDataVal.campaign}`, { type: "json" });
+    } catch(e) {}
+  }
+
   // Pre-calculate inputs for legacy decision
   const url         = new URL(request.url);
   const utmSource   = url.searchParams.get("utm_source")   || "";
@@ -91,7 +99,7 @@ export async function onRequestGet(context) {
       source:   utmSource,
       medium:   utmMedium,
       campaign: utmCampaign,
-      decisionRules: campaignDataVal?.decision_rules || config?.decision_rules || [],
+      decisionRules: intentData?.routing?.rules || campaignDataVal?.decision_rules || config?.decision_rules || [],
       engineConfig,
       engineMapId: campaignDataVal?.engineMapId || null,
     });
@@ -280,7 +288,7 @@ export async function onRequestGet(context) {
         source:   utmSource,
         medium:   utmMedium,
         campaign: utmCampaign,
-        decisionRules: campaignData?.decision_rules || config?.decision_rules || [],
+        decisionRules: intentData?.routing?.rules || campaignData?.decision_rules || config?.decision_rules || [],
         engineConfig,
         engineMapId: campaignData?.engineMapId || null,
       });
