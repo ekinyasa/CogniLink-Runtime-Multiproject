@@ -5085,7 +5085,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     return String(str)
       .toLowerCase()
       .trim()
-      .replace(/^\/+|\/+$/g, "")
+      .replace(/^\\/+|\\/+$/g, "")
       .replace(/[^a-z0-9-_]/g, "-")
       .replace(/-+/g, "-");
   }
@@ -5101,7 +5101,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (!base) {
       base = "https://runtime.ekinyasa.online";
     }
-    return base.replace(/\/+$/, "");
+    return base.replace(/\\/+$/, "");
   }
 
   function buildLandingCanonicalUrl(slug) {
