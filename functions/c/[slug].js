@@ -21,6 +21,8 @@ import { readCookie } from "../_shared/cookie-utils.js";
 import { parseUserState } from "../_shared/user-state.js";
 import { buildRedirectResponse } from "../_shared/redirect-runtime.js";
 
+import { resolveDestinationUrl } from "../_shared/url-resolver.js";
+
 const CONFIG_KEY = "hub_config";
 
 export async function onRequestGet(context) {
@@ -278,6 +280,15 @@ export async function onRequestGet(context) {
     });
   }
 
+  // Verify Main landing status (Section 2: Main landing must be published)
+  let mainLanding = null;
+  if (intentData && Array.isArray(intentData.landings)) {
+    mainLanding = intentData.landings.find(l => l.id === intentData.mainLandingId) || intentData.landings[0];
+    if (mainLanding && (mainLanding.status || "draft").toLowerCase() !== "published") {
+      notFound = true; // Main landing is draft or archived — cannot serve via /c/{campaign}
+    }
+  }
+
   if (!notFound) {
     if (!campaignData && !intentData) {
       notFound = true;
@@ -310,40 +321,56 @@ export async function onRequestGet(context) {
   }
 
   if (decision.action === "redirect" && decision.target) {
-    const redirectUrl = new URL(decision.target);
-    if (utmSource)   redirectUrl.searchParams.set("utm_source",   utmSource);
-    if (utmMedium)   redirectUrl.searchParams.set("utm_medium",   utmMedium);
-    if (utmCampaign) redirectUrl.searchParams.set("utm_campaign", utmCampaign);
-    
-    redirectUrl.searchParams.set("cos_decision", decision.decisionId || "default");
-    if (decision.userState?.uid) {
-      redirectUrl.searchParams.set("cos_uid", decision.userState.uid);
-    }
-    if (campaignData?.engineMapId) {
-      redirectUrl.searchParams.set("cos_emap", campaignData.engineMapId);
-    }
-
-    const redirectResHeaders = {};
-    if (Array.isArray(decision.cookies)) {
-      redirectResHeaders["Set-Cookie"] = decision.cookies;
-    }
-    
-    // ── Log Instant Redirect to AE Traffic Memory ────────────────────────────
+    const resolvedTarget = resolveDestinationUrl(decision.target, env, request);
+    let redirectUrl;
     try {
-      emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
-        alias: slug, modifier: "", canonical_slug: slug,
-        campaign: utmCampaign,
-        request_id: request.headers.get("cf-ray") || "",
-        utm_source: utmSource || "",
-        utm_medium: utmMedium || "",
-        decision_v1: decision.decisionId || "default"
-      });
-    } catch(e) {}
+      redirectUrl = new URL(resolvedTarget);
+    } catch (e) {
+      redirectUrl = new URL(decision.target, request.url);
+    }
 
-    return buildRedirectResponse(redirectUrl.toString(), {
-      statusCode: 302,
-      headers: redirectResHeaders
-    });
+    // Loop protection: Do not redirect if target matches current pathname or /c/{campaign} or Main /l/{slug}
+    const currentPath = url.pathname;
+    const targetPath = redirectUrl.pathname;
+    const isLoop = targetPath === currentPath ||
+                   targetPath === `/c/${slug}` ||
+                   (mainLanding && mainLanding.slug && targetPath === `/l/${mainLanding.slug}`);
+
+    if (!isLoop) {
+      if (utmSource)   redirectUrl.searchParams.set("utm_source",   utmSource);
+      if (utmMedium)   redirectUrl.searchParams.set("utm_medium",   utmMedium);
+      if (utmCampaign) redirectUrl.searchParams.set("utm_campaign", utmCampaign);
+
+      redirectUrl.searchParams.set("cos_decision", decision.decisionId || "default");
+      if (decision.userState?.uid) {
+        redirectUrl.searchParams.set("cos_uid", decision.userState.uid);
+      }
+      if (campaignData?.engineMapId) {
+        redirectUrl.searchParams.set("cos_emap", campaignData.engineMapId);
+      }
+
+      const redirectResHeaders = {};
+      if (Array.isArray(decision.cookies)) {
+        redirectResHeaders["Set-Cookie"] = decision.cookies;
+      }
+
+      // ── Log Instant Redirect to AE Traffic Memory ────────────────────────────
+      try {
+        emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+          alias: slug, modifier: "", canonical_slug: slug,
+          campaign: utmCampaign,
+          request_id: request.headers.get("cf-ray") || "",
+          utm_source: utmSource || "",
+          utm_medium: utmMedium || "",
+          decision_v1: decision.decisionId || "default"
+        });
+      } catch(e) {}
+
+      return buildRedirectResponse(redirectUrl.toString(), {
+        statusCode: 302,
+        headers: redirectResHeaders
+      });
+    }
   }
 
   if (notFound) {

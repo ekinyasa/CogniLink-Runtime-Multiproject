@@ -570,7 +570,17 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <input type="text" id="studio-version-name" readonly style="opacity: 0.7; cursor: not-allowed;" />
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Landing URL
+              Public Slug (Canonical Route: /l/{slug})
+              <input type="text" id="studio-version-slug" placeholder="e.g. sigorta-yenileme-cold" />
+              <div id="studio-slug-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">https://runtime.ekinyasa.online/l/</div>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Alias (Optional Public Shortcut)
+              <input type="text" id="studio-version-alias" placeholder="e.g. yenileme-devam" />
+              <div id="studio-alias-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">No alias set</div>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Landing Preview URL
               <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <input type="text" id="studio-version-url" readonly style="flex: 1; font-family: monospace; opacity: 0.7; cursor: not-allowed; font-size: 0.75rem;" />
                 <button id="btn-studio-copy-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">Copy</button>
@@ -5070,7 +5080,71 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       studioCurrentEditingLanding = null;
     }
 
-    renderStudioVersionsList();
+  function normalizeSlug(str) {
+    if (!str) return "";
+    return String(str)
+      .toLowerCase()
+      .trim()
+      .replace(/^\/+|\/+$/g, "")
+      .replace(/[^a-z0-9-_]/g, "-")
+      .replace(/-+/g, "-");
+  }
+
+  function resolveBaseUrl() {
+    var base = "";
+    if (typeof window !== "undefined" && window.location) {
+      base = window.location.origin;
+    }
+    if (!base && typeof window !== "undefined" && window.CUSTOM_DOMAIN) {
+      base = "https://" + window.CUSTOM_DOMAIN;
+    }
+    if (!base) {
+      base = "https://runtime.ekinyasa.online";
+    }
+    return base.replace(/\/+$/, "");
+  }
+
+  function buildLandingCanonicalUrl(slug) {
+    var base = resolveBaseUrl();
+    var clean = normalizeSlug(slug);
+    return clean ? (base + "/l/" + clean) : "";
+  }
+
+  function buildLandingAliasUrl(alias) {
+    if (!alias) return "";
+    var base = resolveBaseUrl();
+    var clean = normalizeSlug(alias);
+    return clean ? (base + "/" + clean) : "";
+  }
+
+  function updateStudioUrlPreviews() {
+    if (!studioCurrentEditingLanding) return;
+    var slugVal = document.getElementById("studio-version-slug")?.value || studioCurrentEditingLanding.slug || studioCurrentEditingLanding.id;
+    var aliasVal = document.getElementById("studio-version-alias")?.value || studioCurrentEditingLanding.alias || "";
+
+    var cleanSlug = normalizeSlug(slugVal);
+    var cleanAlias = aliasVal ? normalizeSlug(aliasVal) : "";
+
+    var slugPreview = document.getElementById("studio-slug-preview");
+    if (slugPreview) {
+      slugPreview.textContent = cleanSlug ? buildLandingCanonicalUrl(cleanSlug) : "No slug set";
+    }
+
+    var aliasPreview = document.getElementById("studio-alias-preview");
+    if (aliasPreview) {
+      aliasPreview.textContent = cleanAlias ? buildLandingAliasUrl(cleanAlias) : "No alias set";
+    }
+
+    var isMain = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
+    var campSlugs = slugCache.filter(function (s) {
+      return s.campaign === studioCampaignConfig.name && s.isActive !== false;
+    });
+    var slugForUrl = campSlugs.length > 0 ? campSlugs[0].slug : studioCampaignConfig.slug;
+    var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
+    var urlInput = document.getElementById("studio-version-url");
+    if (urlInput) {
+      urlInput.value = resolveBaseUrl() + previewUrlPath;
+    }
   }
 
   function renderStudioVersionsList() {
@@ -5082,7 +5156,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       studioCampaignConfig.landings.forEach(function (l) {
         var opt = document.createElement("option");
         opt.value = l.id;
-        opt.textContent = (l.displayName || l.id) + (l.id === studioCampaignConfig.mainLandingId ? " (Main)" : "");
+        var isPublished = (l.status || "draft").toLowerCase() === "published";
+        opt.textContent = (l.displayName || l.id) + (l.id === studioCampaignConfig.mainLandingId ? " (Main)" : "") + (!isPublished ? " (" + (l.status || "draft") + ")" : "");
         defSelect.appendChild(opt);
       });
       defSelect.value = studioCampaignConfig.mainLandingId || "";
@@ -5100,6 +5175,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     studioCampaignConfig.landings.forEach(function (l) {
       // Fallback/migration mapping for legacy entries
       if (!l.displayName) l.displayName = l.id.replace("version-", "Version ");
+      if (!l.slug) l.slug = l.id;
       if (!l.status) l.status = "draft";
       if (!l.updatedAt) l.updatedAt = new Date().toISOString();
 
@@ -5124,6 +5200,32 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       // Main badge styling - accessible blue/indigo (independent of status)
       var mainBadgeHtml = isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #4f46e5; color: #ffffff; font-weight: 600; line-height: 1.2;">Main</span>' : '';
 
+      // URL rows (Section 4)
+      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id);
+      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias) : "";
+
+      var canonicalRowHtml = "";
+      var aliasRowHtml = "";
+
+      if (statusLower === "published") {
+        canonicalRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Canonical URL: <a href="' + esc(canonicalUrl) + '" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-family: monospace; text-decoration: none;">' + esc(canonicalUrl) + '</a></div>';
+      } else if (statusLower === "archived") {
+        canonicalRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Canonical URL: <span style="font-family: monospace;">' + esc(canonicalUrl) + '</span> <span style="color: var(--danger); font-style: italic;">(Archived - Not public)</span></div>';
+      } else {
+        // Draft
+        canonicalRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Canonical URL: <span style="font-family: monospace;">' + esc(canonicalUrl) + '</span> <span style="font-style: italic;">(Draft - Not published)</span></div>';
+      }
+
+      if (l.alias) {
+        if (statusLower === "published") {
+          aliasRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.15rem;">Alias URL: <a href="' + esc(aliasUrl) + '" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-family: monospace; text-decoration: none;">' + esc(aliasUrl) + '</a></div>';
+        } else {
+          aliasRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.15rem;">Alias URL: <span style="font-family: monospace;">' + esc(aliasUrl) + '</span> <span style="font-style: italic;">(Inactive - ' + esc(l.status) + ')</span></div>';
+        }
+      } else {
+        aliasRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.15rem;">Alias URL: <span style="font-style: italic;">—</span></div>';
+      }
+
       div.innerHTML =
         '<div>' +
           '<div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">' +
@@ -5131,6 +5233,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             statusBadgeHtml +
             mainBadgeHtml +
           '</div>' +
+          canonicalRowHtml +
+          aliasRowHtml +
           '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Last updated: ' + esc(createdFmt) + '</div>' +
         '</div>' +
         '<div class="version-actions" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">' +
@@ -5146,6 +5250,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   }
 
   window.setStudioMainLanding = function(id) {
+    var target = studioCampaignConfig.landings.find(function (l) { return l.id === id; });
+    if (target && (target.status || "draft").toLowerCase() !== "published") {
+      alert("Main landing version must be Published. Please publish this version before setting it as Main.");
+      renderStudioVersionsList();
+      return;
+    }
     studioCampaignConfig.mainLandingId = id;
     renderStudioVersionsList();
   };
@@ -5171,6 +5281,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     if (!studioCurrentEditingLanding.displayName) {
       studioCurrentEditingLanding.displayName = studioCurrentEditingLanding.id.replace("version-", "Version ");
     }
+    if (!studioCurrentEditingLanding.slug) {
+      studioCurrentEditingLanding.slug = studioCurrentEditingLanding.id;
+    }
     if (!studioCurrentEditingLanding.status) {
       studioCurrentEditingLanding.status = "draft";
     }
@@ -5179,21 +5292,15 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     document.getElementById("studio-current-edit-version-title").textContent = studioCurrentEditingLanding.displayName;
     document.getElementById("studio-version-display-name").value = studioCurrentEditingLanding.displayName;
     document.getElementById("studio-version-name").value = studioCurrentEditingLanding.id;
+    document.getElementById("studio-version-slug").value = studioCurrentEditingLanding.slug;
+    document.getElementById("studio-version-alias").value = studioCurrentEditingLanding.alias || "";
     document.getElementById("studio-version-status").value = studioCurrentEditingLanding.status;
     document.getElementById("studio-version-title").value = studioCurrentEditingLanding.headerInfo?.title || "";
     document.getElementById("studio-version-theme").value = studioCurrentEditingLanding.theme || "dark";
     document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
-    var campSlugs = slugCache.filter(function (s) {
-      return s.campaign === studioCampaignConfig.name && s.isActive !== false;
-    });
-    var slugForUrl = campSlugs.length > 0 ? campSlugs[0].slug : studioCampaignConfig.slug;
-    var isMainForUrl = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
-    var previewUrlPath = "/c/" + encodeURIComponent(slugForUrl);
-    if (!isMainForUrl) previewUrlPath += "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id);
-    var fullPreviewUrl = "https://" + window.CUSTOM_DOMAIN + previewUrlPath;
-    document.getElementById("studio-version-url").value = fullPreviewUrl;
+    updateStudioUrlPreviews();
 
     // Load Component options into builder selection
     var compSelect = document.getElementById("studio-comp-select");
@@ -5396,7 +5503,37 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           renderStudioVersionsList();
         }
       },
-      { id: "studio-version-status", prop: "status", cb: renderStudioVersionsList },
+      { id: "studio-version-slug", prop: "slug", cb: function() {
+          if (studioCurrentEditingLanding) {
+            var raw = document.getElementById("studio-version-slug").value;
+            studioCurrentEditingLanding.slug = normalizeSlug(raw);
+          }
+          updateStudioUrlPreviews();
+          renderStudioVersionsList();
+        }
+      },
+      { id: "studio-version-alias", prop: "alias", cb: function() {
+          if (studioCurrentEditingLanding) {
+            var raw = document.getElementById("studio-version-alias").value;
+            studioCurrentEditingLanding.alias = raw ? normalizeSlug(raw) : "";
+          }
+          updateStudioUrlPreviews();
+          renderStudioVersionsList();
+        }
+      },
+      { id: "studio-version-status", prop: "status", cb: function() {
+          if (studioCurrentEditingLanding && studioCampaignConfig) {
+            var newStatus = (document.getElementById("studio-version-status").value || "draft").toLowerCase();
+            var isMain = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
+            if (isMain && newStatus !== "published") {
+              alert("The Main landing version must remain Published. Please set another version as Main before changing this version's status.");
+              document.getElementById("studio-version-status").value = "published";
+              studioCurrentEditingLanding.status = "published";
+            }
+          }
+          renderStudioVersionsList();
+        }
+      },
       { id: "studio-version-name", prop: "id", cb: renderStudioVersionsList },
       { id: "studio-version-title", prop: "title", nested: "headerInfo", cb: renderStudioVersionsList },
       { id: "studio-version-theme", prop: "theme" },
