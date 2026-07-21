@@ -149,7 +149,7 @@ function normalizeLegacy(rawLegacyData, options = {}) {
   layout = layout.filter(item => item && typeof item === 'object' && item.id);
 
   // Normalize components (no null, no duplicate, valid strings)
-  const rawComponents = Array.isArray(data.components) ? data.components : [];
+  const rawComponents = Array.isArray(data.components) ? [...data.components] : [];
   layout.forEach(item => {
     if (item.type === "component" && item.id) rawComponents.push(item.id);
   });

@@ -57,7 +57,8 @@ export function createRuntimeRepository(env) {
   }
 
   async function fetchV2(campaignId, pageId = campaignId) {
-    const rawCampaign = await fetchCampaign(campaignId);
+    const rawCamp = await fetchCampaign(campaignId);
+    const rawCampaign = (rawCamp && typeof rawCamp === "object" && !Array.isArray(rawCamp) && Object.keys(rawCamp).length > 0) ? rawCamp : null;
 
     let rawPage = null;
     let nestedLanding = null;
@@ -68,7 +69,8 @@ export function createRuntimeRepository(env) {
     }
 
     if (!nestedLanding && pageId) {
-      rawPage = await fetchPage(pageId);
+      const rawPg = await fetchPage(pageId);
+      rawPage = (rawPg && typeof rawPg === "object" && !Array.isArray(rawPg) && Object.keys(rawPg).length > 0) ? rawPg : null;
     }
 
     if (!rawCampaign && !rawPage && !nestedLanding) {
@@ -80,7 +82,11 @@ export function createRuntimeRepository(env) {
     if (sourcePage) {
       const headerHtml = typeof sourcePage.customHeaderHtml === 'string' ? sourcePage.customHeaderHtml : "";
       const footerHtml = typeof sourcePage.customFooterHtml === 'string' ? sourcePage.customFooterHtml : "";
-      const customHtml = [headerHtml, footerHtml].filter(Boolean).join("\n");
+      const bodyHtml   = typeof sourcePage.customBodyHtml === 'string' ? sourcePage.customBodyHtml : "";
+      const layoutHtmlItems = Array.isArray(sourcePage.layout)
+        ? sourcePage.layout.filter(x => x && x.type === "custom_html").map(x => x.content || x.body || "").filter(Boolean)
+        : [];
+      const customHtml = [headerHtml, bodyHtml, ...layoutHtmlItems, footerHtml].filter(Boolean).join("\n");
 
       page = {
         id: sourcePage.slug || sourcePage.id || pageId,

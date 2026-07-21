@@ -199,6 +199,7 @@ export async function onRequestGet(context) {
   // Construct effective landing config containing single selected landing version
   const landingConfigData = {
     ...campaign,
+    ...landing,
     landings: [landing],
     mainLandingId: landing.id
   };

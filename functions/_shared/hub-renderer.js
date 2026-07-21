@@ -87,7 +87,7 @@ export function renderHub({
           layoutHtml += '<div style="border:1px dashed #ff4444; padding:15px; margin: 10px 0; background:rgba(255,0,0,0.05); color:#ff4444; text-align:center; font-family:monospace; font-size:12px; border-radius:4px;">[Preview Mode] Component Not Found or Inactive: ' + escHtml(item.id) + '</div>';
         }
       } else if (item.type === "custom_html") {
-        layoutHtml += item.content || "";
+        layoutHtml += item.content || item.body || "";
       }
     });
   }
@@ -198,9 +198,11 @@ ${themeCssLink}
   if (hasCustomLayout) {
     bodyContent = layoutHtml;
   } else {
+    const customBody = slugData?.customBodyHtml || slugData?.custom_html || "";
     bodyContent = `
   ${compsHtml.hero}
   ${compsHtml.body}
+  ${customBody ? `<div class="hub-custom-body">${customBody}</div>` : ""}
   ${compsHtml.legal}
   ${compsHtml.footer}`;
   }

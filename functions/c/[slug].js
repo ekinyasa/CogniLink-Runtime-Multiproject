@@ -111,6 +111,21 @@ export async function onRequestGet(context) {
     } catch(e) {}
   }
 
+  const hasIntentData = intentData && typeof intentData === "object" && !Array.isArray(intentData) && Object.keys(intentData).length > 0;
+  const hasRuntimeContext = !!(shadowData?.rawLegacy || shadowData?.rawV2);
+  if (!campaignDataVal && !hasIntentData && !hasRuntimeContext) {
+    const html = renderHub({ notFound: true, config });
+    return new Response(html, {
+      status: 404,
+      headers: {
+        "Content-Type":           "text/html;charset=UTF-8",
+        "Cache-Control":          "no-store",
+        "X-Robots-Tag":           "noindex,nofollow",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
   const decisionInputState = parseUserState(readCookie(request, "cos_state"));
   const decisionShadowContext = createDecisionShadowContext(runtimeContext, {
     source: utmSource,
@@ -148,7 +163,8 @@ export async function onRequestGet(context) {
       const ruleRepo = createRuleRepository(env);
       const ruleSource = await ruleRepo.fetchRules(runtimeContext, campaignDataVal || shadowData?.rawLegacy || {}, {
         engineConfig,
-        globalConfig: config
+        globalConfig: config,
+        intentDestinations: intentData?.destinations || intentData?.routing?.destinations || null
       });
       
       const rawRules = ruleSource.rules || [];
@@ -390,7 +406,7 @@ export async function onRequestGet(context) {
   const links = resolveLinks(campaignData, config);
 
   // defaultUtms carries source + medium + any other stored defaults.
-  const defaultUtms = (campaignData.defaults && typeof campaignData.defaults === "object")
+  const defaultUtms = (campaignData?.defaults && typeof campaignData.defaults === "object")
     ? { ...campaignData.defaults }
     : {};
 

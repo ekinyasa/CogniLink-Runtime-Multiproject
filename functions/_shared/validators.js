@@ -66,9 +66,12 @@ export function validateModifier(modifier) {
  * @returns {boolean}
  */
 export function validateCanonicalSlug(slug) {
+  if (typeof slug !== "string" || !slug) return false;
+  if (slug.startsWith("/")) {
+    return /^\/[a-zA-Z0-9-_\/]{1,200}$/.test(slug);
+  }
   return (
-    typeof slug === "string" &&
     slug.length <= CANONICAL_SLUG_MAX &&
-    CANONICAL_SLUG_RE.test(slug)
+    (CANONICAL_SLUG_RE.test(slug) || ALIAS_RE.test(slug))
   );
 }

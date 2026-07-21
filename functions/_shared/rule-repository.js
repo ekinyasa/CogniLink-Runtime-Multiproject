@@ -10,6 +10,7 @@ import { normalizeRulesWithReport } from "./rule-compat.js";
 
 // Helper to make V2 rules for legacy hardcoded overrides
 function makeHardcodedOverrideRules(checkRedirects) {
+  if (!checkRedirects) return [];
   const rules = [];
   if (checkRedirects.post) {
     rules.push({
@@ -43,6 +44,20 @@ function makeHardcodedOverrideRules(checkRedirects) {
       action: { type: "redirect", target: checkRedirects.hot }
     });
   }
+  if (checkRedirects.warm) {
+    rules.push({
+      id: "engine_warm_override",
+      priority: 8997,
+      enabled: true,
+      condition: {
+        or: [
+          { field: "userState.v", operator: "equals", value: 1 },
+          { field: "userState.e", operator: "greater_than_or_equal", value: 20 }
+        ]
+      },
+      action: { type: "redirect", target: checkRedirects.warm }
+    });
+  }
   return rules;
 }
 
@@ -58,7 +73,7 @@ export function createRuleRepository(env) {
      */
     async fetchRules(runtimeContext, legacyObject = {}, options = {}) {
       try {
-        const { engineConfig = null, globalConfig = null } = options;
+        const { engineConfig = null, globalConfig = null, intentDestinations = null } = options;
 
         // 1. Check shadow_decision_rules for Canary / V2 Direct Rules
         if (Array.isArray(legacyObject.shadow_decision_rules) && legacyObject.shadow_decision_rules.length > 0) {
@@ -93,18 +108,24 @@ export function createRuleRepository(env) {
         let totalUnsupportedCount = 0;
         const unsupportedDetails = [];
 
-        // A. Engine Config Rules
+        // A. Engine Config Rules & Intent Destination Overrides
         let checkRedirects = null;
         let engineSource = "none";
         let engineSourceId = null;
 
-        if (engineConfig) {
-          if (engineConfig.redirects) {
-            checkRedirects = engineConfig.redirects;
-            engineSource = "engine_config_global";
-            engineSourceId = "global";
-          }
+        if (engineConfig && engineConfig.redirects) {
+          checkRedirects = engineConfig.redirects;
+          engineSource = "engine_config_global";
+          engineSourceId = "global";
         }
+
+        const intentDest = intentDestinations || legacyObject?.destinations || legacyObject?.routing?.destinations || runtimeContext?.campaignContext?.destinations || null;
+        const effectiveRedirects = {
+          post: (intentDest && intentDest.postConversion) ? intentDest.postConversion : (checkRedirects?.post || null),
+          converted: (intentDest && intentDest.converted) ? intentDest.converted : (checkRedirects?.converted || null),
+          hot: (intentDest && intentDest.hot) ? intentDest.hot : (checkRedirects?.hot || null),
+          warm: (intentDest && intentDest.warm) ? intentDest.warm : (checkRedirects?.warm || null)
+        };
 
         if (checkRedirects) {
           // 1. Tag-based rules
@@ -122,10 +143,17 @@ export function createRuleRepository(env) {
             totalUnsupportedCount += report.unsupported.length;
             unsupportedDetails.push(...report.unsupported);
           }
-          // 2. Hardcoded override rules
-          const hardcoded = makeHardcodedOverrideRules(checkRedirects);
+        }
+
+        // 2. Hardcoded override rules from effective destinations
+        const hardcoded = makeHardcodedOverrideRules(effectiveRedirects);
+        if (hardcoded.length > 0) {
           totalRawCount += hardcoded.length;
           consolidatedRules.push(...hardcoded);
+          if (engineSource === "none") {
+            engineSource = "intent_destinations";
+            engineSourceId = legacyObject.slug || legacyObject.id || "campaign";
+          }
         }
 
         // B. Page Decision Rules

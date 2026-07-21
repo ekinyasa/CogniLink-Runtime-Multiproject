@@ -258,6 +258,15 @@ export async function onRequestGet(context) {
   // rendering and analytics.
   const { canonicalSlug, cacheHit } = resolution;
 
+  // ── Alias Path Target Redirect ──────────────────────────────────────────
+  if (typeof canonicalSlug === "string" && canonicalSlug.startsWith("/")) {
+    const redirectUrl = new URL(canonicalSlug, url.origin);
+    url.searchParams.forEach((val, key) => {
+      redirectUrl.searchParams.set(key, val);
+    });
+    return Response.redirect(redirectUrl.toString(), 302);
+  }
+
   // ── A/B routing: optionally replace canonicalSlug with a variant ─────────
   // loadABConfig() returns null when no config exists (result is cached in-memory
   // so aliases without A/B config incur at most one KV read per isolate lifetime).
@@ -397,6 +406,15 @@ export async function onRequestGet(context) {
   const utmMedium = url.searchParams.get("utm_medium") || "";
   const utmCampaign = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfigVal?.campaign && String(hubConfigVal.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
 
+  let campRecord = null;
+  if (env.APP_CONFIG && utmCampaign) {
+    try {
+      campRecord = await env.APP_CONFIG.get(`campaign:${utmCampaign}`, { type: "json" });
+    } catch (_) {}
+  }
+  const intentDestinations = campRecord?.destinations || campRecord?.routing?.destinations || null;
+  const intentRules = campRecord?.rules || campRecord?.routing?.rules || hubConfigVal?.decision_rules || globalConfig?.decision_rules || [];
+
   const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfigVal?.redirectUrl;
   const decisionInputState = parseUserState(readCookie(request, "cos_state"));
   const decisionShadowContext = createDecisionShadowContext(runtimeContext, {
@@ -414,7 +432,8 @@ export async function onRequestGet(context) {
         source:   utmSource,
         medium:   utmMedium,
         campaign: utmCampaign,
-        decisionRules: hubConfigVal?.decision_rules || globalConfig?.decision_rules || [],
+        decisionRules: intentRules,
+        intentDestinations,
         engineConfig,
         engineMapId: hubConfigVal?.engineMapId || null,
       });
@@ -434,7 +453,8 @@ export async function onRequestGet(context) {
       const ruleRepo = createRuleRepository(env);
       const ruleSource = await ruleRepo.fetchRules(runtimeContext, hubConfigVal || shadowData?.rawLegacy || {}, {
         engineConfig,
-        globalConfig
+        globalConfig,
+        intentDestinations
       });
       
       const rawRules = ruleSource.rules || [];

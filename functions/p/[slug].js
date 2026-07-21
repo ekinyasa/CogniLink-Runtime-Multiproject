@@ -118,7 +118,8 @@ export async function onRequestGet(context) {
       const ruleRepo = createRuleRepository(env);
       const ruleSource = await ruleRepo.fetchRules(runtimeContext, campaignDataVal || shadowData?.rawLegacy || {}, {
         engineConfig,
-        globalConfig: config
+        globalConfig: config,
+        intentDestinations: intentData?.destinations || intentData?.routing?.destinations || null
       });
 
       const rawRules = ruleSource.rules || [];
