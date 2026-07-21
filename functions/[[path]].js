@@ -402,9 +402,12 @@ export async function onRequestGet(context) {
   const runtimeContext = shadowData?.context || null;
 
   // Pre-calculate inputs for legacy decision
-  const utmSource = url.searchParams.get("utm_source") || "";
-  const utmMedium = url.searchParams.get("utm_medium") || "";
-  const utmCampaign = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfigVal?.campaign && String(hubConfigVal.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
+  const reqUtmSource   = url.searchParams.get("utm_source")   || "";
+  const reqUtmMedium   = url.searchParams.get("utm_medium")   || "";
+  const reqUtmCampaign = url.searchParams.get("utm_campaign") || "";
+  const utmSource      = reqUtmSource;
+  const utmMedium      = reqUtmMedium;
+  const utmCampaign    = reqUtmCampaign || (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfigVal?.campaign && String(hubConfigVal.campaign).trim()) || deriveCampaignFromSlug(finalSlug);
 
   let campRecord = null;
   if (env.APP_CONFIG && utmCampaign) {
@@ -610,9 +613,9 @@ export async function onRequestGet(context) {
   if (decision.action === "redirect" && decision.target) {
     // ── Instant Redirect (Decision Layer remains invisible) ───────────────
     const redirectUrl = new URL(decision.target);
-    if (utmSource)   redirectUrl.searchParams.set("utm_source",   utmSource);
-    if (utmMedium)   redirectUrl.searchParams.set("utm_medium",   utmMedium);
-    if (utmCampaign) redirectUrl.searchParams.set("utm_campaign", utmCampaign);
+    if (reqUtmSource)   redirectUrl.searchParams.set("utm_source",   reqUtmSource);
+    if (reqUtmMedium)   redirectUrl.searchParams.set("utm_medium",   reqUtmMedium);
+    if (reqUtmCampaign) redirectUrl.searchParams.set("utm_campaign", reqUtmCampaign);
 
     const redirectResHeaders = new Headers({
       "Location": redirectUrl.toString(),

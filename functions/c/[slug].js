@@ -99,9 +99,12 @@ export async function onRequestGet(context) {
   const runtimeContext = shadowData?.context || null;
 
   // Pre-calculate inputs for legacy decision
-  const utmSource   = url.searchParams.get("utm_source")   || "";
-  const utmMedium   = url.searchParams.get("utm_medium")   || "";
-  const utmCampaign = campaignDataVal?.campaign || deriveCampaignFromSlug(slug) || slug;
+  const reqUtmSource   = url.searchParams.get("utm_source")   || "";
+  const reqUtmMedium   = url.searchParams.get("utm_medium")   || "";
+  const reqUtmCampaign = url.searchParams.get("utm_campaign") || "";
+  const utmSource      = reqUtmSource;
+  const utmMedium      = reqUtmMedium;
+  const utmCampaign    = reqUtmCampaign || campaignDataVal?.campaign || deriveCampaignFromSlug(slug) || slug;
 
   // Fetch Intent (Campaign V2 config) to act as the unified routing source
   let intentData = null;
@@ -353,9 +356,9 @@ export async function onRequestGet(context) {
                    (mainLanding && mainLanding.slug && targetPath === `/l/${mainLanding.slug}`);
 
     if (!isLoop) {
-      if (utmSource)   redirectUrl.searchParams.set("utm_source",   utmSource);
-      if (utmMedium)   redirectUrl.searchParams.set("utm_medium",   utmMedium);
-      if (utmCampaign) redirectUrl.searchParams.set("utm_campaign", utmCampaign);
+      if (reqUtmSource)   redirectUrl.searchParams.set("utm_source",   reqUtmSource);
+      if (reqUtmMedium)   redirectUrl.searchParams.set("utm_medium",   reqUtmMedium);
+      if (reqUtmCampaign) redirectUrl.searchParams.set("utm_campaign", reqUtmCampaign);
       if (campaignData?.engineMapId) {
         redirectUrl.searchParams.set("cos_emap", campaignData.engineMapId);
       }

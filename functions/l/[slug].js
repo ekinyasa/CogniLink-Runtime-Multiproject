@@ -141,9 +141,12 @@ export async function onRequestGet(context) {
   const engineConfig = (await env.LANDING_CONFIG?.get("engine_config", { type: "json" })) || {};
   const liveComponents = (await env.APP_CONFIG?.get("comp_live", { type: "json" })) || [];
 
-  const utmSource   = url.searchParams.get("utm_source")   || "";
-  const utmMedium   = url.searchParams.get("utm_medium")   || "";
-  const utmCampaign = campaign.slug || campaign.name || slug;
+  const reqUtmSource   = url.searchParams.get("utm_source")   || "";
+  const reqUtmMedium   = url.searchParams.get("utm_medium")   || "";
+  const reqUtmCampaign = url.searchParams.get("utm_campaign") || "";
+  const utmSource      = reqUtmSource;
+  const utmMedium      = reqUtmMedium;
+  const utmCampaign    = reqUtmCampaign || campaign.slug || campaign.name || slug;
 
   // ── Decision Engine & Redirect Evaluation (Section 7) ──────────────────────
   let decision = null;
@@ -172,9 +175,9 @@ export async function onRequestGet(context) {
       const targetUrlObj = new URL(targetResolved);
       // Loop protection: Do not redirect if target matches current pathname
       if (targetUrlObj.pathname !== url.pathname && targetUrlObj.pathname !== `/l/${slug}`) {
-        if (utmSource)   targetUrlObj.searchParams.set("utm_source",   utmSource);
-        if (utmMedium)   targetUrlObj.searchParams.set("utm_medium",   utmMedium);
-        if (utmCampaign) targetUrlObj.searchParams.set("utm_campaign", utmCampaign);
+        if (reqUtmSource)   targetUrlObj.searchParams.set("utm_source",   reqUtmSource);
+        if (reqUtmMedium)   targetUrlObj.searchParams.set("utm_medium",   reqUtmMedium);
+        if (reqUtmCampaign) targetUrlObj.searchParams.set("utm_campaign", reqUtmCampaign);
 
         const redirectResHeaders = {};
         if (Array.isArray(decision.cookies)) {
