@@ -41,8 +41,6 @@ export async function onRequestGet(context) {
     const redirectUrl = new URL(decision.target);
     redirectUrl.searchParams.set("utm_source",   utms.utmSource || "youtube");
     redirectUrl.searchParams.set("utm_medium",   utms.utmMedium || "social");
-    redirectUrl.searchParams.set("cos_decision", decision.decisionId || "default");
-    redirectUrl.searchParams.set("cos_uid",      decision.userState.uid);
 
     const resHeaders = new Headers({ "Location": redirectUrl.toString(), "Cache-Control": "no-store" });
     decision.cookies.forEach((c) => resHeaders.append("Set-Cookie", c));

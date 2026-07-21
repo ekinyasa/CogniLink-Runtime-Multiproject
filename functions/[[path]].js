@@ -613,9 +613,6 @@ export async function onRequestGet(context) {
     if (utmSource)   redirectUrl.searchParams.set("utm_source",   utmSource);
     if (utmMedium)   redirectUrl.searchParams.set("utm_medium",   utmMedium);
     if (utmCampaign) redirectUrl.searchParams.set("utm_campaign", utmCampaign);
-    
-    redirectUrl.searchParams.set("cos_decision", decision.decisionId || "default");
-    redirectUrl.searchParams.set("cos_uid", decision.userState.uid);
 
     const redirectResHeaders = new Headers({
       "Location": redirectUrl.toString(),

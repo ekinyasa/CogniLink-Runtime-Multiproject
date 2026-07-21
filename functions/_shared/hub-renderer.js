@@ -45,15 +45,28 @@ export function renderHub({
 
   // Compile component HTML sections (Prompt 140 / User Request)
   var allowedComps = (components || []);
-  if (slugData && Array.isArray(slugData.components)) {
-    var enabledSet = {};
+  var enabledSet = null;
+
+  if (slugData && Array.isArray(slugData.components) && slugData.components.length > 0) {
+    enabledSet = {};
     slugData.components.forEach(function (fid) { if (fid) enabledSet[fid] = true; });
+  } else if (slugData && Array.isArray(slugData.layout)) {
+    var compIdsFromLayout = slugData.layout
+      .filter(function (x) { return x && x.type === "component" && x.id; })
+      .map(function (x) { return x.id; });
+    if (compIdsFromLayout.length > 0) {
+      enabledSet = {};
+      compIdsFromLayout.forEach(function (fid) { if (fid) enabledSet[fid] = true; });
+    }
+  }
+
+  if (enabledSet) {
     allowedComps = allowedComps.filter(function (c) {
-      return enabledSet[c.family_id] || enabledSet[c.family_key];
+      return enabledSet[c.family_id] || enabledSet[c.family_key] || enabledSet[c.component_id];
     });
   } else {
     allowedComps = allowedComps.filter(function (c) {
-      return c.family_status === "active";
+      return c.family_status === "active" || c.status === "active";
     });
   }
   var placementOrder = { "hero": 1, "trust": 2, "process": 3, "objection": 4, "faq": 4, "cta": 5, "legal": 6, "footer": 7 };
@@ -80,7 +93,7 @@ export function renderHub({
   if (hasCustomLayout) {
     slugData.layout.forEach(function (item) {
       if (item.type === "component") {
-        var c = allowedComps.find(function (x) { return x.family_id === item.id || x.family_key === item.id; });
+        var c = allowedComps.find(function (x) { return x.family_id === item.id || x.family_key === item.id || x.component_id === item.id; });
         if (c) {
           layoutHtml += renderComponentHtml(c);
         } else if (isPreview) {

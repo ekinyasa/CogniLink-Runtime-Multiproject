@@ -175,10 +175,6 @@ export async function onRequestGet(context) {
         if (utmSource)   targetUrlObj.searchParams.set("utm_source",   utmSource);
         if (utmMedium)   targetUrlObj.searchParams.set("utm_medium",   utmMedium);
         if (utmCampaign) targetUrlObj.searchParams.set("utm_campaign", utmCampaign);
-        targetUrlObj.searchParams.set("cos_decision", decision.decisionId || "default");
-        if (decision.userState?.uid) {
-          targetUrlObj.searchParams.set("cos_uid", decision.userState.uid);
-        }
 
         const redirectResHeaders = {};
         if (Array.isArray(decision.cookies)) {
