@@ -5109,16 +5109,29 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       div.className = "version-item";
       div.style = "padding: 0.75rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.35rem;";
 
+      // Status badge styling
+      var statusLower = (l.status || "draft").toLowerCase();
+      var statusBadgeHtml = "";
+      if (statusLower === "published" || statusLower === "active") {
+        statusBadgeHtml = '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--success, #10b981); color: #ffffff; font-weight: 600; line-height: 1.2;">Published</span>';
+      } else if (statusLower === "archived") {
+        statusBadgeHtml = '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--danger, #ef4444); color: #ffffff; font-weight: 600; line-height: 1.2;">Archived</span>';
+      } else {
+        // Draft / neutral styling - thin dashed border
+        statusBadgeHtml = '<span class="badge" style="font-size: 0.7rem; padding: 1px 5px; border-radius: 4px; background: transparent; color: var(--text-m); border: 1px dashed var(--border); font-weight: 500; text-transform: capitalize; line-height: 1.2;">' + esc(l.status || "Draft") + '</span>';
+      }
+
+      // Main badge styling - accessible blue/indigo (independent of status)
+      var mainBadgeHtml = isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #4f46e5; color: #ffffff; font-weight: 600; line-height: 1.2;">Main</span>' : '';
+
       div.innerHTML =
-        '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
-          '<div>' +
-            '<div style="font-weight: bold; font-size: 0.95rem; color: var(--text);">' + esc(l.displayName) + '</div>' +
-            '<div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.15rem;">' +
-              '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--border); text-transform: capitalize;">' + esc(l.status) + '</span>' +
-              (isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--success); color: white; font-weight: bold;">Main</span>' : '') +
-            '</div>' +
-            '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Last updated: ' + esc(createdFmt) + '</div>' +
+        '<div>' +
+          '<div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">' +
+            '<span style="font-weight: bold; font-size: 0.95rem; color: var(--text);">' + esc(l.displayName) + '</span>' +
+            statusBadgeHtml +
+            mainBadgeHtml +
           '</div>' +
+          '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Last updated: ' + esc(createdFmt) + '</div>' +
         '</div>' +
         '<div class="version-actions" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\\x27' + esc(l.id) + '\\x27)">Edit</button>' +
