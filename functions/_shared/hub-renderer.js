@@ -42,6 +42,8 @@ export function renderHub({
   const modifierJson = JSON.stringify(modifier || "");
   const ctxTypeEsc = JSON.stringify(contextType);
   const ctxIdEsc = JSON.stringify(contextId);
+  const signalsData = slugData?.signals || intentConfig?.signals || cfg?.signals || { time: [], clicks: { soft: [], hard: [] } };
+  const signalsJson = JSON.stringify(signalsData);
 
   // Compile component HTML sections (Prompt 140 / User Request)
   var allowedComps = (components || []);
@@ -277,6 +279,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
   var LINKS_META     = JSON.parse('${escJsString(JSON.stringify(links || []))}');
   var CONTEXT_TYPE   = JSON.parse('${escJsString(ctxTypeEsc)}');
   var CONTEXT_ID     = JSON.parse('${escJsString(ctxIdEsc)}');
+  var SIGNALS_CONFIG = JSON.parse('${escJsString(signalsJson)}');
   var EXP_TOKEN      = ${JSON.stringify(expToken || defaultUtms.exp_token || "")};
   var UTM_VARIANT    = ${JSON.stringify(utmVariant || defaultUtms.utm_variant || "")};
   var TRACKING_KEYS  = [
@@ -433,7 +436,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
     } catch (e) {}
   }
 
-  /* 7. Wire up all links */
+  /* 7. Wire up all links (Outbound & Telemetry) */
   LINKS_META.forEach(function (meta) {
     var el = document.getElementById("link-" + meta.id);
     if (!el) return;
@@ -443,30 +446,83 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
       el.href = resolved;
       fireOutbound(meta.id, resolved);
       fireTelemetryClick();
+    });
+  });
 
-      /* ── Decision Engine: Hard vs Soft Click ────────────────────────
-       * Identify "Hard" clicks (CTA/Buy) vs "Soft" clicks (Social/Explore).
-       * We use a case-insensitive match for common 'Buy' keywords or
-       * specific link IDs that start with 'cta-' or 'buy-'.
-       */
-      var label = String(meta.label || "").toLowerCase();
-      var isHard = /buy|get|join|subscribe|checkout|rezerv|al/.test(label) || meta.id.indexOf("cta") === 0;
-      
+  /* 8. Declarative Signal Architecture (Rule A, B, C, D, E, F) ───────────────
+   * - Strict event delegation for [data-cos-signal-name]
+   * - Single physical click guarantee & bubbling protection (__cos_handled)
+   * - Ignores non-clickable / decorative / body / unlisted elements (0 points)
+   * - Ignores disabled / aria-disabled elements
+   * - Evaluates time signals by real seconds (afterSeconds per Landing Version)
+   */
+  (function initDeclarativeSignals() {
+    var softClicks = (SIGNALS_CONFIG && SIGNALS_CONFIG.clicks && Array.isArray(SIGNALS_CONFIG.clicks.soft)) ? SIGNALS_CONFIG.clicks.soft : [];
+    var hardClicks = (SIGNALS_CONFIG && SIGNALS_CONFIG.clicks && Array.isArray(SIGNALS_CONFIG.clicks.hard)) ? SIGNALS_CONFIG.clicks.hard : [];
+    var timeSignals = (SIGNALS_CONFIG && Array.isArray(SIGNALS_CONFIG.time)) ? SIGNALS_CONFIG.time : [];
+
+    // Global Delegated Click Listener
+    document.addEventListener("click", function (evt) {
+      if (!evt) return;
+      if (evt.__cos_handled) return;
+
+      var el = evt.target ? evt.target.closest("[data-cos-signal-name]") : null;
+      if (!el) return;
+
+      // Ignore disabled elements
+      if (el.disabled || el.getAttribute("aria-disabled") === "true" || el.classList.contains("disabled")) {
+        return;
+      }
+
+      var signalName = (el.getAttribute("data-cos-signal-name") || "").trim();
+      if (!signalName) return;
+
+      evt.__cos_handled = true;
+
+      var isHard = hardClicks.indexOf(signalName) !== -1;
+      var isSoft = softClicks.indexOf(signalName) !== -1;
+
+      // Rule B & F: Unconfigured signal names generate ZERO points / NO request
+      if (!isHard && !isSoft) return;
+
       fetch("/api/decision/signal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-        body: JSON.stringify({ 
-          type: isHard ? "click_hard" : "click_soft", 
-          link_id: meta.id,
+        body: JSON.stringify({
+          type: isHard ? "click_hard" : "click_soft",
+          signal_name: signalName,
           meta: {
             source: CONTEXT_ID,
             campaign: CAMPAIGN || getMerged().utm_campaign || ""
           }
         })
-      }).catch(function() {});
-    });
-  });
+      }).catch(function () {});
+    }, true);
+
+    // Rule C: Time Signals in real seconds per Landing Version
+    if (Array.isArray(timeSignals)) {
+      timeSignals.forEach(function (ts) {
+        if (!ts || !ts.name || typeof ts.afterSeconds !== "number" || ts.afterSeconds <= 0) return;
+        setTimeout(function () {
+          fetch("/api/decision/signal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            keepalive: true,
+            body: JSON.stringify({
+              type: "time_signal",
+              name: ts.name,
+              seconds: ts.afterSeconds,
+              meta: {
+                source: CONTEXT_ID,
+                campaign: CAMPAIGN || getMerged().utm_campaign || ""
+              }
+            })
+          }).catch(function () {});
+        }, ts.afterSeconds * 1000);
+      });
+    }
+  })();
 
   /* 8. Engagement & Scroll Tracking (Phase 3) ─────────────────────────
    * Calculates a "Warmth" score based on scroll depth and time.

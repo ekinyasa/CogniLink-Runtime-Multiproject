@@ -143,6 +143,32 @@ export async function onRequestPost(context) {
         // No change
         break;
 
+      case "time_signal":
+        {
+          const sName = (body.name || "").toLowerCase();
+          const sSeconds = Number(body.seconds) || 0;
+          if (sName === "hot") {
+            if (user.h === 0) {
+              user = updateUserState(user, { h: 1, e: Math.max(user.e, HOT_LIMIT) });
+              updated = true;
+            }
+          } else if (sName === "warm") {
+            const warmScore = Math.max(user.e, 35);
+            if (warmScore !== user.e) {
+              user = updateUserState(user, { e: warmScore });
+              updated = true;
+            }
+          } else if (sSeconds > 0) {
+            const timeBonus = Math.min(30, Math.floor(sSeconds * 1.5));
+            const newScore = Math.min(100, user.e + timeBonus);
+            if (newScore !== user.e) {
+              user = updateUserState(user, { e: newScore });
+              updated = true;
+            }
+          }
+        }
+        break;
+
       case "engagement":
         if (body.score !== undefined) {
           const clientScore = Number(body.score) || 0;

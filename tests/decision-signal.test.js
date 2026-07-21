@@ -58,6 +58,31 @@ const tests = [
     const json = await res.json();
     assert.equal(json.ok, true);
     assert.equal(json.state.h, 1);
+  }],
+  ["onRequestPost processes time_signal for warm and hot thresholds", async () => {
+    const warmCtx = createMockContext({
+      type: "time_signal",
+      name: "warm",
+      seconds: 8,
+      meta: { source: "landing-page", campaign: "test-campaign" }
+    });
+    const warmRes = await onRequestPost(warmCtx);
+    assert.equal(warmRes.status, 200);
+    const warmJson = await warmRes.json();
+    assert.equal(warmJson.ok, true);
+    assert.equal(warmJson.state.e >= 35, true);
+
+    const hotCtx = createMockContext({
+      type: "time_signal",
+      name: "hot",
+      seconds: 20,
+      meta: { source: "landing-page", campaign: "test-campaign" }
+    });
+    const hotRes = await onRequestPost(hotCtx);
+    assert.equal(hotRes.status, 200);
+    const hotJson = await hotRes.json();
+    assert.equal(hotJson.ok, true);
+    assert.equal(hotJson.state.h, 1);
   }]
 ];
 
