@@ -5080,6 +5080,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       studioCurrentEditingLanding = null;
     }
 
+    renderStudioVersionsList();
+  }
+
   function normalizeSlug(str) {
     if (!str) return "";
     return String(str)
