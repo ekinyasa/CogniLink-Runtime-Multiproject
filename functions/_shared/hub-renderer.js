@@ -139,9 +139,9 @@ export function renderHub({
     ? `<div class="hub-footer">${footerRaw}</div>`
     : "";
 
-  // Global Custom CSS block (unscoped)
-  const globalCssBlock = cfg.customStyleCss
-    ? `\n<style>\n${cfg.customStyleCss}\n</style>`
+  // Global Custom CSS block as a natively-hosted external stylesheet with cache busting
+  const globalCssLink = cfg.customStyleCss
+    ? `\n<link rel="stylesheet" href="/global-assets/main.css?v=${escAttr(cfg.cssVersion || "1")}">`
     : "";
 
   // Page-level Custom CSS block (unscoped)
@@ -243,7 +243,7 @@ ${themeCssLink}
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
 ${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
-${themeCssLink}${globalCssBlock}${pageCssBlock}
+${themeCssLink}${globalCssLink}${pageCssBlock}
 </head>
 ${bodyTag}
 ${renderedContent}

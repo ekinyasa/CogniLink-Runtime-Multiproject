@@ -1,0 +1,855 @@
+/* ==========================================================================
+   COGNILINK UI IMPLEMENTER BRIEF & STYLING ARCHITECTURE
+   ========================================================================== */
+
+/*
+   SAYIN UI IMPLEMENTER ARKADAŞIMIZA BRİF (LÜTFEN OKUYUNUZ):
+   --------------------------------------------------------------------------
+   Landing page performansımızı (LCP/FCP skorlarını) maksimize etmek ve tarayıcı
+   caching mekanizmasını sağlıklı kullanmak için CSS mimarimizi "Hibrit" modelle
+   ikiye böldük.
+
+   Lütfen tasarımları üretirken ve güncellerken stillerinizi aşağıdaki prensiplere
+   göre ayrıştırarak sisteme giriniz:
+
+   1. INLINE CSS (CRITICAL / ABOVE-THE-FOLD CSS) [Küçük ve Kritik Stiller]
+      - Amaç: Kullanıcı sayfaya girdiğinde tarayıcının ek bir dosya indirmesini
+        beklemeden, ekranın ilk açılan kısmını (Hero / Above-The-Fold) sıfır gecikmeyle
+        boyayabilmesi.
+      - Neler Dahil Edilmeli:
+        * Design Token / CSS Değişkenleri (:root)
+        * Global Reset & Base HTML eleman stilleri (*, body, html, h1-h3, p, a, vb.)
+        * Layout Primitives (Tüm sayfayı tutan .container, .section, .stack, .cluster)
+        * Hero Bölümü (Sayfada ilk görünen ana başlık, alt başlık ve ilk fold stilleri)
+      - Nereye Yazılır: Landing versiyonu Custom HTML'indeki <style> bloğuna veya
+        sayfa düzeyindeki özel küçük stil alanına.
+
+   2. GLOBAL ASSETS CSS (CACHED CSS) [Büyük / Component / Below-The-Fold Stiller]
+      - Amaç: Ekranın ilk foldunda görünmeyen, sayfayı kaydırdıkça açılan büyük elemanlar
+        ve tüm landinglerde ortak olan kütüphane bileşenlerinin caching yoluyla bir kez
+        indirilip tarayıcı belleğinde saklanması.
+      - Neler Dahil Edilmeli:
+        * Formlar, Kartlar ve Input Alanları (.card, .form-grid, inputs, selects, validation)
+        * Butonlar (.button, .button--primary vb.)
+        * Ekranın aşağısında kalan tüm bloklar: Trust Bar, Benefits, Process Steps, FAQ, Testimonials
+        * Tüm Footer stilleri (.site-footer)
+        * Mobil ve Tablet Media Query'leri (Responsive tasarımlar, ilk renderda
+          blocking olmaması için bu cacheable dosya içinde barındırılır)
+        * Prefers-reduced-motion gibi erişilebilirlik sorguları
+      - Nereye Yazılır: General Settings > Global Custom CSS alanına. (Bu alan artık otomatik
+        olarak versiyonlu ve cacheable bir `/global-assets/main.css?v=...` olarak basılacaktır.)
+
+   3. SAYFA PARÇALAMA PRENSİBİ (A + B + C MODELİ):
+      - A PARÇASI (Başlangıç ve head):
+        * UI Implementer olarak sizin ürettiğiniz şablonun en üst kısmıdır.
+        * HTML başlangıcı, head meta etiketleri, font bağlantıları ve base/kritik CSS'i içerir.
+        * Artık bu kısım sistem tarafından otomatik üretiliyor ve kafanıza takmanıza gerek yok.
+        * Sistem otomatik olarak sizin için cache-busted `/global-assets/main.css?v=...` linkini A kısmına ekliyor.
+      - B PARÇASI (Landing-Specific / Custom HTML):
+        * Tamamen o landing versiyonuna özel, tekrar etmeyen içerik, özel HTML'ler, o sayfaya has JS kodları.
+        * Sisteme "Intent Settings > Landing Version > Custom HTML" olarak yüklediğiniz kısımdır.
+      - C PARÇASI (Sabit Bileşenler / Component Library):
+        * B'den sonra gelen, Library'den çekilen reusable dinamik componentler ve Footer.
+        * Bu componentlerin genel CSS iskeletleri `/global-assets/main.css` içinde yer almalı,
+          HTML/Data yapıları ise Component Library'den yönetilmelidir.
+*/
+
+/* ==========================================================================
+   BÖLÜM 1: INLINE CSS (CRITICAL CSS)
+   - Lütfen bu stilleri Inline/Critical CSS olarak (A ve B parçalarında) tutun.
+   ========================================================================== */
+
+:root {
+  /* Brand-neutral design tokens. Override at workspace or landing level when needed. */
+  --color-bg: #ffffff;
+  --color-surface: #f6f8fa;
+  --color-surface-strong: #eef2f5;
+  --color-text: #17212b;
+  --color-text-muted: #5f6b76;
+  --color-border: #d8e0e6;
+  --color-primary: #0f5c4d;
+  --color-primary-hover: #0b4b3f;
+  --color-primary-soft: #e7f1ee;
+  --color-danger: #b42318;
+  --color-success: #16784a;
+  --color-focus: #2f7f70;
+
+  --font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-size-xs: 0.8125rem;
+  --font-size-sm: 0.9375rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: clamp(1.5rem, 2vw, 2rem);
+  --font-size-hero: clamp(2.25rem, 5vw, 4.75rem);
+
+  --line-height-tight: 1.08;
+  --line-height-base: 1.55;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+
+  --shadow-card: 0 14px 36px rgba(23, 33, 43, 0.11);
+  --container: 75rem;
+
+  --hero-min-height: 100svh;
+  --hero-columns: minmax(0, 0.9fr) minmax(32rem, 1.1fr);
+  --hero-gap: clamp(var(--space-10), 5vw, var(--space-20));
+  --hero-background: linear-gradient(180deg, #fbfcfc 0%, #ffffff 100%);
+  --hero-title-width: 12ch;
+  --hero-subtitle-width: 34rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 20rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure,
+blockquote,
+fieldset {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+  line-height: var(--line-height-tight);
+  text-wrap: balance;
+}
+
+h1 {
+  max-width: var(--hero-title-width);
+  margin-bottom: var(--space-6);
+  font-size: var(--font-size-hero);
+  letter-spacing: -0.045em;
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+  letter-spacing: -0.025em;
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  color: var(--color-text-muted);
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+.container {
+  width: min(calc(100% - 2rem), var(--container));
+  margin-inline: auto;
+}
+
+/* Shared layout primitives */
+.section {
+  padding-block: clamp(var(--space-16), 8vw, var(--space-20));
+}
+
+.section__title {
+  margin-bottom: var(--space-8);
+}
+
+.stack {
+  display: grid;
+  gap: var(--stack-gap, var(--space-6));
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cluster-gap, var(--space-4));
+  align-items: var(--cluster-align, center);
+}
+
+/* Hero Section (Critical / Above-the-fold) */
+.hero {
+  display: flex;
+  min-height: var(--hero-min-height);
+  align-items: center;
+  padding-block: clamp(var(--space-8), 6vh, var(--space-16));
+  background: var(--hero-background);
+}
+
+.hero__grid {
+  display: grid;
+  grid-template-columns: var(--hero-columns);
+  gap: var(--hero-gap);
+  align-items: center;
+}
+
+.hero__content {
+  padding-block: var(--space-6);
+}
+
+.hero__subtitle {
+  max-width: var(--hero-subtitle-width);
+  margin-bottom: 0;
+  font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+  color: var(--color-text-muted);
+}
+
+
+/* ==========================================================================
+   BÖLÜM 2: GLOBAL ASSETS CSS (CACHED CSS)
+   - Lütfen bu stilleri /global-assets/main.css (Global Custom CSS) içinde tutun.
+   ========================================================================== */
+
+:root {
+  /* Component defaults that can be loaded in cache background */
+  --form-columns: repeat(2, minmax(0, 1fr));
+  --form-gap: var(--space-4);
+  --trust-columns: minmax(20rem, 1.6fr) repeat(3, minmax(0, 1fr));
+  --trust-logo-columns: repeat(5, minmax(0, 1fr));
+  --benefit-columns: repeat(3, minmax(0, 1fr));
+  --process-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Card and Form primitives */
+.card,
+.quote-card {
+  width: 100%;
+  padding: clamp(var(--space-6), 3vw, var(--space-10));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.card__header,
+.quote-card__header {
+  margin-bottom: var(--space-6);
+}
+
+.card__header h2,
+.quote-card__header h2 {
+  margin-bottom: var(--space-2);
+}
+
+.card__header p,
+.quote-card__header p {
+  margin-bottom: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: var(--form-columns);
+  gap: var(--form-gap);
+}
+
+.field,
+.field input,
+.field select,
+.field textarea,
+.consent {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field--full {
+  grid-column: 1 / -1;
+}
+
+.field label,
+.choice-group legend {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+.field input,
+.field select,
+.field textarea {
+  display: block;
+  width: 100%;
+  min-height: 2.875rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: #b9c5cd;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 15%, transparent);
+}
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  background: #fff9f8;
+}
+
+.field__error {
+  display: block;
+  min-height: 1.25rem;
+  margin-top: var(--space-1);
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+}
+
+.choice-group {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group__options {
+  display: grid;
+  grid-template-columns: var(--choice-columns, repeat(2, minmax(0, 1fr)));
+  gap: var(--space-3);
+}
+
+.choice,
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.choice {
+  min-height: 2.875rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.choice:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.choice input,
+.checkbox input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--color-primary);
+  flex: 0 0 auto;
+}
+
+.consent {
+  margin-top: var(--space-2);
+}
+
+.checkbox {
+  align-items: flex-start;
+  font-size: var(--font-size-sm);
+}
+
+.button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-2);
+  padding: 0.875rem 1.25rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.button--primary {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.button--primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.button--primary:active {
+  transform: translateY(1px);
+}
+
+.form-status {
+  min-height: 1.5rem;
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-sm);
+}
+
+.form-status[data-state="success"] {
+  color: var(--color-success);
+}
+
+.form-status[data-state="error"] {
+  color: var(--color-danger);
+}
+
+/* Shared focus treatment */
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.choice input:focus-visible,
+.checkbox input:focus-visible,
+.button:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-focus) 28%, transparent);
+  outline-offset: 2px;
+}
+
+/* Trust strip */
+.trust-bar {
+  border-block: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.trust-bar__grid {
+  display: grid;
+  grid-template-columns: var(--trust-columns);
+  align-items: center;
+}
+
+.trust-bar__grid > * {
+  margin: 0;
+  padding: var(--space-5) var(--space-6);
+}
+
+.trust-bar__grid > * + * {
+  border-left: 1px solid var(--color-border);
+}
+
+.trust-bar__grid p {
+  color: var(--color-text);
+  font-weight: 650;
+  text-align: center;
+}
+
+.trust-bar__logos {
+  display: grid;
+  grid-template-columns: var(--trust-logo-columns);
+  gap: var(--space-2);
+}
+
+.logo-placeholder {
+  display: inline-flex;
+  min-width: 0;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Benefits */
+.benefit-list {
+  display: grid;
+  grid-template-columns: var(--benefit-columns);
+  border-block: 1px solid var(--color-border);
+}
+
+.benefit {
+  padding: var(--space-8);
+}
+
+.benefit + .benefit {
+  border-left: 1px solid var(--color-border);
+}
+
+.benefit h3 {
+  margin-bottom: var(--space-3);
+}
+
+.benefit p {
+  margin-bottom: 0;
+}
+
+/* Process */
+.process {
+  background: var(--color-primary-soft);
+}
+
+.process__steps {
+  display: grid;
+  grid-template-columns: var(--process-columns);
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.process__steps li {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  align-items: center;
+  min-width: 0;
+}
+
+.process__steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(var(--space-6) * -0.5);
+  width: var(--space-6);
+  height: 1px;
+  background: #9bbab2;
+}
+
+.process__number {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-weight: 750;
+}
+
+.process__steps p {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+/* FAQ and testimonial */
+.decision-support {
+  background: var(--color-surface);
+}
+
+.decision-support__stack {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.faq__list {
+  border-top: 1px solid var(--color-border);
+}
+
+.faq details {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.faq summary {
+  position: relative;
+  padding: var(--space-5) var(--space-10) var(--space-5) 0;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: "+";
+  position: absolute;
+  right: 0;
+  color: var(--color-primary);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.faq details[open] summary::after {
+  content: "−";
+}
+
+.faq details p {
+  max-width: 48rem;
+  margin-bottom: var(--space-5);
+}
+
+.testimonial {
+  margin: 0;
+  padding: clamp(var(--space-8), 5vw, var(--space-12));
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-bg);
+}
+
+.testimonial blockquote {
+  max-width: 52rem;
+  margin-bottom: 0;
+  color: var(--color-text);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  line-height: 1.4;
+}
+
+/* Shared footer */
+.site-footer {
+  padding-block: var(--space-12);
+  background: #17212b;
+  color: #ffffff;
+}
+
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-10);
+}
+
+.site-footer h2 {
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-lg);
+}
+
+.site-footer ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer li + li {
+  margin-top: var(--space-2);
+}
+
+.site-footer li,
+.site-footer a {
+  color: #c8d0d6;
+  font-size: var(--font-size-sm);
+}
+
+.site-footer a:hover {
+  color: #ffffff;
+}
+
+
+/* ==========================================================================
+   BÖLÜM 3: RESPONSIVE MEDIA QUERIES (CACHED CSS)
+   - Lütfen bu stilleri /global-assets/main.css içinde en altta tutun.
+   ========================================================================== */
+
+/* Tablet (max-width: 62rem) */
+@media (max-width: 62rem) {
+  :root {
+    --hero-min-height: auto;
+    --hero-columns: 1fr;
+    --hero-gap: var(--space-8);
+    --hero-title-width: 14ch;
+    --trust-columns: 1fr 1fr;
+    --benefit-columns: 1fr;
+  }
+
+  .hero {
+    align-items: start;
+  }
+
+  .trust-bar__logos {
+    grid-column: 1 / -1;
+  }
+
+  .trust-bar__grid > * + * {
+    border-left: 0;
+  }
+
+  .trust-bar__grid > *:nth-child(3) {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .trust-bar__grid > *:nth-child(n + 2) {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .benefit + .benefit {
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+}
+
+/* Mobile (max-width: 42rem) */
+@media (max-width: 42rem) {
+  :root {
+    --space-16: 3.25rem;
+    --space-20: 4rem;
+    --hero-min-height: 100svh;
+    --hero-gap: var(--space-6);
+    --hero-title-width: none;
+    --form-columns: 1fr;
+    --form-gap: var(--space-2);
+    --trust-columns: 1fr;
+    --process-columns: 1fr;
+  }
+
+  .container {
+    width: min(calc(100% - 2rem), var(--container));
+  }
+
+  .hero {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-10);
+  }
+
+  .hero__content {
+    padding-block: 0;
+  }
+
+  h1 {
+    max-width: none;
+    margin-bottom: var(--space-4);
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .hero__subtitle {
+    font-size: 1.0625rem;
+  }
+
+  .card,
+  .quote-card {
+    padding: var(--space-5);
+  }
+
+  .card__header,
+  .quote-card__header {
+    margin-bottom: var(--space-5);
+  }
+
+  .field--full {
+    grid-column: auto;
+  }
+
+  .trust-bar__grid > *,
+  .trust-bar__grid > *:nth-child(3),
+  .trust-bar__grid > *:nth-child(n + 2) {
+    border: 0;
+  }
+
+  .trust-bar__grid > * + * {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .trust-bar__logos {
+    width: 100%;
+  }
+
+  .benefit {
+    padding: var(--space-6) 0;
+  }
+
+  .process__steps {
+    gap: var(--space-5);
+  }
+
+  .process__steps li:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    bottom: calc(var(--space-5) * -1);
+    left: 1.25rem;
+    width: 1px;
+    height: var(--space-5);
+  }
+
+  .site-footer__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer__grid section + section,
+  .site-footer__grid section + nav {
+    padding-top: var(--space-6);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+}
+
+/* Reduced Motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

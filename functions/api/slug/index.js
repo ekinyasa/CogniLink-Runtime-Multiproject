@@ -349,5 +349,5 @@ function sanitizeHtmlField(val) {
 function sanitizeCssField(val) {
   if (val === null || val === undefined || val === "") return null;
   if (typeof val !== "string") return null;
-  return val.slice(0, 10000);
+  return val;
 }

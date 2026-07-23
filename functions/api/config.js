@@ -81,8 +81,19 @@ export async function onRequestPut(context) {
       if (v === null || v === "") {
         delete updated[k];
       } else if (typeof v === "string") {
-        updated[k] = v.slice(0, 5000);
+        if (k === "customStyleCss") {
+          updated[k] = v; // Remove character limit on global CSS
+        } else {
+          updated[k] = v.slice(0, 5000);
+        }
       }
+    }
+  }
+
+  // Update cssVersion for cache busting when customStyleCss changes
+  if ("customStyleCss" in (body || {})) {
+    if (body.customStyleCss !== existing.customStyleCss) {
+      updated.cssVersion = Date.now().toString();
     }
   }
 
