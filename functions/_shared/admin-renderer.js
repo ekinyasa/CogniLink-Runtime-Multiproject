@@ -445,7 +445,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <label for="f-custom-footer-html">Custom Footer HTML</label>
               <textarea id="f-custom-footer-html" rows="2" placeholder="<p>Limited time only</p>" maxlength="5000"></textarea>
               <label for="f-custom-css">Custom CSS</label>
-              <textarea id="f-custom-css" rows="3" placeholder=".hub-header { color: gold; }" maxlength="10000"></textarea>
+              <textarea id="f-custom-css" rows="3" placeholder=".hub-header { color: gold; }"></textarea>
             </div>
           </details>
 
@@ -908,7 +908,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <input id="cfg-css" type="url" placeholder="https://cdn.example.com/theme.css" />
 
         <label for="cfg-custom-css">Global Custom CSS <span class="hint-inline">(injected as &lt;style&gt; block)</span></label>
-        <textarea id="cfg-custom-css" rows="3" placeholder=".hub-header { color: red; }" maxlength="10000"></textarea>
+        <textarea id="cfg-custom-css" rows="3" placeholder=".hub-header { color: red; }"></textarea>
 
         <p id="config-error" class="error hidden"></p>
         <p id="config-success" class="success hidden"></p>
