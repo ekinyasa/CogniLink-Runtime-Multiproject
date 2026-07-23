@@ -910,6 +910,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <label for="cfg-custom-css">Global Custom CSS <span class="hint-inline">(injected as &lt;style&gt; block)</span></label>
         <textarea id="cfg-custom-css" rows="3" placeholder=".hub-header { color: red; }"></textarea>
 
+        <label for="cfg-custom-js">Global Custom JS <span class="hint-inline">(served as cached script)</span></label>
+        <textarea id="cfg-custom-js" rows="3" placeholder="console.log('Global script loaded');" style="font-family: monospace;"></textarea>
+
         <p id="config-error" class="error hidden"></p>
         <p id="config-success" class="success hidden"></p>
         <div class="form-actions" style="margin-top:1.5rem">
@@ -3763,6 +3766,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       $("cfg-page-title").value  = cfg.pageTitle    || "";
       $("cfg-css").value         = cfg.themeCssUrl   || "";
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
+      $("cfg-custom-js").value   = cfg.customScript || "";
     } catch (err) {
       if (err.message !== "401") showErr(elConfigError, "Failed to load config.");
     }
@@ -3779,6 +3783,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         pageTitle:      $("cfg-page-title").value.trim()   || null,
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
+        customScript:   $("cfg-custom-js").value.trim()    || null,
       };
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();

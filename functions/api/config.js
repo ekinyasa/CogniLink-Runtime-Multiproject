@@ -2,7 +2,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../_shared/auth.js";
 
 const CONFIG_KEY = "hub_config";
 
-const ALLOWED_STRING_KEYS = ["themeCssUrl", "customStyleCss", "pageTitle"];
+const ALLOWED_STRING_KEYS = ["themeCssUrl", "customStyleCss", "pageTitle", "customScript"];
 
 /* ── URL helpers ─────────────────────────────────────────────────── */
 function normalizeUrl(str) {
@@ -81,8 +81,8 @@ export async function onRequestPut(context) {
       if (v === null || v === "") {
         delete updated[k];
       } else if (typeof v === "string") {
-        if (k === "customStyleCss") {
-          updated[k] = v; // Remove character limit on global CSS
+        if (k === "customStyleCss" || k === "customScript") {
+          updated[k] = v; // Remove character limit on global CSS/JS
         } else {
           updated[k] = v.slice(0, 5000);
         }
@@ -94,6 +94,13 @@ export async function onRequestPut(context) {
   if ("customStyleCss" in (body || {})) {
     if (body.customStyleCss !== existing.customStyleCss) {
       updated.cssVersion = Date.now().toString();
+    }
+  }
+
+  // Update jsVersion for cache busting when customScript changes
+  if ("customScript" in (body || {})) {
+    if (body.customScript !== existing.customScript) {
+      updated.jsVersion = Date.now().toString();
     }
   }
 

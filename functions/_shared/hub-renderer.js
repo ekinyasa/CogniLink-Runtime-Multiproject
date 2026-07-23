@@ -144,6 +144,11 @@ export function renderHub({
     ? `\n<link rel="stylesheet" href="/global-assets/main.css?v=${escAttr(cfg.cssVersion || "1")}">`
     : "";
 
+  // Global Custom JS block as a natively-hosted external script with cache busting
+  const globalJsLink = cfg.customScript
+    ? `\n<script src="/global-assets/main.js?v=${escAttr(cfg.jsVersion || "1")}"></script>`
+    : "";
+
   // Page-level Custom CSS block (unscoped)
   const slugId = slug || "";
   const pageCssRaw = slugData?.customStyleCss || "";
@@ -570,6 +575,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
 
 }());
 </script>
+${globalJsLink}
 </body>
 </html>`;
 }
