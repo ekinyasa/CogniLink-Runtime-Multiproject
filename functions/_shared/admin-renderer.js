@@ -75,6 +75,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <button class="tab-btn" data-tab="routing">Traffic</button>
     <button class="tab-btn" data-tab="components">Library</button>
     <button class="tab-btn" data-tab="config">Settings</button>
+    <button class="tab-btn" data-tab="applications">Applications</button>
     <button class="tab-btn" data-tab="diagnostics">Health</button>
   </div>
   </div> <!-- end header-container -->
@@ -998,12 +999,143 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 </div>
 
+  <!-- ── Tab: Applications ───────────────────────────────────── -->
+  <div id="tab-applications" class="tab-pane hidden">
+    <div class="layout" style="grid-template-columns: 1fr 1fr;">
+      <div class="card">
+        <p class="card-title">Applications</p>
+        <button id="btn-refresh-apps" class="btn-secondary btn-sm" style="margin-bottom: 1rem;">Refresh</button>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="tbl-apps" style="width: 100%; text-align: left; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border);"><th>Date</th><th>Contact</th><th>Status</th><th>Product</th><th>Action</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="card narrow" id="app-detail-card" style="display:none; max-width: 100%;">
+        <p class="card-title">Application Details</p>
+        <form id="app-edit-form">
+          <input type="hidden" id="f-app-id" />
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label>Status</label>
+              <select id="f-app-status">
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="converted">Converted</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div>
+              <label>Provenance</label>
+              <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
+            </div>
+          </div>
+          
+          <label>Working Data (Editable JSON)</label>
+          <textarea id="f-app-working-data" rows="8" style="font-family: monospace; font-size: 0.8rem;"></textarea>
+          
+          <label>Original Data (Read-only)</label>
+          <textarea id="f-app-original-data" rows="5" style="font-family: monospace; font-size: 0.8rem;" readonly></textarea>
+          
+          <button type="submit" class="btn-primary" style="margin-top: 1rem;">Save Changes</button>
+          <span id="app-save-msg" style="margin-left: 1rem; font-size: 0.85rem; color: #1a7f37;"></span>
+        </form>
+      </div>
+    </div>
+  </div>
 <script>
 (function () {
   "use strict";
 
   /* ── State ──────────────────────────────────────────── */
+  });
 
+  /* ── Applications Logic ──────────────────────────────────── */
+  var btnRefreshApps = document.getElementById("btn-refresh-apps");
+  var tblAppsBody = document.querySelector("#tbl-apps tbody");
+  var appDetailCard = document.getElementById("app-detail-card");
+  var appEditForm = document.getElementById("app-edit-form");
+
+  function loadApplications() {
+    apiGet("/api/admin/applications?limit=50", function(err, data) {
+      if (err) return console.error("Error loading apps:", err);
+      tblAppsBody.innerHTML = "";
+      if (data && data.applications) {
+        data.applications.forEach(function(app) {
+          var tr = document.createElement("tr");
+          tr.style.borderBottom = "1px solid var(--border)";
+          var d = new Date(app.created_at * 1000).toLocaleString();
+          var contact = app.email || app.phone || "Unknown";
+          var prod = app.product || "-";
+          
+          tr.innerHTML = "<td>" + esc(d) + "</td>" +
+                         "<td>" + esc(contact) + "</td>" +
+                         "<td>" + esc(app.status) + "</td>" +
+                         "<td>" + esc(prod) + "</td>" +
+                         "<td><button type='button' class='btn-secondary btn-sm' onclick='window.editApp(\"" + esc(app.id) + "\")'>View</button></td>";
+          tblAppsBody.appendChild(tr);
+        });
+      }
+    });
+  }
+
+  window.editApp = function(id) {
+    apiGet("/api/admin/applications/" + id, function(err, app) {
+      if (err) return alert("Failed to load application");
+      document.getElementById("f-app-id").value = app.id;
+      document.getElementById("f-app-status").value = app.status;
+      document.getElementById("f-app-working-data").value = JSON.stringify(app.working_payload || {}, null, 2);
+      document.getElementById("f-app-original-data").value = JSON.stringify(app.original_payload || {}, null, 2);
+      
+      var prov = "Slug: " + (app.slug || "-") + "\n" +
+                 "Campaign: " + (app.campaign || "-") + "\n" +
+                 "Version: " + (app.landing_version || "-") + "\n" +
+                 "Intent: " + (app.intent || "-");
+      document.getElementById("app-provenance").textContent = prov;
+      
+      appDetailCard.style.display = "block";
+      document.getElementById("app-save-msg").textContent = "";
+    });
+  };
+
+  if (appEditForm) {
+    appEditForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      var id = document.getElementById("f-app-id").value;
+      var status = document.getElementById("f-app-status").value;
+      var working_data_str = document.getElementById("f-app-working-data").value;
+      
+      var working_payload;
+      try {
+        working_payload = JSON.parse(working_data_str);
+      } catch (err) {
+        return alert("Invalid JSON in Working Data");
+      }
+      
+      apiPut("/api/admin/applications/" + id, { status: status, working_payload: working_payload }, function(err) {
+        if (err) return alert("Failed to save application: " + err);
+        document.getElementById("app-save-msg").textContent = "Saved!";
+        setTimeout(function() { document.getElementById("app-save-msg").textContent = ""; }, 2000);
+        loadApplications();
+      });
+    });
+  }
+
+  if (btnRefreshApps) {
+    btnRefreshApps.addEventListener("click", loadApplications);
+  }
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.classList.contains("tab-btn") && e.target.dataset.tab === "applications") {
+      if (!window.applicationsTabLoaded) {
+        window.applicationsTabLoaded = true;
+        loadApplications();
+      }
+    }
+  });
   function formatLocalTime(raw) {
     if (!raw) return "—";
     var iso = String(raw).replace(" ", "T");
