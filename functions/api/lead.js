@@ -39,11 +39,22 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   const corsHeaders = getCorsHeaders(request);
 
-  let body;
+  let body = {};
+  const contentType = request.headers.get("content-type") || "";
   try {
-    body = await request.json();
+    if (contentType.includes("application/json")) {
+      body = await request.json();
+    } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      formData.forEach((value, key) => {
+        body[key] = value;
+      });
+    } else {
+      // Fallback
+      body = await request.json();
+    }
   } catch (_) {
-    return new Response(JSON.stringify({ error: "invalid_json" }), {
+    return new Response(JSON.stringify({ error: "invalid_format" }), {
       status: 400,
       headers: corsHeaders
     });
@@ -187,18 +198,24 @@ export async function onRequestPost(context) {
     )
   );
 
-  const response = new Response(
-    JSON.stringify({
-      ok: true,
-      message: "Lead captured successfully",
-      application_id: appId,
-      state: user
-    }),
-    {
-      status: 200,
-      headers: corsHeaders
-    }
-  );
+  let response;
+  if (body._redirect) {
+    response = Response.redirect(body._redirect, 303);
+    Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v));
+  } else {
+    response = new Response(
+      JSON.stringify({
+        ok: true,
+        message: "Lead captured successfully",
+        application_id: appId,
+        state: user
+      }),
+      {
+        status: 200,
+        headers: corsHeaders
+      }
+    );
+  }
 
   response.headers.append(
     "Set-Cookie",
