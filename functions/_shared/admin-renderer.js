@@ -1091,9 +1091,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       document.getElementById("f-app-working-data").value = JSON.stringify(app.working_payload || {}, null, 2);
       document.getElementById("f-app-original-data").value = JSON.stringify(app.original_payload || {}, null, 2);
       
-      var prov = "Slug: " + (app.slug || "-") + "\n" +
-                 "Campaign: " + (app.campaign || "-") + "\n" +
-                 "Version: " + (app.landing_version || "-") + "\n" +
+      var prov = "Slug: " + (app.slug || "-") + "\\n" +
+                 "Campaign: " + (app.campaign || "-") + "\\n" +
+                 "Version: " + (app.landing_version || "-") + "\\n" +
                  "Intent: " + (app.intent || "-");
       document.getElementById("app-provenance").textContent = prov;
       
