@@ -111,7 +111,7 @@ export async function onRequestPost(context) {
   }
 
   if (!env.DB) {
-    return new Response(JSON.stringify({ error: "database_not_configured" }), {
+    return new Response(JSON.stringify({ error: "database_not_configured", details: "env.DB is undefined" }), {
       status: 500,
       headers: corsHeaders
     });
@@ -157,7 +157,7 @@ export async function onRequestPost(context) {
     }
   } catch (e) {
     console.error("Lead D1 insert error:", e);
-    return new Response(JSON.stringify({ error: "database_error" }), {
+    return new Response(JSON.stringify({ error: "database_error", details: e.message, stack: e.stack }), {
       status: 500,
       headers: corsHeaders
     });
@@ -204,8 +204,11 @@ export async function onRequestPost(context) {
   );
 
   let response;
-  if (body._redirect) {
-    response = Response.redirect(body._redirect, 303);
+  const isJsonReq = request.headers.get("content-type")?.includes("application/json");
+
+  if (body._redirect && !isJsonReq) {
+    const redirectUrl = new URL(body._redirect, request.url).toString();
+    response = Response.redirect(redirectUrl, 303);
     Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v));
   } else {
     response = new Response(
