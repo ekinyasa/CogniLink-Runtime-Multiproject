@@ -1076,7 +1076,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                          "<td>" + esc(contact) + "</td>" +
                          "<td>" + esc(app.status) + "</td>" +
                          "<td>" + esc(prod) + "</td>" +
-                         "<td><button type='button' class='btn-secondary btn-sm' onclick='window.editApp(\\\"" + esc(app.id) + "\\\")'>View</button></td>";
+                         "<td><button type='button' class='btn-secondary btn-sm' onclick='window.editApp(&quot;" + esc(app.id) + "&quot;)'>View</button></td>";
           tblAppsBody.appendChild(tr);
         });
       }
