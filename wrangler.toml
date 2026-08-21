@@ -94,3 +94,8 @@ DECISION_V2_CUTOVER_ROUTE_TYPE = "c"
 DECISION_V2_CUTOVER_SLUG = ""
 DECISION_V2_CUTOVER_SOURCE = ""
 DECISION_V2_CUTOVER_RULE_ID = ""
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cognilink-db"
+database_id = "1554e86d-a10d-44b5-aabf-63e9f71f51ac"
