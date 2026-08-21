@@ -60,7 +60,12 @@ export async function onRequestPost(context) {
     });
   }
 
-  const { email, name, phone, slug, form_id, contact_preference } = body || {};
+  const email = body.email || body.eposta || body["e-posta"];
+  const phone = body.phone || body.telefon || body.tel || body.cep;
+  const name = body.name || body.isim || body.ad || body.ad_soyad;
+  const slug = body.slug;
+  const form_id = body.form_id;
+  const contact_preference = body.contact_preference || body.iletisimTercihi;
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = email && typeof email === "string" && emailRegex.test(email.trim());
