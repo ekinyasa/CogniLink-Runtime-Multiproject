@@ -1052,7 +1052,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   "use strict";
 
   /* ── State ──────────────────────────────────────────── */
-  });
 
   /* ── Applications Logic ──────────────────────────────────── */
   var btnRefreshApps = document.getElementById("btn-refresh-apps");
