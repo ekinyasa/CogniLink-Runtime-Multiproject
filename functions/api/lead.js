@@ -110,15 +110,42 @@ export async function onRequestPost(context) {
   let resolvedIntent = null;
   let resolvedLandingVersion = null; // 3. LANDING VERSION PROVENANCE: NOT FULLY VALIDATED
   
-  if (cleanSlug && env.SLUG_LINKS) {
+  if (cleanSlug) {
     try {
-      const slugData = await env.SLUG_LINKS.get(cleanSlug, { type: "json" });
+      let slugData = null;
+      // V1: Legacy SLUG_LINKS
+      if (env.SLUG_LINKS) {
+        slugData = await env.SLUG_LINKS.get(cleanSlug, { type: "json" });
+      }
+      
+      // V2: Hub APP_CONFIG (if SLUG_LINKS missed)
+      if (!slugData && env.APP_CONFIG) {
+        slugData = await env.APP_CONFIG.get(`hub:${cleanSlug}`, { type: "json" });
+      }
+
       if (slugData) {
         resolvedCampaign = slugData.campaign || null;
         resolvedProduct = slugData.product || null;
         resolvedIntent = slugData.intent || null;
         // The baseline configuration version, NOT the actual verifiable rendered A/B version.
         resolvedLandingVersion = (slugData.version || slugData.landing_version || "unknown") + "_BASELINE_UNVERIFIED";
+      }
+
+      // V2: Landing Pointer (If still no campaign/intent found)
+      if (!resolvedCampaign && env.APP_CONFIG) {
+        const landingPtr = await env.APP_CONFIG.get(`landing:${cleanSlug}`, { type: "json" });
+        if (landingPtr && landingPtr.campaignId) {
+          resolvedCampaign = landingPtr.campaignId;
+          resolvedLandingVersion = landingPtr.landingId + "_BASELINE_UNVERIFIED";
+          // We can also fetch the campaign itself to get product/intent
+          if (env.CAMPAIGN_INDEX) {
+            const campRec = await env.CAMPAIGN_INDEX.get(landingPtr.campaignId, { type: "json" });
+            if (campRec) {
+              resolvedProduct = campRec.product || null;
+              resolvedIntent = campRec.alias || landingPtr.campaignId;
+            }
+          }
+        }
       }
     } catch (e) {}
   }

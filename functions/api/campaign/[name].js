@@ -35,9 +35,10 @@ export async function onRequestPatch(context) {
   const hasIsActive    = typeof body?.isActive === "boolean";
   const hasAlias       = "alias" in (body || {});
   const hasDefaultSlug = "defaultSlug" in (body || {});
+  const hasProduct     = "product" in (body || {});
 
-  if (!hasIsActive && !hasAlias && !hasDefaultSlug) {
-    return new Response(JSON.stringify({ error: "Provide isActive (boolean), alias (string|null), and/or defaultSlug (string|null)." }), {
+  if (!hasIsActive && !hasAlias && !hasDefaultSlug && !hasProduct) {
+    return new Response(JSON.stringify({ error: "Provide isActive (boolean), product (string|null), alias (string|null), and/or defaultSlug (string|null)." }), {
       status: 400, headers: jsonHeaders(),
     });
   }
@@ -48,6 +49,11 @@ export async function onRequestPatch(context) {
       status: 404, headers: jsonHeaders(),
     });
   }
+
+  /* ── Parse product if provided ───────────────────────────── */
+  const rawProduct = hasProduct
+    ? ((body.product || "").trim() || null)
+    : undefined;
 
   /* ── Parse alias if provided ─────────────────────────────── */
   const rawAlias = hasAlias
@@ -109,6 +115,7 @@ export async function onRequestPatch(context) {
   const updated = {
     ...existing,
     ...(hasIsActive    ? { isActive:    body.isActive  } : {}),
+    ...(rawProduct     !== undefined ? { product:     rawProduct     } : {}),
     ...(rawAlias       !== undefined ? { alias:       rawAlias       } : {}),
     ...(rawDefaultSlug !== undefined ? { defaultSlug: rawDefaultSlug } : {}),
     updatedAt: new Date().toISOString(),

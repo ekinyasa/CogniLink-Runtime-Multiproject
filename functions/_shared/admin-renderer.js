@@ -499,8 +499,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <p class="card-title">Intents</p>
+            <button id="btn-studio-new-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
           </div>
-          <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem;">
+          <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
+            <select id="filter-intent-product" style="font-size: 0.75rem; padding: 0.2rem; min-width: 100px; flex: 1;">
+              <option value="">All Products</option>
+            </select>
             <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
               <input type="checkbox" id="show-archived" /> Archived
             </label>
@@ -516,7 +520,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <div id="intent-workspace" class="grid-layout" style="display: none; flex-direction: column; gap: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
           <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
-          <button id="btn-studio-new-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto;">+ New Intent</button>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
@@ -525,9 +528,15 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
             <p class="card-title">Intent Settings</p>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Workspace Alias
-              <input type="text" id="studio-campaign-alias" placeholder="e.g. ts-renew" />
-            </label>            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Product Group
+              <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
+              <datalist id="intent-products-list"></datalist>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Intent Name
+              <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Routing & Behavior Configuration (JSON)
               <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
   "destinations": [],
@@ -3830,6 +3839,32 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       var res  = await apiFetch("/api/campaigns");
       var data = await res.json();
       campaigns = data.campaigns || [];
+      
+      // Collect unique products
+      var productsSet = new Set();
+      campaigns.forEach(function(c) {
+        if (c.product) productsSet.add(c.product);
+      });
+      var products = Array.from(productsSet).sort();
+      
+      var filterSelect = document.getElementById("filter-intent-product");
+      if (filterSelect) {
+        var currentFilterVal = filterSelect.value;
+        filterSelect.innerHTML = '<option value="">All Products</option>';
+        products.forEach(function(p) {
+          filterSelect.innerHTML += '<option value="' + escAttr(p) + '">' + escHtml(p) + '</option>';
+        });
+        filterSelect.value = currentFilterVal;
+      }
+      
+      var dataList = document.getElementById("intent-products-list");
+      if (dataList) {
+        dataList.innerHTML = "";
+        products.forEach(function(p) {
+          dataList.innerHTML += '<option value="' + escAttr(p) + '">';
+        });
+      }
+
       populateCampaignSelect();
       renderCampaignList();
     } catch (err) {
@@ -5161,6 +5196,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     // Set Campaign index metadata settings
     var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
     document.getElementById("studio-campaign-alias").value = campIndex ? (campIndex.alias || "") : "";
+    document.getElementById("studio-intent-product").value = campIndex ? (campIndex.product || "") : "";
 
     // Set Archive/Restore and Delete states
     var isActive = campIndex ? (campIndex.isActive !== false) : true;
@@ -5829,6 +5865,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       saveIntentBtn.dataset.wired = "1";
       saveIntentBtn.addEventListener("click", async function () {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
+        var product = document.getElementById("studio-intent-product").value.trim();
         var defaultSlug = null; // No longer used, handled by Intent mainLandingId
 
         var routingConfig = null;
@@ -5846,10 +5883,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           saveIntentBtn.disabled = true;
           saveIntentBtn.textContent = "Saving...";
 
-          // 1. Save Patch Campaign Index Metadata (Alias & defaultSlug)
+          // 1. Save Patch Campaign Index Metadata (Alias, Product)
           var patchRes = await apiFetch("/api/campaign/" + encodeURIComponent(currentSelectedCampaign), {
             method: "PATCH",
-            body: JSON.stringify({ alias: alias || null, defaultSlug: defaultSlug })
+            body: JSON.stringify({ alias: alias || null, product: product || null, defaultSlug: defaultSlug })
           });
 
           // 2. Save Routing Configuration
