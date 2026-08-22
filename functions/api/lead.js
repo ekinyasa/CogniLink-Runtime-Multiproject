@@ -55,6 +55,7 @@ function isValidPhone(phone) {
   return p.length === 10 || p.length === 11;
 }
 export async function onRequestPost(context) {
+  try {
   const { request, env } = context;
   const corsHeaders = getCorsHeaders(request);
 
@@ -364,4 +365,5 @@ export async function onRequestPost(context) {
   );
 
   return response;
+  } catch(globalErr) { return new Response(JSON.stringify({ error: "global_crash", message: globalErr.message, stack: globalErr.stack }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }); }
 }
