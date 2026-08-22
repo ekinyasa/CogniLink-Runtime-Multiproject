@@ -5855,7 +5855,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         }
       });
     }
-    }
 
     var archiveIntentBtn = document.getElementById("btn-studio-archive-intent");
     if (archiveIntentBtn && !archiveIntentBtn.dataset.wired) {
