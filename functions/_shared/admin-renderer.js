@@ -5800,23 +5800,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
     });
 
-          var data = await res.json();
-          if (res.ok) {
-            modal.style.display = "none";
-            await loadCampaignList();
-            window.selectCampaign(name);
-          } else {
-            alert("Error: " + (data.error || "Failed to create intent"));
-          }
-        } catch (e) {
-          alert("Failed to create intent: " + e.toString());
-        } finally {
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = "Create Intent";
-        }
-      });
-    }
-
     var archiveIntentBtn = document.getElementById("btn-studio-archive-intent");
     if (archiveIntentBtn && !archiveIntentBtn.dataset.wired) {
       archiveIntentBtn.dataset.wired = "1";
