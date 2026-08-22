@@ -3998,7 +3998,7 @@ window.openNewIntentModal = function(e) {
         '<div class="campaign-item" id="camp-item-' + esc(c.name) + '" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">' +
           '<div class="campaign-info" style="display: flex; flex-direction: column; gap: 0.15rem;">' +
             '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a> ' +
-            (c.product ? ' <span style="font-size:0.7rem; color:var(--text-m); background:var(--bg); border: 1px solid var(--border); padding: 0.1rem 0.3rem; border-radius: 3px;">' + esc(c.product) + '</span>' : '') +
+            (c.product ? ' <span style="font-size:0.7rem; color:var(--text-m); background:var(--bg); border: 1px solid var(--border); padding: 0.1rem 0.3rem; border-radius: 3px; align-self: flex-start; width: max-content;">' + esc(c.product) + '</span>' : '') +
             '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + createdFmt + aliasText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
@@ -5705,7 +5705,12 @@ window.openNewIntentModal = function(e) {
       var row = document.createElement("div");
       row.style = "display: flex; flex-direction: column; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem; margin-bottom: 0.5rem;";
 
-      var labelText = item.type === "component" ? "Component: " + (item.family ? item.family + " v" + item.version : item.id) : "Custom HTML";
+      var compName = item.name || item.family || item.id;
+      if (compName === item.id && typeof componentFamilies !== "undefined") {
+        var found = componentFamilies.find(function(f) { return f.family_id === item.id; });
+        if (found) compName = found.family_name;
+      }
+      var labelText = item.type === "component" ? "Component: " + compName : "Custom HTML";
 
       var contentArea = "";
       if (item.type === "custom_html") {
@@ -5792,10 +5797,11 @@ window.openNewIntentModal = function(e) {
       compSelect.dataset.wired = "1";
       compSelect.addEventListener("change", function (e) {
         if (!studioCurrentEditingLanding || !e.target.value) return;
+        var selectedName = e.target.options[e.target.selectedIndex].text;
         studioCurrentEditingLanding.layout.push({
           type: "component",
           id: e.target.value,
-          name: e.target.value
+          name: selectedName
         });
         e.target.value = "";
         renderStudioLayoutManager();
