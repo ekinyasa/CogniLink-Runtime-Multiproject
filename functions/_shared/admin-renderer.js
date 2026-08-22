@@ -1060,45 +1060,49 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   var appEditForm = document.getElementById("app-edit-form");
 
   function loadApplications() {
-    apiGet("/api/admin/applications?limit=50", function(err, data) {
-      if (err) return console.error("Error loading apps:", err);
-      tblAppsBody.innerHTML = "";
-      if (data && data.applications) {
-        data.applications.forEach(function(app) {
-          var tr = document.createElement("tr");
-          tr.style.borderBottom = "1px solid var(--border)";
-          var d = new Date(app.created_at * 1000).toLocaleString();
-          var contact = app.email || app.phone || "Unknown";
-          var prod = app.product || "-";
-          
-          tr.innerHTML = "<td>" + esc(d) + "</td>" +
-                         "<td>" + esc(contact) + "</td>" +
-                         "<td>" + esc(app.status) + "</td>" +
-                         "<td>" + esc(prod) + "</td>" +
-                         "<td><button type='button' class='btn-secondary btn-sm' onclick='window.editApp(&quot;" + esc(app.id) + "&quot;)'>View</button></td>";
-          tblAppsBody.appendChild(tr);
-        });
-      }
-    });
+    apiFetch("/api/admin/applications?limit=50")
+      .then(res => res.json())
+      .then(data => {
+        tblAppsBody.innerHTML = "";
+        if (data && data.applications) {
+          data.applications.forEach(function(app) {
+            var tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid var(--border)";
+            var d = new Date(app.created_at * 1000).toLocaleString();
+            var contact = app.email || app.phone || "Unknown";
+            var prod = app.product || "-";
+            
+            tr.innerHTML = "<td>" + esc(d) + "</td>" +
+                           "<td>" + esc(contact) + "</td>" +
+                           "<td>" + esc(app.status) + "</td>" +
+                           "<td>" + esc(prod) + "</td>" +
+                           "<td><button type='button' class='btn-secondary btn-sm' onclick='window.editApp(&quot;" + esc(app.id) + "&quot;)'>View</button></td>";
+            tblAppsBody.appendChild(tr);
+          });
+        }
+      })
+      .catch(err => console.error("Error loading apps:", err));
   }
 
   window.editApp = function(id) {
-    apiGet("/api/admin/applications/" + id, function(err, app) {
-      if (err) return alert("Failed to load application");
-      document.getElementById("f-app-id").value = app.id;
-      document.getElementById("f-app-status").value = app.status;
-      document.getElementById("f-app-working-data").value = JSON.stringify(app.working_payload || {}, null, 2);
-      document.getElementById("f-app-original-data").value = JSON.stringify(app.original_payload || {}, null, 2);
-      
-      var prov = "Slug: " + (app.slug || "-") + "\\n" +
-                 "Campaign: " + (app.campaign || "-") + "\\n" +
-                 "Version: " + (app.landing_version || "-") + "\\n" +
-                 "Intent: " + (app.intent || "-");
-      document.getElementById("app-provenance").textContent = prov;
-      
-      appDetailCard.style.display = "block";
-      document.getElementById("app-save-msg").textContent = "";
-    });
+    apiFetch("/api/admin/applications/" + id)
+      .then(res => res.json())
+      .then(app => {
+        document.getElementById("f-app-id").value = app.id;
+        document.getElementById("f-app-status").value = app.status;
+        document.getElementById("f-app-working-data").value = JSON.stringify(app.working_payload || {}, null, 2);
+        document.getElementById("f-app-original-data").value = JSON.stringify(app.original_payload || {}, null, 2);
+        
+        var prov = "Slug: " + (app.slug || "-") + "\\n" +
+                   "Campaign: " + (app.campaign || "-") + "\\n" +
+                   "Version: " + (app.landing_version || "-") + "\\n" +
+                   "Intent: " + (app.intent || "-");
+        document.getElementById("app-provenance").textContent = prov;
+        
+        appDetailCard.style.display = "block";
+        document.getElementById("app-save-msg").textContent = "";
+      })
+      .catch(err => alert("Failed to load application"));
   };
 
   if (appEditForm) {
@@ -1115,12 +1119,17 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         return alert("Invalid JSON in Working Data");
       }
       
-      apiPut("/api/admin/applications/" + id, { status: status, working_payload: working_payload }, function(err) {
-        if (err) return alert("Failed to save application: " + err);
+      apiFetch("/api/admin/applications/" + id, {
+        method: "PUT",
+        body: JSON.stringify({ status: status, working_payload: working_payload })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("API Error");
         document.getElementById("app-save-msg").textContent = "Saved!";
         setTimeout(function() { document.getElementById("app-save-msg").textContent = ""; }, 2000);
         loadApplications();
-      });
+      })
+      .catch(err => alert("Failed to save application: " + err));
     });
   }
 
