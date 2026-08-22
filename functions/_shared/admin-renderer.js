@@ -499,7 +499,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <p class="card-title">Intents</p>
-            <button id="btn-studio-new-intent" onclick="document.getElementById('modal-new-intent').style.display='flex'" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
+            <button id="btn-studio-new-intent" onclick="window.openNewIntentModal(event)" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
           </div>
           <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
             <select id="filter-intent-product" style="font-size: 0.75rem; padding: 0.2rem; min-width: 100px; flex: 1;">
@@ -757,8 +757,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       </div>
       
       <!-- New Intent Modal -->
-      <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: var(--surface); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
+      <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: var(--surface, #1e1e1e); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
           <h3 style="margin-top: 0;">Create New Intent</h3>
           <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
             Product Group
@@ -1057,12 +1057,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
             <div>
               <label>Provenance</label>
-              <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
+              <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface, #1e1e1e); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
             </div>
           </div>
           
           <label>Raw Client Data</label>
-          <div id="app-raw-data-panel" style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface); padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"></div>
+          <div id="app-raw-data-panel" style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface, #1e1e1e); padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"></div>
           
           <details style="margin-bottom: 1rem;">
             <summary style="cursor: pointer; font-weight: 500; font-size: 0.85rem; margin-bottom: 0.5rem;">Working Data (Editable JSON)</summary>
@@ -1076,6 +1076,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </div>
   </div>
 <script>
+window.openNewIntentModal = function(e) {
+  if (e) e.preventDefault();
+  var modal = document.getElementById('modal-new-intent');
+  if (modal) {
+    modal.style.display = 'flex';
+    console.log("Modal opened");
+  } else {
+    alert("Modal element not found in DOM!");
+  }
+};
 (function () {
   "use strict";
 
@@ -6032,6 +6042,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 </script>
     <script>
+window.openNewIntentModal = function(e) {
+  if (e) e.preventDefault();
+  var modal = document.getElementById('modal-new-intent');
+  if (modal) {
+    modal.style.display = 'flex';
+    console.log("Modal opened");
+  } else {
+    alert("Modal element not found in DOM!");
+  }
+};
           </script>
   </body>
 </html>`;
