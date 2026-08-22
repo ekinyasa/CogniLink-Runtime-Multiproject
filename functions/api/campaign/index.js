@@ -34,6 +34,7 @@ export async function onRequestPost(context) {
   const rawName      = (body?.name      || "").trim().toLowerCase();
   const rawAlias     = (body?.alias     || "").trim().toLowerCase() || null;
   const rawWorkspace = (body?.workspace || "default").trim().toLowerCase() || "default";
+  const rawProduct   = (body?.product   || "").trim() || null;
 
   /* ── Validate name ────────────────────────────────────── */
   const nameErr = validateCampaignName(rawName);
@@ -87,6 +88,7 @@ export async function onRequestPost(context) {
   const record = {
     name:      rawName,
     alias:     rawAlias,
+    product:   rawProduct,
     isActive:  true,
     workspace: rawWorkspace,
     createdAt: new Date().toISOString(),

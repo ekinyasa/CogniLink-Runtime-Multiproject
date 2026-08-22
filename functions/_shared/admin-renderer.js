@@ -755,8 +755,25 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           </div>
         </div>
       </div>
-
-
+      
+      <!-- New Intent Modal -->
+      <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--surface); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
+          <h3 style="margin-top: 0;">Create New Intent</h3>
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Product Group
+            <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Intent Name / ID (lowercase, numbers, hyphens)
+            <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+          </label>
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+            <button type="button" id="btn-cancel-new-intent" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
+            <button type="button" id="btn-confirm-new-intent" class="btn-primary">Create Intent</button>
+          </div>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -5784,16 +5801,60 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     });
 
     var newIntentBtn = document.getElementById("btn-studio-new-intent");
+    var modal = document.getElementById("modal-new-intent");
+    var cancelBtn = document.getElementById("btn-cancel-new-intent");
+    var confirmBtn = document.getElementById("btn-confirm-new-intent");
+    var idInput = document.getElementById("new-intent-id");
+    var productInput = document.getElementById("new-intent-product");
+
     if (newIntentBtn && !newIntentBtn.dataset.wired) {
       newIntentBtn.dataset.wired = "1";
-      newIntentBtn.addEventListener("click", async function () {
-        var name = prompt("Enter new Intent / Campaign name (lowercase, numbers, hyphens):");
-        if (!name) return;
-        name = name.trim().toLowerCase();
+      newIntentBtn.addEventListener("click", function () {
+        idInput.value = "";
+        productInput.value = "";
+        modal.style.display = "flex";
+      });
+      
+      cancelBtn.addEventListener("click", function() {
+        modal.style.display = "none";
+      });
+      
+      confirmBtn.addEventListener("click", async function() {
+        var name = idInput.value.trim().toLowerCase();
+        var product = productInput.value.trim();
+        if (!name) {
+          alert("Intent Name is required.");
+          return;
+        }
         if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
           alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
           return;
         }
+        
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Creating...";
+        try {
+          var createBody = { name: name, alias: name, product: product || null };
+          if (selectedWorkspace) createBody.workspace = selectedWorkspace;
+          var res = await apiFetch("/api/campaign", {
+            method: "POST", body: JSON.stringify(createBody)
+          });
+          var data = await res.json();
+          if (res.ok) {
+            modal.style.display = "none";
+            await loadCampaignList();
+            window.selectCampaign(name);
+          } else {
+            alert("Error: " + (data.error || "Failed to create intent"));
+          }
+        } catch (e) {
+          alert("Failed to create intent: " + e.toString());
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Create Intent";
+        }
+      });
+    }
         try {
           var createBody = { name: name, alias: name };
           if (selectedWorkspace) createBody.workspace = selectedWorkspace;
