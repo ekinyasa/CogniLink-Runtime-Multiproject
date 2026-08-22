@@ -499,7 +499,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <p class="card-title">Intents</p>
-            <button id="btn-studio-new-intent" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
+            <button id="btn-studio-new-intent" onclick="document.getElementById('modal-new-intent').style.display='flex'" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
           </div>
           <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
             <select id="filter-intent-product" style="font-size: 0.75rem; padding: 0.2rem; min-width: 100px; flex: 1;">
@@ -769,7 +769,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
           <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-            <button type="button" id="btn-cancel-new-intent" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
+            <button type="button" id="btn-cancel-new-intent" onclick="document.getElementById('modal-new-intent').style.display='none'" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
             <button type="button" id="btn-confirm-new-intent" class="btn-primary">Create Intent</button>
           </div>
         </div>
@@ -1637,6 +1637,63 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   /* ── Tabs ────────────────────────────────────────────── */
   var pagesTabLoaded = false;
+    // --- NEW INTENT MODAL LOGIC ---
+    var newIntentBtn = document.getElementById("btn-studio-new-intent");
+    var modal = document.getElementById("modal-new-intent");
+    var cancelBtn = document.getElementById("btn-cancel-new-intent");
+    var confirmBtn = document.getElementById("btn-confirm-new-intent");
+    var idInput = document.getElementById("new-intent-id");
+    var productInput = document.getElementById("new-intent-product");
+
+    if (newIntentBtn && !newIntentBtn.dataset.wired) {
+      newIntentBtn.dataset.wired = "1";
+      
+      newIntentBtn.addEventListener("click", function () {
+        idInput.value = "";
+        productInput.value = "";
+        modal.style.display = "flex";
+      });
+      cancelBtn.addEventListener("click", function() {
+        modal.style.display = "none";
+      });
+      confirmBtn.addEventListener("click", async function() {
+        var name = idInput.value.trim().toLowerCase();
+        var product = productInput.value.trim();
+        if (!name) {
+          alert("Intent Name is required.");
+          return;
+        }
+        if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
+          alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
+          return;
+        }
+        
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Creating...";
+        try {
+          var createBody = { name: name, alias: name, product: product || null };
+          if (typeof selectedWorkspace !== "undefined" && selectedWorkspace) createBody.workspace = selectedWorkspace;
+          var res = await apiFetch("/api/campaign", {
+            method: "POST", body: JSON.stringify(createBody)
+          });
+          var data = await res.json();
+          if (res.ok) {
+            modal.style.display = "none";
+            if (typeof loadCampaignList === "function") await loadCampaignList();
+            if (typeof selectCampaign === "function") selectCampaign(name);
+            else if (typeof window.selectCampaign === "function") window.selectCampaign(name);
+          } else {
+            alert("Error: " + (data.error || "Failed to create intent"));
+          }
+        } catch (e) {
+          alert("Failed to create intent: " + e.toString());
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Create Intent";
+        }
+      });
+    }
+    // ------------------------------
     var tabBtns  = document.querySelectorAll(".tab-btn");
   var tabPanes = document.querySelectorAll(".tab-pane");
 
@@ -5946,45 +6003,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     }
   }
 
-    var newIntentBtn = document.getElementById("btn-studio-new-intent");
-    var modal = document.getElementById("modal-new-intent");
-    var cancelBtn = document.getElementById("btn-cancel-new-intent");
-    var confirmBtn = document.getElementById("btn-confirm-new-intent");
-    var idInput = document.getElementById("new-intent-id");
-    var productInput = document.getElementById("new-intent-product");
-
-    if (newIntentBtn && !newIntentBtn.dataset.wired) {
-      newIntentBtn.dataset.wired = "1";
-      newIntentBtn.addEventListener("click", function () {
-        idInput.value = "";
-        productInput.value = "";
-        modal.style.display = "flex";
-      });
-      
-      cancelBtn.addEventListener("click", function() {
-        modal.style.display = "none";
-      });
-      
-      confirmBtn.addEventListener("click", async function() {
-        var name = idInput.value.trim().toLowerCase();
-        var product = productInput.value.trim();
-        if (!name) {
-          alert("Intent Name is required.");
-          return;
-        }
-        if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
-          alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
-          return;
-        }
-        
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = "Creating...";
-        try {
-          var createBody = { name: name, alias: name, product: product || null };
-          if (selectedWorkspace) createBody.workspace = selectedWorkspace;
-          var res = await apiFetch("/api/campaign", {
-            method: "POST", body: JSON.stringify(createBody)
-          });
+    console.log("WIRING NEW INTENT BUTTON");
           var data = await res.json();
           if (res.ok) {
             modal.style.display = "none";
