@@ -84,7 +84,6 @@ export async function onRequestPost(context) {
   const name = body.name || body.isim || body.ad || body.ad_soyad;
   const tcValue = body.tc || body.tcKimlik || body.tckn || body.tc_kimlik || body.tc_no || body["tc-kimlik"];
   const referer = request.headers.get("referer");
-  isJsonReq = request.headers.get("content-type")?.includes("application/json");
 
   if (tcValue && !isValidTC(String(tcValue).trim())) {
     if (referer && !isJsonReq) {
@@ -224,7 +223,7 @@ export async function onRequestPost(context) {
   try {
     // 1. IDEMPOTENCY BUG FIX & SPAM PROTECTION (Roadmap V1)
     // Use TC Kimlik No for a 30-day window if available, otherwise fallback to 120-sec phone check
-    const tcKimlik = typeof body.tcKimlik === "string" ? body.tcKimlik.trim() : "";
+    const tcKimlik = typeof tcValue === "string" || typeof tcValue === "number" ? String(tcValue).trim() : "";
     let existing = null;
     
     if (tcKimlik) {
@@ -252,6 +251,7 @@ export async function onRequestPost(context) {
       appId = existing.id;
     } else {
       const originalPayload = JSON.stringify(body);
+      if (tcKimlik) body.tcKimlik = tcKimlik;
       const workingPayload = JSON.stringify(body);
 
       await env.DB.prepare(
@@ -315,7 +315,6 @@ export async function onRequestPost(context) {
   );
 
   let response;
-  isJsonReq = request.headers.get("content-type")?.includes("application/json");
 
   if (body._redirect && !isJsonReq) {
     const redirectUrl = new URL(body._redirect, request.url).toString();

@@ -3997,7 +3997,8 @@ window.openNewIntentModal = function(e) {
       return (
         '<div class="campaign-item" id="camp-item-' + esc(c.name) + '" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">' +
           '<div class="campaign-info" style="display: flex; flex-direction: column; gap: 0.15rem;">' +
-            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a>' +
+            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a> ' +
+            (c.product ? ' <span style="font-size:0.7rem; color:var(--text-m); background:var(--bg); border: 1px solid var(--border); padding: 0.1rem 0.3rem; border-radius: 3px;">' + esc(c.product) + '</span>' : ') +
             '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + createdFmt + aliasText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
