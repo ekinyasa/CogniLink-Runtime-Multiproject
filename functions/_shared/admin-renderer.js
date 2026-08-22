@@ -5855,25 +5855,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         }
       });
     }
-        try {
-          var createBody = { name: name, alias: name };
-          if (selectedWorkspace) createBody.workspace = selectedWorkspace;
-          var res = await apiFetch("/api/campaign", {
-            method: "POST", body: JSON.stringify(createBody)
-          });
-          var data = await res.json();
-          if (!res.ok) { alert(data.error || "Failed."); return; }
-
-          var newCamp = data.campaign || { name: name, alias: name, isActive: true, createdAt: new Date().toISOString() };
-          campaigns.push(newCamp);
-          campaigns.sort(function (a, b) { return a.name.localeCompare(b.name); });
-          populateCampaignSelect();
-          renderCampaignList();
-          selectCampaign(name);
-        } catch (e) {
-          alert("Error: " + e.toString());
-        }
-      });
     }
 
     var archiveIntentBtn = document.getElementById("btn-studio-archive-intent");
