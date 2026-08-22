@@ -211,27 +211,47 @@ ${themeCssLink}
 </html>`;
   }
 
+  // ----------------------------------------------------
+  // V1 POST-SUBMIT ARCHITECTURE: DYNAMIC THANK YOU PAGES
+  // ----------------------------------------------------
+  let finalBodyContent = "";
+  if (modifier === "thanks") {
+    // Override the normal layout/components with a clean, inherited Thank You component.
+    finalBodyContent = `
+      <section style="min-height: 50vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4rem 1rem;">
+        <div style="max-width: 500px; background: var(--surface); padding: 3rem 2rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+          <div style="width: 64px; height: 64px; background: var(--primary, #1a7f37); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 1.5rem auto;">✓</div>
+          <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary);">Talebiniz Alındı!</h1>
+          <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6;">
+            Bilgileriniz sistemimize başarıyla kaydedildi. En kısa sürede sizinle iletişime geçeceğiz.
+          </p>
+          <a href="/" style="display: inline-block; padding: 0.875rem 2rem; background: var(--primary, #1a7f37); color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 1rem;">Ana Sayfaya Dön</a>
+        </div>
+      </section>
+    `;
+  } else {
+    if (hasCustomLayout) {
+      finalBodyContent = layoutHtml;
+    } else {
+      const customBody = slugData?.customBodyHtml || slugData?.custom_html || "";
+      finalBodyContent = `
+    ${compsHtml.hero}
+    ${compsHtml.body}
+    ${customBody ? `<div class="hub-custom-body">${customBody}</div>` : ""}
+    ${compsHtml.legal}
+    ${compsHtml.footer}`;
+    }
+  }
+  // ----------------------------------------------------
+
   /* ── Normal page layout and wrapping ──────────────────────────── */
   const wrapperClass = "page-shell";
 
-  let bodyContent = "";
-  if (hasCustomLayout) {
-    bodyContent = layoutHtml;
-  } else {
-    const customBody = slugData?.customBodyHtml || slugData?.custom_html || "";
-    bodyContent = `
-  ${compsHtml.hero}
-  ${compsHtml.body}
-  ${customBody ? `<div class="hub-custom-body">${customBody}</div>` : ""}
-  ${compsHtml.legal}
-  ${compsHtml.footer}`;
-  }
-
-  const renderedContent = (headerHtml || bodyContent.trim() || footerHtml)
+  const renderedContent = (headerHtml || finalBodyContent.trim() || footerHtml)
     ? `<div class="${wrapperClass}">
-  ${headerHtml}
-  ${bodyContent}
-  ${footerHtml}
+  ${modifier === "thanks" ? "" : headerHtml}
+  ${finalBodyContent}
+  ${modifier === "thanks" ? "" : footerHtml}
 </div>`
     : "";
 
