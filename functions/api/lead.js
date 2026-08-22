@@ -135,19 +135,30 @@ export async function onRequestPost(context) {
   const status = "new";
 
   try {
-    // 1. IDEMPOTENCY BUG FIX
-    // Use strictly non-empty contact identifiers to prevent unrelated matches
-    const idempThreshold = now - 120;
+    // 1. IDEMPOTENCY BUG FIX & SPAM PROTECTION (Roadmap V1)
+    // Use TC Kimlik No for a 30-day window if available, otherwise fallback to 120-sec phone check
+    const tcKimlik = typeof body.tcKimlik === "string" ? body.tcKimlik.trim() : "";
     let existing = null;
     
-    if (cleanEmail) {
+    if (tcKimlik) {
+      const thirtyDaysAgo = now - 2592000;
+      // SQLite JSON extract syntax for D1
       existing = await env.DB.prepare(
-        `SELECT id FROM applications WHERE slug = ? AND email = ? AND created_at > ? LIMIT 1`
-      ).bind(cleanSlug, cleanEmail, idempThreshold).first();
-    } else if (cleanPhone) {
-      existing = await env.DB.prepare(
-        `SELECT id FROM applications WHERE slug = ? AND phone = ? AND created_at > ? LIMIT 1`
-      ).bind(cleanSlug, cleanPhone, idempThreshold).first();
+        `SELECT id FROM applications WHERE slug = ? AND json_extract(working_payload_json, '$.tcKimlik') = ? AND created_at > ? LIMIT 1`
+      ).bind(cleanSlug, tcKimlik, thirtyDaysAgo).first();
+    } 
+    
+    if (!existing) {
+      const idempThreshold = now - 120; // Double-submit fallback
+      if (cleanEmail) {
+        existing = await env.DB.prepare(
+          `SELECT id FROM applications WHERE slug = ? AND email = ? AND created_at > ? LIMIT 1`
+        ).bind(cleanSlug, cleanEmail, idempThreshold).first();
+      } else if (cleanPhone) {
+        existing = await env.DB.prepare(
+          `SELECT id FROM applications WHERE slug = ? AND phone = ? AND created_at > ? LIMIT 1`
+        ).bind(cleanSlug, cleanPhone, idempThreshold).first();
+      }
     }
 
     if (existing) {
