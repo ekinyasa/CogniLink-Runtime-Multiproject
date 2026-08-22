@@ -90,7 +90,13 @@ export async function onRequestPost(context) {
       try {
         const redirectUrl = new URL(referer);
         redirectUrl.searchParams.set("error", "Geçersiz TC Kimlik No");
-        return Response.redirect(redirectUrl.toString(), 303);
+        return new Response(null, {
+          status: 303,
+          headers: {
+            "Location": redirectUrl.toString(),
+            ...corsHeaders
+          }
+        });
       } catch(e) {}
     }
     return new Response(JSON.stringify({ error: "Geçersiz TC Kimlik No" }), {
@@ -103,7 +109,13 @@ export async function onRequestPost(context) {
       try {
         const redirectUrl = new URL(referer);
         redirectUrl.searchParams.set("error", "Geçersiz Telefon Numarası");
-        return Response.redirect(redirectUrl.toString(), 303);
+        return new Response(null, {
+          status: 303,
+          headers: {
+            "Location": redirectUrl.toString(),
+            ...corsHeaders
+          }
+        });
       } catch(e) {}
     }
     return new Response(JSON.stringify({ error: "Geçersiz Telefon Numarası" }), {
@@ -318,8 +330,13 @@ export async function onRequestPost(context) {
 
   if (body._redirect && !isJsonReq) {
     const redirectUrl = new URL(body._redirect, request.url).toString();
-    response = Response.redirect(redirectUrl, 303);
-    Object.entries(corsHeaders).forEach(([k, v]) => response.headers.set(k, v));
+    response = new Response(null, {
+      status: 303,
+      headers: {
+        "Location": redirectUrl,
+        ...corsHeaders
+      }
+    });
   } else {
     response = new Response(
       JSON.stringify({
