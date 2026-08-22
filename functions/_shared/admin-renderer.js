@@ -5800,45 +5800,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       }
     });
 
-    var newIntentBtn = document.getElementById("btn-studio-new-intent");
-    var modal = document.getElementById("modal-new-intent");
-    var cancelBtn = document.getElementById("btn-cancel-new-intent");
-    var confirmBtn = document.getElementById("btn-confirm-new-intent");
-    var idInput = document.getElementById("new-intent-id");
-    var productInput = document.getElementById("new-intent-product");
-
-    if (newIntentBtn && !newIntentBtn.dataset.wired) {
-      newIntentBtn.dataset.wired = "1";
-      newIntentBtn.addEventListener("click", function () {
-        idInput.value = "";
-        productInput.value = "";
-        modal.style.display = "flex";
-      });
-      
-      cancelBtn.addEventListener("click", function() {
-        modal.style.display = "none";
-      });
-      
-      confirmBtn.addEventListener("click", async function() {
-        var name = idInput.value.trim().toLowerCase();
-        var product = productInput.value.trim();
-        if (!name) {
-          alert("Intent Name is required.");
-          return;
-        }
-        if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
-          alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
-          return;
-        }
-        
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = "Creating...";
-        try {
-          var createBody = { name: name, alias: name, product: product || null };
-          if (selectedWorkspace) createBody.workspace = selectedWorkspace;
-          var res = await apiFetch("/api/campaign", {
-            method: "POST", body: JSON.stringify(createBody)
-          });
           var data = await res.json();
           if (res.ok) {
             modal.style.display = "none";
@@ -6000,6 +5961,62 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       });
     }
   }
+
+    var newIntentBtn = document.getElementById("btn-studio-new-intent");
+    var modal = document.getElementById("modal-new-intent");
+    var cancelBtn = document.getElementById("btn-cancel-new-intent");
+    var confirmBtn = document.getElementById("btn-confirm-new-intent");
+    var idInput = document.getElementById("new-intent-id");
+    var productInput = document.getElementById("new-intent-product");
+
+    if (newIntentBtn && !newIntentBtn.dataset.wired) {
+      newIntentBtn.dataset.wired = "1";
+      newIntentBtn.addEventListener("click", function () {
+        idInput.value = "";
+        productInput.value = "";
+        modal.style.display = "flex";
+      });
+      
+      cancelBtn.addEventListener("click", function() {
+        modal.style.display = "none";
+      });
+      
+      confirmBtn.addEventListener("click", async function() {
+        var name = idInput.value.trim().toLowerCase();
+        var product = productInput.value.trim();
+        if (!name) {
+          alert("Intent Name is required.");
+          return;
+        }
+        if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
+          alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
+          return;
+        }
+        
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Creating...";
+        try {
+          var createBody = { name: name, alias: name, product: product || null };
+          if (selectedWorkspace) createBody.workspace = selectedWorkspace;
+          var res = await apiFetch("/api/campaign", {
+            method: "POST", body: JSON.stringify(createBody)
+          });
+          var data = await res.json();
+          if (res.ok) {
+            modal.style.display = "none";
+            await loadCampaignList();
+            window.selectCampaign(name);
+          } else {
+            alert("Error: " + (data.error || "Failed to create intent"));
+          }
+        } catch (e) {
+          alert("Failed to create intent: " + e.toString());
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Create Intent";
+        }
+      });
+    }
 
   // Globally expose for inline event binding support
   window.selectCampaign = selectCampaign;
