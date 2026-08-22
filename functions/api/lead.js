@@ -61,6 +61,7 @@ export async function onRequestPost(context) {
 
   let body = {};
   const contentType = request.headers.get("content-type") || "";
+  const isJsonReq = contentType.includes("application/json");
   try {
     if (contentType.includes("application/json")) {
       body = await request.json();
