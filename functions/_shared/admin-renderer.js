@@ -3863,13 +3863,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         if (c.product) productsSet.add(c.product);
       });
       var products = Array.from(productsSet).sort();
+      function esc(s) { return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
       
       var filterSelect = document.getElementById("filter-intent-product");
       if (filterSelect) {
         var currentFilterVal = filterSelect.value;
         filterSelect.innerHTML = '<option value="">All Products</option>';
         products.forEach(function(p) {
-          filterSelect.innerHTML += '<option value="' + escAttr(p) + '">' + escHtml(p) + '</option>';
+          filterSelect.innerHTML += '<option value="' + esc(p) + '">' + esc(p) + '</option>';
         });
         filterSelect.value = currentFilterVal;
       }
@@ -3878,7 +3879,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       if (dataList) {
         dataList.innerHTML = "";
         products.forEach(function(p) {
-          dataList.innerHTML += '<option value="' + escAttr(p) + '">';
+          dataList.innerHTML += '<option value="' + esc(p) + '">';
         });
       }
 
