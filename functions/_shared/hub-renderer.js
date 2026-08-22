@@ -207,6 +207,28 @@ ${themeCssLink}
 <div class="page-shell">
   <p class="not-found-msg" style="text-align:center;font-size:.9375rem;opacity:.55;margin:2.5rem 0;">Aradığınız sayfa aktif değil veya bulunamadı.</p>
 </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var err = p.get("error");
+        if (err) {
+          var f = document.querySelector("form");
+          if (f) {
+            var d = document.createElement("div");
+            d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
+            d.textContent = err;
+            f.insertBefore(d, f.firstChild);
+            if(window.history && window.history.replaceState) {
+              p.delete("error");
+              var newUrl = window.location.pathname + (p.toString() ? "?" + p.toString() : "") + window.location.hash;
+              window.history.replaceState({}, "", newUrl);
+            }
+          }
+        }
+      } catch(e) {}
+    });
+  </script>
 </body>
 </html>`;
   }
@@ -596,6 +618,28 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
 }());
 </script>
 ${globalJsLink}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var err = p.get("error");
+        if (err) {
+          var f = document.querySelector("form");
+          if (f) {
+            var d = document.createElement("div");
+            d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
+            d.textContent = err;
+            f.insertBefore(d, f.firstChild);
+            if(window.history && window.history.replaceState) {
+              p.delete("error");
+              var newUrl = window.location.pathname + (p.toString() ? "?" + p.toString() : "") + window.location.hash;
+              window.history.replaceState({}, "", newUrl);
+            }
+          }
+        }
+      } catch(e) {}
+    });
+  </script>
 </body>
 </html>`;
 }

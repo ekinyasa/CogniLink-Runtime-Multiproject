@@ -537,6 +537,19 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            <div style="display: flex; gap: 1rem;">
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
+                Double-Submit Window (Time)
+                <input type="number" id="studio-intent-idem-val" placeholder="e.g. 30" min="0" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
+                Unit
+                <select id="studio-intent-idem-unit">
+                  <option value="days">Days</option>
+                  <option value="hours">Hours</option>
+                </select>
+              </label>
+            </div>
               Routing & Behavior Configuration (JSON)
               <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
   "destinations": [],
@@ -5257,6 +5270,17 @@ window.openNewIntentModal = function(e) {
       };
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
+      var idemVal = document.getElementById("studio-intent-idem-val");
+      var idemUnit = document.getElementById("studio-intent-idem-unit");
+      if (idemVal && idemUnit) {
+        if (studioCampaignConfig.idempotency) {
+          idemVal.value = studioCampaignConfig.idempotency.val || "";
+          idemUnit.value = studioCampaignConfig.idempotency.unit || "days";
+        } else {
+          idemVal.value = "30";
+          idemUnit.value = "days";
+        }
+      }
       var routingEl = document.getElementById("studio-routing-config");
       if (routingEl) {
         if (studioCampaignConfig.routing && Object.keys(studioCampaignConfig.routing).length > 0) {
@@ -5274,6 +5298,17 @@ window.openNewIntentModal = function(e) {
         landings: [],
         mainLandingId: ""
       };
+      var idemVal = document.getElementById("studio-intent-idem-val");
+      var idemUnit = document.getElementById("studio-intent-idem-unit");
+      if (idemVal && idemUnit) {
+        if (studioCampaignConfig.idempotency) {
+          idemVal.value = studioCampaignConfig.idempotency.val || "";
+          idemUnit.value = studioCampaignConfig.idempotency.unit || "days";
+        } else {
+          idemVal.value = "30";
+          idemUnit.value = "days";
+        }
+      }
       var routingEl = document.getElementById("studio-routing-config");
       if (routingEl) routingEl.value = "";
     }
@@ -5946,6 +5981,16 @@ window.openNewIntentModal = function(e) {
           var v2Ok = true;
           var v2ErrMsg = "";
 
+          var idemValInput = document.getElementById("studio-intent-idem-val");
+          var idemUnitInput = document.getElementById("studio-intent-idem-unit");
+          if (idemValInput && idemValInput.value) {
+            studioCampaignConfig.idempotency = {
+              val: parseInt(idemValInput.value, 10),
+              unit: idemUnitInput.value
+            };
+          } else {
+            studioCampaignConfig.idempotency = null;
+          }
           studioCampaignConfig.slug = currentSelectedCampaign;
           studioCampaignConfig.routing = routingConfig;
 

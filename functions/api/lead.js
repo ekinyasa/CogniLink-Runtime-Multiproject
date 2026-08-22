@@ -35,6 +35,25 @@ export function onRequestOptions(context) {
   return new Response(null, { status: 204, headers });
 }
 
+function isValidTC(tc) {
+  if (typeof tc !== "string" || tc.length !== 11 || /[^0-9]/.test(tc)) return false;
+  if (tc[0] === "0") return false;
+  let sumOdd = 0, sumEven = 0;
+  for (let i = 0; i < 9; i++) {
+    if (i % 2 === 0) sumOdd += parseInt(tc[i], 10);
+    else sumEven += parseInt(tc[i], 10);
+  }
+  const tenth = ((sumOdd * 7) - sumEven) % 10;
+  if (tenth !== parseInt(tc[9], 10)) return false;
+  const totalSum = (sumOdd + sumEven + tenth) % 10;
+  if (totalSum !== parseInt(tc[10], 10)) return false;
+  return true;
+}
+
+function isValidPhone(phone) {
+  const p = typeof phone === "string" ? phone.replace(/[^0-9]/g, "") : "";
+  return p.length === 10 || p.length === 11;
+}
 export async function onRequestPost(context) {
   const { request, env } = context;
   const corsHeaders = getCorsHeaders(request);
@@ -63,6 +82,36 @@ export async function onRequestPost(context) {
   const email = body.email || body.eposta || body["e-posta"];
   const phone = body.phone || body.telefon || body.tel || body.cep;
   const name = body.name || body.isim || body.ad || body.ad_soyad;
+  const tcValue = body.tc || body.tcKimlik || body.tckn || body.tc_kimlik || body.tc_no || body["tc-kimlik"];
+  const referer = request.headers.get("referer");
+  isJsonReq = request.headers.get("content-type")?.includes("application/json");
+
+  if (tcValue && !isValidTC(String(tcValue).trim())) {
+    if (referer && !isJsonReq) {
+      try {
+        const redirectUrl = new URL(referer);
+        redirectUrl.searchParams.set("error", "Geçersiz TC Kimlik No");
+        return Response.redirect(redirectUrl.toString(), 303);
+      } catch(e) {}
+    }
+    return new Response(JSON.stringify({ error: "Geçersiz TC Kimlik No" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+  if (phone && !isValidPhone(String(phone).trim())) {
+    if (referer && !isJsonReq) {
+      try {
+        const redirectUrl = new URL(referer);
+        redirectUrl.searchParams.set("error", "Geçersiz Telefon Numarası");
+        return Response.redirect(redirectUrl.toString(), 303);
+      } catch(e) {}
+    }
+    return new Response(JSON.stringify({ error: "Geçersiz Telefon Numarası" }), {
+      status: 400,
+      headers: corsHeaders
+    });
+  }
   
   let slug = body.slug;
   if (!slug) {
@@ -157,6 +206,17 @@ export async function onRequestPost(context) {
     });
   }
 
+  let idemSecs = 2592000; // default 30 days
+  if (resolvedCampaign && env.APP_CONFIG) {
+    try {
+      const campConf = await env.APP_CONFIG.get(`campaign:${resolvedCampaign}`, { type: "json" });
+      if (campConf && campConf.idempotency && campConf.idempotency.val) {
+        const v = parseInt(campConf.idempotency.val, 10);
+        const u = campConf.idempotency.unit === "hours" ? 3600 : 86400;
+        if (!isNaN(v)) idemSecs = v * u;
+      }
+    } catch(e) {}
+  }
   const now = Math.floor(Date.now() / 1000);
   let appId = crypto.randomUUID();
   const status = "new";
@@ -168,7 +228,7 @@ export async function onRequestPost(context) {
     let existing = null;
     
     if (tcKimlik) {
-      const thirtyDaysAgo = now - 2592000;
+      const thirtyDaysAgo = now - idemSecs;
       // SQLite JSON extract syntax for D1
       existing = await env.DB.prepare(
         `SELECT id FROM applications WHERE slug = ? AND json_extract(working_payload_json, '$.tcKimlik') = ? AND created_at > ? LIMIT 1`
@@ -176,7 +236,7 @@ export async function onRequestPost(context) {
     } 
     
     if (!existing) {
-      const idempThreshold = now - 120; // Double-submit fallback
+      const idempThreshold = now - idemSecs;
       if (cleanEmail) {
         existing = await env.DB.prepare(
           `SELECT id FROM applications WHERE slug = ? AND email = ? AND created_at > ? LIMIT 1`
@@ -255,7 +315,7 @@ export async function onRequestPost(context) {
   );
 
   let response;
-  const isJsonReq = request.headers.get("content-type")?.includes("application/json");
+  isJsonReq = request.headers.get("content-type")?.includes("application/json");
 
   if (body._redirect && !isJsonReq) {
     const redirectUrl = new URL(body._redirect, request.url).toString();
