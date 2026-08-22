@@ -63,7 +63,20 @@ export async function onRequestPost(context) {
   const email = body.email || body.eposta || body["e-posta"];
   const phone = body.phone || body.telefon || body.tel || body.cep;
   const name = body.name || body.isim || body.ad || body.ad_soyad;
-  const slug = body.slug;
+  
+  let slug = body.slug;
+  if (!slug) {
+    const referer = request.headers.get("referer");
+    if (referer) {
+      try {
+        const url = new URL(referer);
+        if (url.pathname.startsWith("/l/")) {
+          slug = url.pathname.replace("/l/", "").split("/")[0];
+        }
+      } catch (e) {}
+    }
+  }
+  
   const form_id = body.form_id;
   const contact_preference = body.contact_preference || body.iletisimTercihi;
 

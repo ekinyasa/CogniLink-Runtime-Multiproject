@@ -1001,14 +1001,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   <!-- ── Tab: Applications ───────────────────────────────────── -->
   <div id="tab-applications" class="tab-pane hidden">
-    <div class="layout" style="grid-template-columns: 1fr 1fr;">
+    <div class="layout" style="grid-template-columns: 1fr 2fr;">
       <div class="card">
         <p class="card-title">Applications</p>
         <button id="btn-refresh-apps" class="btn-secondary btn-sm" style="margin-bottom: 1rem;">Refresh</button>
         <div style="overflow-x:auto;">
           <table class="data-table" id="tbl-apps" style="width: 100%; text-align: left; border-collapse: collapse;">
             <thead>
-              <tr style="border-bottom: 1px solid var(--border);"><th>Date</th><th>Contact</th><th>Status</th><th>Product</th><th>Action</th></tr>
+              <tr style="border-bottom: 1px solid var(--border);"><th>Date</th><th>Contact</th><th>Status</th><th>Intent</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -1035,13 +1035,15 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
           </div>
           
-          <label>Working Data (Editable JSON)</label>
-          <textarea id="f-app-working-data" rows="8" style="font-family: monospace; font-size: 0.8rem;"></textarea>
+          <label>Raw Client Data</label>
+          <div id="app-raw-data-panel" style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface); padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"></div>
           
-          <label>Original Data (Read-only)</label>
-          <textarea id="f-app-original-data" rows="5" style="font-family: monospace; font-size: 0.8rem;" readonly></textarea>
+          <details style="margin-bottom: 1rem;">
+            <summary style="cursor: pointer; font-weight: 500; font-size: 0.85rem; margin-bottom: 0.5rem;">Working Data (Editable JSON)</summary>
+            <textarea id="f-app-working-data" rows="8" style="font-family: monospace; font-size: 0.8rem; margin-top: 0.5rem;"></textarea>
+          </details>
           
-          <button type="submit" class="btn-primary" style="margin-top: 1rem;">Save Changes</button>
+          <button type="submit" class="btn-primary">Save Changes</button>
           <span id="app-save-msg" style="margin-left: 1rem; font-size: 0.85rem; color: #1a7f37;"></span>
         </form>
       </div>
@@ -1068,20 +1070,48 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           data.applications.forEach(function(app) {
             var tr = document.createElement("tr");
             tr.style.borderBottom = "1px solid var(--border)";
-            var d = new Date(app.created_at * 1000).toLocaleString();
-            var contact = app.email || app.phone || "Unknown";
-            var prod = app.product || "-";
+            tr.style.cursor = "pointer";
+            tr.onclick = function() { window.editApp(app.id); };
+            tr.onmouseover = function() { this.style.backgroundColor = "var(--surface)"; };
+            tr.onmouseout = function() { this.style.backgroundColor = ""; };
             
-            tr.innerHTML = "<td>" + esc(d) + "</td>" +
+            var d = new Date(app.created_at * 1000);
+            var formattedDate = d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear() + " - " + String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+            
+            var contact = app.email || app.phone || "Unknown";
+            var intentStr = app.intent ? (app.intent.charAt(0).toUpperCase() + "-" + (app.product || app.intent)) : (app.product || "-");
+            
+            tr.innerHTML = "<td>" + esc(formattedDate) + "</td>" +
                            "<td>" + esc(contact) + "</td>" +
                            "<td>" + esc(app.status) + "</td>" +
-                           "<td>" + esc(prod) + "</td>" +
-                           "<td><button type='button' class='btn-secondary btn-sm' onclick='window.editApp(&quot;" + esc(app.id) + "&quot;)'>View</button></td>";
+                           "<td>" + esc(intentStr) + "</td>";
             tblAppsBody.appendChild(tr);
           });
         }
       })
       .catch(err => console.error("Error loading apps:", err));
+  }
+
+  function renderRawData(payload) {
+    if (!payload) return "-";
+    var html = "";
+    for (var key in payload) {
+      if (payload.hasOwnProperty(key) && key !== "_redirect") {
+        var displayKey = key.replace(/([A-Z])/g, " $1");
+        displayKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1);
+        if (key === "tcKimlik") displayKey = "Tc Kimlik";
+        if (key === "dogumTarihi") displayKey = "Dogum Tarihi";
+        
+        var val = payload[key];
+        if (key === "dogumTarihi" && typeof val === "string") {
+          var parts = val.split("-");
+          if (parts.length === 3) val = parts[2] + "." + parts[1] + "." + parts[0];
+        }
+        
+        html += "<strong>" + esc(displayKey) + ":</strong> " + esc(String(val)) + "<br>";
+      }
+    }
+    return html;
   }
 
   window.editApp = function(id) {
@@ -1091,7 +1121,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         document.getElementById("f-app-id").value = app.id;
         document.getElementById("f-app-status").value = app.status;
         document.getElementById("f-app-working-data").value = JSON.stringify(app.working_payload || {}, null, 2);
-        document.getElementById("f-app-original-data").value = JSON.stringify(app.original_payload || {}, null, 2);
+        
+        document.getElementById("app-raw-data-panel").innerHTML = renderRawData(app.original_payload);
         
         var prov = "Slug: " + (app.slug || "-") + "\\n" +
                    "Campaign: " + (app.campaign || "-") + "\\n" +
