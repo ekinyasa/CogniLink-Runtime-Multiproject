@@ -10,7 +10,7 @@
  * Unified here so future channel additions only need one change.
  *
  * Usage:
- *   import { deriveCampaignFromSlug } from "./_shared/slug-utils.js";
+ *   import { deriveCampaignFromSlug, slugify } from "./_shared/slug-utils.js";
  */
 
 /**
@@ -46,4 +46,50 @@ export function deriveCampaignFromSlug(canonicalSlug) {
   if (lastDash < 1) return "";
   const suffix = canonicalSlug.slice(lastDash + 1);
   return KNOWN_CHANNELS.has(suffix) ? canonicalSlug.slice(0, lastDash) : "";
+}
+
+/**
+ * Normalizes and slugifies a string, specifically handling Turkish characters.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function slugify(text) {
+  if (!text) return "";
+  const trMap = {
+    'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+    'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u'
+  };
+  return String(text)
+    .replace(/[çğıöşüÇĞİÖŞÜ]/g, match => trMap[match])
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export const SUBDOMAIN_BLACKLIST = new Set([
+  "www", "admin", "login", "api", "assets", "static", "dash", "dashboard", "my", "app", "test", "demo"
+]);
+
+export function extractProductSubdomain(urlStr) {
+  try {
+    const url = new URL(urlStr);
+    const hostSegments = url.hostname.split('.');
+    if (hostSegments.length >= 3) {
+      const sub = hostSegments[0].toLowerCase();
+      if (!SUBDOMAIN_BLACKLIST.has(sub)) {
+        return sub;
+      }
+    }
+  } catch (e) {}
+  return "";
+}
+
+export function validateProductSubdomainMatch(subdomain, productString) {
+  if (!subdomain) return true; // root domains (or www) can serve anything
+  const productSlug = slugify(productString);
+  if (!productSlug) return true; // Legacy campaigns without a product pass
+  return productSlug === subdomain;
 }

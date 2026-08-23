@@ -1,3 +1,4 @@
+import { extractProductSubdomain, validateProductSubdomainMatch } from "../../_shared/slug-utils.js";
 import { renderHub } from "../../_shared/hub-renderer.js";
 import { resolveLinks } from "../../_shared/links.js";
 

@@ -47,7 +47,7 @@ import { createLegacyCompatibleView }              from "./_shared/runtime-compa
 import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
 import { compareDecisions }                        from "./_shared/decision-comparator.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
-import { deriveCampaignFromSlug }                  from "./_shared/slug-utils.js";
+import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch } from "./_shared/slug-utils.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
 import { loadABConfig }                            from "./_shared/ab-router.js";
 import { resolveExperimentVariant }                from "./lib/experiment-router.js";
@@ -173,6 +173,7 @@ export async function onRequestGet(context) {
   const { request, env, params } = context;
   const t0 = Date.now();
   const url = new URL(request.url);
+  const productSubdomain = extractProductSubdomain(request.url);
 
   // --- Auth Check for Preview ---
   const previewVersion = url.searchParams.get("preview_version");
@@ -395,6 +396,11 @@ export async function onRequestGet(context) {
   ]);
 
   const hubConfigVal = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
+  
+  // Enforce subdomain match to prevent conflicts
+  if (productSubdomain && hubConfigVal && !validateProductSubdomainMatch(productSubdomain, hubConfigVal.product)) {
+    return html404();
+  }
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
   const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
   const engineConfig = engineResult.status === "fulfilled" ? (engineResult.value || {}) : {};

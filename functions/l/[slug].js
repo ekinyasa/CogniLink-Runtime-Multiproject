@@ -104,6 +104,7 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
   const previewVersion = url.searchParams.get("preview_version");
+  const productSubdomain = extractProductSubdomain(request.url);
   let isAdminPreview = false;
 
   // ── Authorized Preview Check ──────────────────────────────────────────────
@@ -123,6 +124,12 @@ export async function onRequestGet(context) {
   }
 
   const { campaign, landing } = found;
+
+  // Enforce subdomain match to prevent conflicts
+  if (productSubdomain && campaign && !validateProductSubdomainMatch(productSubdomain, campaign.product)) {
+    return render404("The requested landing version belongs to a different product group.");
+  }
+
   const statusLower = (landing.status || "draft").toLowerCase();
 
   // ── Status Enforcement (Section 1) ─────────────────────────────────────────

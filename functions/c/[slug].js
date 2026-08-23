@@ -1,7 +1,7 @@
 import { resolveLinks } from "../_shared/links.js";
 import { renderHub }    from "../_shared/hub-renderer.js";
 import { incrementCounter }         from "../_shared/counter.js";
-import { deriveCampaignFromSlug } from "../_shared/slug-utils.js";
+import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch } from "../_shared/slug-utils.js";
 import { handleDecision }          from "../lib/decision-controller.js";
 import { emitOps, OPS_EVENTS }       from "../_shared/ops-telemetry.js";
 import { createRuntimeRepository }   from "../_shared/runtime-repository.js";
@@ -39,6 +39,7 @@ export async function onRequestGet(context) {
   }
 
   const url = new URL(request.url);
+  const productSubdomain = extractProductSubdomain(request.url);
   const previewVersion = url.searchParams.get("preview_version");
   let isAdminPreview = false;
   
@@ -115,6 +116,16 @@ export async function onRequestGet(context) {
   }
 
   const hasIntentData = intentData && typeof intentData === "object" && !Array.isArray(intentData) && Object.keys(intentData).length > 0;
+  
+  // Enforce subdomain match to prevent conflicts
+  const activeData = intentData || campaignDataVal;
+  if (productSubdomain && activeData && !validateProductSubdomainMatch(productSubdomain, activeData.product)) {
+    const html = renderHub({ notFound: true, config });
+    return new Response(html, {
+      status: 404,
+      headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" }
+    });
+  }
   const hasRuntimeContext = !!(shadowData?.rawLegacy || shadowData?.rawV2);
   if (!campaignDataVal && !hasIntentData && !hasRuntimeContext) {
     const html = renderHub({ notFound: true, config });
