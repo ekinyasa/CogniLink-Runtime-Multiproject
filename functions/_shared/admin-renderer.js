@@ -1084,12 +1084,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div style="background: var(--surface, #1e1e1e); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
           <h3 style="margin-top: 0;">Create New Intent</h3>
           <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            Product Group
-            <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+            <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* Bu isim sistemde kalıcı olarak atanır ve sonradan değiştirilemez!</span></span>
+            <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
           <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            Intent Name / ID (lowercase, numbers, hyphens)
-            <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+            Product Group
+            <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
           <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
             <button type="button" id="btn-cancel-new-intent" onclick="document.getElementById('modal-new-intent').style.display='none'" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
