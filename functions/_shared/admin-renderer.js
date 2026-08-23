@@ -3500,14 +3500,15 @@ window.openNewIntentModal = function(e) {
       var delAttrs = inGrace
         ? 'class="btn-danger btn-xs btn-del" data-slug="' + esc(item.slug) + '"'
         : 'class="btn-danger btn-xs btn-del" data-slug="' + esc(item.slug) + '" disabled title="Grace window expired"';
+      var prodUrl = resolveProductBaseUrl(item.product);
       var aliasBtn = item.alias
-        ? '<a class="btn-ghost btn-xs slug-alias-link" href="/' + esc(item.alias) + '" ' +
+        ? '<a class="btn-ghost btn-xs slug-alias-link" href="' + prodUrl + '/' + esc(item.alias) + '" ' +
             'target="_blank" rel="noopener noreferrer">' + esc(item.alias) + '</a>'
         : '';
       return (
         '<div class="slug-item' + (isActive ? "" : " slug-inactive") + '">' +
           '<div class="slug-info">' +
-            '<a class="slug-name" href="/c/' + esc(item.slug) + '" ' +
+            '<a class="slug-name" href="' + prodUrl + '/c/' + esc(item.slug) + '" ' +
                'target="_blank" rel="noopener noreferrer">/c/' + esc(item.slug) + '</a>' +
             '<span class="slug-meta">' + esc(campaign) + ' · ' + esc(src) + ' · ' + esc(med) +
               (!isActive ? ' · <span class="badge-inactive">disabled</span>' : '') +
@@ -5440,6 +5441,30 @@ window.openNewIntentModal = function(e) {
       .replace(/-+/g, "-");
   }
 
+  function getRootDomain() {
+    var base = "";
+    if (typeof window !== "undefined" && window.location) {
+      base = window.location.hostname;
+    }
+    if (!base && typeof window !== "undefined" && window.CUSTOM_DOMAIN) {
+      base = window.CUSTOM_DOMAIN;
+    }
+    if (!base) return "teklifi.online";
+    var parts = base.split('.');
+    if (parts.length >= 3) {
+      return parts.slice(-2).join('.');
+    }
+    return base;
+  }
+
+  function resolveProductBaseUrl(product) {
+    var root = getRootDomain();
+    if (!product) return "https://www." + root;
+    var cleanProd = normalizeSlug(product);
+    if (!cleanProd) return "https://www." + root;
+    return "https://" + cleanProd + "." + root;
+  }
+
   function resolveBaseUrl() {
     var base = "";
     if (typeof window !== "undefined" && window.location) {
@@ -5454,15 +5479,15 @@ window.openNewIntentModal = function(e) {
     return base.replace(/\\/+$/, "");
   }
 
-  function buildLandingCanonicalUrl(slug) {
-    var base = resolveBaseUrl();
+  function buildLandingCanonicalUrl(slug, product) {
+    var base = resolveProductBaseUrl(product);
     var clean = normalizeSlug(slug);
     return clean ? (base + "/l/" + clean) : "";
   }
 
-  function buildLandingAliasUrl(alias) {
+  function buildLandingAliasUrl(alias, product) {
     if (!alias) return "";
-    var base = resolveBaseUrl();
+    var base = resolveProductBaseUrl(product);
     var clean = normalizeSlug(alias);
     return clean ? (base + "/" + clean) : "";
   }
@@ -5493,7 +5518,7 @@ window.openNewIntentModal = function(e) {
     var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
     var urlInput = document.getElementById("studio-version-url");
     if (urlInput) {
-      urlInput.value = resolveBaseUrl() + previewUrlPath;
+      urlInput.value = resolveProductBaseUrl(studioCurrentEditingLanding ? (studioCurrentEditingLanding.product || (studioCurrentContextData && studioCurrentContextData.product)) : null) + previewUrlPath;
     }
   }
 
@@ -5551,8 +5576,8 @@ window.openNewIntentModal = function(e) {
       var mainBadgeHtml = isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #4f46e5; color: #ffffff; font-weight: 600; line-height: 1.2;">Main</span>' : '';
 
       // URL rows (Section 4)
-      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id);
-      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias) : "";
+      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id, l.product || studioCampaignConfig.product);
+      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias, l.product || studioCampaignConfig.product) : "";
 
       var canonicalRowHtml = "";
       var aliasRowHtml = "";
