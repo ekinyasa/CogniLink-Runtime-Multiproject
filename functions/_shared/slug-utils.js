@@ -70,7 +70,7 @@ export function slugify(text) {
 }
 
 export const SUBDOMAIN_BLACKLIST = new Set([
-  "www", "admin", "login", "api", "assets", "static", "dash", "dashboard", "my", "app", "test", "demo"
+  "www", "admin", "login", "api", "assets", "static", "dash", "dashboard", "my", "app", "test", "demo", "sigorta"
 ]);
 
 export function extractProductSubdomain(urlStr) {

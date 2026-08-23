@@ -1,16 +1,16 @@
-/**
- * functions/admin/index.js — Studio admin panel.
- *
- * GET /admin
- *
- * Replaced the legacy /nilufer route (Prompt 41).
- * /nilufer now permanently redirects here.
- */
 import { renderAdmin } from "../_shared/admin-renderer.js";
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const customDomain = env.CUSTOM_DOMAIN || url.hostname;
+
+  // Enforce login.teklifi.online for admin panel
+  if (
+    url.hostname.endsWith("teklifi.online") && 
+    url.hostname !== "login.teklifi.online"
+  ) {
+    return Response.redirect(`https://login.teklifi.online${url.pathname}${url.search}`, 301);
+  }
 
   return new Response(renderAdmin({
     branch: (env && env.CF_PAGES_BRANCH)     || "",

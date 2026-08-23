@@ -537,7 +537,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            <div style="display: flex; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: flex-end;">
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
                 Double-Submit Window (Time)
                 <input type="number" id="studio-intent-idem-val" placeholder="e.g. 30" min="0" />
@@ -1084,7 +1084,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div style="background: var(--surface, #1e1e1e); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
           <h3 style="margin-top: 0;">Create New Intent</h3>
           <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* Bu isim sistemde kalıcı olarak atanır ve sonradan değiştirilemez!</span></span>
+            <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* This name cannot be changed once set!</span></span>
             <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
           <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
@@ -4000,17 +4000,18 @@ window.openNewIntentModal = function(e) {
 
     elCampaignList.innerHTML = items.map(function (c) {
       var isActive   = c.isActive !== false;
-      var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—";
-      var aliasText   = c.alias ? ' · alias: <code>' + esc(c.alias) + '</code>' : '';
+      var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : "—";
+      var aliasText   = c.alias ? '<code style="color: var(--success, #22c55e);">' + esc(c.alias) + '</code>' : '';
+      var metaText    = aliasText ? aliasText + ' · ' + createdFmt : createdFmt;
 
       return (
         '<div class="campaign-item" id="camp-item-' + esc(c.name) + '" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">' +
           '<div class="campaign-info" style="display: flex; flex-direction: column; gap: 0.15rem;">' +
-            '<div style="display: flex; align-items: center; gap: 0.5rem;">' +
-            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a> ' +
-            (c.product ? ' <span style="font-size:0.7rem; color:var(--text-m); background:var(--bg); border: 1px solid var(--border); padding: 0.1rem 0.3rem; border-radius: 3px; align-self: flex-start; width: max-content;">' + esc(c.product) + '</span>' : '') +
+            '<div style="display: flex; align-items: center; gap: 0.25rem;">' +
+            (c.product ? '<span style="font-size:0.7rem; color:var(--text-m);">' + esc(c.product) + '.</span> ' : '') +
+            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a>' +
             '</div>' +
-            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + createdFmt + aliasText +
+            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + metaText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
           '</div>' +
