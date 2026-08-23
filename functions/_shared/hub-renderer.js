@@ -233,7 +233,7 @@ ${themeCssLink}
 
       // Intercept form submits for seamless validation without reset
       var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
-      var forms = document.querySelectorAll("form[action='/api/lead']");
+      var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
       forms.forEach(function(f) {
         var turnstileWidgetId = null;
         if (turnstileSiteKey && typeof turnstile !== "undefined") {
@@ -752,7 +752,7 @@ ${globalJsLink}
 
       // Intercept form submits for seamless validation without reset
       var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
-      var forms = document.querySelectorAll("form[action='/api/lead']");
+      var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
       forms.forEach(function(f) {
         var turnstileWidgetId = null;
         if (turnstileSiteKey && typeof turnstile !== "undefined") {
