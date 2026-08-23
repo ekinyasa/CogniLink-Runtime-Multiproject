@@ -301,7 +301,7 @@ export async function onRequestGet(context) {
     
     // Fetch internally
     const rewriteReq = new Request(internalUrl.toString(), request);
-    return env.ASSETS.fetch(rewriteReq);
+    return fetch(rewriteReq);
   }
 
   // ── A/B routing: optionally replace canonicalSlug with a variant ─────────
