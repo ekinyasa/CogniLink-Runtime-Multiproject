@@ -1,1103 +1,4 @@
-/**
- * Renders the studio panel HTML.
- * Token management and API calls are entirely client-side.
- * The word "admin" never appears in user-visible text.
- */
-export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.ekinyasa.online" } = {}) {
-  // Derive version tag from CF Pages branch (e.g. "feat/v9-diagnostics" → "v9")
-  var vMatch = branch.match(/v(\d+)/);
-  var vTag = vMatch ? "v" + vMatch[1] : "v9";
-  // Prompt 69 — CogniLink branding: shaShort = first 2 + . + last 1
-  var shaShort = sha ? sha.slice(0, 2) + "." + sha.slice(-1) : "";
-  var shaTag = sha ? " \u00b7 " + shaShort : "";
-  var panelLogo = "CogniLink";
-  var panelTitle = shaTag;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow,noarchive">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=info,lock,workspace_premium" />
-<title>${panelLogo}${panelTitle}</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<style>${ADMIN_CSS}</style>
-</head>
-<body>
-
-<!-- ── Token Gate ──────────────────────────────────────── -->
-<div id="gate" class="screen">
-  <div class="card narrow">
-    <p class="card-title">CogniLink</p>
-    <p class="hint">Enter your access token to continue.</p>
-    <form id="gate-form" autocomplete="off">
-      <input id="token-input" type="password" placeholder="Access token"
-        autocomplete="current-password" required />
-      <p id="gate-error" class="error hidden"></p>
-      <button type="submit" class="btn-primary">Continue</button>
-    </form>
-  </div>
-</div>
-
-<!-- ── Main Panel ──────────────────────────────────────── -->
-<div id="panel" class="screen hidden">
-  <div class="header-container" id="header-container">
-  <div class="topbar" id="main-topbar">
-    <span class="topbar-title">${panelLogo}<small> <span style="color: var(--text-m)">${panelTitle}</span></small></span>
-    <div class="sw-toolbar" id="sw-toolbar" style="display:flex;align-items:center;gap:0.75rem">
-      <div id="sw-display-wrap" class="sw-display-oval" title="Start / Stop — click to toggle">
-        <span id="sw-display" class="sw-time" style="user-select:none">00:00.0</span>
-        <span id="sw-icon" class="sw-icon" style="font-size:20px;padding-top:1.2px">⏵︎</span>
-      </div>
-      <button type="button" id="btn-sw-reset" class="btn-ghost btn-sm btn-round" title="Reset" style="color: var(--text-m); font-size: 22px; padding: 0px 0px 0px 1.9px; width: 34px; height: 34px; border-radius: 50%;">⟳</button>
-    </div>
-    <div class="ws-selector" id="ws-selector" style="display:none">
-      <label class="ws-label" for="ws-select">Workspace</label>
-      <select id="ws-select" class="ws-select">
-        <option value="">All</option>
-        <option value="default">default</option>
-      </select>
-    </div>
-    <a href="/admin/experiments" target="_blank"><button class="btn-ghost btn-sm btn-oval btn-lab-link" style="padding: 0.6em 1.3em;">Lab <small>&#x2197;</small></button></a>
-    <button id="btn-logout" class="btn-ghost btn-sm btn-round" style="padding: 1px; width: 34px; height: 34px; border-radius: 50%;">
-      <svg class="" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 22 22" style="width: 20px; height: 18px;"><path stroke="var(--text-m)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12h-9.5m7.5 3 3-3-3-3m-5-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-1"></path></svg>
-    </button>
-  </div>
-
-
-  <!-- Tab bar -->
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="analytics">Pulse</button>
-    <button class="tab-btn" data-tab="pages" style="display:none">Landings</button>
-        <button class="tab-btn" data-tab="campaigns">Intents</button>
-    <button class="tab-btn" data-tab="slugs" style="display:none!important">Nodes</button>
-        <button class="tab-btn" data-tab="routing">Traffic</button>
-    <button class="tab-btn" data-tab="components">Library</button>
-    <button class="tab-btn" data-tab="config">Settings</button>
-    <button class="tab-btn" data-tab="applications">Applications</button>
-    <button class="tab-btn" data-tab="diagnostics">Health</button>
-  </div>
-  </div> <!-- end header-container -->
-
-  <!-- ── Tab: Analytics ───────────────────────────────── -->
-  <div id="tab-analytics" class="tab-pane">
-    <div class="pulse-grid">
-
-      <!-- A: Header (Full Width) -->
-      <div class="pulse-section-a card">
-        <div class="dash-header">
-          <div>
-            <p class="card-title" style="margin-bottom:0.25rem">Analytics</p>
-            <p class="hint" style="margin-bottom:0;font-size:0.75rem" id="analytics-freshness-text">Real-time data from Analytics Engine</p>
-          </div>
-          <div class="dash-header-meta" id="analytics-generated" style="position:absolute;top:1rem;right:1.5rem"></div>
-          <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.25rem;flex-wrap:wrap">
-            <div class="filter-bar desktop-only" id="analytics-time-filters">
-              <button type="button" class="filter-btn" data-window="1h">1H</button>
-              <button type="button" class="filter-btn" data-window="24h">24H</button>
-              <button type="button" class="filter-btn" data-window="7d">7D</button>
-              <button type="button" class="filter-btn" data-window="30d">30D</button>
-            </div>
-            <select id="analytics-time-select" class="mobile-only filter-select" style="padding:0.25rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8rem;outline:none;display:none;">
-              <option value="1h">1H</option>
-              <option value="24h">24H</option>
-              <option value="7d">7D</option>
-              <option value="30d">30D</option>
-            </select>
-            <div class="date-input-group">
-              <input type="date" id="analytics-start-date" class="date-input" title="Start Date" />
-              <span style="font-size:0.7rem;color:var(--text-dim)">-</span>
-              <input type="date" id="analytics-end-date" class="date-input" title="End Date" />
-            </div>
-            <button type="button" id="btn-refresh-analytics" class="btn-ghost" style="padding:0.25rem 0.6rem;font-size:1.1rem;border-radius:50%" title="Refresh Now">⟳</button>
-          </div>
-        </div>
-
-        <div id="analytics-status" class="hint" style="margin:1rem 0">Loading…</div>
-
-        <div id="stat-conv-rate-wrap" class="dash-grid hidden" style="margin-top:1rem">
-          <div class="dash-card">
-            <span class="dash-card-label">Total Clicks</span>
-            <span class="dash-card-value" id="stat-clicks">0</span>
-          </div>
-          <div class="dash-card">
-            <span class="dash-card-label">Conversions</span>
-            <span class="dash-card-value" id="stat-conversions">0</span>
-          </div>
-          <div class="dash-card">
-            <span class="dash-card-label">Avg. Conv. Rate</span>
-            <span class="dash-card-value" id="stat-conv-rate">0%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- B: Performance Breakdown (Source) -->
-      <div id="analytics-content-b" class="pulse-section-b card hidden">
-        <p class="dash-card-label" style="margin-bottom:1rem">Performance Breakdown (Source)</p>
-        <div class="dash-chart-container" style="border:none;padding:0">
-          <canvas id="dash-source-chart" height="100"></canvas>
-        </div>
-      </div>
-
-      <!-- C: Traffic & Conversions Over Time -->
-      <div id="analytics-content-c" class="pulse-section-c card hidden">
-        <p class="dash-card-label" style="margin-bottom:1rem">Traffic & Conversions Over Time</p>
-        <div class="dash-chart-container" style="border:none;padding:0">
-          <canvas id="dash-chart" height="100"></canvas>
-        </div>
-      </div>
-
-      <!-- D: Active Experiments -->
-      <div id="dash-experiments-wrap" class="pulse-section-d card hidden">
-        <p class="analytics-section-title">Active Experiments</p>
-        <div class="exp-grid" id="dash-exp-grid"></div>
-      </div>
-
-      <!-- E: By Campaign / By Alias -->
-      <div id="analytics-content-e" class="pulse-section-e card hidden">
-        <div class="analytics-grid" style="grid-template-columns:1fr; gap:1.5rem">
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-              <p class="analytics-section-title" style="margin-bottom:0">By Campaign</p>
-              <div id="pag-campaigns" class="mini-pagination"></div>
-            </div>
-            <table class="analytics-table" id="tbl-by-campaign">
-              <thead><tr><th>Campaign</th><th>Clicks</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-              <p class="analytics-section-title" style="margin-bottom:0">By Alias</p>
-              <div id="pag-aliases" class="mini-pagination"></div>
-            </div>
-            <table class="analytics-table" id="tbl-by-alias">
-              <thead><tr><th>Alias</th><th>Clicks</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- F: Recent Events -->
-      <div id="analytics-content-f" class="pulse-section-f card hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-          <p class="analytics-section-title" style="margin-bottom:0">Recent Events</p>
-          <div style="display:flex;align-items:center;gap:1.5rem">
-            <label class="toggle-label" style="font-size:.7rem;margin:0">
-              <input type="checkbox" id="show-test-analytics" /> Show Test
-            </label>
-            <div id="pag-events" class="mini-pagination"></div>
-          </div>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="analytics-table analytics-table-full" id="tbl-recent">
-            <thead><tr><th>Time</th><th>Alias</th><th>Slug</th><th>Campaign</th><th>Event / Source</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ── Tab: Pages ───────────────────────────────────── -->
-  <div id="tab-pages" class="tab-pane hidden">
-    <div class="layout">
-      <!-- Left: Create Form -->
-      <div class="card form-card">
-        <p class="card-title" id="page-form-title">New Landing Page</p>
-        <form id="page-form" autocomplete="off">
-          <input type="hidden" id="f-page-editing" value="" />
-          <label for="f-page-id">Page ID / Slug <span class="req">*</span></label>
-          <input type="text" id="f-page-id" placeholder="e.g. black-friday-landing" required pattern="[A-Za-z0-9-_]+" />
-
-          <label for="f-page-title">Page Title</label>
-          <input type="text" id="f-page-title" placeholder="My Landing" />
-
-          <label for="f-page-theme">Theme</label>
-          <select id="f-page-theme">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="system">System Default</option>
-          </select>
-
-          <label for="f-page-url">Redirect URL (optional)</label>
-          <input type="url" id="f-page-url" placeholder="https://external-landing.com" />
-          <p class="hint">If provided, this page acts as a pass-through.</p>
-
-          <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
-          <p class="card-title" style="font-size:13px; font-weight:600; margin-bottom:10px;">Page Sections & Layout Manager</p>
-          <p class="hint" style="margin-top:-5px; margin-bottom:15px; font-size:0.75rem;">Arrange the order of components, links, and custom HTML sections. You can add multiple custom sections and position them anywhere.</p>
-
-          <div id="page-layout-container" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;"></div>
-
-          <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:10px; margin-bottom:20px;">
-            <button type="button" id="btn-add-layout-html" class="btn-ghost btn-sm" style="background:var(--surface); padding:8px; font-size:0.8rem;">+ Add Custom HTML</button>
-            <select id="add-layout-comp-select" style="padding:6px; font-size:0.8rem; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:4px;">
-              <option value="">+ Add Component...</option>
-            </select>
-          </div>
-
-          <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
-          <p class="card-title" style="font-size:12px; opacity:0.7">Advanced / Code Editor</p>
-
-          <label for="f-page-is-conv" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-             <input type="checkbox" id="f-page-is-conv" /> Mark as Conversion Goal (fires signal on load)
-          </label>
-
-          <input type="hidden" id="f-page-html" />
-
-          <label for="f-page-css">Custom CSS</label>
-          <textarea id="f-page-css" rows="3" placeholder=".my-class { color: red; }" style="font-family:monospace;"></textarea>
-
-          <label for="f-page-js">Custom Script (JS)</label>
-          <textarea id="f-page-js" rows="4" placeholder="console.log('Hello world');" style="font-family:monospace;"></textarea>
-
-          <p id="page-form-error" class="error hidden"></p>
-          <p id="page-form-success" class="success hidden"></p>
-          <div style="display:flex; gap:10px;">
-            <button type="submit" id="btn-save-page" class="btn-primary" style="flex:1;">Save Page</button>
-            <button type="button" id="btn-cancel-page" class="btn-ghost hidden">Cancel</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Right: List -->
-      <div class="card list-card">
-        <p class="card-title">Active Pages</p>
-        <div style="overflow-x:auto;">
-          <table id="tbl-pages" class="data-table">
-            <thead style="text-align: left;">
-              <tr><th>ID</th><th>Title/Dest</th><th width="80">Actions</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div> <!-- closes overflow-x:auto -->
-      </div> <!-- closes card list-card -->
-    </div> <!-- closes layout -->
-  </div> <!-- closes tab-pages -->
-
-  <!-- ── Tab: Campaign Links ──────────────────────────── -->
-  <div id="tab-slugs" class="tab-pane hidden">
-    <div class="layout">
-
-      <!-- Left: Create / Edit form -->
-      <div class="card form-card">
-        <p class="card-title" id="form-title">New Campaign Link</p>
-
-        <form id="slug-form" autocomplete="off" novalidate>
-          <input type="hidden" id="edit-mode" value="create" />
-
-          <!-- Campaign selector -->
-          <label for="f-campaign">Campaign <span class="req">*</span></label>
-          <div id="campaign-select-wrap">
-            <select id="f-campaign" name="campaign" required>
-              <option value="__new__">+ Create new campaign</option>
-            </select>
-          </div>
-          <p id="campaign-confirm-msg" class="error hidden"></p>
-
-          <!-- Create new campaign inline -->
-          <div id="new-campaign-wrap" class="hidden new-campaign-box">
-            <div class="inline-row">
-              <input id="f-new-campaign" type="text" placeholder="new-campaign-2026"
-                autocomplete="off" spellcheck="false" />
-              <button type="button" id="btn-create-campaign" class="btn-ghost btn-sm">Create</button>
-            </div>
-            <div class="inline-alias-row">
-              <input id="f-new-campaign-alias" type="text" placeholder="alias (optional, e.g. iki)"
-                autocomplete="off" spellcheck="false" maxlength="48" />
-              <p id="new-camp-alias-status" class="field-hint hidden"></p>
-            </div>
-            <p id="campaign-error" class="error hidden"></p>
-          </div>
-
-          <!-- Slug -->
-          <label for="f-slug">Slug <span class="hint-inline">(path after /c/)</span></label>
-          <div class="input-row">
-            <span class="input-prefix">…/c/</span>
-            <input id="f-slug" name="slug" type="text" placeholder="spring-2026-yt"
-              autocomplete="off" spellcheck="false" required />
-          </div>
-          <p class="field-hint hidden" id="slug-hint"></p>
-
-          <!-- Route Alias -->
-          <label for="f-alias">Route Alias <span class="hint-inline">(optional — short public route, e.g. "bio")</span></label>
-          <input id="f-alias" name="alias" type="text" placeholder="bio"
-            autocomplete="off" spellcheck="false" maxlength="48" />
-          <p id="alias-status" class="field-hint hidden"></p>
-
-          <!-- Attribution Window (TTL) -->
-          <label for="f-cos-win" style="margin-top: 15px;">Attribution Window (Days) <span class="hint-inline">(TTL for cross domains)</span></label>
-          <div class="input-row">
-            <input id="f-cos-win" name="cos_win" type="number" list="attrDaysList" min="1" max="365" placeholder="7" value="7" style="width: 8rem;" />
-            <datalist id="attrDaysList">
-              <option value="1">
-              <option value="7">
-              <option value="30">
-            </datalist>
-          </div>
-
-          <!-- Preset -->
-          <label for="f-preset">UTM Preset</label>
-          <select id="f-preset" name="preset">
-            <option value="instagram_bio">Instagram – Bio</option>
-            <option value="instagram_story">Instagram – Story</option>
-            <option value="youtube_desc">YouTube – Description</option>
-            <option value="spotify_bio">Spotify – Bio</option>
-            <option value="tiktok_bio">TikTok – Bio</option>
-            <option value="tiktok_paid">TikTok – Paid</option>
-            <option value="facebook_post">Facebook – Post</option>
-            <option value="paid_meta">Paid – Meta Ads</option>
-            <option value="paid_google">Paid – Google Ads</option>
-            <option value="custom">Custom</option>
-          </select>
-
-          <!-- Custom UTM: source + medium ONLY -->
-          <div id="custom-utm" class="hidden custom-utm-box">
-            <label for="f-utm-source">utm_source</label>
-            <input id="f-utm-source" name="utm_source" type="text"
-              placeholder="instagram" autocomplete="off" />
-            <label for="f-utm-medium">utm_medium</label>
-            <input id="f-utm-medium" name="utm_medium" type="text"
-              placeholder="story" autocomplete="off" />
-          </div>
-
-          <!-- Additional Global UTM Defaults (lang, market) -->
-          <div style="margin-top: 15px; display: flex; gap: 1rem; align-items: center;">
-            <div style="display: flex; flex-direction: column;">
-              <label for="f-lang" style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">lang</label>
-              <input id="f-lang" name="lang" type="text" value="en" autocomplete="off" style="width: 5rem;" />
-            </div>
-            <div style="display: flex; flex-direction: column;">
-              <label for="f-market" style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">market</label>
-              <input id="f-market" name="market" type="text" value="global" autocomplete="off" style="width: 6rem;" />
-            </div>
-          </div>
-
-          <!-- Destination overrides -->
-          <details class="overrides-section">
-            <summary>Destination overrides <span class="hint-inline">(optional — url, order, active, noUtm per link)</span></summary>
-            <div class="overrides-grid">
-              <div class="override-row">
-                <label class="override-dest-label">Official Website</label>
-                <div class="override-fields">
-                  <input id="f-dest-official-url" class="override-url" type="url" placeholder="https://${customDomain}/tr" />
-                  <input id="f-dest-official-order" class="override-order" type="number" placeholder="order" />
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-official-active" checked /> Active</label>
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-official-noutm" /> No UTM</label>
-                </div>
-              </div>
-              <div class="override-row">
-                <label class="override-dest-label">Educational Programs</label>
-                <div class="override-fields">
-                  <input id="f-dest-programs-url" class="override-url" type="url" placeholder="" />
-                  <input id="f-dest-programs-order" class="override-order" type="number" placeholder="order" />
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-programs-active" checked /> Active</label>
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-programs-noutm" /> No UTM</label>
-                </div>
-              </div>
-              <div class="override-row">
-                <label class="override-dest-label">Latest Release</label>
-                <div class="override-fields">
-                  <input id="f-dest-release-url" class="override-url" type="url" placeholder="" />
-                  <input id="f-dest-release-order" class="override-order" type="number" placeholder="order" />
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-release-active" checked /> Active</label>
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-release-noutm" /> No UTM</label>
-                </div>
-              </div>
-              <div class="override-row">
-                <label class="override-dest-label">Newsletter</label>
-                <div class="override-fields">
-                  <input id="f-dest-newsletter-url" class="override-url" type="url" placeholder="" />
-                  <input id="f-dest-newsletter-order" class="override-order" type="number" placeholder="order" />
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-newsletter-active" checked /> Active</label>
-                  <label class="checkbox-label"><input type="checkbox" id="f-dest-newsletter-noutm" /> No UTM</label>
-                </div>
-              </div>
-            </div>
-          </details>
-
-          <!-- Custom links[] editor -->
-          <details class="links-section" id="links-details">
-            <summary>Custom Buttons <span class="hint-inline">(adds extra buttons after base links)</span></summary>
-            <div id="links-editor" class="links-editor-wrap"></div>
-            <button type="button" id="btn-add-link" class="btn-ghost btn-sm" style="margin-top:.5rem">+ Add button</button>
-          </details>
-
-          <!-- Routing Maps selection -->
-          <details class="landing-section" id="routing-maps-details" open>
-            <summary>Custom Engine Map <span class="hint-inline">(optional — contextual auto-redirect overrides)</span></summary>
-            <div class="landing-fields" style="margin-top:0.5rem;">
-              <select id="f-engine-map-id">
-                <option value="">[Global Default Engine]</option>
-              </select>
-            </div>
-          </details>
-
-          <!-- Per-slug landing customization -->
-          <details class="landing-section">
-            <summary>Landing Customization <span class="hint-inline">(optional — per-slug header, footer, CSS)</span></summary>
-            <div class="landing-fields">
-              <label for="f-custom-header-html">Custom Header HTML</label>
-              <textarea id="f-custom-header-html" rows="2" placeholder="<p>Special announcement</p>" maxlength="5000"></textarea>
-              <label for="f-custom-footer-html">Custom Footer HTML</label>
-              <textarea id="f-custom-footer-html" rows="2" placeholder="<p>Limited time only</p>" maxlength="5000"></textarea>
-              <label for="f-custom-css">Custom CSS</label>
-              <textarea id="f-custom-css" rows="3" placeholder=".hub-header { color: gold; }"></textarea>
-            </div>
-          </details>
-
-          <p id="form-error" class="error hidden"></p>
-
-          <div class="form-actions">
-            <button type="submit" class="btn-primary" id="btn-save">Save</button>
-            <button type="button" class="btn-ghost" id="btn-cancel" style="display:none">Cancel</button>
-          </div>
-        </form>
-
-        <!-- Generated link -->
-        <div id="generated-wrap" class="hidden">
-          <p class="generated-label">Short link</p>
-          <div class="generated-row">
-            <span id="generated-url" class="generated-url"></span>
-            <button id="btn-copy" class="btn-ghost btn-sm">Copy</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Slug list -->
-      <div class="card list-card">
-        <div class="list-header">
-          <p class="card-title">Campaign Links</p>
-          <input id="search-input" type="search" placeholder="Search slug…" />
-          <div class="filter-row">
-            <select id="filter-source">
-              <option value="">All sources</option>
-            </select>
-            <select id="filter-medium">
-              <option value="">All mediums</option>
-            </select>
-            <label class="toggle-label"><input type="checkbox" id="show-archived-camp-slugs" /> Archived campaigns</label>
-            <label class="toggle-label"><input type="checkbox" id="show-test-camp-slugs" /> Test campaigns</label>
-            <button type="button" id="btn-reset-filters" class="btn-ghost btn-sm">Reset</button>
-          </div>
-        </div>
-        <div id="slug-list"><p class="empty-state">Loading…</p></div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ── Tab: Campaigns (Intents) ─────────────────────── -->
-  <div id="tab-campaigns" class="tab-pane hidden">
-    <div class="layout" style="display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; max-width: 100%;">
-      <!-- Left Panel: Intent List -->
-      <div class="card" style="display: flex; flex-direction: column; gap: 1rem; height: fit-content;">
-        <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <p class="card-title">Intents</p>
-            <button id="btn-studio-new-intent" onclick="window.openNewIntentModal(event)" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
-          </div>
-          <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
-            <select id="filter-intent-product" style="font-size: 0.75rem; padding: 0.2rem; min-width: 100px; flex: 1;">
-              <option value="">All Products</option>
-            </select>
-            <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
-              <input type="checkbox" id="show-archived" /> Archived
-            </label>
-            <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
-              <input type="checkbox" id="show-test-campaigns" /> Test
-            </label>
-          </div>
-        </div>
-        <div id="campaign-list" style="display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; max-height: 50vh;"><p class="empty-state">Loading…</p></div>
-      </div>
-
-      <!-- Right Panel: Selected Intent Workspace -->
-      <div id="intent-workspace" class="grid-layout" style="display: none; flex-direction: column; gap: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
-          <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
-
-          <!-- 1. Intent Settings -->
-          <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
-            <p class="card-title">Intent Settings</p>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Product Group
-              <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
-              <datalist id="intent-products-list"></datalist>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Intent Alias (Slug)
-              <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            <div style="display: flex; gap: 1rem; align-items: flex-end;">
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
-                Double-Submit Window (Time)
-                <input type="number" id="studio-intent-idem-val" placeholder="e.g. 30" min="0" />
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
-                Unit
-                <select id="studio-intent-idem-unit">
-                  <option value="days">Days</option>
-                  <option value="hours">Hours</option>
-                </select>
-              </label>
-            </div>
-              Routing & Behavior Configuration (JSON)
-              <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
-  "destinations": [],
-  "evaluation": "sequential",
-  "rules": []
-}'></textarea>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Default Landing Version
-              <select id="studio-default-version-select">
-              </select>
-            </label>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
-              <div style="display: flex; gap: 0.5rem;">
-                <button id="btn-studio-archive-intent" class="btn-danger btn-sm">Archive</button>
-              </div>
-              <button id="btn-studio-save-intent" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
-            </div>
-          </div>
-
-          <!-- 2. Landing Versions -->
-          <div class="card">
-            <p class="card-title">Landing Versions</p>
-            <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
-              <!-- Loaded via JS -->
-            </div>
-            <button id="btn-studio-add-version" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ Create New Version</button>
-          </div>
-
-          <!-- 3. Edit Landing Version (builder) -->
-          <div class="card" id="studio-builder-panel" style="display: none; flex-direction: column; gap: 1rem;">
-            <p class="card-title" style="margin-bottom: 0.25rem;">Edit Landing Version</p>
-            <p id="studio-current-edit-version-title" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1rem; color: var(--primary);"></p>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Display Name
-              <input type="text" id="studio-version-display-name" />
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Version ID (System)
-              <input type="text" id="studio-version-name" readonly style="opacity: 0.7; cursor: not-allowed;" />
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Public Slug (Canonical Route: /l/{slug})
-              <input type="text" id="studio-version-slug" placeholder="e.g. sigorta-yenileme-cold" />
-              <div id="studio-slug-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">https://runtime.ekinyasa.online/l/</div>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Alias (Optional Public Shortcut)
-              <input type="text" id="studio-version-alias" placeholder="e.g. yenileme-devam" />
-              <div id="studio-alias-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">No alias set</div>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Landing Preview URL
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <input type="text" id="studio-version-url" readonly style="flex: 1; font-family: monospace; opacity: 0.7; cursor: not-allowed; font-size: 0.75rem;" />
-                <button id="btn-studio-copy-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">Copy</button>
-                <button id="btn-studio-open-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border); color: var(--accent);">Open &nearr;</button>
-              </div>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Status
-              <select id="studio-version-status">
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="archived">Archived</option>
-              </select>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Page Title
-              <input type="text" id="studio-version-title" />
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Theme
-              <select id="studio-version-theme">
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="system">System Default</option>
-              </select>
-            </label>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Sections & Layout</p>
-                <div style="display: flex; gap: 0.5rem; background: var(--bg); padding: 2px; border-radius: 6px; border: 1px solid var(--border);">
-                  <button id="btn-studio-layout-main" class="btn-primary btn-sm" type="button" onclick="setStudioLayoutMode('main')" style="border: none;">Landing Page</button>
-                  <button id="btn-studio-layout-thanks" class="btn-ghost btn-sm" type="button" onclick="setStudioLayoutMode('thanks')" style="border: 1px solid var(--border);">Thank You Page</button>
-                </div>
-              </div>
-              <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
-                <select id="studio-comp-select" style="padding: 4px; font-size: 0.8rem;">
-                  <option value="">+ Add Component...</option>
-                </select>
-              </div>
-            </div>
-
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Custom CSS
-              <textarea id="studio-version-css" rows="3" style="font-family: monospace;"></textarea>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Custom JS
-              <textarea id="studio-version-js" rows="3" style="font-family: monospace;"></textarea>
-            </label>
-
-            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
-              <button id="btn-studio-save-version" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Version</button>
-            </div>
-          </div>
-
-          <!-- 4. Active Slugs -->
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <p class="card-title" style="margin: 0;">Active Slugs</p>
-              <button id="btn-studio-new-slug" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ New Slug</button>
-            </div>
-            <div id="studio-slug-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
-              <!-- Loaded via JS -->
-            </div>
-          </div>
-
-        </div>
-      </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="tab-routing" class="tab-pane hidden">
-    <div class="paths-grid">
-
-      <!-- ── Section A: Router Status ── -->
-      <div class="card">
-        <div class="list-header" style="margin-bottom:.5rem">
-          <p class="card-title">Router Status</p>
-          <button type="button" id="btn-router-status-refresh" class="btn-ghost btn-sm">Refresh</button>
-        </div>
-        <div id="router-status-body">
-          <p class="hint" style="margin:0">Loading...</p>
-        </div>
-      </div>
-
-      <!-- ── Section B: Compile Routes ── -->
-      <div class="card">
-        <p class="card-title">Compile Routes</p>
-        <p class="hint">Routing activates automatically when aliases are created. Use <strong>Compile Now</strong> to force-rebuild ROUTE_ALIAS.</p>
-        <div class="compile-actions">
-          <button type="button" id="btn-dry-run" class="btn-ghost">Dry Run</button>
-          <button type="button" id="btn-compile-now" class="btn-primary" style="flex:0 0 auto">Compile Now</button>
-        </div>
-        <div id="compile-result" class="hidden compile-result-box">
-          <div id="compile-result-inner"></div>
-        </div>
-        <p id="compile-error" class="error hidden"></p>
-      </div>
-
-      <!-- ── Section C: Experiment Results (Full Width) ── -->
-      <div class="card paths-section-c">
-        <p class="card-title">Experiment Results</p>
-        <p class="hint" style="margin-bottom:.75rem">View traffic split and click-through rate for a live A/B experiment. Counters update as pages are served and links are clicked.</p>
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-          <select id="exp-alias-select" style="width:180px;flex:0 0 auto">
-            <option value="">Select alias&hellip;</option>
-          </select>
-          <button type="button" id="btn-exp-load" class="btn-ghost btn-sm">Load Results</button>
-        </div>
-        <p id="exp-status" class="hint hidden" style="margin-bottom:.5rem"></p>
-        <p id="exp-alias-info" class="hint hidden" style="margin-bottom:.375rem;line-height:1.5"></p>
-        <p id="exp-error" class="error hidden"></p>
-        <p id="exp-winner" class="hidden" style="font-size:.8125rem;font-weight:600;color:var(--success,#1a7f37);margin-bottom:.5rem"></p>
-        <div id="exp-results" class="hidden" style="max-width: 100%; overflow-x: auto;">
-          <table class="analytics-table" style="width:100%; margin-top:.5rem; min-width: 500px;">
-            <thead>
-              <tr>
-                <th>Variant</th>
-                <th style="text-align:right">Target&nbsp;Wt%</th>
-                <th style="text-align:right">Traffic</th>
-                <th style="text-align:right">Clicks</th>
-                <th style="text-align:right">CTR</th>
-                <th style="text-align:right">Conv.</th>
-                <th style="text-align:right">Conv Rate</th>
-                <th style="text-align:right">Lift</th>
-              </tr>
-            </thead>
-            <tbody id="exp-rows"></tbody>
-          </table>
-          <p id="exp-weight-note" class="hint" style="margin-top:.375rem;display:none;font-style:italic"></p>
-        </div>
-      </div>
-
-      <!-- ── Section D: A/B Routing ── -->
-      <div class="card">
-        <p class="card-title">A/B Routing</p>
-        <p class="hint">Set a traffic split for an alias. Weights must sum to 100. Config is cached for 60 s — changes take effect shortly after saving.</p>
-
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-          <select id="ab-alias-select" style="width:180px;flex:0 0 auto">
-            <option value="">Loading aliases…</option>
-          </select>
-          <button type="button" id="btn-ab-load" class="btn-ghost btn-sm">Load</button>
-        </div>
-
-        <p id="ab-status" class="hint hidden" style="margin-bottom:.5rem"></p>
-        <p id="ab-error" class="error hidden"></p>
-        <p id="ab-success" class="hidden" style="font-size:.8125rem;color:var(--success,#1a7f37);margin-bottom:.5rem"></p>
-
-        <div id="ab-config" class="hidden">
-          <div style="display:flex;gap:.5rem;margin-bottom:.3rem;padding:0 .1rem">
-            <span style="flex:1 1 160px;font-size:.72rem;font-weight:600;color:var(--text-m);text-transform:uppercase;letter-spacing:.04em">Slug</span>
-            <span style="width:72px;font-size:.72rem;font-weight:600;color:var(--text-m);text-transform:uppercase;letter-spacing:.04em">Weight</span>
-            <span style="width:28px"></span>
-          </div>
-          <div id="ab-variants"></div>
-          <div style="display:flex;align-items:center;gap:.75rem;margin-top:.5rem;flex-wrap:wrap">
-            <button type="button" id="btn-ab-add-row" class="btn-ghost btn-sm">+ Add Variant</button>
-            <span id="ab-weight-total" style="font-size:.8rem;font-weight:500"></span>
-          </div>
-          <div style="display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap">
-            <button type="button" id="btn-ab-save" class="btn-primary btn-sm">Save Config</button>
-            <button type="button" id="btn-ab-delete" class="btn-ghost btn-sm">Delete Config</button>
-          </div>
-        </div>
-      </div>
-      
-
-    </div>
-  </div>
-
-  <!-- ── Tab: Diagnostics ─────────────────────────────── -->
-  <div id="tab-diagnostics" class="tab-pane hidden">
-    <div class="verify-grid">
-
-      <!-- ── State Decoder ── -->
-      <div class="card" style="grid-column: 1 / -1;">
-        <p class="card-title" style="margin-bottom:0.5rem">cos_state Decoder</p>
-        <p class="hint" style="margin-bottom:1rem">Paste an encoded URI 'cos_state' value (or raw JSON) to decode its engine significance.</p>
-        <input type="text" id="verify-state-input" placeholder="%7B%22uid..." style="font-family:ui-monospace,monospace; font-size:0.8rem; margin-bottom:1rem;">
-        <div id="verify-state-result" class="hidden" style="background:var(--bg); padding:1rem; border:1px solid var(--border); border-radius:var(--radius-sm); font-size: 0.85rem; line-height: 1.6;"></div>
-      </div>
-
-      <!-- ── System Test (A) ── -->
-      <div class="card">
-        <div class="list-header" style="margin-bottom:.75rem">
-          <p class="card-title">System Test</p>
-          <button type="button" id="btn-run-system" class="btn-primary btn-sm">Run System Test</button>
-        </div>
-        <p class="hint" style="margin-bottom:1.25rem">
-          Runs all checks in parallel: smoke test, manual validation, and hub link integrity.
-          One-click full system verification. Allow up to ~2 minutes for AE ingestion.
-        </p>
-        <div id="system-status" class="hidden"></div>
-        <div id="system-result" class="hidden">
-          <table class="analytics-table" style="max-width:540px">
-            <thead><tr><th>Check</th><th>Result</th></tr></thead>
-            <tbody id="system-rows"></tbody>
-          </table>
-          <p id="system-meta" class="hint" style="margin-top:.75rem;font-size:.7rem"></p>
-          <div id="system-fixture-info" class="hidden"
-            style="margin-top:.75rem;padding:.6rem .75rem;background:var(--c-surface-2,#f6f8fa);border-radius:6px;font-size:.78rem;line-height:1.7">
-            <span style="font-weight:600;color:var(--c-text-muted,#555)">Test Fixture</span><br>
-            Campaign: <code id="sfi-campaign" style="font-size:.78rem"></code><br>
-            Alias: <code id="sfi-alias" style="font-size:.78rem"></code><br>
-            Slug: <code id="sfi-slug" style="font-size:.78rem"></code>
-          </div>
-          <div id="system-warnings" class="hidden" style="margin-top:.75rem">
-            <p class="hint" style="font-weight:600;margin-bottom:.25rem">Warnings</p>
-            <ul id="system-warning-list" style="margin:0;padding-left:1.2rem;font-size:.8rem;color:var(--c-warning,#c17b00)"></ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Smoke Test (B) ── -->
-      <div class="card">
-        <div class="list-header" style="margin-bottom:.75rem">
-          <p class="card-title">Smoke Test</p>
-          <button type="button" id="btn-run-smoke" class="btn-ghost btn-sm">Run Smoke Test</button>
-        </div>
-        <p class="hint" style="margin-bottom:1.25rem">
-          Probes routing, KV health, and Analytics Engine pipeline. Read-only.
-          AE retry takes up to ~63s.
-        </p>
-        <div id="diag-status" class="hidden"></div>
-        <div id="diag-result" class="hidden">
-          <table class="analytics-table" style="max-width:480px">
-            <thead><tr><th>Check</th><th>Result</th></tr></thead>
-            <tbody id="diag-rows"></tbody>
-          </table>
-          <p id="diag-meta" class="hint" style="margin-top:.75rem;font-size:.7rem"></p>
-          <div id="diag-warnings" class="hidden" style="margin-top:.75rem">
-            <p class="hint" style="font-weight:600;margin-bottom:.25rem">Warnings</p>
-            <ul id="diag-warning-list" style="margin:0;padding-left:1.2rem;font-size:.8rem;color:var(--c-warning,#c17b00)"></ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Manual Validation (C) ── -->
-      <div class="card">
-        <div class="list-header" style="margin-bottom:.75rem">
-          <p class="card-title">Manual Validation</p>
-          <button type="button" id="btn-run-manual" class="btn-ghost btn-sm">Run Manual Validation</button>
-        </div>
-        <p class="hint" style="margin-bottom:1.25rem">
-          Generates an isolated fixture campaign, fires /{alias}×2, /{alias}/offer,
-          /{alias}/vsl and validates analytics with fixture-scoped filters.
-          Allow up to ~2 minutes for AE ingestion.
-        </p>
-        <div id="manual-status" class="hidden"></div>
-        <div id="manual-result" class="hidden">
-          <table class="analytics-table" style="max-width:580px">
-            <thead><tr><th>Check</th><th>Expected</th><th>Observed</th><th>Result</th></tr></thead>
-            <tbody id="manual-rows"></tbody>
-          </table>
-          <p id="manual-meta" class="hint" style="margin-top:.75rem;font-size:.7rem"></p>
-          <div id="manual-warnings" class="hidden" style="margin-top:.75rem">
-            <ul id="manual-warning-list" style="margin:0;padding-left:1.2rem;font-size:.8rem;color:var(--c-warning,#c17b00)"></ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Hub Link Integrity (D) ── -->
-      <div class="card">
-        <div class="list-header" style="margin-bottom:.75rem">
-          <p class="card-title">Hub Link Integrity</p>
-        </div>
-        <p class="hint" style="margin-bottom:.75rem">Verify all external links on a hub page are reachable.</p>
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-          <input id="link-check-alias" type="text" placeholder="alias (e.g. nb)"
-            style="flex:0 0 160px;width:160px" maxlength="60" />
-          <button type="button" id="btn-link-check" class="btn-ghost btn-sm">Check Links</button>
-        </div>
-        <div id="link-status" class="hidden"></div>
-        <ul id="link-result-list" class="hidden"
-          style="margin:0;padding:0;list-style:none;font-size:.85rem;line-height:2"></ul>
-      </div>
-
-      <!-- ── Background Self-Test (E) ── -->
-      <div class="card">
-        <div class="list-header" style="margin-bottom:.75rem">
-          <p class="card-title">Background Self-Test</p>
-          <button type="button" id="btn-run-bg-test" class="btn-ghost btn-sm">Run Now</button>
-        </div>
-        <p class="hint" style="margin-bottom:.75rem">
-          Lightweight autonomous test: creates a fixture, fires the click sequence,
-          validates AE ingestion, then archives. Can be scheduled via Cron Trigger.
-        </p>
-        <div id="bg-test-status" class="hidden"></div>
-        <div id="bg-test-last" class="hidden"
-          style="font-size:.8rem;color:var(--c-text-muted,#555);margin-top:.5rem">
-          <span id="bg-test-last-text"></span>
-        </div>
-      </div>
-
-      <!-- ── A/B Diagnostics (F) ── -->
-      <div class="card">
-        <p class="card-title">A/B Diagnostics</p>
-        <p class="hint" style="margin-bottom:.75rem">Simulate a routing decision to verify your A/B config. Each run uses a fresh random request ID.</p>
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-          <input id="abd-alias-input" type="text" placeholder="alias (e.g. launch)"
-            style="width:180px;flex:0 0 auto" autocomplete="off" spellcheck="false" maxlength="48" />
-          <button type="button" id="btn-abd-run" class="btn-ghost btn-sm">Test Routing</button>
-        </div>
-        <p id="abd-status" class="hint hidden" style="margin-bottom:.5rem"></p>
-        <p id="abd-error" class="error hidden"></p>
-        <pre id="abd-result" class="hidden" style="margin:0;font-size:.78rem;font-family:ui-monospace,'SF Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .75rem;overflow:auto;white-space:pre-wrap"></pre>
-      </div>
-
-    </div>
-  </div>
-
-  <div id="tab-config" class="tab-pane hidden">
-    <p class="analytics-section-title" style="margin:1.25rem 1.25rem 0 1.25rem">Default Landing Page Configuration</p>
-    <form id="config-form" class="landings-grid" autocomplete="off" novalidate>
-
-      <!-- Card B: General Settings -->
-      <div class="card">
-        <p class="card-title">General Settings</p>
-        <p class="hint">Changes apply globally to rendered pages without redeployment.</p>
-
-        <label for="cfg-page-title">Default Page Title <span class="hint-inline">(shown in browser tab)</span></label>
-        <input id="cfg-page-title" type="text" placeholder="Official Links" maxlength="200" />
-
-        <label for="cfg-css">External CSS URL <span class="hint-inline">(optional; https only)</span></label>
-        <input id="cfg-css" type="url" placeholder="https://cdn.example.com/theme.css" />
-
-        <label for="cfg-custom-css">Global Custom CSS <span class="hint-inline">(injected as &lt;style&gt; block)</span></label>
-        <textarea id="cfg-custom-css" rows="3" placeholder=".hub-header { color: red; }"></textarea>
-
-        <label for="cfg-custom-js">Global Custom JS <span class="hint-inline">(served as cached script)</span></label>
-        <textarea id="cfg-custom-js" rows="3" placeholder="console.log('Global script loaded');" style="font-family: monospace;"></textarea>
-
-        <label for="cfg-turnstile-site-key">Cloudflare Turnstile Site Key <span class="hint-inline">(optional; invisible captcha)</span></label>
-        <input id="cfg-turnstile-site-key" type="text" placeholder="0x4AAAAAA..." />
-
-        <p id="config-error" class="error hidden"></p>
-        <p id="config-success" class="success hidden"></p>
-        <div class="form-actions" style="margin-top:1.5rem">
-          <button type="submit" class="btn-primary" id="btn-save-config">Save Config</button>
-        </div>
-      </div>
-
-      <!-- Card C: Tracking & Integrations -->
-      <div class="card">
-        <p class="card-title">Tracking & Integrations</p>
-        <p class="hint" style="margin-bottom:.75rem">Generate a tracking snippet for a specific conversion event (e.g. <code>purchase</code>, <code>lead</code>). Place this code on your thank-you page.</p>
-
-        <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;flex-wrap:wrap">
-          <input id="conv-event-name" type="text" placeholder="purchase"
-            style="width:140px;flex:0 0 auto" autocomplete="off" />
-          <button type="button" id="btn-conv-gen" class="btn-ghost btn-sm">Generate Snippet</button>
-        </div>
-
-        <div id="conv-snippet-wrap" class="hidden" style="margin-top:1rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-             <span class="hint" style="font-weight:600">JS Snippet</span>
-             <button type="button" id="btn-conv-copy" class="btn-ghost btn-sm">Copy Code</button>
-          </div>
-          <pre id="conv-snippet" style="margin:0;font-size:.78rem;font-family:ui-monospace,'SF Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.6rem .75rem;overflow:auto;white-space:pre-wrap"></pre>
-        </div>
-      </div>
-
-
-    </form>
-  </div>
-
-  <!-- ── Tab: Components ──────────────────────────────── -->
-  <div id="tab-components" class="tab-pane hidden">
-    <div class="layout">
-      <!-- Left: Create/Edit Form & Version Manager -->
-      <div class="card form-card">
-        <div id="component-editor-container">
-          <!-- Dynamically generated HTML goes here -->
-        </div>
-      </div>
-
-      <!-- Right: List -->
-      <div class="card list-card">
-        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-          <div style="display: flex; flex-direction: column; gap: 4px;">
-            <p class="card-title" style="margin-bottom: 0;">Component Families</p>
-            <div style="display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-m); margin-top: 4px;">
-              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                <input type="checkbox" id="comp-filter-active" checked /> Active
-              </label>
-              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                <input type="checkbox" id="comp-filter-inactive" checked /> Inactive
-              </label>
-              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                <input type="checkbox" id="comp-filter-archived" /> Archived
-              </label>
-            </div>
-          </div>
-          <button type="button" id="btn-new-family" class="btn-primary btn-sm" style="width: auto; padding: 6px 12px;">+ New Component</button>
-        </div>
-        <div style="overflow-x:auto;">
-          <table class="data-table" id="tbl-components">
-            <thead style="text-align: left;">
-              <tr>
-                <th>Slug</th>
-                <th>Live</th>
-                <th>Latest</th>
-                <th>Status</th>
-                <th>Modified</th>
-              </tr>
-            </thead>
-            <tbody id="tbl-components-body">
-              <tr><td colspan="5" class="empty-state">Loading components...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  </div>
-
-</div>
-
-  <!-- ── Tab: Applications ───────────────────────────────────── -->
-  <div id="tab-applications" class="tab-pane hidden">
-    <div class="layout" style="grid-template-columns: 1fr 2fr;">
-      <div class="card">
-        <p class="card-title">Applications</p>
-        <button id="btn-refresh-apps" class="btn-secondary btn-sm" style="margin-bottom: 1rem;">Refresh</button>
-        <div style="overflow-x:auto;">
-          <table class="data-table" id="tbl-apps" style="width: 100%; text-align: left; border-collapse: collapse;">
-            <thead>
-              <tr style="border-bottom: 1px solid var(--border);"><th>Date</th><th>Contact</th><th>Status</th><th>Intent</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-      
-      <div class="card narrow" id="app-detail-card" style="display:none; max-width: 100%;">
-        <p class="card-title">Application Details</p>
-        <form id="app-edit-form">
-          <input type="hidden" id="f-app-id" />
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <div>
-              <label>Status</label>
-              <select id="f-app-status">
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="converted">Converted</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-            <div>
-              <label>Provenance</label>
-              <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface, #1e1e1e); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
-            </div>
-          </div>
-          
-          <label>Raw Client Data</label>
-          <div id="app-raw-data-panel" style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface, #1e1e1e); padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"></div>
-          
-          <details style="margin-bottom: 1rem;">
-            <summary style="cursor: pointer; font-weight: 500; font-size: 0.85rem; margin-bottom: 0.5rem;">Working Data (Editable JSON)</summary>
-            <textarea id="f-app-working-data" rows="8" style="font-family: monospace; font-size: 0.8rem; margin-top: 0.5rem;"></textarea>
-          </details>
-          
-          <button type="submit" class="btn-primary">Save Changes</button>
-          <span id="app-save-msg" style="margin-left: 1rem; font-size: 0.85rem; color: #1a7f37;"></span>
-        </form>
-      </div>
-    </div>
-  </div>
-      <!-- New Intent Modal (Moved to global scope) -->
-      <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center;">
-        <div style="background: var(--surface, #1e1e1e); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
-          <h3 style="margin-top: 0;">Create New Intent</h3>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* This name cannot be changed once set!</span></span>
-            <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
-          </label>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            Product Group
-            <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
-          </label>
-          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-            <button type="button" id="btn-cancel-new-intent" onclick="document.getElementById('modal-new-intent').style.display='none'" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
-            <button type="button" id="btn-confirm-new-intent" class="btn-primary">Create Intent</button>
-          </div>
-        </div>
-      </div>
-<script>
 window.openNewIntentModal = function(e) {
   if (e) e.preventDefault();
   var modal = document.getElementById('modal-new-intent');
@@ -1689,24 +590,15 @@ window.openNewIntentModal = function(e) {
         modal.style.display = "none";
       });
       confirmBtn.addEventListener("click", async function() {
-        var rawName = idInput.value.trim().toLowerCase();
+        var name = idInput.value.trim().toLowerCase();
         var product = productInput.value.trim();
-        if (!rawName) {
+        if (!name) {
           alert("Intent Name is required.");
           return;
         }
-        if (rawName.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(rawName)) {
+        if (name.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name)) {
           alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
           return;
-        }
-        
-        // Auto-prefix for unique database keys
-        var name = rawName;
-        if (product) {
-          var cleanProd = normalizeSlug(product);
-          if (cleanProd && !rawName.startsWith(cleanProd + "-")) {
-            name = cleanProd + "-" + rawName;
-          }
         }
         
         confirmBtn.disabled = true;
@@ -3509,15 +2401,14 @@ window.openNewIntentModal = function(e) {
       var delAttrs = inGrace
         ? 'class="btn-danger btn-xs btn-del" data-slug="' + esc(item.slug) + '"'
         : 'class="btn-danger btn-xs btn-del" data-slug="' + esc(item.slug) + '" disabled title="Grace window expired"';
-      var prodUrl = resolveProductBaseUrl(item.product);
       var aliasBtn = item.alias
-        ? '<a class="btn-ghost btn-xs slug-alias-link" href="' + prodUrl + '/' + esc(item.alias) + '" ' +
+        ? '<a class="btn-ghost btn-xs slug-alias-link" href="/' + esc(item.alias) + '" ' +
             'target="_blank" rel="noopener noreferrer">' + esc(item.alias) + '</a>'
         : '';
       return (
         '<div class="slug-item' + (isActive ? "" : " slug-inactive") + '">' +
           '<div class="slug-info">' +
-            '<a class="slug-name" href="' + prodUrl + '/c/' + esc(item.slug) + '" ' +
+            '<a class="slug-name" href="/c/' + esc(item.slug) + '" ' +
                'target="_blank" rel="noopener noreferrer">/c/' + esc(item.slug) + '</a>' +
             '<span class="slug-meta">' + esc(campaign) + ' · ' + esc(src) + ' · ' + esc(med) +
               (!isActive ? ' · <span class="badge-inactive">disabled</span>' : '') +
@@ -4010,27 +2901,15 @@ window.openNewIntentModal = function(e) {
 
     elCampaignList.innerHTML = items.map(function (c) {
       var isActive   = c.isActive !== false;
-      var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : "—";
-      
-      var displayAlias = c.alias || "";
-      var displayName = c.name || "";
-      if (c.product) {
-        var prefix = normalizeSlug(c.product) + "-";
-        if (displayAlias.startsWith(prefix)) displayAlias = displayAlias.substring(prefix.length);
-        if (displayName.startsWith(prefix)) displayName = displayName.substring(prefix.length);
-      }
-      
-      var aliasText   = displayAlias ? '<code style="color: var(--success, #22c55e);">' + esc(displayAlias) + '</code>' : '';
-      var metaText    = aliasText ? aliasText + ' · ' + createdFmt : createdFmt;
+      var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—";
+      var aliasText   = c.alias ? ' · alias: <code>' + esc(c.alias) + '</code>' : '';
 
       return (
         '<div class="campaign-item" id="camp-item-' + esc(c.name) + '" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">' +
           '<div class="campaign-info" style="display: flex; flex-direction: column; gap: 0.15rem;">' +
-            '<div style="display: flex; align-items: center; gap: 0.25rem;">' +
-            (c.product ? '<span style="font-size:0.7rem; color:var(--text-m);">' + esc(c.product) + '.</span> ' : '') +
-            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(displayName) + '</a>' +
-            '</div>' +
-            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + metaText +
+            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a> ' +
+            (c.product ? ' <span style="font-size:0.7rem; color:var(--text-m); background:var(--bg); border: 1px solid var(--border); padding: 0.1rem 0.3rem; border-radius: 3px;">' + esc(c.product) + '</span>' : '') +
+            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + createdFmt + aliasText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
           '</div>' +
@@ -4103,7 +2982,6 @@ window.openNewIntentModal = function(e) {
       $("cfg-css").value         = cfg.themeCssUrl   || "";
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
       $("cfg-custom-js").value   = cfg.customScript || "";
-      $("cfg-turnstile-site-key").value = cfg.turnstileSiteKey || "";
     } catch (err) {
       if (err.message !== "401") showErr(elConfigError, "Failed to load config.");
     }
@@ -4121,7 +2999,6 @@ window.openNewIntentModal = function(e) {
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
         customScript:   $("cfg-custom-js").value.trim()    || null,
-        turnstileSiteKey: $("cfg-turnstile-site-key").value.trim() || null,
       };
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();
@@ -5302,11 +4179,6 @@ window.openNewIntentModal = function(e) {
         landings: [],
         mainLandingId: ""
       };
-      
-      // Inherit product from V1 index if missing
-      if (!studioCampaignConfig.product && campIndex && campIndex.product) {
-        studioCampaignConfig.product = campIndex.product;
-      }
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
       var idemVal = document.getElementById("studio-intent-idem-val");
@@ -5354,12 +4226,7 @@ window.openNewIntentModal = function(e) {
 
     // Set Campaign index metadata settings
     var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
-    var aliasInputVal = campIndex ? (campIndex.alias || "") : "";
-    if (campIndex && campIndex.product) {
-      var prefix = normalizeSlug(campIndex.product) + "-";
-      if (aliasInputVal.startsWith(prefix)) aliasInputVal = aliasInputVal.substring(prefix.length);
-    }
-    document.getElementById("studio-campaign-alias").value = aliasInputVal;
+    document.getElementById("studio-campaign-alias").value = campIndex ? (campIndex.alias || "") : "";
     document.getElementById("studio-intent-product").value = campIndex ? (campIndex.product || "") : "";
 
     // Set Archive/Restore and Delete states
@@ -5469,30 +4336,6 @@ window.openNewIntentModal = function(e) {
       .replace(/-+/g, "-");
   }
 
-  function getRootDomain() {
-    var base = "";
-    if (typeof window !== "undefined" && window.location) {
-      base = window.location.hostname;
-    }
-    if (!base && typeof window !== "undefined" && window.CUSTOM_DOMAIN) {
-      base = window.CUSTOM_DOMAIN;
-    }
-    if (!base) return "teklifi.online";
-    var parts = base.split('.');
-    if (parts.length >= 3) {
-      return parts.slice(-2).join('.');
-    }
-    return base;
-  }
-
-  function resolveProductBaseUrl(product) {
-    var root = getRootDomain();
-    if (!product) return "https://www." + root;
-    var cleanProd = normalizeSlug(product);
-    if (!cleanProd) return "https://www." + root;
-    return "https://" + cleanProd + "." + root;
-  }
-
   function resolveBaseUrl() {
     var base = "";
     if (typeof window !== "undefined" && window.location) {
@@ -5507,24 +4350,16 @@ window.openNewIntentModal = function(e) {
     return base.replace(/\\/+$/, "");
   }
 
-  function buildLandingCanonicalUrl(slug, product) {
-    var base = resolveProductBaseUrl(product);
+  function buildLandingCanonicalUrl(slug) {
+    var base = resolveBaseUrl();
     var clean = normalizeSlug(slug);
-    if (product && clean) {
-       var prefix = normalizeSlug(product) + "-";
-       if (clean.startsWith(prefix)) clean = clean.substring(prefix.length);
-    }
     return clean ? (base + "/l/" + clean) : "";
   }
 
-  function buildLandingAliasUrl(alias, product) {
+  function buildLandingAliasUrl(alias) {
     if (!alias) return "";
-    var base = resolveProductBaseUrl(product);
+    var base = resolveBaseUrl();
     var clean = normalizeSlug(alias);
-    if (product && clean) {
-       var prefix = normalizeSlug(product) + "-";
-       if (clean.startsWith(prefix)) clean = clean.substring(prefix.length);
-    }
     return clean ? (base + "/" + clean) : "";
   }
 
@@ -5554,7 +4389,7 @@ window.openNewIntentModal = function(e) {
     var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
     var urlInput = document.getElementById("studio-version-url");
     if (urlInput) {
-      urlInput.value = resolveProductBaseUrl(studioCurrentEditingLanding ? (studioCurrentEditingLanding.product || (typeof studioCampaignConfig !== "undefined" && studioCampaignConfig && studioCampaignConfig.product)) : null) + previewUrlPath;
+      urlInput.value = resolveBaseUrl() + previewUrlPath;
     }
   }
 
@@ -5612,8 +4447,8 @@ window.openNewIntentModal = function(e) {
       var mainBadgeHtml = isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #4f46e5; color: #ffffff; font-weight: 600; line-height: 1.2;">Main</span>' : '';
 
       // URL rows (Section 4)
-      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id, l.product || studioCampaignConfig.product);
-      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias, l.product || studioCampaignConfig.product) : "";
+      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id);
+      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias) : "";
 
       var canonicalRowHtml = "";
       var aliasRowHtml = "";
@@ -5712,7 +4547,6 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
     updateStudioUrlPreviews();
-    setStudioLayoutMode("main");
 
     // Load Component options into builder selection
     var compSelect = document.getElementById("studio-comp-select");
@@ -5772,50 +4606,16 @@ window.openNewIntentModal = function(e) {
     renderStudioVersionsList();
   };
 
-  window.studioLayoutMode = "main";
-  window.getActiveStudioLayout = function() {
-    if (!studioCurrentEditingLanding) return [];
-    if (window.studioLayoutMode === "thanks") {
-      if (!studioCurrentEditingLanding.thanksLayout) studioCurrentEditingLanding.thanksLayout = [];
-      return studioCurrentEditingLanding.thanksLayout;
-    } else {
-      if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
-      return studioCurrentEditingLanding.layout;
-    }
-  };
-
-  window.setStudioLayoutMode = function(mode) {
-    window.studioLayoutMode = mode;
-    var btnMain = document.getElementById("btn-studio-layout-main");
-    var btnThanks = document.getElementById("btn-studio-layout-thanks");
-    if (mode === "thanks") {
-      btnThanks.className = "btn-primary btn-sm";
-      btnThanks.style.border = "none";
-      btnMain.className = "btn-ghost btn-sm";
-      btnMain.style.border = "1px solid var(--border)";
-    } else {
-      btnMain.className = "btn-primary btn-sm";
-      btnMain.style.border = "none";
-      btnThanks.className = "btn-ghost btn-sm";
-      btnThanks.style.border = "1px solid var(--border)";
-    }
-    renderStudioLayoutManager();
-  };
-
   function renderStudioLayoutManager() {
     var container = document.getElementById("studio-layout-container");
     container.innerHTML = "";
-    var activeLayout = getActiveStudioLayout();
-    activeLayout.forEach(function (item, idx) {
+    if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
+
+    studioCurrentEditingLanding.layout.forEach(function (item, idx) {
       var row = document.createElement("div");
       row.style = "display: flex; flex-direction: column; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem; margin-bottom: 0.5rem;";
 
-      var compName = item.name || item.family || item.id;
-      if (compName === item.id && typeof componentFamilies !== "undefined") {
-        var found = componentFamilies.find(function(f) { return f.family_id === item.id; });
-        if (found) compName = found.family_name;
-      }
-      var labelText = item.type === "component" ? "Component: " + compName : "Custom HTML";
+      var labelText = item.type === "component" ? "Component: " + (item.family ? item.family + " v" + item.version : item.id) : "Custom HTML";
 
       var contentArea = "";
       if (item.type === "custom_html") {
@@ -5836,12 +4636,13 @@ window.openNewIntentModal = function(e) {
   }
 
   window.updateStudioHtmlContent = function(idx, val) {
-    var layout = getActiveStudioLayout();
-    if (layout[idx]) layout[idx].content = val;
+    if (studioCurrentEditingLanding && studioCurrentEditingLanding.layout[idx]) {
+      studioCurrentEditingLanding.layout[idx].content = val;
+    }
   };
 
   window.moveStudioItem = function(idx, dir) {
-    var layout = getActiveStudioLayout();
+    var layout = studioCurrentEditingLanding.layout;
     var target = idx + dir;
     if (target >= 0 && target < layout.length) {
       var temp = layout[idx];
@@ -5852,8 +4653,7 @@ window.openNewIntentModal = function(e) {
   };
 
   window.removeStudioItem = function(idx) {
-    var layout = getActiveStudioLayout();
-    layout.splice(idx, 1);
+    studioCurrentEditingLanding.layout.splice(idx, 1);
     renderStudioLayoutManager();
   };
 
@@ -5887,7 +4687,7 @@ window.openNewIntentModal = function(e) {
       addHtmlBtn.dataset.wired = "1";
       addHtmlBtn.addEventListener("click", function () {
         if (!studioCurrentEditingLanding) return;
-        getActiveStudioLayout().push({
+        studioCurrentEditingLanding.layout.push({
           type: "custom_html",
           id: "html-" + Date.now(),
           name: "Custom HTML",
@@ -5902,11 +4702,10 @@ window.openNewIntentModal = function(e) {
       compSelect.dataset.wired = "1";
       compSelect.addEventListener("change", function (e) {
         if (!studioCurrentEditingLanding || !e.target.value) return;
-        var selectedName = e.target.options[e.target.selectedIndex].text;
-        getActiveStudioLayout().push({
+        studioCurrentEditingLanding.layout.push({
           type: "component",
           id: e.target.value,
-          name: selectedName
+          name: e.target.value
         });
         e.target.value = "";
         renderStudioLayoutManager();
@@ -6067,13 +4866,6 @@ window.openNewIntentModal = function(e) {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
         var product = document.getElementById("studio-intent-product").value.trim();
         var defaultSlug = null; // No longer used, handled by Intent mainLandingId
-        
-        if (alias && product) {
-          var cleanProd = normalizeSlug(product);
-          if (cleanProd && !alias.startsWith(cleanProd + "-")) {
-            alias = cleanProd + "-" + alias;
-          }
-        }
 
         var routingConfig = null;
         var rawRouting = document.getElementById("studio-routing-config") ? document.getElementById("studio-routing-config").value.trim() : "";
@@ -6111,7 +4903,6 @@ window.openNewIntentModal = function(e) {
             studioCampaignConfig.idempotency = null;
           }
           studioCampaignConfig.slug = currentSelectedCampaign;
-          studioCampaignConfig.product = product || null;
           studioCampaignConfig.routing = routingConfig;
 
           var v2Res = await apiFetch("/api/admin/intent-routing", {
@@ -6217,545 +5008,4 @@ window.openNewIntentModal = function(e) {
     alert("Modal element not found in DOM!");
   }
 };
-          </script>
-  </body>
-</html>`;
-}
-
-/* ── Admin CSS ──────────────────────────────────────────────────── */
-const ADMIN_CSS = `
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#F4F4F2;--surface:#FFFFFF;--text:#111111;--text-m:#666666;
-  --border:#E0E0DC;--accent:#111111;--accent-t:#FFFFFF;
-  --danger:#C0392B;--danger-t:#FFFFFF;--success:#2D7D4F;
-  --radius:.75rem;--radius-sm:.5rem;
-  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;
-  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
-}
-@media(prefers-color-scheme:dark){
-  :root{
-    --bg:#111111;--surface:#1C1C1C;--text:#F0F0EE;--text-m:#888888;
-    --border:#2E2E2E;--accent:#F0F0EE;--accent-t:#111111;
-    --shadow:0 1px 3px rgba(0,0,0,.4);
-  }
-}
-html,body{height:100%}
-body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:.9rem;-webkit-font-smoothing:antialiased}
-.hidden{display:none!important;height:0!important;overflow:hidden!important}
-.screen{min-height:100dvh;display:flex;flex-direction:column}
-#panel.screen{min-height:auto}
-
-/* ── Gate ─────────────────────────────────────────── */
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' -25, 'opsz' 24;
-  vertical-align: middle; line-height: 1;
-}
-#sw-display-wrap{user-select:none}
-#gate{display:flex;align-items:center;justify-content:center;padding:2rem 1.25rem}
-
-/* ── Topbar ───────────────────────────────────────── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.5rem;border-bottom:1px solid var(--border);background:var(--surface);gap:.75rem;min-height:64px}
-.topbar-title{font-weight:600;font-size:.9375rem;flex-shrink:0}
-.sw-toolbar{display:flex;align-items:center;gap:.35rem;margin:auto;}
-.sw-display-oval{
-  display:flex;align-items:center;gap:0.1rem;
-  padding:.4rem 1rem;border:1.5px solid var(--border);border-radius:28px;
-  cursor:pointer;user-select:none;transition:all .2s;
-  color:var(--text-m);height:34px;
-}
-.sw-display-oval:hover{background:var(--bg);color:var(--text)}
-.sw-display-oval.running{color:rgba(179, 34, 34, 0.75);border-color:rgba(179, 34, 34, 0.3)}
-.sw-display-oval.running:hover{color:var(--text)}
-.sw-time{font-variant-numeric:tabular-nums;font-size:.9rem;font-weight:600;min-width:4.5rem;letter-spacing:.02em;font-family:ui-monospace,monospace;pointer-events:none}
-.sw-icon{font-size:20px;opacity:.8;pointer-events:none;padding-top:1.2px}
-.ws-selector{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
-/* Prompt 68 — always hide workspace selector in topbar */
-.topbar>#ws-selector{display:none!important}
-.ws-label{font-size:.75rem;font-weight:500;color:var(--text-m);margin:0;white-space:nowrap}
-.ws-select{width:auto;min-width:110px;padding:.3rem .6rem;font-size:.8rem;margin:0}
-.btn-lab-link,#btn-sw-reset{color:var(--text-m)!important}
-.btn-lab-link:hover,#btn-sw-reset:hover{color:var(--text)!important}
-
-/* ── Tab bar ──────────────────────────────────────── */
-.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);padding:0 1.5rem;flex-wrap: wrap;}
-.tab-btn{padding:.75rem 1rem;background:transparent;color:var(--text-m);border:none;border-bottom:2px solid transparent;font-family:var(--font);font-size:.875rem;font-weight:500;cursor:pointer;transition:color .12s,border-color .12s;margin-bottom:-1px;text-wrap-mode: nowrap;}
-.tab-btn:hover{color:var(--text)}
-.tab-btn.active{color:var(--text);border-bottom-color:var(--accent)}
-
-/* ── Layout ───────────────────────────────────────── */
-.layout{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;padding:1.25rem;max-width:1200px;margin:0 auto}
-@media(max-width:700px){.layout{grid-template-columns:1fr}}
-.layout-single{padding:1.25rem;max-width:780px;margin:0 auto}
-
-/* ── Pulse Layout Overhaul ───────────────────────── */
-.pulse-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-  padding: 1.25rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.pulse-section-a, .pulse-section-d {
-  grid-column: 1 / -1;
-}
-@media(max-width: 900px) {
-  .pulse-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Paths, Landings, Verify Grid Overhauls ──────── */
-.paths-grid, .landings-grid, .verify-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-  padding: 1.25rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.paths-section-c {
-  grid-column: 1 / -1;
-}
-@media(max-width: 900px) {
-  .paths-grid, .landings-grid, .verify-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Timer Selection Fix ──────────────────────────── */
-.sw-time::selection { background: transparent; }
-.sw-time::-moz-selection { background: transparent; }
-
-/* ── Card ─────────────────────────────────────────── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow);position:relative}
-.card.narrow{max-width:380px;width:100%}
-.card-title{font-size:1rem;font-weight:600;margin-bottom:1.25rem}
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.25rem}
-.dash-card{background:var(--bg);padding:1rem;border-radius:10px;border:1px solid var(--border);display:flex;flex-direction:column;position:relative;overflow:hidden}
-.dash-card-label{font-size:.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.025em;margin-bottom:0.25rem}
-.dash-card-value{font-size:1.5rem;font-weight:700;color:var(--text);letter-spacing:-0.025em}
-.dash-sparkline{position:absolute;bottom:0;left:0;right:0;width:100%;height:40px;opacity:0.6;pointer-events:none}
-.dash-chart-container{margin-bottom:1.5rem;height:240px;width:100%;background:var(--bg);border-radius:10px;border:1px solid var(--border);padding:1rem;box-sizing:border-box}
-.pagination{display:flex;justify-content:center;align-items:center;gap:0.75rem;margin-top:1rem}
-.btn-exp-toggle{display:block;width:100%;padding:0.5rem;text-align:center;font-size:0.8rem;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600}
-.btn-exp-toggle:hover{text-decoration:underline}
-.hidden-exp{display:none}
-.date-input-group{display:flex;gap:0.35rem;align-items:center;margin-left:0.55rem;border-left:1px solid var(--border);padding-left:0.5rem}
-.date-input{font-size:.75rem;padding:0.2rem 0.4rem;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer}
-
-/* ── Form elements ────────────────────────────────── */
-label{display:block;font-size:.8125rem;font-weight:500;color:var(--text-m);margin-bottom:.3rem;margin-top:.875rem}
-label:first-of-type{margin-top:0}
-.req{color:var(--danger)}
-input[type=text],input[type=url],input[type=password],input[type=search],input[type=number],select{
-  width:100%;padding:.625rem .875rem;background:var(--bg);color:var(--text);
-  border:1px solid var(--border);border-radius:var(--radius-sm);
-  font-family:var(--font);font-size:.875rem;outline:none;transition:border-color .12s;
-  -webkit-appearance:none;appearance:none;
-}
-input:focus,select:focus{border-color:var(--accent)}
-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;padding-right:2rem}
-.input-row{display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.input-row input{border:none;border-radius:0;flex:1;min-width:0}
-.input-prefix{padding:.625rem .5rem .625rem .875rem;font-size:.75rem;color:var(--text-m);white-space:nowrap;background:var(--bg);border-right:1px solid var(--border);user-select:none}
-.hint{font-size:.8125rem;color:var(--text-m);margin-bottom:1.25rem}
-.hint-inline{font-size:.75rem;color:var(--text-m);font-weight:400}
-.field-hint{font-size:.75rem;color:var(--text-m);margin-top:.3rem;font-family:ui-monospace,'SF Mono',monospace}
-
-/* ── Campaign confirmation shake ──────────────────── */
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-5px)}
-  40%{transform:translateX(5px)}
-  60%{transform:translateX(-3px)}
-  80%{transform:translateX(3px)}
-}
-.shake{animation:shake .35s ease-in-out}
-select.field-error{border-color:var(--danger)!important;box-shadow:0 0 0 2px rgba(192,57,43,.12)}
-
-/* ── New campaign inline ──────────────────────────── */
-.new-campaign-box{margin-top:.5rem;border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem .875rem;background:var(--bg)}
-.inline-row{display:flex;gap:.5rem;align-items:center}
-.inline-row input{flex:1;min-width:0}
-
-/* ── Overrides section ────────────────────────────── */
-.overrides-section{margin-top:1rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.overrides-section summary{padding:.625rem .875rem;font-size:.8125rem;font-weight:500;cursor:pointer;list-style:none;user-select:none;background:var(--bg)}
-.overrides-section summary::-webkit-details-marker{display:none}
-.overrides-grid{padding:.75rem .875rem;display:flex;flex-direction:column}
-.custom-utm-box{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;margin-top:.625rem;background:var(--bg)}
-.custom-utm-box label:first-child{margin-top:0}
-
-/* ── Links editor ─────────────────────────────────── */
-.links-section{margin-top:1rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.links-section summary{padding:.625rem .875rem;font-size:.8125rem;font-weight:500;cursor:pointer;list-style:none;user-select:none;background:var(--bg)}
-.links-section summary::-webkit-details-marker{display:none}
-.links-section > *:not(summary){padding:.5rem .875rem}
-.links-editor-wrap{display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem}
-.link-row{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.625rem;background:var(--surface);display:flex;flex-direction:column;gap:.375rem}
-.link-row-fields{display:flex;gap:.375rem;flex-wrap:wrap}
-.link-row-fields input{flex:1;min-width:120px}
-.link-row-opts{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-.checkbox-label{display:flex;align-items:center;gap:.3rem;font-size:.8125rem;color:var(--text-m);cursor:pointer;font-weight:400;margin-top:0}
-.checkbox-label input{width:auto;margin:0;padding:0}
-.link-remove{margin-left:auto}
-
-/* ── Buttons ──────────────────────────────────────── */
-.form-actions{margin-top:1.25rem;display:flex;gap:.625rem}
-.btn-primary{padding:.75rem 1.25rem;background:var(--accent);color:var(--accent-t);border:none;border-radius:28px;font-family:var(--font);font-size:.875rem;font-weight:500;cursor:pointer;transition:opacity .12s;flex:1}
-.btn-primary:hover{opacity:.85}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed}
-.btn-ghost{padding:.625rem 1rem;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:28px;font-family:var(--font);font-size:.875rem;font-weight:500;cursor:pointer;transition:background .12s}
-.btn-ghost:hover{background:var(--border);color:var(--text)}
-.btn-sm{padding:.375rem .75rem;font-size:.8125rem}
-.btn-xs{padding:.25rem .625rem;font-size:.75rem}
-.btn-danger{padding:.25rem .625rem;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:28px;font-family:var(--font);font-size:.75rem;font-weight:500;cursor:pointer;transition:background .12s,color .12s}
-.btn-danger:hover{background:var(--danger);color:var(--danger-t)}
-.btn-danger:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
-
-/* ── Generated link ───────────────────────────────── */
-.generated-label{font-size:.75rem;font-weight:500;color:var(--text-m);margin-top:1.25rem;margin-bottom:.375rem}
-.generated-row{display:flex;align-items:center;gap:.625rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.625rem .875rem}
-.generated-url{flex:1;font-size:.8125rem;font-family:ui-monospace,'SF Mono','Fira Code',monospace;word-break:break-all;color:var(--accent)}
-
-/* ── Errors / success ─────────────────────────────── */
-.error{margin-top:.75rem;font-size:.8125rem;color:var(--danger)}
-.error-text{color:var(--danger)}
-.success{margin-top:.75rem;font-size:.8125rem;color:var(--success)}
-
-/* ── List card ────────────────────────────────────── */
-.list-header{display:flex;flex-direction:column;gap:.625rem;margin-bottom:1rem}
-.list-header .card-title{margin-bottom:0}
-.filter-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-.filter-row select{flex:1;font-size:.8125rem;padding:.5rem .75rem;min-width: 49px;}
-.filter-row .btn-ghost{flex-shrink:0;white-space:nowrap}
-.toggle-label{display:flex;align-items:center;gap:.5rem;font-size:.875rem;cursor:pointer;font-weight:400;margin-top:0}
-.toggle-label input{width:auto;margin:0;padding:0}
-
-/* ── Slug items ───────────────────────────────────── */
-.slug-item{display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border);gap:.5rem}
-.slug-item:last-child{border-bottom:none}
-.slug-item.slug-inactive{opacity:.55}
-.slug-info{display:flex;flex-direction:column;gap:.2rem;min-width:0}
-a.slug-name{font-size:.875rem;font-weight:500;word-break:break-all;color:var(--accent);text-decoration:none}
-a.slug-name:hover{text-decoration:underline}
-.slug-meta{font-size:.75rem;color:var(--text-m)}
-.slug-actions{display:flex;gap:.375rem;flex-shrink:0;flex-wrap:wrap}
-
-/* ── Campaign items ───────────────────────────────── */
-.campaign-item{display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border);gap:.5rem}
-.campaign-item:last-child{border-bottom:none}
-.campaign-info{display:flex;flex-direction:column;gap:.2rem;min-width:0}
-.campaign-name{font-size:.875rem;font-weight:500;word-break:break-all;color:inherit;text-decoration:none}
-.campaign-name:hover{text-decoration:underline}
-.campaign-meta{font-size:.75rem;color:var(--text-m)}
-.campaign-actions{display:flex;gap:.375rem;flex-shrink:0}
-
-/* ── Badges ───────────────────────────────────────── */
-.badge-inactive{display:inline-block;background:var(--border);color:var(--text-m);font-size:.7rem;padding:.1rem .375rem;border-radius:.25rem;vertical-align:middle}
-
-/* ── Alias/landing anchor links (styled like btn-ghost btn-xs) ── */
-a.slug-alias-link,a.camp-link{
-  display:inline-flex;align-items:center;
-  font-size:.75rem;font-weight:500;font-family:var(--font);
-  padding:.2rem .55rem;border:1px solid var(--border);border-radius:var(--radius-sm);
-  color:var(--text);text-decoration:none;cursor:pointer;
-  background:transparent;transition:background .1s ease,border-color .1s ease;
-  flex-shrink:0;white-space:nowrap
-}
-a.slug-alias-link:hover,a.camp-link:hover{background:var(--border);border-color:var(--text-m)}
-
-/* ── Overrides expanded ───────────────────────────── */
-.override-row{margin-bottom:.875rem;padding-bottom:.875rem;border-bottom:1px solid var(--border)}
-.override-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
-.override-dest-label{display:block;font-size:.8125rem;font-weight:500;color:var(--text-m);margin-bottom:.3rem}
-.override-fields{display:flex;flex-wrap:wrap;gap:.375rem;align-items:center}
-.override-url{flex:1!important;min-width:160px!important;width:auto!important}
-.override-order{width:5.5rem!important;flex:none!important}
-
-/* ── Textarea ─────────────────────────────────────── */
-textarea{
-  width:100%;padding:.625rem .875rem;background:var(--bg);color:var(--text);
-  border:1px solid var(--border);border-radius:var(--radius-sm);
-  font-family:ui-monospace,'SF Mono','Fira Code',monospace;font-size:.8125rem;
-  outline:none;resize:vertical;transition:border-color .12s;
-}
-textarea:focus{border-color:var(--accent)}
-
-/* ── Base links editor (Hub Config) ──────────────── */
-.base-links-section{margin-top:1rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.base-links-section summary{padding:.625rem .875rem;font-size:.8125rem;font-weight:500;cursor:pointer;list-style:none;user-select:none;background:var(--bg)}
-.base-links-section summary::-webkit-details-marker{display:none}
-.base-links-grid{padding:.75rem .875rem;display:flex;flex-direction:column}
-
-/* ── Landing customization (slug form) ───────────── */
-.landing-section{margin-top:1rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.landing-section summary{padding:.625rem .875rem;font-size:.8125rem;font-weight:500;cursor:pointer;list-style:none;user-select:none;background:var(--bg)}
-.landing-section summary::-webkit-details-marker{display:none}
-.landing-fields{padding:.75rem .875rem}
-.landing-fields label{margin-top:.625rem}
-.landing-fields label:first-child{margin-top:0}
-
-/* ── Empty state ──────────────────────────────────── */
-.empty-state{font-size:.875rem;color:var(--text-m);text-align:center;padding:1.5rem 0}
-
-/* ── Alias status ─────────────────────────────────── */
-.alias-ok{color:var(--success)!important}
-.alias-err{color:var(--danger)!important}
-
-/* ── Campaign alias edit row ──────────────────────── */
-.campaign-alias-edit{margin-top:.25rem}
-.campaign-alias-edit .inline-row input{min-width:120px}
-
-/* ── Inline alias row (campaign create box) ───────── */
-.inline-alias-row{margin-top:.375rem}
-.inline-alias-row input{width:100%;font-size:.8125rem;padding:.5rem .75rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);outline:none;font-family:var(--font)}
-.inline-alias-row input:focus{border-color:var(--accent)}
-
-/* ── Campaign meta code ────────────────────────────── */
-.campaign-meta code{font-family:ui-monospace,'SF Mono',monospace;font-size:.75rem;background:var(--bg);border:1px solid var(--border);border-radius:.25rem;padding:.05rem .3rem}
-
-/* ── Routing tab ───────────────────────────────────── */
-.routing-note{font-size:.8125rem;color:var(--danger);margin-bottom:1rem;font-weight:500}
-.compile-actions{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
-.compile-result-box{border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;background:var(--bg);margin-top:.75rem}
-.compile-table{width:100%;border-collapse:collapse;font-size:.8125rem}
-.compile-table td{padding:.3rem .5rem;border-bottom:1px solid var(--border)}
-.compile-table td:first-child{color:var(--text-m);width:50%}
-.compile-table tr:last-child td{border-bottom:none}
-.compile-active-note{margin-top:.75rem;font-size:.8125rem;color:var(--success);font-weight:500}
-/* ── A/B routing rows ──────────────────────────────────────────────── */
-.ab-variant-row{display:flex;gap:.375rem;align-items:center;margin-bottom:.375rem}
-.ab-variant-row .ab-slug-input{flex:1 1 160px;min-width:100px}
-.ab-variant-row .ab-weight-input{width:72px;flex:0 0 72px;text-align:right}
-
-/* ── Analytics tab ──────────────────────────────────────────────── */
-/* ── Analytics tab ──────────────────────────────────────────────── */
-.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:.5rem}
-.analytics-section-title{font-size:.75rem;font-weight:600;color:var(--text-m);text-transform:uppercase;letter-spacing:.05em;margin:1.25rem 0 .5rem 0}
-.analytics-section-title:first-child{margin-top:0}
-.analytics-table{width:100%;border-collapse:collapse;font-size:.8125rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
-.analytics-table-full{min-width:600px}
-.analytics-table th{text-align:left;padding:.4rem .6rem;font-size:.7rem;font-weight:600;color:var(--text-m);background:var(--bg);border-bottom:1px solid var(--border)}
-.analytics-table td{padding:.4rem .6rem;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
-.analytics-table tr:last-child td{border-bottom:none}
-.analytics-table td:last-child{text-align:right;font-weight:600;color:var(--text)}
-.analytics-table td:first-child{font-family:ui-monospace,'SF Mono',monospace;font-size:.78rem}
-.analytics-table-full td:first-child{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:.8125rem}
-
-/* ── Dashboard V2 ── */
-.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap}
-.filter-bar{display:flex;background:var(--bg);padding:.25rem;border-radius:var(--radius-sm);border:1px solid var(--border);gap:.125rem}
-.filter-btn{padding:.375rem .875rem;border:none;background:transparent;color:var(--text-m);font-size:.75rem;font-weight:600;border-radius:calc(var(--radius-sm) - 2px);cursor:pointer;transition:all .12s}
-.filter-btn:hover{color:var(--text)}
-.filter-btn.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
-
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
-.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.125rem;display:flex;flex-direction:column;gap:.5rem;position:relative;overflow:hidden}
-.dash-card-label{font-size:.7rem;font-weight:600;color:var(--text-m);text-transform:uppercase;letter-spacing:.02em}
-.dash-card-value{font-size:1.5rem;font-weight:700;color:var(--text);line-height:1.1}
-.dash-header-meta{position:absolute;top:.5rem;right:.75rem;font-size:0.65rem;color:var(--text-m);font-weight:600;font-family:ui-monospace,monospace}
-.dash-chart-container{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;min-height:200px}
-.dash-sparkline{position:absolute;bottom:0;left:0;right:0;height:40px;opacity:.15;pointer-events:none}
-.dash-sparkline path{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-.mini-pagination{display:flex;align-items:center;gap:.5rem;font-size:.7rem;color:var(--text-m);font-weight:600}
-.mini-btn{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8rem;line-height:1;padding:0;transition:all .2s;vertical-align:middle}
-.mini-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
-.mini-btn:disabled{opacity:.2;cursor:not-allowed}
-
-.exp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem}
-.exp-card{border:1px solid var(--border);border-radius:var(--radius);padding:1rem;background:var(--surface);display:flex;flex-direction:column;gap:.75rem}
-.btn-exp-toggle{background:var(--bg);border:1px solid var(--border);color:var(--accent);font-size:.7rem;font-weight:600;padding:.4rem .8rem;border-radius:20px;cursor:pointer;display:block;margin:.5rem auto 0;transition:all .2s}
-.btn-exp-toggle:hover{border-color:var(--accent);background:rgba(59,130,246,.05)}
-
-/* ── Mobile & Responsive Styling ── */
-@media(max-width: 800px) {
-  .tab-bar {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .tab-btn {
-    flex: 0 0 auto;
-    padding: 0.6rem 0.8rem;
-  }
-  .topbar {
-    padding: 0.5rem 1rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    min-height: auto;
-  }
-  .topbar-title {
-    font-size: 0.85rem;
-    width: 100%;
-    text-align: center;
-  }
-  .sw-toolbar {
-    width: 100%;
-    justify-content: center;
-    margin-top: 0.25rem;
-  }
-  .btn-lab-link {
-    padding: 0.4em 0.8em !important;
-    font-size: 0.75rem !important;
-  }
-  .ws-selector {
-    display: none !important;
-  }
-}
-
-/* --- Mobile Fixes --- */
-@media (max-width: 800px) {
-  /* 2. Mobile Viewport & Inputs (prevent auto-zoom) */
-  input, select, textarea {
-    font-size: 16px !important;
-  }
-
-  .desktop-only { display: none !important; }
-  .mobile-only { display: inline-block !important; }
-  .date-input-group { flex-wrap: wrap; gap: 0.25rem; }
-
-  /* 6. Campaign Links Mobile Stack */
-  .version-item {
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 0.75rem;
-  }
-  .version-item > div:first-child {
-    width: 100%;
-    overflow-wrap: anywhere;
-    word-break: normal;
-  }
-  .version-item > div:last-child {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .slug-item {
-    flex-direction: column;
-    align-items: flex-start !important;
-  }
-  .slug-info {
-    width: 100%;
-  }
-  a.slug-name {
-    word-break: normal;
-    overflow-wrap: anywhere;
-    white-space: normal;
-  }
-  .slug-actions {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    margin-top: 0.5rem;
-  }
-
-  /* 7. Health Manual Validation overflow */
-  #manual-result {
-    max-width: 100%;
-    overflow-x: auto;
-  }
-  .analytics-table {
-    width: 100%;
-    max-width: none !important;
-  }
-  pre, code {
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  /* 4. Intent Workspace Mobile Grid */
-  #tab-campaigns .layout {
-    grid-template-columns: 1fr !important;
-  }
-  #intent-workspace {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
-  #intent-workspace > div {
-    min-width: 0;
-  }
-  .card {
-    min-width: 0;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  /* 5. Tab bar scrolling */
-  .tab-bar {
-    display: flex;
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-    touch-action: pan-x;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-    scrollbar-width: none;
-  }
-  .tab-bar::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* 3. Pulse Responsive Overflow */
-.dash-chart-container {
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
-.dash-chart-container canvas {
-  max-width: 100% !important;
-  height: auto !important;
-}
-.pulse-section-b, .pulse-section-c, .pulse-section-d, .pulse-section-e, .pulse-section-f {
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-/* 6. Header Collapse setup */
-.header-container {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg);
-}
-.topbar {
-  transition: margin-top 0.3s ease, opacity 0.3s ease;
-  transform-origin: top;
-}
-.topbar.collapsed {
-
-  opacity: 0;
-  pointer-events: none;
-}
-/* Add a small handle to tab-bar for visibility */
-@media (max-width: 800px) {
-  .header-container::after {
-    content: "";
-    display: block;
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 4px;
-    opacity: 0.5;
-  }
-}
-`;
-
-
-
-
-
+          

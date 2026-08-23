@@ -137,7 +137,13 @@ export async function onRequestGet(context) {
     return renderFallback("Route not specified.");
   }
 
-  const found = await findLandingVersionBySlug(slug, env);
+  let found = null;
+  if (productSubdomain) {
+    found = await findLandingVersionBySlug(productSubdomain + "-" + slug, env);
+  }
+  if (!found) {
+    found = await findLandingVersionBySlug(slug, env);
+  }
   
   if (!found || !found.landing) {
     // If we can't find a custom setup, return the default so we don't break functionality

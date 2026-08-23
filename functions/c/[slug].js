@@ -112,7 +112,12 @@ export async function onRequestGet(context) {
   let intentData = null;
   if (utmCampaign && env.APP_CONFIG) {
     try {
-      intentData = await env.APP_CONFIG.get(`campaign:${utmCampaign}`, { type: "json" });
+      if (productSubdomain) {
+        intentData = await env.APP_CONFIG.get(`campaign:${productSubdomain}-${utmCampaign}`, { type: "json" });
+      }
+      if (!intentData) {
+        intentData = await env.APP_CONFIG.get(`campaign:${utmCampaign}`, { type: "json" });
+      }
     } catch(e) {}
   }
 

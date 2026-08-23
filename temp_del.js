@@ -499,7 +499,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <p class="card-title">Intents</p>
-            <button id="btn-studio-new-intent" onclick="window.openNewIntentModal(event)" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
+            <button id="btn-studio-new-intent" onclick="document.getElementById('modal-new-intent').style.display='flex'" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
           </div>
           <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
             <select id="filter-intent-product" style="font-size: 0.75rem; padding: 0.2rem; min-width: 100px; flex: 1;">
@@ -533,23 +533,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <datalist id="intent-products-list"></datalist>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Intent Alias (Slug)
+              Intent Name
               <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            <div style="display: flex; gap: 1rem; align-items: flex-end;">
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
-                Double-Submit Window (Time)
-                <input type="number" id="studio-intent-idem-val" placeholder="e.g. 30" min="0" />
-              </label>
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
-                Unit
-                <select id="studio-intent-idem-unit">
-                  <option value="days">Days</option>
-                  <option value="hours">Hours</option>
-                </select>
-              </label>
-            </div>
               Routing & Behavior Configuration (JSON)
               <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
   "destinations": [],
@@ -632,13 +619,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </label>
 
             <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Sections & Layout</p>
-                <div style="display: flex; gap: 0.5rem; background: var(--bg); padding: 2px; border-radius: 6px; border: 1px solid var(--border);">
-                  <button id="btn-studio-layout-main" class="btn-primary btn-sm" type="button" onclick="setStudioLayoutMode('main')" style="border: none;">Landing Page</button>
-                  <button id="btn-studio-layout-thanks" class="btn-ghost btn-sm" type="button" onclick="setStudioLayoutMode('thanks')" style="border: 1px solid var(--border);">Thank You Page</button>
-                </div>
-              </div>
+              <p class="card-title" style="font-size: 0.9rem;">Page Sections & Layout</p>
               <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                 <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
@@ -775,6 +756,24 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         </div>
       </div>
       
+      <!-- New Intent Modal -->
+      <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--surface); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
+          <h3 style="margin-top: 0;">Create New Intent</h3>
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Product Group
+            <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Intent Name / ID (lowercase, numbers, hyphens)
+            <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+          </label>
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+            <button type="button" id="btn-cancel-new-intent" onclick="document.getElementById('modal-new-intent').style.display='none'" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
+            <button type="button" id="btn-confirm-new-intent" class="btn-primary">Create Intent</button>
+          </div>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -941,9 +940,6 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <label for="cfg-custom-js">Global Custom JS <span class="hint-inline">(served as cached script)</span></label>
         <textarea id="cfg-custom-js" rows="3" placeholder="console.log('Global script loaded');" style="font-family: monospace;"></textarea>
 
-        <label for="cfg-turnstile-site-key">Cloudflare Turnstile Site Key <span class="hint-inline">(optional; invisible captcha)</span></label>
-        <input id="cfg-turnstile-site-key" type="text" placeholder="0x4AAAAAA..." />
-
         <p id="config-error" class="error hidden"></p>
         <p id="config-success" class="success hidden"></p>
         <div class="form-actions" style="margin-top:1.5rem">
@@ -1061,12 +1057,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
             <div>
               <label>Provenance</label>
-              <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface, #1e1e1e); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
+              <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
             </div>
           </div>
           
           <label>Raw Client Data</label>
-          <div id="app-raw-data-panel" style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface, #1e1e1e); padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"></div>
+          <div id="app-raw-data-panel" style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface); padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;"></div>
           
           <details style="margin-bottom: 1rem;">
             <summary style="cursor: pointer; font-weight: 500; font-size: 0.85rem; margin-bottom: 0.5rem;">Working Data (Editable JSON)</summary>
@@ -1079,35 +1075,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       </div>
     </div>
   </div>
-      <!-- New Intent Modal (Moved to global scope) -->
-      <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center;">
-        <div style="background: var(--surface, #1e1e1e); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
-          <h3 style="margin-top: 0;">Create New Intent</h3>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* This name cannot be changed once set!</span></span>
-            <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
-          </label>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-            Product Group
-            <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
-          </label>
-          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-            <button type="button" id="btn-cancel-new-intent" onclick="document.getElementById('modal-new-intent').style.display='none'" class="btn-ghost" style="border: 1px solid var(--border);">Cancel</button>
-            <button type="button" id="btn-confirm-new-intent" class="btn-primary">Create Intent</button>
-          </div>
-        </div>
-      </div>
 <script>
-window.openNewIntentModal = function(e) {
-  if (e) e.preventDefault();
-  var modal = document.getElementById('modal-new-intent');
-  if (modal) {
-    modal.style.display = 'flex';
-    console.log("Modal opened");
-  } else {
-    alert("Modal element not found in DOM!");
-  }
-};
 (function () {
   "use strict";
 
@@ -1669,72 +1637,6 @@ window.openNewIntentModal = function(e) {
 
   /* ── Tabs ────────────────────────────────────────────── */
   var pagesTabLoaded = false;
-    // --- NEW INTENT MODAL LOGIC ---
-    var newIntentBtn = document.getElementById("btn-studio-new-intent");
-    var modal = document.getElementById("modal-new-intent");
-    var cancelBtn = document.getElementById("btn-cancel-new-intent");
-    var confirmBtn = document.getElementById("btn-confirm-new-intent");
-    var idInput = document.getElementById("new-intent-id");
-    var productInput = document.getElementById("new-intent-product");
-
-    if (newIntentBtn && !newIntentBtn.dataset.wired) {
-      newIntentBtn.dataset.wired = "1";
-      
-      newIntentBtn.addEventListener("click", function () {
-        idInput.value = "";
-        productInput.value = "";
-        modal.style.display = "flex";
-      });
-      cancelBtn.addEventListener("click", function() {
-        modal.style.display = "none";
-      });
-      confirmBtn.addEventListener("click", async function() {
-        var rawName = idInput.value.trim().toLowerCase();
-        var product = productInput.value.trim();
-        if (!rawName) {
-          alert("Intent Name is required.");
-          return;
-        }
-        if (rawName.length > 1 && !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(rawName)) {
-          alert("Invalid name. Lowercase letters, numbers, hyphens (no leading/trailing hyphen).");
-          return;
-        }
-        
-        // Auto-prefix for unique database keys
-        var name = rawName;
-        if (product) {
-          var cleanProd = normalizeSlug(product);
-          if (cleanProd && !rawName.startsWith(cleanProd + "-")) {
-            name = cleanProd + "-" + rawName;
-          }
-        }
-        
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = "Creating...";
-        try {
-          var createBody = { name: name, alias: name, product: product || null };
-          if (typeof selectedWorkspace !== "undefined" && selectedWorkspace) createBody.workspace = selectedWorkspace;
-          var res = await apiFetch("/api/campaign", {
-            method: "POST", body: JSON.stringify(createBody)
-          });
-          var data = await res.json();
-          if (res.ok) {
-            modal.style.display = "none";
-            if (typeof loadCampaignList === "function") await loadCampaignList();
-            if (typeof selectCampaign === "function") selectCampaign(name);
-            else if (typeof window.selectCampaign === "function") window.selectCampaign(name);
-          } else {
-            alert("Error: " + (data.error || "Failed to create intent"));
-          }
-        } catch (e) {
-          alert("Failed to create intent: " + e.toString());
-        } finally {
-          confirmBtn.disabled = false;
-          confirmBtn.textContent = "Create Intent";
-        }
-      });
-    }
-    // ------------------------------
     var tabBtns  = document.querySelectorAll(".tab-btn");
   var tabPanes = document.querySelectorAll(".tab-pane");
 
@@ -3509,15 +3411,14 @@ window.openNewIntentModal = function(e) {
       var delAttrs = inGrace
         ? 'class="btn-danger btn-xs btn-del" data-slug="' + esc(item.slug) + '"'
         : 'class="btn-danger btn-xs btn-del" data-slug="' + esc(item.slug) + '" disabled title="Grace window expired"';
-      var prodUrl = resolveProductBaseUrl(item.product);
       var aliasBtn = item.alias
-        ? '<a class="btn-ghost btn-xs slug-alias-link" href="' + prodUrl + '/' + esc(item.alias) + '" ' +
+        ? '<a class="btn-ghost btn-xs slug-alias-link" href="/' + esc(item.alias) + '" ' +
             'target="_blank" rel="noopener noreferrer">' + esc(item.alias) + '</a>'
         : '';
       return (
         '<div class="slug-item' + (isActive ? "" : " slug-inactive") + '">' +
           '<div class="slug-info">' +
-            '<a class="slug-name" href="' + prodUrl + '/c/' + esc(item.slug) + '" ' +
+            '<a class="slug-name" href="/c/' + esc(item.slug) + '" ' +
                'target="_blank" rel="noopener noreferrer">/c/' + esc(item.slug) + '</a>' +
             '<span class="slug-meta">' + esc(campaign) + ' · ' + esc(src) + ' · ' + esc(med) +
               (!isActive ? ' · <span class="badge-inactive">disabled</span>' : '') +
@@ -4010,27 +3911,14 @@ window.openNewIntentModal = function(e) {
 
     elCampaignList.innerHTML = items.map(function (c) {
       var isActive   = c.isActive !== false;
-      var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : "—";
-      
-      var displayAlias = c.alias || "";
-      var displayName = c.name || "";
-      if (c.product) {
-        var prefix = normalizeSlug(c.product) + "-";
-        if (displayAlias.startsWith(prefix)) displayAlias = displayAlias.substring(prefix.length);
-        if (displayName.startsWith(prefix)) displayName = displayName.substring(prefix.length);
-      }
-      
-      var aliasText   = displayAlias ? '<code style="color: var(--success, #22c55e);">' + esc(displayAlias) + '</code>' : '';
-      var metaText    = aliasText ? aliasText + ' · ' + createdFmt : createdFmt;
+      var createdFmt  = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—";
+      var aliasText   = c.alias ? ' · alias: <code>' + esc(c.alias) + '</code>' : '';
 
       return (
         '<div class="campaign-item" id="camp-item-' + esc(c.name) + '" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">' +
           '<div class="campaign-info" style="display: flex; flex-direction: column; gap: 0.15rem;">' +
-            '<div style="display: flex; align-items: center; gap: 0.25rem;">' +
-            (c.product ? '<span style="font-size:0.7rem; color:var(--text-m);">' + esc(c.product) + '.</span> ' : '') +
-            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(displayName) + '</a>' +
-            '</div>' +
-            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + metaText +
+            '<a class="campaign-name" href="#" data-name="' + esc(c.name) + '" style="font-weight:bold; color:var(--primary); text-decoration:none;">' + esc(c.name) + '</a>' +
+            '<span class="campaign-meta" style="font-size: 0.75rem; color: var(--text-m);">' + createdFmt + aliasText +
               (!isActive ? ' · <span class="badge-inactive">archived</span>' : '') +
             '</span>' +
           '</div>' +
@@ -4103,7 +3991,6 @@ window.openNewIntentModal = function(e) {
       $("cfg-css").value         = cfg.themeCssUrl   || "";
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
       $("cfg-custom-js").value   = cfg.customScript || "";
-      $("cfg-turnstile-site-key").value = cfg.turnstileSiteKey || "";
     } catch (err) {
       if (err.message !== "401") showErr(elConfigError, "Failed to load config.");
     }
@@ -4121,7 +4008,6 @@ window.openNewIntentModal = function(e) {
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
         customScript:   $("cfg-custom-js").value.trim()    || null,
-        turnstileSiteKey: $("cfg-turnstile-site-key").value.trim() || null,
       };
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();
@@ -5302,24 +5188,8 @@ window.openNewIntentModal = function(e) {
         landings: [],
         mainLandingId: ""
       };
-      
-      // Inherit product from V1 index if missing
-      if (!studioCampaignConfig.product && campIndex && campIndex.product) {
-        studioCampaignConfig.product = campIndex.product;
-      }
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
-      var idemVal = document.getElementById("studio-intent-idem-val");
-      var idemUnit = document.getElementById("studio-intent-idem-unit");
-      if (idemVal && idemUnit) {
-        if (studioCampaignConfig.idempotency) {
-          idemVal.value = studioCampaignConfig.idempotency.val || "";
-          idemUnit.value = studioCampaignConfig.idempotency.unit || "days";
-        } else {
-          idemVal.value = "30";
-          idemUnit.value = "days";
-        }
-      }
       var routingEl = document.getElementById("studio-routing-config");
       if (routingEl) {
         if (studioCampaignConfig.routing && Object.keys(studioCampaignConfig.routing).length > 0) {
@@ -5337,29 +5207,13 @@ window.openNewIntentModal = function(e) {
         landings: [],
         mainLandingId: ""
       };
-      var idemVal = document.getElementById("studio-intent-idem-val");
-      var idemUnit = document.getElementById("studio-intent-idem-unit");
-      if (idemVal && idemUnit) {
-        if (studioCampaignConfig.idempotency) {
-          idemVal.value = studioCampaignConfig.idempotency.val || "";
-          idemUnit.value = studioCampaignConfig.idempotency.unit || "days";
-        } else {
-          idemVal.value = "30";
-          idemUnit.value = "days";
-        }
-      }
       var routingEl = document.getElementById("studio-routing-config");
       if (routingEl) routingEl.value = "";
     }
 
     // Set Campaign index metadata settings
     var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
-    var aliasInputVal = campIndex ? (campIndex.alias || "") : "";
-    if (campIndex && campIndex.product) {
-      var prefix = normalizeSlug(campIndex.product) + "-";
-      if (aliasInputVal.startsWith(prefix)) aliasInputVal = aliasInputVal.substring(prefix.length);
-    }
-    document.getElementById("studio-campaign-alias").value = aliasInputVal;
+    document.getElementById("studio-campaign-alias").value = campIndex ? (campIndex.alias || "") : "";
     document.getElementById("studio-intent-product").value = campIndex ? (campIndex.product || "") : "";
 
     // Set Archive/Restore and Delete states
@@ -5469,30 +5323,6 @@ window.openNewIntentModal = function(e) {
       .replace(/-+/g, "-");
   }
 
-  function getRootDomain() {
-    var base = "";
-    if (typeof window !== "undefined" && window.location) {
-      base = window.location.hostname;
-    }
-    if (!base && typeof window !== "undefined" && window.CUSTOM_DOMAIN) {
-      base = window.CUSTOM_DOMAIN;
-    }
-    if (!base) return "teklifi.online";
-    var parts = base.split('.');
-    if (parts.length >= 3) {
-      return parts.slice(-2).join('.');
-    }
-    return base;
-  }
-
-  function resolveProductBaseUrl(product) {
-    var root = getRootDomain();
-    if (!product) return "https://www." + root;
-    var cleanProd = normalizeSlug(product);
-    if (!cleanProd) return "https://www." + root;
-    return "https://" + cleanProd + "." + root;
-  }
-
   function resolveBaseUrl() {
     var base = "";
     if (typeof window !== "undefined" && window.location) {
@@ -5507,24 +5337,16 @@ window.openNewIntentModal = function(e) {
     return base.replace(/\\/+$/, "");
   }
 
-  function buildLandingCanonicalUrl(slug, product) {
-    var base = resolveProductBaseUrl(product);
+  function buildLandingCanonicalUrl(slug) {
+    var base = resolveBaseUrl();
     var clean = normalizeSlug(slug);
-    if (product && clean) {
-       var prefix = normalizeSlug(product) + "-";
-       if (clean.startsWith(prefix)) clean = clean.substring(prefix.length);
-    }
     return clean ? (base + "/l/" + clean) : "";
   }
 
-  function buildLandingAliasUrl(alias, product) {
+  function buildLandingAliasUrl(alias) {
     if (!alias) return "";
-    var base = resolveProductBaseUrl(product);
+    var base = resolveBaseUrl();
     var clean = normalizeSlug(alias);
-    if (product && clean) {
-       var prefix = normalizeSlug(product) + "-";
-       if (clean.startsWith(prefix)) clean = clean.substring(prefix.length);
-    }
     return clean ? (base + "/" + clean) : "";
   }
 
@@ -5554,7 +5376,7 @@ window.openNewIntentModal = function(e) {
     var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
     var urlInput = document.getElementById("studio-version-url");
     if (urlInput) {
-      urlInput.value = resolveProductBaseUrl(studioCurrentEditingLanding ? (studioCurrentEditingLanding.product || (typeof studioCampaignConfig !== "undefined" && studioCampaignConfig && studioCampaignConfig.product)) : null) + previewUrlPath;
+      urlInput.value = resolveBaseUrl() + previewUrlPath;
     }
   }
 
@@ -5612,8 +5434,8 @@ window.openNewIntentModal = function(e) {
       var mainBadgeHtml = isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #4f46e5; color: #ffffff; font-weight: 600; line-height: 1.2;">Main</span>' : '';
 
       // URL rows (Section 4)
-      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id, l.product || studioCampaignConfig.product);
-      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias, l.product || studioCampaignConfig.product) : "";
+      var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id);
+      var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias) : "";
 
       var canonicalRowHtml = "";
       var aliasRowHtml = "";
@@ -5712,7 +5534,6 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
     updateStudioUrlPreviews();
-    setStudioLayoutMode("main");
 
     // Load Component options into builder selection
     var compSelect = document.getElementById("studio-comp-select");
@@ -5772,50 +5593,16 @@ window.openNewIntentModal = function(e) {
     renderStudioVersionsList();
   };
 
-  window.studioLayoutMode = "main";
-  window.getActiveStudioLayout = function() {
-    if (!studioCurrentEditingLanding) return [];
-    if (window.studioLayoutMode === "thanks") {
-      if (!studioCurrentEditingLanding.thanksLayout) studioCurrentEditingLanding.thanksLayout = [];
-      return studioCurrentEditingLanding.thanksLayout;
-    } else {
-      if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
-      return studioCurrentEditingLanding.layout;
-    }
-  };
-
-  window.setStudioLayoutMode = function(mode) {
-    window.studioLayoutMode = mode;
-    var btnMain = document.getElementById("btn-studio-layout-main");
-    var btnThanks = document.getElementById("btn-studio-layout-thanks");
-    if (mode === "thanks") {
-      btnThanks.className = "btn-primary btn-sm";
-      btnThanks.style.border = "none";
-      btnMain.className = "btn-ghost btn-sm";
-      btnMain.style.border = "1px solid var(--border)";
-    } else {
-      btnMain.className = "btn-primary btn-sm";
-      btnMain.style.border = "none";
-      btnThanks.className = "btn-ghost btn-sm";
-      btnThanks.style.border = "1px solid var(--border)";
-    }
-    renderStudioLayoutManager();
-  };
-
   function renderStudioLayoutManager() {
     var container = document.getElementById("studio-layout-container");
     container.innerHTML = "";
-    var activeLayout = getActiveStudioLayout();
-    activeLayout.forEach(function (item, idx) {
+    if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
+
+    studioCurrentEditingLanding.layout.forEach(function (item, idx) {
       var row = document.createElement("div");
       row.style = "display: flex; flex-direction: column; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem; margin-bottom: 0.5rem;";
 
-      var compName = item.name || item.family || item.id;
-      if (compName === item.id && typeof componentFamilies !== "undefined") {
-        var found = componentFamilies.find(function(f) { return f.family_id === item.id; });
-        if (found) compName = found.family_name;
-      }
-      var labelText = item.type === "component" ? "Component: " + compName : "Custom HTML";
+      var labelText = item.type === "component" ? "Component: " + (item.family ? item.family + " v" + item.version : item.id) : "Custom HTML";
 
       var contentArea = "";
       if (item.type === "custom_html") {
@@ -5836,12 +5623,13 @@ window.openNewIntentModal = function(e) {
   }
 
   window.updateStudioHtmlContent = function(idx, val) {
-    var layout = getActiveStudioLayout();
-    if (layout[idx]) layout[idx].content = val;
+    if (studioCurrentEditingLanding && studioCurrentEditingLanding.layout[idx]) {
+      studioCurrentEditingLanding.layout[idx].content = val;
+    }
   };
 
   window.moveStudioItem = function(idx, dir) {
-    var layout = getActiveStudioLayout();
+    var layout = studioCurrentEditingLanding.layout;
     var target = idx + dir;
     if (target >= 0 && target < layout.length) {
       var temp = layout[idx];
@@ -5852,8 +5640,7 @@ window.openNewIntentModal = function(e) {
   };
 
   window.removeStudioItem = function(idx) {
-    var layout = getActiveStudioLayout();
-    layout.splice(idx, 1);
+    studioCurrentEditingLanding.layout.splice(idx, 1);
     renderStudioLayoutManager();
   };
 
@@ -5887,7 +5674,7 @@ window.openNewIntentModal = function(e) {
       addHtmlBtn.dataset.wired = "1";
       addHtmlBtn.addEventListener("click", function () {
         if (!studioCurrentEditingLanding) return;
-        getActiveStudioLayout().push({
+        studioCurrentEditingLanding.layout.push({
           type: "custom_html",
           id: "html-" + Date.now(),
           name: "Custom HTML",
@@ -5902,11 +5689,10 @@ window.openNewIntentModal = function(e) {
       compSelect.dataset.wired = "1";
       compSelect.addEventListener("change", function (e) {
         if (!studioCurrentEditingLanding || !e.target.value) return;
-        var selectedName = e.target.options[e.target.selectedIndex].text;
-        getActiveStudioLayout().push({
+        studioCurrentEditingLanding.layout.push({
           type: "component",
           id: e.target.value,
-          name: selectedName
+          name: e.target.value
         });
         e.target.value = "";
         renderStudioLayoutManager();
@@ -6067,13 +5853,6 @@ window.openNewIntentModal = function(e) {
         var alias = document.getElementById("studio-campaign-alias").value.trim();
         var product = document.getElementById("studio-intent-product").value.trim();
         var defaultSlug = null; // No longer used, handled by Intent mainLandingId
-        
-        if (alias && product) {
-          var cleanProd = normalizeSlug(product);
-          if (cleanProd && !alias.startsWith(cleanProd + "-")) {
-            alias = cleanProd + "-" + alias;
-          }
-        }
 
         var routingConfig = null;
         var rawRouting = document.getElementById("studio-routing-config") ? document.getElementById("studio-routing-config").value.trim() : "";
@@ -6100,18 +5879,7 @@ window.openNewIntentModal = function(e) {
           var v2Ok = true;
           var v2ErrMsg = "";
 
-          var idemValInput = document.getElementById("studio-intent-idem-val");
-          var idemUnitInput = document.getElementById("studio-intent-idem-unit");
-          if (idemValInput && idemValInput.value) {
-            studioCampaignConfig.idempotency = {
-              val: parseInt(idemValInput.value, 10),
-              unit: idemUnitInput.value
-            };
-          } else {
-            studioCampaignConfig.idempotency = null;
-          }
           studioCampaignConfig.slug = currentSelectedCampaign;
-          studioCampaignConfig.product = product || null;
           studioCampaignConfig.routing = routingConfig;
 
           var v2Res = await apiFetch("/api/admin/intent-routing", {
@@ -6178,6 +5946,23 @@ window.openNewIntentModal = function(e) {
     }
   }
 
+    console.log("WIRING NEW INTENT BUTTON");
+          var data = await res.json();
+          if (res.ok) {
+            modal.style.display = "none";
+            await loadCampaignList();
+            window.selectCampaign(name);
+          } else {
+            alert("Error: " + (data.error || "Failed to create intent"));
+          }
+        } catch (e) {
+          alert("Failed to create intent: " + e.toString());
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Create Intent";
+        }
+      });
+    }
 
   // Globally expose for inline event binding support
   window.selectCampaign = selectCampaign;
@@ -6207,16 +5992,6 @@ window.openNewIntentModal = function(e) {
 
 </script>
     <script>
-window.openNewIntentModal = function(e) {
-  if (e) e.preventDefault();
-  var modal = document.getElementById('modal-new-intent');
-  if (modal) {
-    modal.style.display = 'flex';
-    console.log("Modal opened");
-  } else {
-    alert("Modal element not found in DOM!");
-  }
-};
           </script>
   </body>
 </html>`;

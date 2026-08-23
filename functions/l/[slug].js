@@ -119,7 +119,13 @@ export async function onRequestGet(context) {
   }
 
   // ── Fetch Landing Version ──────────────────────────────────────────────────
-  const found = await findLandingVersionBySlug(slug, env);
+  let found = null;
+  if (productSubdomain) {
+    found = await findLandingVersionBySlug(productSubdomain + "-" + slug, env);
+  }
+  if (!found) {
+    found = await findLandingVersionBySlug(slug, env);
+  }
   if (!found) {
     return render404("The requested landing version does not exist.");
   }
