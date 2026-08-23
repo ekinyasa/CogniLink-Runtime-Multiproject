@@ -2,7 +2,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../_shared/auth.js";
 
 const CONFIG_KEY = "hub_config";
 
-const ALLOWED_STRING_KEYS = ["themeCssUrl", "customStyleCss", "pageTitle", "customScript"];
+const ALLOWED_STRING_KEYS = ["turnstileSiteKey", "themeCssUrl", "customStyleCss", "pageTitle", "customScript"];
 
 /* ── URL helpers ─────────────────────────────────────────────────── */
 function normalizeUrl(str) {
