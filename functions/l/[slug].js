@@ -104,7 +104,8 @@ export async function onRequestGet(context) {
 
   const url = new URL(request.url);
   const previewVersion = url.searchParams.get("preview_version");
-  const productSubdomain = extractProductSubdomain(request.url);
+  const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || url.hostname;
+  const productSubdomain = extractProductSubdomain(request.url, originalHost);
   let isAdminPreview = false;
 
   // ── Authorized Preview Check ──────────────────────────────────────────────

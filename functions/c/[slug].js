@@ -39,7 +39,8 @@ export async function onRequestGet(context) {
   }
 
   const url = new URL(request.url);
-  const productSubdomain = extractProductSubdomain(request.url);
+  const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || url.hostname;
+  const productSubdomain = extractProductSubdomain(request.url, originalHost);
   const previewVersion = url.searchParams.get("preview_version");
   let isAdminPreview = false;
   

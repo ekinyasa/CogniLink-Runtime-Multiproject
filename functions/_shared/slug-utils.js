@@ -73,10 +73,12 @@ export const SUBDOMAIN_BLACKLIST = new Set([
   "www", "admin", "login", "api", "assets", "static", "dash", "dashboard", "my", "app", "test", "demo", "sigorta"
 ]);
 
-export function extractProductSubdomain(urlStr) {
+export function extractProductSubdomain(urlStr, reqHeaderHost = null) {
+  let actualHost = reqHeaderHost;
   try {
     const url = new URL(urlStr);
-    const hostSegments = url.hostname.split('.');
+    if (!actualHost) actualHost = url.hostname;
+    const hostSegments = actualHost.split('.');
     if (hostSegments.length >= 3) {
       const sub = hostSegments[0].toLowerCase();
       if (!SUBDOMAIN_BLACKLIST.has(sub)) {

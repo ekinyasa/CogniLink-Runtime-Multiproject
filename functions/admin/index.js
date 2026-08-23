@@ -2,16 +2,17 @@ import { renderAdmin } from "../_shared/admin-renderer.js";
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  const customDomain = env.CUSTOM_DOMAIN || url.hostname;
+  const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || url.hostname;
+  const customDomain = env.CUSTOM_DOMAIN || originalHost;
 
-  if (url.hostname === "login.teklifi.online") {
+  if (originalHost === "login.teklifi.online") {
     return Response.redirect(`https://login.teklifi.online/${url.search}`, 301);
   }
 
   // Enforce login.teklifi.online for admin panel
   if (
-    url.hostname.endsWith("teklifi.online") && 
-    url.hostname !== "login.teklifi.online"
+    originalHost.endsWith("teklifi.online") && 
+    originalHost !== "login.teklifi.online"
   ) {
     return Response.redirect(`https://login.teklifi.online/${url.search}`, 301);
   }

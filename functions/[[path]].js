@@ -174,7 +174,8 @@ export async function onRequestGet(context) {
   const { request, env, params } = context;
   const t0 = Date.now();
   const url = new URL(request.url);
-  const productSubdomain = extractProductSubdomain(request.url);
+  const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || url.hostname;
+  const productSubdomain = extractProductSubdomain(request.url, originalHost);
 
   // --- Auth Check for Preview ---
   const previewVersion = url.searchParams.get("preview_version");
@@ -196,7 +197,7 @@ export async function onRequestGet(context) {
     !url.hostname.endsWith(".pages.dev")
   ) {
     let needsRedirect = false;
-    let newHost = url.hostname;
+    let newHost = originalHost;
     
     // Always force HTTPS
     if (url.protocol === "http:") {
@@ -229,7 +230,7 @@ export async function onRequestGet(context) {
     : "/" + String(params.path || "");
 
   // ── Admin Subdomain Handling ─────────────────────────────────────────────
-  if (url.hostname === "login.teklifi.online" && (rawPath === "/" || rawPath === "")) {
+  if (originalHost === "login.teklifi.online" && (rawPath === "/" || rawPath === "")) {
     return new Response(renderAdmin({
       branch: (env && env.CF_PAGES_BRANCH)     || "",
       sha:    (env && env.CF_PAGES_COMMIT_SHA) || "",
