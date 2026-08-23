@@ -5284,6 +5284,11 @@ window.openNewIntentModal = function(e) {
         landings: [],
         mainLandingId: ""
       };
+      
+      // Inherit product from V1 index if missing
+      if (!studioCampaignConfig.product && campIndex && campIndex.product) {
+        studioCampaignConfig.product = campIndex.product;
+      }
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
       var idemVal = document.getElementById("studio-intent-idem-val");
@@ -5518,7 +5523,7 @@ window.openNewIntentModal = function(e) {
     var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
     var urlInput = document.getElementById("studio-version-url");
     if (urlInput) {
-      urlInput.value = resolveProductBaseUrl(studioCurrentEditingLanding ? (studioCurrentEditingLanding.product || (studioCurrentContextData && studioCurrentContextData.product)) : null) + previewUrlPath;
+      urlInput.value = resolveProductBaseUrl(studioCurrentEditingLanding ? (studioCurrentEditingLanding.product || (typeof studioCampaignConfig !== "undefined" && studioCampaignConfig && studioCampaignConfig.product)) : null) + previewUrlPath;
     }
   }
 
@@ -6068,6 +6073,7 @@ window.openNewIntentModal = function(e) {
             studioCampaignConfig.idempotency = null;
           }
           studioCampaignConfig.slug = currentSelectedCampaign;
+          studioCampaignConfig.product = product || null;
           studioCampaignConfig.routing = routingConfig;
 
           var v2Res = await apiFetch("/api/admin/intent-routing", {
