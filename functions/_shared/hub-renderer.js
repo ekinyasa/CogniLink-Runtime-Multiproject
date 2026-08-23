@@ -336,6 +336,7 @@ ${themeCssLink}
           });
         }
       });
+    });
   </script>
 </body>
 </html>`;
@@ -814,6 +815,7 @@ ${globalJsLink}
           });
         });
       });
+    });
   </script>
 </body>
 </html>`;
