@@ -5535,15 +5535,17 @@ window.openNewIntentModal = function(e) {
 
     var cleanSlug = normalizeSlug(slugVal);
     var cleanAlias = aliasVal ? normalizeSlug(aliasVal) : "";
+    
+    var prod = typeof studioCampaignConfig !== "undefined" && studioCampaignConfig ? studioCampaignConfig.product : null;
 
     var slugPreview = document.getElementById("studio-slug-preview");
     if (slugPreview) {
-      slugPreview.textContent = cleanSlug ? buildLandingCanonicalUrl(cleanSlug) : "No slug set";
+      slugPreview.textContent = cleanSlug ? buildLandingCanonicalUrl(cleanSlug, prod) : "No slug set";
     }
 
     var aliasPreview = document.getElementById("studio-alias-preview");
     if (aliasPreview) {
-      aliasPreview.textContent = cleanAlias ? buildLandingAliasUrl(cleanAlias) : "No alias set";
+      aliasPreview.textContent = cleanAlias ? buildLandingAliasUrl(cleanAlias, prod) : "No alias set";
     }
 
     var isMain = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
@@ -5551,6 +5553,14 @@ window.openNewIntentModal = function(e) {
       return s.campaign === studioCampaignConfig.name && s.isActive !== false;
     });
     var slugForUrl = campSlugs.length > 0 ? campSlugs[0].slug : studioCampaignConfig.slug;
+    
+    // Strip prefix for clean URL presentation
+    if (prod) {
+       var prefix = normalizeSlug(prod) + "-";
+       if (slugForUrl.startsWith(prefix)) slugForUrl = slugForUrl.substring(prefix.length);
+       if (cleanSlug.startsWith(prefix)) cleanSlug = cleanSlug.substring(prefix.length);
+    }
+    
     var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
     var urlInput = document.getElementById("studio-version-url");
     if (urlInput) {
