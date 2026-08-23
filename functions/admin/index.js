@@ -4,12 +4,16 @@ export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const customDomain = env.CUSTOM_DOMAIN || url.hostname;
 
+  if (url.hostname === "login.teklifi.online") {
+    return Response.redirect(`https://login.teklifi.online/${url.search}`, 301);
+  }
+
   // Enforce login.teklifi.online for admin panel
   if (
     url.hostname.endsWith("teklifi.online") && 
     url.hostname !== "login.teklifi.online"
   ) {
-    return Response.redirect(`https://login.teklifi.online${url.pathname}${url.search}`, 301);
+    return Response.redirect(`https://login.teklifi.online/${url.search}`, 301);
   }
 
   return new Response(renderAdmin({

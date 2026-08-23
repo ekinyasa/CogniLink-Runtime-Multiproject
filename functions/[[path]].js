@@ -48,6 +48,7 @@ import { verifyAdminDebug }                        from "./_shared/runtime-debug
 import { compareDecisions }                        from "./_shared/decision-comparator.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch } from "./_shared/slug-utils.js";
+import { renderAdmin } from "./_shared/admin-renderer.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
 import { loadABConfig }                            from "./_shared/ab-router.js";
 import { resolveExperimentVariant }                from "./lib/experiment-router.js";
@@ -226,6 +227,24 @@ export async function onRequestGet(context) {
   const rawPath = Array.isArray(params.path)
     ? "/" + params.path.join("/")
     : "/" + String(params.path || "");
+
+  // ── Admin Subdomain Handling ─────────────────────────────────────────────
+  if (url.hostname === "login.teklifi.online" && (rawPath === "/" || rawPath === "")) {
+    return new Response(renderAdmin({
+      branch: (env && env.CF_PAGES_BRANCH)     || "",
+      sha:    (env && env.CF_PAGES_COMMIT_SHA) || "",
+      customDomain: url.hostname
+    }), {
+      headers: {
+        "Content-Type":           "text/html;charset=UTF-8",
+        "Cache-Control":          "no-store",
+        "X-Robots-Tag":           "noindex,nofollow,noarchive",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options":        "DENY",
+        "Referrer-Policy":        "no-referrer",
+      },
+    });
+  }
 
   // ── Step 0: Root path handling ──────────────────────────────────────────
   // If no path is specified, attempt to serve the "home" page.
