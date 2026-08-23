@@ -145,6 +145,7 @@ export function renderHub({
     : "";
 
   // Global Custom JS block as a natively-hosted external script with cache busting
+  const turnstileScript = cfg.turnstileSiteKey ? `\n<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>` : "";
   const globalJsLink = cfg.customScript
     ? `\n<script src="/global-assets/main.js?v=${escAttr(cfg.jsVersion || "1")}"></script>`
     : "";
@@ -229,13 +230,45 @@ ${themeCssLink}
         }
       } catch(e) {}
 
+
       // Intercept form submits for seamless validation without reset
+      var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
       var forms = document.querySelectorAll("form[action='/api/lead']");
       forms.forEach(function(f) {
+        var turnstileWidgetId = null;
+        if (turnstileSiteKey && typeof turnstile !== "undefined") {
+          var tdiv = document.createElement("div");
+          tdiv.className = "cf-turnstile";
+          f.appendChild(tdiv);
+          try {
+            turnstileWidgetId = turnstile.render(tdiv, {
+              sitekey: turnstileSiteKey,
+              size: "invisible",
+              callback: function(token) {
+                doSubmit(token);
+              }
+            });
+          } catch (e) {
+            console.error("Turnstile error:", e);
+          }
+        }
+
         f.addEventListener("submit", function(e) {
           e.preventDefault();
-          
+          if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+            try {
+              turnstile.execute(turnstileWidgetId);
+            } catch (e) {
+              doSubmit(null);
+            }
+          } else {
+            doSubmit(null);
+          }
+        });
+
+        function doSubmit(turnstileToken) {
           var existingAlert = f.querySelector(".form-error-alert");
+
           if (existingAlert) existingAlert.remove();
           
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
@@ -258,6 +291,9 @@ ${themeCssLink}
               jsonBody[key] = value;
             }
           });
+          if (turnstileToken) {
+            jsonBody["cf-turnstile-response"] = turnstileToken;
+          }
           
           fetch("/api/lead", {
             method: "POST",
@@ -280,6 +316,9 @@ ${themeCssLink}
               f.insertBefore(d, f.firstChild);
               
               if (submitBtn) {
+                if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+                   turnstile.reset(turnstileWidgetId);
+                }
                 submitBtn.disabled = false;
                 if (submitBtn.tagName === "BUTTON") submitBtn.textContent = originalBtnText;
                 else submitBtn.value = originalBtnText;
@@ -287,12 +326,15 @@ ${themeCssLink}
             }
           }).catch(function(err) {
             if (submitBtn) {
+              if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+                 turnstile.reset(turnstileWidgetId);
+              }
               submitBtn.disabled = false;
               if (submitBtn.tagName === "BUTTON") submitBtn.textContent = originalBtnText;
               else submitBtn.value = originalBtnText;
             }
           });
-        });
+        }
       });
   </script>
 </body>
@@ -356,7 +398,8 @@ ${themeCssLink}
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
 ${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
-${themeCssLink}${globalCssLink}${pageCssBlock}
+${themeCssLink}${globalCssLink}
+${turnstileScript}${pageCssBlock}
 </head>
 ${bodyTag}
 ${renderedContent}

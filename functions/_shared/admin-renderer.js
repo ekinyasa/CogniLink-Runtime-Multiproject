@@ -935,6 +935,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <label for="cfg-custom-js">Global Custom JS <span class="hint-inline">(served as cached script)</span></label>
         <textarea id="cfg-custom-js" rows="3" placeholder="console.log('Global script loaded');" style="font-family: monospace;"></textarea>
 
+        <label for="cfg-turnstile-site-key">Cloudflare Turnstile Site Key <span class="hint-inline">(optional; invisible captcha)</span></label>
+        <input id="cfg-turnstile-site-key" type="text" placeholder="0x4AAAAAA..." />
+
         <p id="config-error" class="error hidden"></p>
         <p id="config-success" class="success hidden"></p>
         <div class="form-actions" style="margin-top:1.5rem">
