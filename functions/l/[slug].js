@@ -4,6 +4,7 @@ import { incrementCounter } from "../_shared/counter.js";
 import { handleDecision }  from "../lib/decision-controller.js";
 import { verifyToken }     from "../_shared/auth.js";
 import { buildRedirectResponse } from "../_shared/redirect-runtime.js";
+import { extractProductSubdomain, validateProductSubdomainMatch } from "../_shared/slug-utils.js";
 import { resolveDestinationUrl, normalizeSlug } from "../_shared/url-resolver.js";
 
 const SEC_HEADERS = {

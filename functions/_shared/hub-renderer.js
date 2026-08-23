@@ -751,11 +751,41 @@ ${globalJsLink}
       } catch(e) {}
 
       // Intercept form submits for seamless validation without reset
+      var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
       var forms = document.querySelectorAll("form[action='/api/lead']");
       forms.forEach(function(f) {
+        var turnstileWidgetId = null;
+        if (turnstileSiteKey && typeof turnstile !== "undefined") {
+          var tdiv = document.createElement("div");
+          tdiv.className = "cf-turnstile";
+          f.appendChild(tdiv);
+          try {
+            turnstileWidgetId = turnstile.render(tdiv, {
+              sitekey: turnstileSiteKey,
+              size: "invisible",
+              callback: function(token) {
+                doSubmit(token);
+              }
+            });
+          } catch (e) {
+            console.error("Turnstile error:", e);
+          }
+        }
+
         f.addEventListener("submit", function(e) {
           e.preventDefault();
-          
+          if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+            try {
+              turnstile.execute(turnstileWidgetId);
+            } catch (e) {
+              doSubmit(null);
+            }
+          } else {
+            doSubmit(null);
+          }
+        });
+
+        function doSubmit(turnstileToken) {
           var existingAlert = f.querySelector(".form-error-alert");
           if (existingAlert) existingAlert.remove();
           
@@ -779,6 +809,9 @@ ${globalJsLink}
               jsonBody[key] = value;
             }
           });
+          if (turnstileToken) {
+            jsonBody["cf-turnstile-response"] = turnstileToken;
+          }
           
           fetch("/api/lead", {
             method: "POST",
@@ -801,6 +834,9 @@ ${globalJsLink}
               f.insertBefore(d, f.firstChild);
               
               if (submitBtn) {
+                if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+                   turnstile.reset(turnstileWidgetId);
+                }
                 submitBtn.disabled = false;
                 if (submitBtn.tagName === "BUTTON") submitBtn.textContent = originalBtnText;
                 else submitBtn.value = originalBtnText;
@@ -808,12 +844,15 @@ ${globalJsLink}
             }
           }).catch(function(err) {
             if (submitBtn) {
+              if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+                 turnstile.reset(turnstileWidgetId);
+              }
               submitBtn.disabled = false;
               if (submitBtn.tagName === "BUTTON") submitBtn.textContent = originalBtnText;
               else submitBtn.value = originalBtnText;
             }
           });
-        });
+        }
       });
     });
   </script>
