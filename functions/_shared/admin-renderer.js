@@ -533,7 +533,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <datalist id="intent-products-list"></datalist>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Intent Name
+              Intent Alias (Slug)
               <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
