@@ -131,7 +131,9 @@ async function findLandingVersionBySlug(slug, env) {
 
 export async function onRequestGet(context) {
   const { request, env, params } = context;
+  const url = new URL(request.url);
   const slug = normalizeSlug(params.slug || "");
+  const productSubdomain = extractProductSubdomain(url);
 
   if (!slug) {
     return renderFallback("Route not specified.");
