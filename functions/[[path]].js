@@ -285,7 +285,24 @@ export async function onRequestGet(context) {
 
   // ── Alias Path Target Redirect ──────────────────────────────────────────
   if (typeof canonicalSlug === "string" && canonicalSlug.startsWith("/")) {
-    const redirectUrl = new URL(canonicalSlug, url.origin);
+    const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || url.hostname;
+    const protocol = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+    const baseOrigin = `${protocol}://${originalHost}`;
+    
+    // Strip subdomain prefix if redirecting to a landing page to keep URLs clean
+    let cleanCanonicalSlug = canonicalSlug;
+    if (cleanCanonicalSlug.startsWith("/l/")) {
+      const parts = originalHost.split(".");
+      if (parts.length > 2 && parts[0] !== "www") {
+        const subdomain = parts[0];
+        const prefix = "/l/" + subdomain + "-";
+        if (cleanCanonicalSlug.startsWith(prefix)) {
+          cleanCanonicalSlug = "/l/" + cleanCanonicalSlug.slice(prefix.length);
+        }
+      }
+    }
+
+    const redirectUrl = new URL(cleanCanonicalSlug, baseOrigin);
     url.searchParams.forEach((val, key) => {
       redirectUrl.searchParams.set(key, val);
     });
