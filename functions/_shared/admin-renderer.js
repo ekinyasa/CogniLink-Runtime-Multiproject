@@ -98,7 +98,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <button type="button" class="filter-btn" data-window="24h">24H</button>
               <button type="button" class="filter-btn" data-window="7d">7D</button>
               <button type="button" class="filter-btn" data-window="30d">30D</button>
-            '</div>' +
+            </div>
             <select id="analytics-time-select" class="mobile-only filter-select" style="padding:0.25rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8rem;outline:none;display:none;">
               <option value="1h">1H</option>
               <option value="24h">24H</option>
@@ -109,7 +109,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <input type="date" id="analytics-start-date" class="date-input" title="Start Date" />
               <span style="font-size:0.7rem;color:var(--text-dim)">-</span>
               <input type="date" id="analytics-end-date" class="date-input" title="End Date" />
-            '</div>' +
+            </div>
             <button type="button" id="btn-refresh-analytics" class="btn-ghost" style="padding:0.25rem 0.6rem;font-size:1.1rem;border-radius:50%" title="Refresh Now">⟳</button>
           </div>
         </div>
@@ -161,7 +161,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
               <p class="analytics-section-title" style="margin-bottom:0">By Campaign</p>
               <div id="pag-campaigns" class="mini-pagination"></div>
-            '</div>' +
+            </div>
             <table class="analytics-table" id="tbl-by-campaign">
               <thead><tr><th>Campaign</th><th>Clicks</th></tr></thead>
               <tbody></tbody>
@@ -171,7 +171,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
               <p class="analytics-section-title" style="margin-bottom:0">By Alias</p>
               <div id="pag-aliases" class="mini-pagination"></div>
-            '</div>' +
+            </div>
             <table class="analytics-table" id="tbl-by-alias">
               <thead><tr><th>Alias</th><th>Clicks</th></tr></thead>
               <tbody></tbody>
@@ -305,12 +305,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <input id="f-new-campaign" type="text" placeholder="new-campaign-2026"
                 autocomplete="off" spellcheck="false" />
               <button type="button" id="btn-create-campaign" class="btn-ghost btn-sm">Create</button>
-            '</div>' +
+            </div>
             <div class="inline-alias-row">
               <input id="f-new-campaign-alias" type="text" placeholder="alias (optional, e.g. iki)"
                 autocomplete="off" spellcheck="false" maxlength="48" />
               <p id="new-camp-alias-status" class="field-hint hidden"></p>
-            '</div>' +
+            </div>
             <p id="campaign-error" class="error hidden"></p>
           </div>
 
@@ -370,11 +370,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="display: flex; flex-direction: column;">
               <label for="f-lang" style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">lang</label>
               <input id="f-lang" name="lang" type="text" value="en" autocomplete="off" style="width: 5rem;" />
-            '</div>' +
+            </div>
             <div style="display: flex; flex-direction: column;">
               <label for="f-market" style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">market</label>
               <input id="f-market" name="market" type="text" value="global" autocomplete="off" style="width: 6rem;" />
-            '</div>' +
+            </div>
           </div>
 
           <!-- Destination overrides -->
@@ -388,8 +388,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <input id="f-dest-official-order" class="override-order" type="number" placeholder="order" />
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-official-active" checked /> Active</label>
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-official-noutm" /> No UTM</label>
-                '</div>' +
-              '</div>' +
+                </div>
+              </div>
               <div class="override-row">
                 <label class="override-dest-label">Educational Programs</label>
                 <div class="override-fields">
@@ -397,8 +397,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <input id="f-dest-programs-order" class="override-order" type="number" placeholder="order" />
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-programs-active" checked /> Active</label>
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-programs-noutm" /> No UTM</label>
-                '</div>' +
-              '</div>' +
+                </div>
+              </div>
               <div class="override-row">
                 <label class="override-dest-label">Latest Release</label>
                 <div class="override-fields">
@@ -406,8 +406,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <input id="f-dest-release-order" class="override-order" type="number" placeholder="order" />
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-release-active" checked /> Active</label>
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-release-noutm" /> No UTM</label>
-                '</div>' +
-              '</div>' +
+                </div>
+              </div>
               <div class="override-row">
                 <label class="override-dest-label">Newsletter</label>
                 <div class="override-fields">
@@ -415,9 +415,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <input id="f-dest-newsletter-order" class="override-order" type="number" placeholder="order" />
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-newsletter-active" checked /> Active</label>
                   <label class="checkbox-label"><input type="checkbox" id="f-dest-newsletter-noutm" /> No UTM</label>
-                '</div>' +
-              '</div>' +
-            '</div>' +
+                </div>
+              </div>
+            </div>
           </details>
 
           <!-- Custom links[] editor -->
@@ -434,7 +434,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <select id="f-engine-map-id">
                 <option value="">[Global Default Engine]</option>
               </select>
-            '</div>' +
+            </div>
           </details>
 
           <!-- Per-slug landing customization -->
@@ -447,7 +447,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <textarea id="f-custom-footer-html" rows="2" placeholder="<p>Limited time only</p>" maxlength="5000"></textarea>
               <label for="f-custom-css">Custom CSS</label>
               <textarea id="f-custom-css" rows="3" placeholder=".hub-header { color: gold; }"></textarea>
-            '</div>' +
+            </div>
           </details>
 
           <p id="form-error" class="error hidden"></p>
@@ -549,7 +549,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <option value="hours">Hours</option>
                 </select>
               </label>
-            '</div>' +
+            </div>
               Routing & Behavior Configuration (JSON)
               <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
   "destinations": [],
@@ -566,9 +566,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <div style="display: flex; gap: 0.5rem;">
                 <button id="btn-studio-archive-intent" class="btn-danger btn-sm">Archive</button>
-              '</div>' +
+              </div>
               <button id="btn-studio-save-intent" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
-            '</div>' +
+            </div>
           </div>
 
           <!-- 2. Landing Versions -->
@@ -576,7 +576,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <p class="card-title">Landing Versions</p>
             <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
               <!-- Loaded via JS -->
-            '</div>' +
+            </div>
             <button id="btn-studio-add-version" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ Create New Version</button>
           </div>
 
@@ -608,7 +608,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                 <input type="text" id="studio-version-url" readonly style="flex: 1; font-family: monospace; opacity: 0.7; cursor: not-allowed; font-size: 0.75rem;" />
                 <button id="btn-studio-copy-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">Copy</button>
                 <button id="btn-studio-open-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border); color: var(--accent);">Open &nearr;</button>
-              '</div>' +
+              </div>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Status
@@ -645,8 +645,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                 <select id="studio-comp-select" style="padding: 4px; font-size: 0.8rem;">
                   <option value="">+ Add Component...</option>
                 </select>
-              '</div>' +
-            '</div>' +
+              </div>
+            </div>
 
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Custom CSS
@@ -659,7 +659,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
             <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <button id="btn-studio-save-version" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Version</button>
-            '</div>' +
+            </div>
           </div>
 
           <!-- 4. Active Slugs -->
@@ -667,10 +667,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
               <p class="card-title" style="margin: 0;">Active Slugs</p>
               <button id="btn-studio-new-slug" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ New Slug</button>
-            '</div>' +
+            </div>
             <div id="studio-slug-list-container" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
               <!-- Loaded via JS -->
-            '</div>' +
+            </div>
           </div>
 
         </div>
@@ -1000,7 +1000,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
                 <input type="checkbox" id="comp-filter-archived" /> Archived
               </label>
-            '</div>' +
+            </div>
           </div>
           <button type="button" id="btn-new-family" class="btn-primary btn-sm" style="width: auto; padding: 6px 12px;">+ New Component</button>
         </div>
@@ -1058,11 +1058,11 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                 <option value="converted">Converted</option>
                 <option value="rejected">Rejected</option>
               </select>
-            '</div>' +
+            </div>
             <div>
               <label>Provenance</label>
               <div id="app-provenance" style="font-size: 0.75rem; background: var(--surface, #1e1e1e); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all;"></div>
-            '</div>' +
+            </div>
           </div>
           
           <label>Raw Client Data</label>
