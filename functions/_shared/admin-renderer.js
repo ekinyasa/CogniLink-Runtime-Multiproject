@@ -632,7 +632,13 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </label>
 
             <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-              <p class="card-title" style="font-size: 0.9rem;">Page Sections & Layout</p>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Sections & Layout</p>
+                <div style="display: flex; gap: 0.5rem; background: var(--bg); padding: 2px; border-radius: 6px; border: 1px solid var(--border);">
+                  <button id="btn-studio-layout-main" class="btn-primary btn-sm" type="button" onclick="setStudioLayoutMode('main')" style="border: none;">Landing Page</button>
+                  <button id="btn-studio-layout-thanks" class="btn-ghost btn-sm" type="button" onclick="setStudioLayoutMode('thanks')" style="border: 1px solid var(--border);">Thank You Page</button>
+                </div>
+              </div>
               <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                 <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
@@ -5644,6 +5650,7 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
     updateStudioUrlPreviews();
+    setStudioLayoutMode("main");
 
     // Load Component options into builder selection
     var compSelect = document.getElementById("studio-comp-select");
@@ -5703,12 +5710,41 @@ window.openNewIntentModal = function(e) {
     renderStudioVersionsList();
   };
 
+  window.studioLayoutMode = "main";
+  window.getActiveStudioLayout = function() {
+    if (!studioCurrentEditingLanding) return [];
+    if (window.studioLayoutMode === "thanks") {
+      if (!studioCurrentEditingLanding.thanksLayout) studioCurrentEditingLanding.thanksLayout = [];
+      return studioCurrentEditingLanding.thanksLayout;
+    } else {
+      if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
+      return studioCurrentEditingLanding.layout;
+    }
+  };
+
+  window.setStudioLayoutMode = function(mode) {
+    window.studioLayoutMode = mode;
+    var btnMain = document.getElementById("btn-studio-layout-main");
+    var btnThanks = document.getElementById("btn-studio-layout-thanks");
+    if (mode === "thanks") {
+      btnThanks.className = "btn-primary btn-sm";
+      btnThanks.style.border = "none";
+      btnMain.className = "btn-ghost btn-sm";
+      btnMain.style.border = "1px solid var(--border)";
+    } else {
+      btnMain.className = "btn-primary btn-sm";
+      btnMain.style.border = "none";
+      btnThanks.className = "btn-ghost btn-sm";
+      btnThanks.style.border = "1px solid var(--border)";
+    }
+    renderStudioLayoutManager();
+  };
+
   function renderStudioLayoutManager() {
     var container = document.getElementById("studio-layout-container");
     container.innerHTML = "";
-    if (!studioCurrentEditingLanding.layout) studioCurrentEditingLanding.layout = [];
-
-    studioCurrentEditingLanding.layout.forEach(function (item, idx) {
+    var activeLayout = getActiveStudioLayout();
+    activeLayout.forEach(function (item, idx) {
       var row = document.createElement("div");
       row.style = "display: flex; flex-direction: column; padding: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; gap: 0.5rem; margin-bottom: 0.5rem;";
 
@@ -5738,13 +5774,12 @@ window.openNewIntentModal = function(e) {
   }
 
   window.updateStudioHtmlContent = function(idx, val) {
-    if (studioCurrentEditingLanding && studioCurrentEditingLanding.layout[idx]) {
-      studioCurrentEditingLanding.layout[idx].content = val;
-    }
+    var layout = getActiveStudioLayout();
+    if (layout[idx]) layout[idx].content = val;
   };
 
   window.moveStudioItem = function(idx, dir) {
-    var layout = studioCurrentEditingLanding.layout;
+    var layout = getActiveStudioLayout();
     var target = idx + dir;
     if (target >= 0 && target < layout.length) {
       var temp = layout[idx];
@@ -5755,7 +5790,8 @@ window.openNewIntentModal = function(e) {
   };
 
   window.removeStudioItem = function(idx) {
-    studioCurrentEditingLanding.layout.splice(idx, 1);
+    var layout = getActiveStudioLayout();
+    layout.splice(idx, 1);
     renderStudioLayoutManager();
   };
 
@@ -5789,7 +5825,7 @@ window.openNewIntentModal = function(e) {
       addHtmlBtn.dataset.wired = "1";
       addHtmlBtn.addEventListener("click", function () {
         if (!studioCurrentEditingLanding) return;
-        studioCurrentEditingLanding.layout.push({
+        getActiveStudioLayout().push({
           type: "custom_html",
           id: "html-" + Date.now(),
           name: "Custom HTML",
@@ -5805,7 +5841,7 @@ window.openNewIntentModal = function(e) {
       compSelect.addEventListener("change", function (e) {
         if (!studioCurrentEditingLanding || !e.target.value) return;
         var selectedName = e.target.options[e.target.selectedIndex].text;
-        studioCurrentEditingLanding.layout.push({
+        getActiveStudioLayout().push({
           type: "component",
           id: e.target.value,
           name: selectedName
