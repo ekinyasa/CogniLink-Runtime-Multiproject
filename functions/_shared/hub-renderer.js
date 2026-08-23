@@ -128,8 +128,8 @@ export function renderHub({
                      "CogniLink";
 
   // Per-page header/footers only (global fallbacks headerHtml/footerHtml are removed)
-  const headerRaw = slugData?.customHeaderHtml || "";
-  const footerRaw = slugData?.customFooterHtml || "";
+  const headerRaw = hasCustomLayout ? "" : (slugData?.customHeaderHtml || "");
+  const footerRaw = hasCustomLayout ? "" : (slugData?.customFooterHtml || "");
 
   // Raw HTML injection (no escaping)
   const headerHtml = headerRaw
