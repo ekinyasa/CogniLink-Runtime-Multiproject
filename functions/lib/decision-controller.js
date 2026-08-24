@@ -102,6 +102,7 @@ export async function handleDecision(request, env, opts) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.warm, id: "intent_warm_override" };
       }
     }
+  }
 
   // 3b. Fall back to standard custom hub routing rules if no global override
   if (!decisionMatch) {
