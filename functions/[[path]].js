@@ -457,7 +457,8 @@ export async function onRequestGet(context) {
       campRecord = await env.APP_CONFIG.get(`campaign:${utmCampaign}`, { type: "json" });
     } catch (_) {}
   }
-  const intentDestinations = campRecord?.destinations || campRecord?.routing?.destinations || null;
+  const baseDest = campRecord?.destinations || campRecord?.routing?.destinations || {};
+  const intentDestinations = Object.keys(baseDest).length > 0 || (landingRecord?.destinations && Object.keys(landingRecord.destinations).length > 0) ? Object.assign({}, baseDest, landingRecord?.destinations || {}) : null;
   const intentRules = campRecord?.rules || campRecord?.routing?.rules || hubConfigVal?.decision_rules || globalConfig?.decision_rules || [];
 
   const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfigVal?.redirectUrl;
@@ -466,6 +467,7 @@ export async function onRequestGet(context) {
     source: utmSource,
     medium: utmMedium,
     campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : (typeof finalSlug !== "undefined" ? finalSlug.split("-")[0] : null),
     userState: decisionInputState
   });
 
@@ -477,6 +479,7 @@ export async function onRequestGet(context) {
         source:   utmSource,
         medium:   utmMedium,
         campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : (typeof finalSlug !== "undefined" ? finalSlug.split("-")[0] : null),
         decisionRules: intentRules,
         intentDestinations,
         engineConfig,
@@ -639,6 +642,7 @@ export async function onRequestGet(context) {
         source:   utmSource,
         medium:   utmMedium,
         campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : (typeof finalSlug !== "undefined" ? finalSlug.split("-")[0] : null),
         decisionRules: hubConfig?.decision_rules || globalConfig?.decision_rules || [],
         engineConfig,
         engineMapId: hubConfig?.engineMapId || null,
@@ -669,6 +673,7 @@ export async function onRequestGet(context) {
     emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
       alias, modifier: modifier ?? "", canonical_slug: finalSlug,
       campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : (typeof finalSlug !== "undefined" ? finalSlug.split("-")[0] : null),
       request_id: requestId,
       utm_source: utmSource || "",
       utm_medium: utmMedium || "",

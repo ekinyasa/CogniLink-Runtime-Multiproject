@@ -361,6 +361,23 @@ ${themeCssLink}
       });
     });
   </script>
+
+${slugData?.signals?.conversionSelector ? `
+<script>
+(function(){
+  var sel = "${escAttr(slugData.signals.conversionSelector)}";
+  var el = document.querySelector(sel);
+  if (el) {
+    el.addEventListener("click", function() {
+      fetch("/api/decision/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "conversion", meta: { product: "${escAttr(productSubdomain)}", slug: "${escAttr(slug)}", campaign: "${escAttr(campaign || '')}", source: "${escAttr(contextId)}" } })
+      }).catch(function(){});
+    });
+  }
+})();
+</script>` : ""}
 </body>
 </html>`;
   }
@@ -445,6 +462,8 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
         body: JSON.stringify({ 
           type: "conversion", 
           meta: {
+                product: "${escAttr(productSubdomain)}",
+                slug: "${escAttr(slug)}",
             source: ${JSON.stringify(contextId)},
             campaign: ${JSON.stringify(campaign || "")},
           }
@@ -674,6 +693,8 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
           type: isHard ? "click_hard" : "click_soft",
           signal_name: signalName,
           meta: {
+                product: "${escAttr(productSubdomain)}",
+                slug: "${escAttr(slug)}",
             source: CONTEXT_ID,
             campaign: CAMPAIGN || getMerged().utm_campaign || ""
           }
@@ -695,6 +716,8 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
               name: ts.name,
               seconds: ts.afterSeconds,
               meta: {
+                product: "${escAttr(productSubdomain)}",
+                slug: "${escAttr(slug)}",
                 source: CONTEXT_ID,
                 campaign: CAMPAIGN || getMerged().utm_campaign || ""
               }
@@ -738,6 +761,8 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
           type: "engagement", 
           score: score,
           meta: {
+                product: "${escAttr(productSubdomain)}",
+                slug: "${escAttr(slug)}",
             source: CONTEXT_ID,
             campaign: CAMPAIGN || getMerged().utm_campaign || ""
           }

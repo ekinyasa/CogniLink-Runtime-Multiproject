@@ -170,8 +170,9 @@ export async function onRequestGet(context) {
       source: utmSource,
       medium: utmMedium,
       campaign: utmCampaign,
+      productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
       decisionRules: campaign?.rules || campaign?.routing?.rules || config?.decision_rules || [],
-      intentDestinations: campaign?.destinations || campaign?.routing?.destinations || null,
+      intentDestinations: Object.keys(campaign?.destinations || campaign?.routing?.destinations || {}).length > 0 || (landing?.destinations && Object.keys(landing.destinations).length > 0) ? Object.assign({}, campaign?.destinations || campaign?.routing?.destinations || {}, landing?.destinations || {}) : null,
       intentEvaluation: campaign?.evaluation || campaign?.routing?.evaluation || null,
       engineConfig,
     });

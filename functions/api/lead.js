@@ -326,25 +326,22 @@ export async function onRequestPost(context) {
 
   if (!rawCookie) {
     user.uid = crypto.randomUUID();
-    user.v = 1;
-    user.c = 1; 
-    user.h = 0;
-    user.e = 100;
-    user.u = 0;
-    user.t = ["lead_submitted"];
     user.ts = now;
+    const reqProd = cleanSlug ? cleanSlug.split('-')[0] : null;
+    user = updateUserState(user, { v: 1, c: 1, h: 0, e: 100, u: 0, t: ["lead_submitted"] }, reqProd);
   } else {
     const currentTags = Array.isArray(user.t) ? user.t : [];
     const newTags = currentTags.includes("lead_submitted")
       ? currentTags
       : [...currentTags, "lead_submitted"];
     
+    const reqProd = cleanSlug ? cleanSlug.split('-')[0] : null;
     user = updateUserState(user, {
       c: 1,
       h: 0,
       e: Math.min(100, (user.e || 0) + 30),
       t: newTags
-    });
+    }, reqProd);
   }
 
   context.waitUntil(

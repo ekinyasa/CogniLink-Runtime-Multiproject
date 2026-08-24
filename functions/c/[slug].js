@@ -151,6 +151,7 @@ export async function onRequestGet(context) {
     source: utmSource,
     medium: utmMedium,
     campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
     userState: decisionInputState
   });
 
@@ -161,6 +162,7 @@ export async function onRequestGet(context) {
       source:   utmSource,
       medium:   utmMedium,
       campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
       decisionRules: intentData?.rules || intentData?.routing?.rules || campaignDataVal?.decision_rules || config?.decision_rules || [],
       intentDestinations: intentData?.destinations || intentData?.routing?.destinations || null,
       intentEvaluation: intentData?.evaluation || intentData?.routing?.evaluation || null,
@@ -341,6 +343,7 @@ export async function onRequestGet(context) {
         source:   utmSource,
         medium:   utmMedium,
         campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
         decisionRules: intentData?.rules || intentData?.routing?.rules || campaignData?.decision_rules || config?.decision_rules || [],
         intentDestinations: intentData?.destinations || intentData?.routing?.destinations || null,
         intentEvaluation: intentData?.evaluation || intentData?.routing?.evaluation || null,
@@ -390,6 +393,7 @@ export async function onRequestGet(context) {
         emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
           alias: slug, modifier: "", canonical_slug: slug,
           campaign: utmCampaign,
+        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
           request_id: request.headers.get("cf-ray") || "",
           utm_source: utmSource || "",
           utm_medium: utmMedium || "",

@@ -571,8 +571,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
           </div>
 
+          <!-- 2 & 3 side-by-side container -->
+          <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: 1rem;">
           <!-- 2. Landing Versions -->
-          <div class="card">
+          <div class="card" style="flex: 1; min-width: 300px;">
             <p class="card-title">Landing Versions</p>
             <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
               <!-- Loaded via JS -->
@@ -581,7 +583,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           </div>
 
           <!-- 3. Edit Landing Version (builder) -->
-          <div class="card" id="studio-builder-panel" style="display: none; flex-direction: column; gap: 1rem;">
+          <div class="card" id="studio-builder-panel" style="flex: 2; min-width: 400px; display: none; flex-direction: column; gap: 1rem;">
             <p class="card-title" style="margin-bottom: 0.25rem;">Edit Landing Version</p>
             <p id="studio-current-edit-version-title" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1rem; color: var(--primary);"></p>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
@@ -5714,6 +5716,11 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-version-display-name").value = studioCurrentEditingLanding.displayName;
     document.getElementById("studio-version-name").value = studioCurrentEditingLanding.id;
     document.getElementById("studio-version-slug").value = studioCurrentEditingLanding.slug;
+    document.getElementById("studio-landing-hot-threshold").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hotThreshold) || "";
+    document.getElementById("studio-landing-conv-selector").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.conversionSelector) || "";
+    document.getElementById("studio-landing-dest-hot").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.hot) || "";
+    document.getElementById("studio-landing-dest-converted").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.converted) || "";
+
     document.getElementById("studio-version-alias").value = studioCurrentEditingLanding.alias || "";
     document.getElementById("studio-version-status").value = studioCurrentEditingLanding.status;
     document.getElementById("studio-version-title").value = studioCurrentEditingLanding.headerInfo?.title || "";
@@ -5960,6 +5967,25 @@ window.openNewIntentModal = function(e) {
           renderStudioVersionsList();
         }
       },
+
+      { id: "studio-landing-hot-threshold", cb: function() {
+          if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
+          var v = document.getElementById("studio-landing-hot-threshold").value;
+          if (v) studioCurrentEditingLanding.signals.hotThreshold = Number(v);
+          else delete studioCurrentEditingLanding.signals.hotThreshold;
+      }},
+      { id: "studio-landing-conv-selector", cb: function() {
+          if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
+          studioCurrentEditingLanding.signals.conversionSelector = document.getElementById("studio-landing-conv-selector").value;
+      }},
+      { id: "studio-landing-dest-hot", cb: function() {
+          if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
+          studioCurrentEditingLanding.destinations.hot = document.getElementById("studio-landing-dest-hot").value;
+      }},
+      { id: "studio-landing-dest-converted", cb: function() {
+          if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
+          studioCurrentEditingLanding.destinations.converted = document.getElementById("studio-landing-dest-converted").value;
+      }},
       { id: "studio-version-slug", prop: "slug", cb: function() {
           if (studioCurrentEditingLanding) {
             var raw = document.getElementById("studio-version-slug").value;

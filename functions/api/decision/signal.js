@@ -92,12 +92,12 @@ export async function onRequestPost(context) {
     if (type === "engagement") {
       const newScore = Math.min(100, Math.max(user.e, Number(body.score) || 0));
       if (newScore !== user.e) {
-        user = updateUserState(user, { e: newScore });
+        user = updateUserState(user, { e: newScore }, reqProd);
         updated = true;
       }
     } else if (type === "click" && body.level === "hard") {
       if (user.h === 0) {
-        user = updateUserState(user, { h: 1 });
+        user = updateUserState(user, { h: 1 }, reqProd);
         updated = true;
       }
     }
@@ -121,8 +121,17 @@ export async function onRequestPost(context) {
     const campaignId = body.meta ? body.meta.campaign : null;
     if (campaignId && context.env.APP_CONFIG) {
       try {
+
         const intentData = await context.env.APP_CONFIG.get(`campaign:${campaignId}`, { type: "json" });
-        const evalCfg = intentData?.evaluation || intentData?.routing?.evaluation;
+        const slug = body.meta?.slug;
+        let landingData = null;
+        if (slug) {
+          try {
+            landingData = await context.env.APP_CONFIG.get(`landing:${slug}`, { type: "json" });
+          } catch(e) {}
+        }
+
+        const evalCfg = landingData?.signals || intentData?.evaluation || intentData?.routing?.evaluation;
         if (evalCfg) {
           if (evalCfg.hotThreshold !== undefined) thresholds.hot_engagement = Number(evalCfg.hotThreshold);
           if (evalCfg.hardClickPoints !== undefined) points.click_hard = evalCfg.hardClickPoints;
@@ -155,14 +164,14 @@ export async function onRequestPost(context) {
           } else if (sName === "warm") {
             const warmScore = Math.max(user.e, 35);
             if (warmScore !== user.e) {
-              user = updateUserState(user, { e: warmScore });
+              user = updateUserState(user, { e: warmScore }, reqProd);
               updated = true;
             }
           } else if (sSeconds > 0) {
             const timeBonus = Math.min(30, Math.floor(sSeconds * 1.5));
             const newScore = Math.min(100, user.e + timeBonus);
             if (newScore !== user.e) {
-              user = updateUserState(user, { e: newScore });
+              user = updateUserState(user, { e: newScore }, reqProd);
               updated = true;
             }
           }
@@ -178,7 +187,7 @@ export async function onRequestPost(context) {
             if (user.h === 0 && newScore >= HOT_LIMIT) {
               updates.h = 1;
             }
-            user = updateUserState(user, updates);
+            user = updateUserState(user, updates, reqProd);
             updated = true;
           }
         }
@@ -192,7 +201,7 @@ export async function onRequestPost(context) {
         bonus = points.click_hard !== undefined ? points.click_hard : 10;
         // Hard clicks immediately designate strong intent
         if (user.h === 0) {
-          user = updateUserState(user, { h: 1 });
+          user = updateUserState(user, { h: 1 }, reqProd);
           updated = true;
         }
         break;
@@ -200,7 +209,7 @@ export async function onRequestPost(context) {
       case "checkout_start":
         bonus = points.checkout_start !== undefined ? points.checkout_start : 0;
         if (user.h === 0) {
-          user = updateUserState(user, { h: 1 });
+          user = updateUserState(user, { h: 1 }, reqProd);
           updated = true;
         }
         break;
@@ -233,7 +242,7 @@ export async function onRequestPost(context) {
       case "upsell_reject":
         // Only meaningful if user has already converted
         if (user.u === 0 && user.c === 1) {
-          user = updateUserState(user, { u: 1 });
+          user = updateUserState(user, { u: 1 }, reqProd);
           updated = true;
         }
         break;
@@ -260,7 +269,7 @@ export async function onRequestPost(context) {
         {
           const tRem = body.meta && body.meta.tag;
           if (tRem && Array.isArray(user.t) && user.t.includes(tRem)) {
-            user = updateUserState(user, { t: user.t.filter(t => t !== tRem) });
+            user = updateUserState(user, { t: user.t.filter(t => t !== tRem) }, reqProd);
             updated = true;
           }
         }
@@ -285,7 +294,7 @@ export async function onRequestPost(context) {
         if (user.h === 0 && newScore >= HOT_LIMIT) {
           updates.h = 1;
         }
-        user = updateUserState(user, updates);
+        user = updateUserState(user, updates, reqProd);
         updated = true;
       }
     }

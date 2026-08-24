@@ -30,13 +30,19 @@ import { evaluateRules } from "./decision-engine.js";
  * }>}
  */
 export async function handleDecision(request, env, opts) {
+  
   const { source = "", medium = "", campaign = "", decisionRules = [], engineConfig = null, intentDestinations = null, intentEvaluation = null } = opts;
+  const reqProd = opts.productSubdomain || (campaign ? campaign.split('-')[0] : null);
 
   // 1. Read existing state
   const rawState = readCookie(request, "cos_state");
   let userState  = parseUserState(rawState);
   let stateUpdate = false;
   const cookies   = [];
+
+  // Get active product state
+  const pState = (reqProd && userState.p && userState.p[reqProd]) ? userState.p[reqProd] : userState;
+
 
   // 2. Identification: assign persistent UID if missing
   if (!userState.uid) {
@@ -82,21 +88,20 @@ export async function handleDecision(request, env, opts) {
       warm:      (intentDestinations && intentDestinations.warm) ? intentDestinations.warm : null
     };
 
-    if (userState.c === 1) {
-      if (userState.u === 1 && effectiveDestinations.post) {
+        if (pState.c === 1) {
+      if (pState.u === 1 && effectiveDestinations.post) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.post, id: "intent_post_override" };
       } else if (effectiveDestinations.converted) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.converted, id: "intent_converted_override" };
       }
-    } else if (userState.h === 1 && effectiveDestinations.hot) {
+    } else if (pState.h === 1 && effectiveDestinations.hot) {
       decisionMatch = { action: "redirect", target: effectiveDestinations.hot, id: "intent_hot_override" };
     } else if (effectiveDestinations.warm) {
-      // Intent warm destination check based on userState fields (v=1 or e>=20 or tags exist)
-      if (userState.v === 1 || (userState.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
+      // Intent warm destination check based on pState fields (v=1 or e>=20 or tags exist)
+      if (pState.v === 1 || (pState.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.warm, id: "intent_warm_override" };
       }
     }
-  }
 
   // 3b. Fall back to standard custom hub routing rules if no global override
   if (!decisionMatch) {
@@ -123,8 +128,8 @@ export async function handleDecision(request, env, opts) {
 
   // 5. Handle RENDER action (default)
   // Mark as visited (v=1) if this is the first successful render hit
-  if (userState.v === 0) {
-    userState   = updateUserState(userState, { v: 1 });
+  if (pState.v === 0) {
+    userState   = updateUserState(userState, { v: 1 }, reqProd);
     stateUpdate = true;
   }
 
