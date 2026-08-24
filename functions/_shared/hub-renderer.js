@@ -27,7 +27,8 @@ export function renderHub({
   notFound = false,
   config = {},          // LANDING_CONFIG
   slug = "",          // slug name for CSS scoping
-  slugData = null,        // full slug KV record
+  slugData = null, // full slug KV record
+  productSubdomain = "",
   expToken = "",          // A/B exposure token (Prompt 130)
   utmVariant = "",          // A/B selected variant slug
   components = [],          // Live KV components (Prompt 140)
@@ -35,6 +36,22 @@ export function renderHub({
   intentConfig = {},        // Routing & Behavior JSON (Campaign V2)
 } = {}) {
   const cfg = config || {};
+
+  // --- DEBUG INFO INJECTION ---
+  const pSub = productSubdomain || (slug ? slug.split('-')[0] : "unknown");
+  const dCamp = campaign || (slug ? slug.split('-')[1] : "unknown");
+  const dMod = modifier || (slug ? slug.split('-').slice(2).join('-') : "unknown");
+  const cUrl = "https://" + pSub + ".teklifi.online/l/" + slug;
+  const alias = slugData && slugData.alias ? slugData.alias : null;
+  const aUrl = alias ? "https://" + pSub + ".teklifi.online/" + alias : "N/A";
+  const pSlug = "{" + slug + "}";
+  const pTheme = (slugData && slugData.theme) ? slugData.theme : "Default";
+  const pUpdate = (slugData && slugData.updatedAt) ? new Date(slugData.updatedAt).toLocaleString("tr-TR") : (slugData && slugData.updated_at ? new Date(slugData.updated_at).toLocaleString("tr-TR") : "Bilinmiyor");
+
+  const debugString = `${pSub} | ${dCamp} | ${dMod} | C: ${cUrl} | A: ${aUrl} | ${pSlug} | ${pTheme} | Last updated: ${pUpdate}`;
+  
+  const debugHtml = `\n<!--\nRUNTIME DEBUG INFO:\n${debugString}\n-->\n<script>console.log("RUNTIME DEBUG INFO: %c" + ${JSON.stringify(debugString)}, "color:#0284c7; font-weight:bold;");</script>`;
+
 
   const utmsJson = JSON.stringify(defaultUtms);
   const intentConfigJson = JSON.stringify(intentConfig || {});
@@ -198,6 +215,7 @@ export function renderHub({
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>${escHtml(finalTitle)}</title>
+${debugHtml}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 ${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
@@ -399,6 +417,7 @@ ${themeCssLink}
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>${escHtml(finalTitle)}</title>
+${debugHtml}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">

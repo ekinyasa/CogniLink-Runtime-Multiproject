@@ -430,6 +430,8 @@ export async function onRequestGet(context) {
   const html = renderHub({
     contextType: "campaign",
     contextId:   slug,
+    requestUrl:  request.url,
+    productSubdomain: extractProductSubdomain(url),
     campaign:    campaign,
     defaultUtms,
     links,
