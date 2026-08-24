@@ -659,7 +659,37 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <textarea id="studio-version-js" rows="3" style="font-family: monospace;"></textarea>
             </label>
 
-            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+            
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;" />
+            <p style="font-weight: bold; color: var(--primary);">Intent & Routing Overrides (Optional)</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                "Hot" Intent Threshold (0-100)
+                <input type="number" id="studio-landing-hot-threshold" placeholder="e.g. 60" min="0" max="100" />
+                <small>Defaults to 60. Overrides campaign settings.</small>
+              </label>
+              
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Custom Conversion Element (CSS Selector)
+                <input type="text" id="studio-landing-conv-selector" placeholder="e.g. button#buy-now" />
+                <small>Clicking this element will trigger a 'Converted' signal.</small>
+              </label>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Redirect if Hot
+                <input type="text" id="studio-landing-dest-hot" placeholder="e.g. /l/kasko-hot" />
+              </label>
+              
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Redirect if Converted
+                <input type="text" id="studio-landing-dest-converted" placeholder="e.g. /l/kasko-thanks" />
+              </label>
+            </div>
+
+<div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <button id="btn-studio-save-version" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Version</button>
             </div>
           </div>
@@ -3909,7 +3939,7 @@ window.openNewIntentModal = function(e) {
     var sel = $("f-engine-map-id");
     if (!sel) return;
     sel.innerHTML = '<option value="">[Global Default Engine]</option>';
-    var maps = engineStore.customMaps || {};
+    var maps = (typeof engineStore !== "undefined" ? engineStore.customMaps : null) || {};
     Object.keys(maps).forEach(function(key) {
       var opt = document.createElement("option");
       opt.value = key;
