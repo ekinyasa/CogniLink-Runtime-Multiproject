@@ -244,8 +244,11 @@ ${themeCssLink}
             turnstileWidgetId = turnstile.render(tdiv, {
               sitekey: turnstileSiteKey,
               size: "invisible",
+              execution: "execute",
               callback: function(token) {
-                doSubmit(token);
+                if (f.dataset.isSubmitting === "true") {
+                  doSubmit(token);
+                }
               }
             });
           } catch (e) {
@@ -255,6 +258,7 @@ ${themeCssLink}
 
         f.addEventListener("submit", function(e) {
           e.preventDefault();
+          f.dataset.isSubmitting = "true";
           if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
             try {
               turnstile.execute(turnstileWidgetId);
@@ -267,6 +271,7 @@ ${themeCssLink}
         });
 
         function doSubmit(turnstileToken) {
+          f.dataset.isSubmitting = "false";
           var existingAlert = f.querySelector(".form-error-alert");
 
           if (existingAlert) existingAlert.remove();
@@ -763,8 +768,11 @@ ${globalJsLink}
             turnstileWidgetId = turnstile.render(tdiv, {
               sitekey: turnstileSiteKey,
               size: "invisible",
+              execution: "execute",
               callback: function(token) {
-                doSubmit(token);
+                if (f.dataset.isSubmitting === "true") {
+                  doSubmit(token);
+                }
               }
             });
           } catch (e) {
@@ -774,6 +782,7 @@ ${globalJsLink}
 
         f.addEventListener("submit", function(e) {
           e.preventDefault();
+          f.dataset.isSubmitting = "true";
           if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
             try {
               turnstile.execute(turnstileWidgetId);
@@ -786,6 +795,7 @@ ${globalJsLink}
         });
 
         function doSubmit(turnstileToken) {
+          f.dataset.isSubmitting = "false";
           var existingAlert = f.querySelector(".form-error-alert");
           if (existingAlert) existingAlert.remove();
           

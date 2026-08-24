@@ -75,7 +75,7 @@ export async function onRequestPost(context) {
       body = await request.json();
     }
   } catch (_) {
-    return new Response(JSON.stringify({ error: "invalid_format" }), {
+    return new Response(JSON.stringify({ error: "İstek formatı hatalı. Lütfen kontrol edip tekrar deneyin." }), {
       status: 400,
       headers: corsHeaders
     });
@@ -147,7 +147,7 @@ export async function onRequestPost(context) {
   const cleanPhone = typeof phone === "string" ? phone.trim().slice(0, 30) : "";
   
   if (!isEmailValid && !cleanPhone) {
-    return new Response(JSON.stringify({ error: "missing_contact_info" }), {
+    return new Response(JSON.stringify({ error: "Lütfen geçerli bir telefon numarası veya e-posta adresi girin." }), {
       status: 400,
       headers: corsHeaders
     });
@@ -213,7 +213,7 @@ export async function onRequestPost(context) {
   }
 
   if (!env.DB) {
-    return new Response(JSON.stringify({ error: "database_not_configured", details: "env.DB is undefined" }), {
+    return new Response(JSON.stringify({ error: "Sistem yapılandırma hatası (DB bulunamadı).", details: "env.DB is undefined" }), {
       status: 500,
       headers: corsHeaders
     });
@@ -315,7 +315,7 @@ export async function onRequestPost(context) {
     }
   } catch (e) {
     console.error("Lead D1 insert error:", e);
-    return new Response(JSON.stringify({ error: "database_error", details: e.message, stack: e.stack }), {
+    return new Response(JSON.stringify({ error: "Sistemsel bir hata oluştu, lütfen daha sonra tekrar deneyin.", details: e.message, stack: e.stack }), {
       status: 500,
       headers: corsHeaders
     });
@@ -399,5 +399,5 @@ export async function onRequestPost(context) {
   );
 
   return response;
-  } catch(globalErr) { return new Response(JSON.stringify({ error: "global_crash", message: globalErr.message, stack: globalErr.stack }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }); }
+  } catch(globalErr) { return new Response(JSON.stringify({ error: "Beklenmeyen bir hata oluştu, lütfen daha sonra tekrar deneyin.", message: globalErr.message, stack: globalErr.stack }), { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }); }
 }
