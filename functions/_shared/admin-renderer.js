@@ -5827,6 +5827,9 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-landing-dest-hot").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.hot) || "";
     document.getElementById("studio-landing-dest-warm").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.warm) || "";
     document.getElementById("studio-landing-dest-converted").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.converted) || "";
+    if (document.getElementById("studio-landing-dest-sale")) {
+      document.getElementById("studio-landing-dest-sale").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.sale) || "";
+    }
     
     // UI Scoring overrides
     document.getElementById("studio-landing-hard-click").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardClickPoints) || "";
@@ -6105,6 +6108,10 @@ window.openNewIntentModal = function(e) {
       { id: "studio-landing-dest-converted", cb: function() {
           if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
           studioCurrentEditingLanding.destinations.converted = document.getElementById("studio-landing-dest-converted").value;
+      }},
+      { id: "studio-landing-dest-sale", cb: function() {
+          if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
+          studioCurrentEditingLanding.destinations.sale = document.getElementById("studio-landing-dest-sale").value;
       }},
       { id: "studio-landing-dest-warm", cb: function() {
           if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};

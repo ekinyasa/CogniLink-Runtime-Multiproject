@@ -9,7 +9,8 @@
  *   uid : string  — Persistent User ID (UUID)
  *   p   : object  — Product-scoped states: { "trafik": { c:1, h:0, e:45, v:1 } }
  *   v   : number  — Global Visited
- *   c   : number  — Global Converted
+ *   f   : number  — Global Form Submitted
+ *   c   : number  — Global Converted (Sale)
  *   h   : number  — Global Hard Click / Hot
  *   e   : number  — Global Engagement Score
  *   u   : number  — Global Entered Upsell
@@ -21,6 +22,7 @@ export const DEFAULT_USER_STATE = {
   uid: "",
   p: {},
   v: 0,
+  f: 0,
   c: 0,
   h: 0,
   e: 0,
@@ -45,6 +47,7 @@ export function serializeUserState(user) {
     uid: user.uid || "",
     p: user.p || {},
     v: Number(user.v) || 0,
+    f: Number(user.f) || 0,
     c: Number(user.c) || 0,
     h: Number(user.h) || 0,
     e: Number(user.e) || 0,
@@ -64,10 +67,11 @@ export function updateUserState(user, patch, product = null) {
   
   if (product) {
     // Apply patch to product scope
-    const prodState = newState.p[product] || { v: 0, c: 0, h: 0, e: 0 };
+    const prodState = newState.p[product] || { v: 0, f: 0, c: 0, h: 0, e: 0 };
     newState.p[product] = { ...prodState, ...patch };
     
     // Also update global state as a fallback/aggregate (optional but good for backwards compat)
+    if (patch.f !== undefined) newState.f = Math.max(newState.f || 0, patch.f);
     if (patch.c !== undefined) newState.c = Math.max(newState.c || 0, patch.c);
     if (patch.h !== undefined) newState.h = Math.max(newState.h || 0, patch.h);
     if (patch.e !== undefined) newState.e = Math.max(newState.e || 0, patch.e);
@@ -86,6 +90,7 @@ export function calculateVisitorIntentLevel(userState, product = null) {
   const state = (product && userState.p && userState.p[product]) ? userState.p[product] : userState;
   
   if (state.c === 1) return "converted";
+  if (state.f === 1) return "form_submitted";
   if (state.h === 1 || (state.e || 0) >= 60) return "hot";
   if (state.v === 1 || (state.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
     return "warm";
@@ -102,6 +107,7 @@ export function getVisitorIntentSummary(userState, product = null) {
     tier,
     score: Number(state.e) || 0,
     isReturning: Number(state.v) === 1,
+    hasFormSubmitted: Number(state.f) === 1,
     hasConverted: Number(state.c) === 1,
     isHot: Number(state.h) === 1,
     tags: Array.isArray(base.t) ? base.t : [],

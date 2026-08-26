@@ -83,12 +83,15 @@ export async function handleDecision(request, env, opts) {
     // Resolve effective destinations (Intent wins over Global Engine Config)
     const effectiveDestinations = {
       post:      (intentDestinations && intentDestinations.postConversion) ? intentDestinations.postConversion : checkRedirects.post,
+      sale:      (intentDestinations && intentDestinations.sale) ? intentDestinations.sale : checkRedirects.sale,
       converted: (intentDestinations && intentDestinations.converted) ? intentDestinations.converted : checkRedirects.converted,
       hot:       (intentDestinations && intentDestinations.hot) ? intentDestinations.hot : checkRedirects.hot,
       warm:      (intentDestinations && intentDestinations.warm) ? intentDestinations.warm : null
     };
 
-        if (pState.c === 1) {
+    if (pState.c === 1 && effectiveDestinations.sale) {
+      decisionMatch = { action: "redirect", target: effectiveDestinations.sale, id: "intent_sale_override" };
+    } else if (pState.f === 1 || pState.c === 1) {
       if (pState.u === 1 && effectiveDestinations.post) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.post, id: "intent_post_override" };
       } else if (effectiveDestinations.converted) {

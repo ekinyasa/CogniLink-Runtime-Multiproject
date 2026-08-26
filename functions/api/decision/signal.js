@@ -247,10 +247,18 @@ export async function onRequestPost(context) {
         }
         break;
 
+      case "form_submit":
+        if (user.f === 0 || user.h === 1) {
+          // f=1 sets form_submitted. h=0 resets hot intent since form is submitted.
+          user = updateUserState(user, { f: 1, h: 0 }, reqProd);
+          updated = true;
+        }
+        break;
+        
       case "conversion":
-        if (user.c === 0 || user.h === 1) {
-          // c=1 sets conversion. h=0 resets hot intent since transaction is done.
-          user = updateUserState(user, { c: 1, h: 0 });
+        if (user.c === 0) {
+          // c=1 sets actual sale converted (usually triggered manually or from CRM).
+          user = updateUserState(user, { c: 1, f: 1, h: 0 }, reqProd);
           updated = true;
         }
         break;

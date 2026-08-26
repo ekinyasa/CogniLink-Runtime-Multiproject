@@ -372,7 +372,7 @@ ${slugData?.signals?.conversionSelector ? `
       fetch("/api/decision/signal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "conversion", meta: { product: "${escAttr(productSubdomain)}", slug: "${escAttr(slug)}", campaign: "${escAttr(campaign || '')}", source: "${escAttr(contextId)}" } })
+        body: JSON.stringify({ type: "form_submit", meta: { product: "${escAttr(productSubdomain)}", slug: "${escAttr(slug)}", campaign: "${escAttr(campaign || '')}", source: "${escAttr(contextId)}" } })
       }).catch(function(){});
     };
     if (el.tagName && el.tagName.toLowerCase() === 'form') {
@@ -465,7 +465,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
         headers: { "Content-Type": "application/json" },
         keepalive: true,
         body: JSON.stringify({ 
-          type: "conversion", 
+          type: "form_submit", 
           meta: {
                 product: "${escAttr(productSubdomain)}",
                 slug: "${escAttr(slug)}",
