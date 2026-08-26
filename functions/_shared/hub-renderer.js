@@ -368,13 +368,18 @@ ${slugData?.signals?.conversionSelector ? `
   var sel = "${escAttr(slugData.signals.conversionSelector)}";
   var el = document.querySelector(sel);
   if (el) {
-    el.addEventListener("click", function() {
+    var handler = function() {
       fetch("/api/decision/signal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "conversion", meta: { product: "${escAttr(productSubdomain)}", slug: "${escAttr(slug)}", campaign: "${escAttr(campaign || '')}", source: "${escAttr(contextId)}" } })
       }).catch(function(){});
-    });
+    };
+    if (el.tagName && el.tagName.toLowerCase() === 'form') {
+      el.addEventListener("submit", handler);
+    } else {
+      el.addEventListener("click", handler);
+    }
   }
 })();
 </script>` : ""}

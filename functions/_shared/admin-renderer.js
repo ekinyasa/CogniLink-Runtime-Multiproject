@@ -533,15 +533,17 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <!-- 1. Intent Settings -->
           <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
             <p class="card-title">Intent Settings</p>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Product Group
-              <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
-              <datalist id="intent-products-list"></datalist>
-            </label>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Intent Alias (Slug)
-              <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
-            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Product Group
+                <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
+                <datalist id="intent-products-list"></datalist>
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Intent Alias (Slug)
+                <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
+              </label>
+            </div>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
             <div style="display: flex; gap: 1rem; align-items: flex-end;">
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
@@ -560,19 +562,19 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">Global Intent Scoring (Evaluation)</p>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Hard Click Score (Default: 30)
+                  <div>Hard Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
                   <input type="number" id="studio-intent-hard-click" placeholder="e.g. 30" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Soft Click Score (Default: 15)
+                  <div>Soft Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [15] - 100)</span></div>
                   <input type="number" id="studio-intent-soft-click" placeholder="e.g. 15" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Hard Time Sec (Default: 30)
+                  <div>Max Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
                   <input type="number" id="studio-intent-hard-time" placeholder="e.g. 30" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Soft Time Sec (Default: 10)
+                  <div>Min Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [10] - 100)</span></div>
                   <input type="number" id="studio-intent-soft-time" placeholder="e.g. 10" />
                 </label>
               </div>
@@ -695,21 +697,21 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;" />
             <p style="font-weight: bold; color: var(--primary);">Intent & Routing Overrides (Optional)</p>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                "Hot" Intent Threshold (0-100)
+                <div>"Hot" Intent Threshold <span style="font-size:0.7rem;opacity:0.7">(0 - [60] - 100)</span></div>
                 <input type="number" id="studio-landing-hot-threshold" placeholder="e.g. 60" min="0" max="100" />
-                <small>Defaults to 60. Overrides campaign settings.</small>
+                <small style="margin-top: 0;">Defaults to 60. Overrides campaign settings.</small>
               </label>
               
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Custom Conversion Element (CSS Selector)
-                <input type="text" id="studio-landing-conv-selector" placeholder="e.g. button#buy-now" />
-                <small>Clicking this element will trigger a 'Converted' signal.</small>
+                Form Submit Element (CSS Selector)
+                <input type="text" id="studio-landing-conv-selector" placeholder="e.g. form#lead-form" />
+                <small style="margin-top: 0;">Submitting this will trigger a 'Form Submitted' (Converted) signal.</small>
               </label>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem; align-items: start;">
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
                 Redirect if Hot
                 <input type="text" id="studio-landing-dest-hot" placeholder="e.g. /l/kasko-hot" />
@@ -721,7 +723,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               </label>
 
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Redirect if Converted
+                Redirect if Form Submitted
                 <input type="text" id="studio-landing-dest-converted" placeholder="e.g. /l/kasko-thanks" />
               </label>
             </div>
@@ -732,19 +734,19 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Hard Click Points
+                  <div>Hard Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
                   <input type="number" id="studio-landing-hard-click" placeholder="Inherit from Intent" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Soft Click Points
+                  <div>Soft Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [15] - 100)</span></div>
                   <input type="number" id="studio-landing-soft-click" placeholder="Inherit from Intent" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Hard Time Sec
+                  <div>Max Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
                   <input type="number" id="studio-landing-hard-time" placeholder="Inherit from Intent" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  Soft Time Sec
+                  <div>Min Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [10] - 100)</span></div>
                   <input type="number" id="studio-landing-soft-time" placeholder="Inherit from Intent" />
                 </label>
               </div>
