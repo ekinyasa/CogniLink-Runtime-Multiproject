@@ -493,9 +493,9 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
   <!-- ── Tab: Campaigns (Intents) ─────────────────────── -->
   <div id="tab-campaigns" class="tab-pane hidden">
-    <div class="layout" style="display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; max-width: 100%;">
+    <div class="layout" style="display: flex; flex-wrap: wrap; gap: 1.5rem; max-width: 100%; align-items: flex-start;">
       <!-- Left Panel: Intent List -->
-      <div class="card" style="display: flex; flex-direction: column; gap: 1rem; height: fit-content;">
+      <div class="card" style="flex: 0 0 320px; display: flex; flex-direction: column; gap: 1rem; height: fit-content;">
         <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <p class="card-title" style="margin:0;">Intents</p>
@@ -521,12 +521,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       </div>
 
       <!-- Right Panel: Selected Intent Workspace -->
-      <div id="intent-workspace" class="grid-layout" style="display: none; flex-direction: column; gap: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
-          <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+      <div id="intent-workspace" style="display: none;">
+        
+        <!-- Group 1: Intent Title & Settings -->
+        <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
 
           <!-- 1. Intent Settings -->
           <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -595,8 +597,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
           </div>
 
+          </div> <!-- Close inner gap -->
+        </div> <!-- Close Group 1 -->
+        
+        <!-- Group 2: Landings & Slugs (Spans full width, breaking to next row) -->
+        <div style="flex: 0 0 100%; display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+          
           <!-- 2 & 3 side-by-side container -->
-          <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; width: 100%;">
           <!-- 2. Landing Versions -->
           <div class="card" style="flex: 1; min-width: 300px;">
             <p class="card-title">Landing Versions</p>
@@ -5381,7 +5389,7 @@ window.openNewIntentModal = function(e) {
     var previousSelectedLandingId = studioCurrentEditingLanding ? studioCurrentEditingLanding.id : null;
     currentSelectedCampaign = campaignName;
     document.getElementById("workspace-title").textContent = campaignName;
-    document.getElementById("intent-workspace").style.display = "flex";
+    document.getElementById("intent-workspace").style.display = "contents";
 
     // Load campaign V2 config
     try {
