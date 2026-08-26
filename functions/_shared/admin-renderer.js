@@ -497,8 +497,12 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <!-- Left Panel: Intent List -->
       <div class="card" style="display: flex; flex-direction: column; gap: 1rem; height: fit-content;">
         <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <p class="card-title">Intents</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <p class="card-title" style="margin:0;">Intents</p>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-m); cursor: pointer; user-select: none;">
+              <input type="checkbox" id="toggle-campaign-mode" onchange="document.getElementById('studio-active-slugs-panel').style.display = this.checked ? 'flex' : 'none';" />
+              Campaign Mode
+            </label>
             <button id="btn-studio-new-intent" onclick="window.openNewIntentModal(event)" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
           </div>
           <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
@@ -550,13 +554,33 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                 </select>
               </label>
             </div>
-              Routing & Behavior Configuration (JSON)
-              <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px;" placeholder='{
-  "destinations": [],
-  "evaluation": "sequential",
-  "rules": []
-}'></textarea>
-            </label>
+              <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">Global Intent Scoring (Evaluation)</p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Hard Click Score (Default: 30)
+                  <input type="number" id="studio-intent-hard-click" placeholder="e.g. 30" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Soft Click Score (Default: 15)
+                  <input type="number" id="studio-intent-soft-click" placeholder="e.g. 15" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Hard Time Sec (Default: 30)
+                  <input type="number" id="studio-intent-hard-time" placeholder="e.g. 30" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Soft Time Sec (Default: 10)
+                  <input type="number" id="studio-intent-soft-time" placeholder="e.g. 10" />
+                </label>
+              </div>
+              <details>
+                <summary style="font-size: 0.8rem; color: var(--accent); cursor: pointer; outline: none; margin-top: 0.5rem;">Advanced Routing & Rules (JSON)</summary>
+                <div style="margin-top: 0.75rem;">
+                  <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px; width: 100%; box-sizing: border-box;" placeholder='{ "destinations": {}, "evaluation": {}, "rules": [] }'></textarea>
+                </div>
+              </details>
+            </div>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
               Default Landing Version
               <select id="studio-default-version-select">
@@ -677,17 +701,53 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               </label>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
                 Redirect if Hot
                 <input type="text" id="studio-landing-dest-hot" placeholder="e.g. /l/kasko-hot" />
               </label>
               
               <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Redirect if Warm
+                <input type="text" id="studio-landing-dest-warm" placeholder="e.g. /l/kasko-warm" />
+              </label>
+
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
                 Redirect if Converted
                 <input type="text" id="studio-landing-dest-converted" placeholder="e.g. /l/kasko-thanks" />
               </label>
             </div>
+            
+            <details style="margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;">
+              <summary style="font-size: 0.85rem; font-weight: bold; color: var(--text); cursor: pointer; outline: none;">Advanced Scoring Overrides (Optional)</summary>
+              <p style="font-size: 0.75rem; color: var(--text-m); margin-top: 0.5rem;">Overrides the global Intent scoring rules for this specific landing page.</p>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Hard Click Points
+                  <input type="number" id="studio-landing-hard-click" placeholder="Inherit from Intent" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Soft Click Points
+                  <input type="number" id="studio-landing-soft-click" placeholder="Inherit from Intent" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Hard Time Sec
+                  <input type="number" id="studio-landing-hard-time" placeholder="Inherit from Intent" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Soft Time Sec
+                  <input type="number" id="studio-landing-soft-time" placeholder="Inherit from Intent" />
+                </label>
+              </div>
+
+              <details style="margin-top: 1rem;">
+                <summary style="font-size: 0.75rem; color: var(--accent); cursor: pointer; outline: none;">Custom Override JSON</summary>
+                <div style="margin-top: 0.5rem;">
+                  <textarea id="studio-landing-override-json" rows="3" style="font-family: monospace; font-size: 12px; width: 100%; box-sizing: border-box;" placeholder='{ "destinations": {}, "evaluation": {} }'></textarea>
+                </div>
+              </details>
+            </details>
 
 <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <button id="btn-studio-save-version" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Version</button>
@@ -695,7 +755,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           </div>
 
           <!-- 4. Active Slugs -->
-          <div class="card">
+          <div class="card" id="studio-active-slugs-panel" style="display: none; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
               <p class="card-title" style="margin: 0;">Active Slugs</p>
               <button id="btn-studio-new-slug" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ New Slug</button>
@@ -5359,6 +5419,12 @@ window.openNewIntentModal = function(e) {
         } else {
           routingEl.value = "";
         }
+        
+        var evalCfg = (studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation) || {};
+        var elHc = document.getElementById("studio-intent-hard-click"); if (elHc) elHc.value = evalCfg.hardClickPoints || "";
+        var elSc = document.getElementById("studio-intent-soft-click"); if (elSc) elSc.value = evalCfg.softClickPoints || "";
+        var elHt = document.getElementById("studio-intent-hard-time"); if (elHt) elHt.value = evalCfg.hardTimeSeconds || "";
+        var elSt = document.getElementById("studio-intent-soft-time"); if (elSt) elSt.value = evalCfg.softTimeSeconds || "";
       }
 
       // Set values
@@ -5749,7 +5815,21 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-landing-hot-threshold").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hotThreshold) || "";
     document.getElementById("studio-landing-conv-selector").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.conversionSelector) || "";
     document.getElementById("studio-landing-dest-hot").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.hot) || "";
+    document.getElementById("studio-landing-dest-warm").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.warm) || "";
     document.getElementById("studio-landing-dest-converted").value = (studioCurrentEditingLanding.destinations && studioCurrentEditingLanding.destinations.converted) || "";
+    
+    // UI Scoring overrides
+    document.getElementById("studio-landing-hard-click").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardClickPoints) || "";
+    document.getElementById("studio-landing-soft-click").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.softClickPoints) || "";
+    document.getElementById("studio-landing-hard-time").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardTimeSeconds) || "";
+    document.getElementById("studio-landing-soft-time").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.softTimeSeconds) || "";
+    
+    // Advanced JSON box
+    var overrideCfg = {
+      destinations: studioCurrentEditingLanding.destinations || {},
+      signals: studioCurrentEditingLanding.signals || {}
+    };
+    document.getElementById("studio-landing-override-json").value = JSON.stringify(overrideCfg, null, 2);
 
     document.getElementById("studio-version-alias").value = studioCurrentEditingLanding.alias || "";
     document.getElementById("studio-version-status").value = studioCurrentEditingLanding.status;
@@ -6016,6 +6096,40 @@ window.openNewIntentModal = function(e) {
           if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
           studioCurrentEditingLanding.destinations.converted = document.getElementById("studio-landing-dest-converted").value;
       }},
+      { id: "studio-landing-dest-warm", cb: function() {
+          if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
+          studioCurrentEditingLanding.destinations.warm = document.getElementById("studio-landing-dest-warm").value;
+      }},
+      { id: "studio-landing-hard-click", cb: function() {
+          if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
+          var v = document.getElementById("studio-landing-hard-click").value;
+          if (v) studioCurrentEditingLanding.signals.hardClickPoints = Number(v); else delete studioCurrentEditingLanding.signals.hardClickPoints;
+      }},
+      { id: "studio-landing-soft-click", cb: function() {
+          if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
+          var v = document.getElementById("studio-landing-soft-click").value;
+          if (v) studioCurrentEditingLanding.signals.softClickPoints = Number(v); else delete studioCurrentEditingLanding.signals.softClickPoints;
+      }},
+      { id: "studio-landing-hard-time", cb: function() {
+          if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
+          var v = document.getElementById("studio-landing-hard-time").value;
+          if (v) studioCurrentEditingLanding.signals.hardTimeSeconds = Number(v); else delete studioCurrentEditingLanding.signals.hardTimeSeconds;
+      }},
+      { id: "studio-landing-soft-time", cb: function() {
+          if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
+          var v = document.getElementById("studio-landing-soft-time").value;
+          if (v) studioCurrentEditingLanding.signals.softTimeSeconds = Number(v); else delete studioCurrentEditingLanding.signals.softTimeSeconds;
+      }},
+      { id: "studio-landing-override-json", cb: function() {
+          try {
+            var val = document.getElementById("studio-landing-override-json").value.trim();
+            if (val) {
+              var parsed = JSON.parse(val);
+              if (parsed.destinations) studioCurrentEditingLanding.destinations = Object.assign(studioCurrentEditingLanding.destinations || {}, parsed.destinations);
+              if (parsed.signals) studioCurrentEditingLanding.signals = Object.assign(studioCurrentEditingLanding.signals || {}, parsed.signals);
+            }
+          } catch(e) { console.error("Invalid Landing Override JSON"); }
+      }},
       { id: "studio-version-slug", prop: "slug", cb: function() {
           if (studioCurrentEditingLanding) {
             var raw = document.getElementById("studio-version-slug").value;
@@ -6150,6 +6264,28 @@ window.openNewIntentModal = function(e) {
             alert("Invalid JSON in Routing & Behavior Configuration: " + e.message);
             return;
           }
+        } else {
+          routingConfig = { destinations: {}, evaluation: {}, rules: [] };
+        }
+        
+        // Merge UI values into evaluation config
+        if (!routingConfig.evaluation) routingConfig.evaluation = {};
+        
+        var vHc = document.getElementById("studio-intent-hard-click")?.value;
+        if (vHc) routingConfig.evaluation.hardClickPoints = Number(vHc); else delete routingConfig.evaluation.hardClickPoints;
+        
+        var vSc = document.getElementById("studio-intent-soft-click")?.value;
+        if (vSc) routingConfig.evaluation.softClickPoints = Number(vSc); else delete routingConfig.evaluation.softClickPoints;
+        
+        var vHt = document.getElementById("studio-intent-hard-time")?.value;
+        if (vHt) routingConfig.evaluation.hardTimeSeconds = Number(vHt); else delete routingConfig.evaluation.hardTimeSeconds;
+        
+        var vSt = document.getElementById("studio-intent-soft-time")?.value;
+        if (vSt) routingConfig.evaluation.softTimeSeconds = Number(vSt); else delete routingConfig.evaluation.softTimeSeconds;
+        
+        // Reflect back to textarea
+        if (document.getElementById("studio-routing-config")) {
+          document.getElementById("studio-routing-config").value = JSON.stringify(routingConfig, null, 2);
         }
 
         try {
