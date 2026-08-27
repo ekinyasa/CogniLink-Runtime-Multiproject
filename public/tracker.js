@@ -193,6 +193,12 @@
       const bindClickHard = (excludedEls = []) => {
         bindSelector(C.selectors.hardCta, "click", (e, el) => {
           if (excludedEls.includes(el) || DOMCache.has(el)) return;
+          // Class-level dedup for forms: treat all inputs in a form as a single hard intent
+          const form = el.closest('form');
+          if (form) {
+            if (DOMCache.has(form)) return;
+            DOMCache.add(form);
+          }
           const now = Date.now();
           if (now - limits.lastStrongIntent < 2000) return;
           DOMCache.add(el);

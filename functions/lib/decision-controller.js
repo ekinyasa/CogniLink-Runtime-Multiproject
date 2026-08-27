@@ -42,7 +42,8 @@ export async function handleDecision(request, env, opts) {
   const cookies   = [];
 
   // Get active product state
-  const pState = (reqProd && userState.p && userState.p[reqProd]) ? userState.p[reqProd] : userState;
+  const pState = (reqProd && userState.p && userState.p[reqProd]) ? userState.p[reqProd] : { v: 0, f: 0, c: 0, h: 0, e: 0 };
+  // Include global conversions if needed, but per intent isolation contract we do not inherit global engagement score
 
 
   // 2. Identification: assign persistent UID if missing

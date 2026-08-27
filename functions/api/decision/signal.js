@@ -56,6 +56,7 @@ export async function onRequestPost(context) {
   }
 
   let isLegacy = !body.meta;
+  const reqProd = body.meta ? body.meta.campaign : null;
 
   // Validation Gate: Missing source rejected immediately
   if (!isLegacy && (!body.meta || !body.meta.source)) {
@@ -67,15 +68,17 @@ export async function onRequestPost(context) {
 
   let user = parseUserState(rawCookie);
   let updated = false;
+  const activeState = (reqProd && user.p && user.p[reqProd]) ? user.p[reqProd] : { e: 0, h: 0, c: 0, f: 0, u: 0, v: 0, t: [] };
+  if (!activeState.t) activeState.t = [];
 
   // 1. COOKIE YOKSA STATE OLUŞTUR
   if (!rawCookie) {
     user.uid = crypto.randomUUID();
     user.v = 1;
-    user.c = 0;
-    user.h = 0;
-    user.e = 0;
-    user.u = 0;
+    activeState.c = 0;
+    activeState.h = 0;
+    activeState.e = 0;
+    activeState.u = 0;
     user.ts = Math.floor(Date.now() / 1000);
     updated = true; // Assure it gets written to Set-Cookie
   }
@@ -90,13 +93,13 @@ export async function onRequestPost(context) {
   // 1. Eski yapı desteği (Legacy)
   if (isLegacy) {
     if (type === "engagement") {
-      const newScore = Math.min(100, Math.max(user.e, Number(body.score) || 0));
-      if (newScore !== user.e) {
+      const newScore = Math.min(100, Math.max(activeState.e, Number(body.score) || 0));
+      if (newScore !== activeState.e) {
         user = updateUserState(user, { e: newScore }, reqProd);
         updated = true;
       }
     } else if (type === "click" && body.level === "hard") {
-      if (user.h === 0) {
+      if (activeState.h === 0) {
         user = updateUserState(user, { h: 1 }, reqProd);
         updated = true;
       }
@@ -160,20 +163,20 @@ export async function onRequestPost(context) {
           const sName = (body.name || "").toLowerCase();
           const sSeconds = Number(body.seconds) || 0;
           if (sName === "hot") {
-            if (user.h === 0) {
-              user = updateUserState(user, { h: 1, e: Math.max(user.e, HOT_LIMIT) });
+            if (activeState.h === 0) {
+              user = updateUserState(user, { h: 1, e: Math.max(activeState.e, HOT_LIMIT) }, reqProd);
               updated = true;
             }
           } else if (sName === "warm") {
-            const warmScore = Math.max(user.e, 35);
-            if (warmScore !== user.e) {
+            const warmScore = Math.max(activeState.e, 35);
+            if (warmScore !== activeState.e) {
               user = updateUserState(user, { e: warmScore }, reqProd);
               updated = true;
             }
           } else if (sSeconds > 0) {
             const timeBonus = Math.min(30, Math.floor(sSeconds * 1.5));
-            const newScore = Math.min(100, user.e + timeBonus);
-            if (newScore !== user.e) {
+            const newScore = Math.min(100, activeState.e + timeBonus);
+            if (newScore !== activeState.e) {
               user = updateUserState(user, { e: newScore }, reqProd);
               updated = true;
             }
@@ -184,10 +187,10 @@ export async function onRequestPost(context) {
       case "engagement":
         if (body.score !== undefined) {
           const clientScore = Number(body.score) || 0;
-          const newScore = Math.min(100, Math.max(user.e, clientScore));
-          if (newScore !== user.e) {
+          const newScore = Math.min(100, Math.max(activeState.e, clientScore));
+          if (newScore !== activeState.e) {
             const updates = { e: newScore };
-            if (user.h === 0 && newScore >= HOT_LIMIT) {
+            if (activeState.h === 0 && newScore >= HOT_LIMIT) {
               updates.h = 1;
             }
             user = updateUserState(user, updates, reqProd);
@@ -203,7 +206,7 @@ export async function onRequestPost(context) {
       case "click_hard":
         bonus = points.click_hard !== undefined ? points.click_hard : 10;
         // Hard clicks immediately designate strong intent
-        if (user.h === 0) {
+        if (activeState.h === 0) {
           user = updateUserState(user, { h: 1 }, reqProd);
           updated = true;
         }
@@ -211,7 +214,7 @@ export async function onRequestPost(context) {
 
       case "checkout_start":
         bonus = points.checkout_start !== undefined ? points.checkout_start : 0;
-        if (user.h === 0) {
+        if (activeState.h === 0) {
           user = updateUserState(user, { h: 1 }, reqProd);
           updated = true;
         }
@@ -244,14 +247,14 @@ export async function onRequestPost(context) {
       case "upsell_accept":
       case "upsell_reject":
         // Only meaningful if user has already converted
-        if (user.u === 0 && user.c === 1) {
+        if (activeState.u === 0 && activeState.c === 1) {
           user = updateUserState(user, { u: 1 }, reqProd);
           updated = true;
         }
         break;
 
       case "form_submit":
-        if (user.f === 0 || user.h === 1) {
+        if (activeState.f === 0 || activeState.h === 1) {
           // f=1 sets form_submitted. h=0 resets hot intent since form is submitted.
           user = updateUserState(user, { f: 1, h: 0 }, reqProd);
           updated = true;
@@ -259,7 +262,7 @@ export async function onRequestPost(context) {
         break;
         
       case "conversion":
-        if (user.c === 0) {
+        if (activeState.c === 0) {
           // c=1 sets actual sale converted (usually triggered manually or from CRM).
           user = updateUserState(user, { c: 1, f: 1, h: 0 }, reqProd);
           updated = true;
@@ -269,8 +272,8 @@ export async function onRequestPost(context) {
       case "tag_add":
         {
           const tAdd = body.meta && body.meta.tag;
-          if (tAdd && Array.isArray(user.t) && !user.t.includes(tAdd)) {
-            user = updateUserState(user, { t: [...user.t, tAdd] });
+          if (tAdd && Array.isArray(activeState.t) && !activeState.t.includes(tAdd)) {
+            user = updateUserState(user, { t: [...activeState.t, tAdd] }, reqProd);
             updated = true;
           }
         }
@@ -279,8 +282,8 @@ export async function onRequestPost(context) {
       case "tag_remove":
         {
           const tRem = body.meta && body.meta.tag;
-          if (tRem && Array.isArray(user.t) && user.t.includes(tRem)) {
-            user = updateUserState(user, { t: user.t.filter(t => t !== tRem) }, reqProd);
+          if (tRem && Array.isArray(activeState.t) && activeState.t.includes(tRem)) {
+            user = updateUserState(user, { t: activeState.t.filter(t => t !== tRem) }, reqProd);
             updated = true;
           }
         }
@@ -299,10 +302,10 @@ export async function onRequestPost(context) {
 
     // Engagement Update Logic & Dynamic Threshold Check
     if (bonus > 0) {
-      const newScore = Math.min(100, user.e + bonus);
-      if (newScore !== user.e) {
+      const newScore = Math.min(100, activeState.e + bonus);
+      if (newScore !== activeState.e) {
         const updates = { e: newScore };
-        if (user.h === 0 && newScore >= HOT_LIMIT) {
+        if (activeState.h === 0 && newScore >= HOT_LIMIT) {
           updates.h = 1;
         }
         user = updateUserState(user, updates, reqProd);
