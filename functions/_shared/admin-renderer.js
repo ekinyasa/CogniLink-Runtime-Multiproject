@@ -1,4 +1,710 @@
-<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+/**
+ * Renders the studio panel HTML.
+ * Token management and API calls are entirely client-side.
+ * The word "admin" never appears in user-visible text.
+ */
+export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.ekinyasa.online" } = {}) {
+  // Derive version tag from CF Pages branch (e.g. "feat/v9-diagnostics" → "v9")
+  var vMatch = branch.match(/v(\d+)/);
+  var vTag = vMatch ? "v" + vMatch[1] : "v9";
+  // Prompt 69 — CogniLink branding: shaShort = first 2 + . + last 1
+  var shaShort = sha ? sha.slice(0, 2) + "." + sha.slice(-1) : "";
+  var shaTag = sha ? " \u00b7 " + shaShort : "";
+  var panelLogo = "CogniLink";
+  var panelTitle = shaTag;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=info,lock,workspace_premium" />
+<title>${panelLogo}${panelTitle}</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>${ADMIN_CSS}</style>
+</head>
+<body>
+
+<!-- ── Token Gate ──────────────────────────────────────── -->
+<div id="gate" class="screen">
+  <div class="card narrow">
+    <p class="card-title">CogniLink</p>
+    <p class="hint">Enter your access token to continue.</p>
+    <form id="gate-form" autocomplete="off">
+      <input id="token-input" type="password" placeholder="Access token"
+        autocomplete="current-password" required />
+      <p id="gate-error" class="error hidden"></p>
+      <button type="submit" class="btn-primary">Continue</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Main Panel ──────────────────────────────────────── -->
+<div id="panel" class="screen hidden">
+  <div class="header-container" id="header-container">
+  <div class="topbar" id="main-topbar">
+    <span class="topbar-title">${panelLogo}<small> <span style="color: var(--text-m)">${panelTitle}</span></small></span>
+    <div class="sw-toolbar" id="sw-toolbar" style="display:flex;align-items:center;gap:0.75rem">
+      <div id="sw-display-wrap" class="sw-display-oval" title="Start / Stop — click to toggle">
+        <span id="sw-display" class="sw-time" style="user-select:none">00:00.0</span>
+        <span id="sw-icon" class="sw-icon" style="font-size:20px;padding-top:1.2px">⏵︎</span>
+      </div>
+      <button type="button" id="btn-sw-reset" class="btn-ghost btn-sm btn-round" title="Reset" style="color: var(--text-m); font-size: 22px; padding: 0px 0px 0px 1.9px; width: 34px; height: 34px; border-radius: 50%;">⟳</button>
+    </div>
+    <div class="ws-selector" id="ws-selector" style="display:none">
+      <label class="ws-label" for="ws-select">Workspace</label>
+      <select id="ws-select" class="ws-select">
+        <option value="">All</option>
+        <option value="default">default</option>
+      </select>
+    </div>
+    <a href="/admin/experiments" target="_blank"><button class="btn-ghost btn-sm btn-oval btn-lab-link" style="padding: 0.6em 1.3em;">Lab <small>&#x2197;</small></button></a>
+    <button id="btn-logout" class="btn-ghost btn-sm btn-round" style="padding: 1px; width: 34px; height: 34px; border-radius: 50%;">
+      <svg class="" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 22 22" style="width: 20px; height: 18px;"><path stroke="var(--text-m)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12h-9.5m7.5 3 3-3-3-3m-5-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-1"></path></svg>
+    </button>
+  </div>
+
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="analytics">Pulse</button>
+    <button class="tab-btn" data-tab="pages" style="display:none">Landings</button>
+        <button class="tab-btn" data-tab="campaigns">Intents</button>
+    <button class="tab-btn" data-tab="slugs" style="display:none!important">Nodes</button>
+        <button class="tab-btn" data-tab="routing">Traffic</button>
+    <button class="tab-btn" data-tab="components">Library</button>
+    <button class="tab-btn" data-tab="config">Settings</button>
+    <button class="tab-btn" data-tab="applications">Applications</button>
+    <button class="tab-btn" data-tab="diagnostics">Health</button>
+  </div>
+  </div> <!-- end header-container -->
+
+  <!-- ── Tab: Analytics ───────────────────────────────── -->
+  <div id="tab-analytics" class="tab-pane">
+    <div class="pulse-grid">
+
+      <!-- A: Header (Full Width) -->
+      <div class="pulse-section-a card">
+        <div class="dash-header">
+          <div>
+            <p class="card-title" style="margin-bottom:0.25rem">Analytics</p>
+            <p class="hint" style="margin-bottom:0;font-size:0.75rem" id="analytics-freshness-text">Real-time data from Analytics Engine</p>
+          </div>
+          <div class="dash-header-meta" id="analytics-generated" style="position:absolute;top:1rem;right:1.5rem"></div>
+          <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.25rem;flex-wrap:wrap">
+            <div class="filter-bar desktop-only" id="analytics-time-filters">
+              <button type="button" class="filter-btn" data-window="1h">1H</button>
+              <button type="button" class="filter-btn" data-window="24h">24H</button>
+              <button type="button" class="filter-btn" data-window="7d">7D</button>
+              <button type="button" class="filter-btn" data-window="30d">30D</button>
+            </div>
+            <select id="analytics-time-select" class="mobile-only filter-select" style="padding:0.25rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8rem;outline:none;display:none;">
+              <option value="1h">1H</option>
+              <option value="24h">24H</option>
+              <option value="7d">7D</option>
+              <option value="30d">30D</option>
+            </select>
+            <div class="date-input-group">
+              <input type="date" id="analytics-start-date" class="date-input" title="Start Date" />
+              <span style="font-size:0.7rem;color:var(--text-dim)">-</span>
+              <input type="date" id="analytics-end-date" class="date-input" title="End Date" />
+            </div>
+            <button type="button" id="btn-refresh-analytics" class="btn-ghost" style="padding:0.25rem 0.6rem;font-size:1.1rem;border-radius:50%" title="Refresh Now">⟳</button>
+          </div>
+        </div>
+
+        <div id="analytics-status" class="hint" style="margin:1rem 0">Loading…</div>
+
+        <div id="stat-conv-rate-wrap" class="dash-grid hidden" style="margin-top:1rem">
+          <div class="dash-card">
+            <span class="dash-card-label">Total Clicks</span>
+            <span class="dash-card-value" id="stat-clicks">0</span>
+          </div>
+          <div class="dash-card">
+            <span class="dash-card-label">Conversions</span>
+            <span class="dash-card-value" id="stat-conversions">0</span>
+          </div>
+          <div class="dash-card">
+            <span class="dash-card-label">Avg. Conv. Rate</span>
+            <span class="dash-card-value" id="stat-conv-rate">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- B: Performance Breakdown (Source) -->
+      <div id="analytics-content-b" class="pulse-section-b card hidden">
+        <p class="dash-card-label" style="margin-bottom:1rem">Performance Breakdown (Source)</p>
+        <div class="dash-chart-container" style="border:none;padding:0">
+          <canvas id="dash-source-chart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- C: Traffic & Conversions Over Time -->
+      <div id="analytics-content-c" class="pulse-section-c card hidden">
+        <p class="dash-card-label" style="margin-bottom:1rem">Traffic & Conversions Over Time</p>
+        <div class="dash-chart-container" style="border:none;padding:0">
+          <canvas id="dash-chart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- D: Active Experiments -->
+      <div id="dash-experiments-wrap" class="pulse-section-d card hidden">
+        <p class="analytics-section-title">Active Experiments</p>
+        <div class="exp-grid" id="dash-exp-grid"></div>
+      </div>
+
+      <!-- E: By Campaign / By Alias -->
+      <div id="analytics-content-e" class="pulse-section-e card hidden">
+        <div class="analytics-grid" style="grid-template-columns:1fr; gap:1.5rem">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+              <p class="analytics-section-title" style="margin-bottom:0">By Campaign</p>
+              <div id="pag-campaigns" class="mini-pagination"></div>
+            </div>
+            <table class="analytics-table" id="tbl-by-campaign">
+              <thead><tr><th>Campaign</th><th>Clicks</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+              <p class="analytics-section-title" style="margin-bottom:0">By Alias</p>
+              <div id="pag-aliases" class="mini-pagination"></div>
+            </div>
+            <table class="analytics-table" id="tbl-by-alias">
+              <thead><tr><th>Alias</th><th>Clicks</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- F: Recent Events -->
+      <div id="analytics-content-f" class="pulse-section-f card hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <p class="analytics-section-title" style="margin-bottom:0">Recent Events</p>
+          <div style="display:flex;align-items:center;gap:1.5rem">
+            <label class="toggle-label" style="font-size:.7rem;margin:0">
+              <input type="checkbox" id="show-test-analytics" /> Show Test
+            </label>
+            <div id="pag-events" class="mini-pagination"></div>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="analytics-table analytics-table-full" id="tbl-recent">
+            <thead><tr><th>Time</th><th>Alias</th><th>Slug</th><th>Campaign</th><th>Event / Source</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tab: Pages ───────────────────────────────────── -->
+  <div id="tab-pages" class="tab-pane hidden">
+    <div class="layout">
+      <!-- Left: Create Form -->
+      <div class="card form-card">
+        <p class="card-title" id="page-form-title">New Landing Page</p>
+        <form id="page-form" autocomplete="off">
+          <input type="hidden" id="f-page-editing" value="" />
+          <label for="f-page-id">Page ID / Slug <span class="req">*</span></label>
+          <input type="text" id="f-page-id" placeholder="e.g. black-friday-landing" required pattern="[A-Za-z0-9-_]+" />
+
+          <label for="f-page-title">Page Title</label>
+          <input type="text" id="f-page-title" placeholder="My Landing" />
+
+          <label for="f-page-theme">Theme</label>
+          <select id="f-page-theme">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="system">System Default</option>
+          </select>
+
+          <label for="f-page-url">Redirect URL (optional)</label>
+          <input type="url" id="f-page-url" placeholder="https://external-landing.com" />
+          <p class="hint">If provided, this page acts as a pass-through.</p>
+
+          <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
+          <p class="card-title" style="font-size:13px; font-weight:600; margin-bottom:10px;">Page Sections & Layout Manager</p>
+          <p class="hint" style="margin-top:-5px; margin-bottom:15px; font-size:0.75rem;">Arrange the order of components, links, and custom HTML sections. You can add multiple custom sections and position them anywhere.</p>
+
+          <div id="page-layout-container" style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;"></div>
+
+          <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:10px; margin-bottom:20px;">
+            <button type="button" id="btn-add-layout-html" class="btn-ghost btn-sm" style="background:var(--surface); padding:8px; font-size:0.8rem;">+ Add Custom HTML</button>
+            <select id="add-layout-comp-select" style="padding:6px; font-size:0.8rem; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:4px;">
+              <option value="">+ Add Component...</option>
+            </select>
+          </div>
+
+          <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);" />
+          <p class="card-title" style="font-size:12px; opacity:0.7">Advanced / Code Editor</p>
+
+          <label for="f-page-is-conv" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+             <input type="checkbox" id="f-page-is-conv" /> Mark as Conversion Goal (fires signal on load)
+          </label>
+
+          <input type="hidden" id="f-page-html" />
+
+          <label for="f-page-css">Custom CSS</label>
+          <textarea id="f-page-css" rows="3" placeholder=".my-class { color: red; }" style="font-family:monospace;"></textarea>
+
+          <label for="f-page-js">Custom Script (JS)</label>
+          <textarea id="f-page-js" rows="4" placeholder="console.log('Hello world');" style="font-family:monospace;"></textarea>
+
+          <p id="page-form-error" class="error hidden"></p>
+          <p id="page-form-success" class="success hidden"></p>
+          <div style="display:flex; gap:10px;">
+            <button type="submit" id="btn-save-page" class="btn-primary" style="flex:1;">Save Page</button>
+            <button type="button" id="btn-cancel-page" class="btn-ghost hidden">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Right: List -->
+      <div class="card list-card">
+        <p class="card-title">Active Pages</p>
+        <div style="overflow-x:auto;">
+          <table id="tbl-pages" class="data-table">
+            <thead style="text-align: left;">
+              <tr><th>ID</th><th>Title/Dest</th><th width="80">Actions</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div> <!-- closes overflow-x:auto -->
+      </div> <!-- closes card list-card -->
+    </div> <!-- closes layout -->
+  </div> <!-- closes tab-pages -->
+
+  <!-- ── Tab: Campaign Links ──────────────────────────── -->
+  <div id="tab-slugs" class="tab-pane hidden">
+    <div class="layout">
+
+      <!-- Left: Create / Edit form -->
+      <div class="card form-card">
+        <p class="card-title" id="form-title">New Campaign Link</p>
+
+        <form id="slug-form" autocomplete="off" novalidate>
+          <input type="hidden" id="edit-mode" value="create" />
+
+          <!-- Campaign selector -->
+          <label for="f-campaign">Campaign <span class="req">*</span></label>
+          <div id="campaign-select-wrap">
+            <select id="f-campaign" name="campaign" required>
+              <option value="__new__">+ Create new campaign</option>
+            </select>
+          </div>
+          <p id="campaign-confirm-msg" class="error hidden"></p>
+
+          <!-- Create new campaign inline -->
+          <div id="new-campaign-wrap" class="hidden new-campaign-box">
+            <div class="inline-row">
+              <input id="f-new-campaign" type="text" placeholder="new-campaign-2026"
+                autocomplete="off" spellcheck="false" />
+              <button type="button" id="btn-create-campaign" class="btn-ghost btn-sm">Create</button>
+            </div>
+            <div class="inline-alias-row">
+              <input id="f-new-campaign-alias" type="text" placeholder="alias (optional, e.g. iki)"
+                autocomplete="off" spellcheck="false" maxlength="48" />
+              <p id="new-camp-alias-status" class="field-hint hidden"></p>
+            </div>
+            <p id="campaign-error" class="error hidden"></p>
+          </div>
+
+          <!-- Slug -->
+          <label for="f-slug">Slug <span class="hint-inline">(path after /c/)</span></label>
+          <div class="input-row">
+            <span class="input-prefix">…/c/</span>
+            <input id="f-slug" name="slug" type="text" placeholder="spring-2026-yt"
+              autocomplete="off" spellcheck="false" required />
+          </div>
+          <p class="field-hint hidden" id="slug-hint"></p>
+
+          <!-- Route Alias -->
+          <label for="f-alias">Route Alias <span class="hint-inline">(optional — short public route, e.g. "bio")</span></label>
+          <input id="f-alias" name="alias" type="text" placeholder="bio"
+            autocomplete="off" spellcheck="false" maxlength="48" />
+          <p id="alias-status" class="field-hint hidden"></p>
+
+          <!-- Attribution Window (TTL) -->
+          <label for="f-cos-win" style="margin-top: 15px;">Attribution Window (Days) <span class="hint-inline">(TTL for cross domains)</span></label>
+          <div class="input-row">
+            <input id="f-cos-win" name="cos_win" type="number" list="attrDaysList" min="1" max="365" placeholder="7" value="7" style="width: 8rem;" />
+            <datalist id="attrDaysList">
+              <option value="1">
+              <option value="7">
+              <option value="30">
+            </datalist>
+          </div>
+
+          <!-- Preset -->
+          <label for="f-preset">UTM Preset</label>
+          <select id="f-preset" name="preset">
+            <option value="instagram_bio">Instagram – Bio</option>
+            <option value="instagram_story">Instagram – Story</option>
+            <option value="youtube_desc">YouTube – Description</option>
+            <option value="spotify_bio">Spotify – Bio</option>
+            <option value="tiktok_bio">TikTok – Bio</option>
+            <option value="tiktok_paid">TikTok – Paid</option>
+            <option value="facebook_post">Facebook – Post</option>
+            <option value="paid_meta">Paid – Meta Ads</option>
+            <option value="paid_google">Paid – Google Ads</option>
+            <option value="custom">Custom</option>
+          </select>
+
+          <!-- Custom UTM: source + medium ONLY -->
+          <div id="custom-utm" class="hidden custom-utm-box">
+            <label for="f-utm-source">utm_source</label>
+            <input id="f-utm-source" name="utm_source" type="text"
+              placeholder="instagram" autocomplete="off" />
+            <label for="f-utm-medium">utm_medium</label>
+            <input id="f-utm-medium" name="utm_medium" type="text"
+              placeholder="story" autocomplete="off" />
+          </div>
+
+          <!-- Additional Global UTM Defaults (lang, market) -->
+          <div style="margin-top: 15px; display: flex; gap: 1rem; align-items: center;">
+            <div style="display: flex; flex-direction: column;">
+              <label for="f-lang" style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">lang</label>
+              <input id="f-lang" name="lang" type="text" value="en" autocomplete="off" style="width: 5rem;" />
+            </div>
+            <div style="display: flex; flex-direction: column;">
+              <label for="f-market" style="font-size: 0.85rem; color: #666; margin-bottom: 2px;">market</label>
+              <input id="f-market" name="market" type="text" value="global" autocomplete="off" style="width: 6rem;" />
+            </div>
+          </div>
+
+          <!-- Destination overrides -->
+          <details class="overrides-section">
+            <summary>Destination overrides <span class="hint-inline">(optional — url, order, active, noUtm per link)</span></summary>
+            <div class="overrides-grid">
+              <div class="override-row">
+                <label class="override-dest-label">Official Website</label>
+                <div class="override-fields">
+                  <input id="f-dest-official-url" class="override-url" type="url" placeholder="https://${customDomain}/tr" />
+                  <input id="f-dest-official-order" class="override-order" type="number" placeholder="order" />
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-official-active" checked /> Active</label>
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-official-noutm" /> No UTM</label>
+                </div>
+              </div>
+              <div class="override-row">
+                <label class="override-dest-label">Educational Programs</label>
+                <div class="override-fields">
+                  <input id="f-dest-programs-url" class="override-url" type="url" placeholder="" />
+                  <input id="f-dest-programs-order" class="override-order" type="number" placeholder="order" />
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-programs-active" checked /> Active</label>
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-programs-noutm" /> No UTM</label>
+                </div>
+              </div>
+              <div class="override-row">
+                <label class="override-dest-label">Latest Release</label>
+                <div class="override-fields">
+                  <input id="f-dest-release-url" class="override-url" type="url" placeholder="" />
+                  <input id="f-dest-release-order" class="override-order" type="number" placeholder="order" />
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-release-active" checked /> Active</label>
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-release-noutm" /> No UTM</label>
+                </div>
+              </div>
+              <div class="override-row">
+                <label class="override-dest-label">Newsletter</label>
+                <div class="override-fields">
+                  <input id="f-dest-newsletter-url" class="override-url" type="url" placeholder="" />
+                  <input id="f-dest-newsletter-order" class="override-order" type="number" placeholder="order" />
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-newsletter-active" checked /> Active</label>
+                  <label class="checkbox-label"><input type="checkbox" id="f-dest-newsletter-noutm" /> No UTM</label>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Custom links[] editor -->
+          <details class="links-section" id="links-details">
+            <summary>Custom Buttons <span class="hint-inline">(adds extra buttons after base links)</span></summary>
+            <div id="links-editor" class="links-editor-wrap"></div>
+            <button type="button" id="btn-add-link" class="btn-ghost btn-sm" style="margin-top:.5rem">+ Add button</button>
+          </details>
+
+          <!-- Routing Maps selection -->
+          <details class="landing-section" id="routing-maps-details" open>
+            <summary>Custom Engine Map <span class="hint-inline">(optional — contextual auto-redirect overrides)</span></summary>
+            <div class="landing-fields" style="margin-top:0.5rem;">
+              <select id="f-engine-map-id">
+                <option value="">[Global Default Engine]</option>
+              </select>
+            </div>
+          </details>
+
+          <!-- Per-slug landing customization -->
+          <details class="landing-section">
+            <summary>Landing Customization <span class="hint-inline">(optional — per-slug header, footer, CSS)</span></summary>
+            <div class="landing-fields">
+              <label for="f-custom-header-html">Custom Header HTML</label>
+              <textarea id="f-custom-header-html" rows="2" placeholder="<p>Special announcement</p>" maxlength="5000"></textarea>
+              <label for="f-custom-footer-html">Custom Footer HTML</label>
+              <textarea id="f-custom-footer-html" rows="2" placeholder="<p>Limited time only</p>" maxlength="5000"></textarea>
+              <label for="f-custom-css">Custom CSS</label>
+              <textarea id="f-custom-css" rows="3" placeholder=".hub-header { color: gold; }"></textarea>
+            </div>
+          </details>
+
+          <p id="form-error" class="error hidden"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="btn-save">Save</button>
+            <button type="button" class="btn-ghost" id="btn-cancel" style="display:none">Cancel</button>
+          </div>
+        </form>
+
+        <!-- Generated link -->
+        <div id="generated-wrap" class="hidden">
+          <p class="generated-label">Short link</p>
+          <div class="generated-row">
+            <span id="generated-url" class="generated-url"></span>
+            <button id="btn-copy" class="btn-ghost btn-sm">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Slug list -->
+      <div class="card list-card">
+        <div class="list-header">
+          <p class="card-title">Campaign Links</p>
+          <input id="search-input" type="search" placeholder="Search slug…" />
+          <div class="filter-row">
+            <select id="filter-source">
+              <option value="">All sources</option>
+            </select>
+            <select id="filter-medium">
+              <option value="">All mediums</option>
+            </select>
+            <label class="toggle-label"><input type="checkbox" id="show-archived-camp-slugs" /> Archived campaigns</label>
+            <label class="toggle-label"><input type="checkbox" id="show-test-camp-slugs" /> Test campaigns</label>
+            <button type="button" id="btn-reset-filters" class="btn-ghost btn-sm">Reset</button>
+          </div>
+        </div>
+        <div id="slug-list"><p class="empty-state">Loading…</p></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tab: Campaigns (Intents) ─────────────────────── -->
+  <div id="tab-campaigns" class="tab-pane hidden">
+    <div class="layout" style="display: flex; flex-wrap: wrap; gap: 1.5rem; max-width: 100%; align-items: flex-start;">
+      <!-- Left Panel: Intent List -->
+      <div class="card" style="flex: 0 0 320px; display: flex; flex-direction: column; gap: 1rem; height: fit-content;">
+        <div class="list-header" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <p class="card-title" style="margin:0;">Intents</p>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-m); cursor: pointer; user-select: none;">
+              <input type="checkbox" id="toggle-campaign-mode" onchange="document.getElementById('studio-active-slugs-panel').style.display = this.checked ? 'flex' : 'none';" />
+              Campaign Mode
+            </label>
+            <button id="btn-studio-new-intent" onclick="window.openNewIntentModal(event)" class="btn-ghost btn-sm" style="border: 1px solid var(--border); width: auto; padding: 0.2rem 0.5rem;">+ New Intent</button>
+          </div>
+          <div class="filter-row" style="display: flex; flex-direction: row; gap: 0.75rem; align-items: center; justify-content: flex-start; margin-top: 0.25rem; flex-wrap: wrap;">
+            <select id="filter-intent-product" style="font-size: 0.75rem; padding: 0.2rem; min-width: 100px; flex: 1;">
+              <option value="">All Products</option>
+            </select>
+            <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
+              <input type="checkbox" id="show-archived" /> Archived
+            </label>
+            <label class="toggle-label" style="font-size: 0.75rem; white-space: nowrap; margin-top: 0; display: flex; align-items: center; gap: 0.25rem;">
+              <input type="checkbox" id="show-test-campaigns" /> Test
+            </label>
+          </div>
+        </div>
+        <div id="campaign-list" style="display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; max-height: 50vh;"><p class="empty-state">Loading…</p></div>
+      </div>
+
+      <!-- Right Panel: Selected Intent Workspace -->
+      <div id="intent-workspace" style="display: none;">
+        
+        <!-- Group 1: Intent Title & Settings -->
+        <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <h1 id="workspace-title" style="font-size: 1.3rem;">Selected Intent</h1>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+
+          <!-- 1. Intent Settings -->
+          <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <p class="card-title" style="margin:0;">Intent Configuration <span id="intent-unsaved-badge" style="display:none; color: var(--danger); font-size: 0.75rem; font-weight: bold; margin-left: 0.5rem;">(Unsaved Changes)</span></p>
+            </div>
+            
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">ROUTING & IDENTITY</p>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Product Group
+                  <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
+                  <datalist id="intent-products-list"></datalist>
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Intent Alias (Slug)
+                  <input type="text" id="studio-campaign-alias" placeholder="e.g. yenileme-hot" />
+                </label>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Default Landing Version
+                  <select id="studio-default-version-select"></select>
+                </label>
+                <div style="display: flex; gap: 1rem; align-items: flex-end;">
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
+                    Double-Submit Window
+                    <input type="number" id="studio-intent-idem-val" placeholder="e.g. 30" min="0" />
+                  </label>
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); flex: 1;">
+                    Unit
+                    <select id="studio-intent-idem-unit">
+                      <option value="days">Days</option>
+                      <option value="hours">Hours</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">GLOBAL INTENT SCORING</p>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <div>Hard Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
+                  <input type="number" id="studio-intent-hard-click" placeholder="e.g. 30" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <div>Soft Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [15] - 100)</span></div>
+                  <input type="number" id="studio-intent-soft-click" placeholder="e.g. 15" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <div>Max Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
+                  <input type="number" id="studio-intent-hard-time" placeholder="e.g. 30" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <div>Min Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [10] - 100)</span></div>
+                  <input type="number" id="studio-intent-soft-time" placeholder="e.g. 10" />
+                </label>
+              </div>
+              
+              <details id="studio-intent-json-details">
+                <summary style="font-size: 0.8rem; color: var(--accent); cursor: pointer; outline: none; margin-top: 0.5rem;">Advanced Routing & Rules (JSON) <span id="intent-json-error" style="color:var(--danger); display:none; margin-left: 0.5rem;">Invalid JSON!</span></summary>
+                <div style="margin-top: 0.75rem;">
+                  <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px; width: 100%; box-sizing: border-box;" placeholder='{ "destinations": {}, "evaluation": {}, "rules": [] }'></textarea>
+                </div>
+              </details>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
+              <div style="display: flex; gap: 0.5rem;">
+                <button id="btn-studio-archive-intent" class="btn-danger btn-sm">Archive</button>
+              </div>
+              <button id="btn-studio-save-intent" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Intent</button>
+            </div>
+          </div>
+
+          </div> <!-- Close inner gap -->
+        </div> 
+        <!-- Group 2: Landings & Slugs (Spans full width, breaking to next row) -->
+        <div style="flex: 0 0 100%; display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+          
+          <!-- 2 & 3 side-by-side container -->
+          <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; width: 100%;">
+          <!-- 2. Landing Versions -->
+          <div class="card" style="flex: 1; min-width: 300px;">
+            <p class="card-title">Landing Versions</p>
+            <div id="studio-version-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+              <!-- Loaded via JS -->
+            </div>
+            <button id="btn-studio-add-version" class="btn-ghost btn-sm" style="border: 1px solid var(--border);">+ Create New Version</button>
+          </div>
+
+          <!-- 3. Edit Landing Version (builder) -->
+          <div class="card" id="studio-builder-panel" style="flex: 2; min-width: 400px; display: none; flex-direction: column; gap: 1rem;">
+            <p class="card-title" style="margin-bottom: 0.25rem;">Edit Landing Version</p>
+            <p id="studio-current-edit-version-title" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 1rem; color: var(--primary);"></p>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Display Name
+              <input type="text" id="studio-version-display-name" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Version ID (System)
+              <input type="text" id="studio-version-name" readonly style="opacity: 0.7; cursor: not-allowed;" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Public Slug (Canonical Route: /l/{slug})
+              <input type="text" id="studio-version-slug" placeholder="e.g. sigorta-yenileme-cold" />
+              <div id="studio-slug-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">https://runtime.ekinyasa.online/l/</div>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Alias (Optional Public Shortcut)
+              <input type="text" id="studio-version-alias" placeholder="e.g. yenileme-devam" />
+              <div id="studio-alias-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">No alias set</div>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Landing Preview URL
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="text" id="studio-version-url" readonly style="flex: 1; font-family: monospace; opacity: 0.7; cursor: not-allowed; font-size: 0.75rem;" />
+                <button id="btn-studio-copy-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">Copy</button>
+                <button id="btn-studio-open-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border); color: var(--accent);">Open &nearr;</button>
+              </div>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Status
+              <select id="studio-version-status">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Page Title
+              <input type="text" id="studio-version-title" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Theme
+              <select id="studio-version-theme">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="system">System Default</option>
+              </select>
+            </label>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Sections & Layout</p>
+                <div style="display: flex; gap: 0.5rem; background: var(--bg); padding: 2px; border-radius: 6px; border: 1px solid var(--border);">
+                  <button id="btn-studio-layout-main" class="btn-primary btn-sm" type="button" onclick="setStudioLayoutMode('main')" style="border: none;">Landing Page</button>
+                  <button id="btn-studio-layout-thanks" class="btn-ghost btn-sm" type="button" onclick="setStudioLayoutMode('thanks')" style="border: 1px solid var(--border);">Thank You Page</button>
+                </div>
+              </div>
+              <div id="studio-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <button id="btn-studio-add-html" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
+                <select id="studio-comp-select" style="padding: 4px; font-size: 0.8rem;">
+                  <option value="">+ Add Component...</option>
+                </select>
+              </div>
+            </div>
+
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Custom CSS
+              <textarea id="studio-version-css" rows="3" style="font-family: monospace;"></textarea>
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Custom JS
+              <textarea id="studio-version-js" rows="3" style="font-family: monospace;"></textarea>
+            </label>
+
+            
+<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem; margin-top: 1.5rem;">
               <p style="font-weight: bold; color: var(--primary); margin:0;">Intent & Routing Overrides (Optional)</p>
               <span id="landing-unsaved-badge" style="display:none; color: var(--danger); font-size: 0.75rem; font-weight: bold;">(Unsaved Changes)</span>
             </div>
@@ -76,70 +782,6 @@
               <textarea id="studio-landing-override-json" rows="4" style="margin-top: 0.5rem; font-family: monospace; font-size: 12px; width: 100%; box-sizing: border-box;" placeholder='{ "destinations": {}, "signals": {} }'></textarea>
             </details>
             
-            <p style="font-weight: bold; color: var(--primary);">Intent & Routing Overrides (Optional)</p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
-                <div>"Hot" Intent Threshold <span style="font-size:0.7rem;opacity:0.7">(0 - [60] - 100)</span></div>
-                <input type="number" id="studio-landing-hot-threshold" placeholder="e.g. 60" min="0" max="100" />
-                <small style="margin-top: 0;">Defaults to 60. Overrides campaign settings.</small>
-              </label>
-              
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Form Submit Element (CSS Selector)
-                <input type="text" id="studio-landing-conv-selector" placeholder="e.g. form#lead-form" />
-                <small style="margin-top: 0;">Submitting this will trigger a 'Form Submitted' (Converted) signal.</small>
-              </label>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem; align-items: start;">
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
-                Redirect if Hot
-                <input type="text" id="studio-landing-dest-hot" placeholder="e.g. /l/kasko-hot" />
-              </label>
-              
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Redirect if Warm
-                <input type="text" id="studio-landing-dest-warm" placeholder="e.g. /l/kasko-warm" />
-              </label>
-
-              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                Redirect if Form Submitted
-                <input type="text" id="studio-landing-dest-converted" placeholder="e.g. /l/kasko-thanks" />
-              </label>
-            </div>
-            
-            <details style="margin-top: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;">
-              <summary style="font-size: 0.85rem; font-weight: bold; color: var(--text); cursor: pointer; outline: none;">Advanced Scoring Overrides (Optional)</summary>
-              <p style="font-size: 0.75rem; color: var(--text-m); margin-top: 0.5rem;">Overrides the global Intent scoring rules for this specific landing page.</p>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Hard Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
-                  <input type="number" id="studio-landing-hard-click" placeholder="Inherit from Intent" />
-                </label>
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Soft Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [15] - 100)</span></div>
-                  <input type="number" id="studio-landing-soft-click" placeholder="Inherit from Intent" />
-                </label>
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Max Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
-                  <input type="number" id="studio-landing-hard-time" placeholder="Inherit from Intent" />
-                </label>
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Min Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [10] - 100)</span></div>
-                  <input type="number" id="studio-landing-soft-time" placeholder="Inherit from Intent" />
-                </label>
-              </div>
-
-              <details style="margin-top: 1rem;">
-                <summary style="font-size: 0.75rem; color: var(--accent); cursor: pointer; outline: none;">Custom Override JSON</summary>
-                <div style="margin-top: 0.5rem;">
-                  <textarea id="studio-landing-override-json" rows="3" style="font-family: monospace; font-size: 12px; width: 100%; box-sizing: border-box;" placeholder='{ "destinations": {}, "evaluation": {} }'></textarea>
-                </div>
-              </details>
-            </details>
-
 <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
               <button id="btn-studio-save-version" class="btn-primary" style="width: auto; min-width: 140px; flex: none;">Save Version</button>
             </div>
@@ -570,7 +1212,7 @@
             <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* This name cannot be changed once set!</span></span>
             <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
             Product Group
             <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
@@ -6412,7 +7054,7 @@ function syncIntentJsonToUi() {
       errEl.style.display = 'none';
     } catch(e) {
       errEl.style.display = 'inline';
-      return; // Stop sync if invalid
+      return;
     }
   }
   
@@ -6427,7 +7069,6 @@ function syncIntentJsonToUi() {
   updateEffectiveSummary();
 }
 
-// Attach listeners safely
 function attachIntentSyncListeners() {
   const ids = ["studio-intent-hard-click", "studio-intent-soft-click", "studio-intent-hard-time", "studio-intent-soft-time"];
   ids.forEach(id => {
@@ -6444,8 +7085,6 @@ function attachIntentSyncListeners() {
     jsonEl.addEventListener("input", syncIntentJsonToUi);
   }
 }
-
-// ----------------- LANDING OVERRIDES -----------------
 
 function syncLandingJsonToUi() {
   if (!studioCurrentEditingLanding) return;
@@ -6468,7 +7107,6 @@ function syncLandingJsonToUi() {
     }
   }
   
-  // Update UI values
   const dests = studioCurrentEditingLanding.destinations || {};
   const sigs = studioCurrentEditingLanding.signals || {};
   
@@ -6491,14 +7129,8 @@ function syncLandingJsonToUi() {
 
 function syncLandingUiToJson() {
   if (!studioCurrentEditingLanding) return;
-  
-  // Rebuild JSON based on UI
   if (!studioCurrentEditingLanding.destinations) studioCurrentEditingLanding.destinations = {};
   if (!studioCurrentEditingLanding.signals) studioCurrentEditingLanding.signals = {};
-  
-  // The UI inputs themselves are wired in editStudioLanding via f.cb().
-  // That updates studioCurrentEditingLanding.
-  // So we just stringify the current object!
   
   const toSave = {};
   if (Object.keys(studioCurrentEditingLanding.destinations).length > 0) toSave.destinations = studioCurrentEditingLanding.destinations;
@@ -6510,8 +7142,6 @@ function syncLandingUiToJson() {
   updateEffectiveSummary();
   markLandingUnsaved();
 }
-
-// ---------------- EFFECTIVE SUMMARY ----------------
 
 function renderOverrideBadge(elementId, isOverridden, propKey, domain) {
   const span = document.getElementById('lbl-badge-' + elementId);
@@ -6526,8 +7156,6 @@ function renderOverrideBadge(elementId, isOverridden, propKey, domain) {
 window.resetLandingOverride = function(domain, propKey) {
   if (studioCurrentEditingLanding && studioCurrentEditingLanding[domain]) {
     delete studioCurrentEditingLanding[domain][propKey];
-    
-    // Update UI Field directly
     let uiId = "";
     if (domain === 'destinations') {
       if (propKey === 'hot') uiId = 'studio-landing-dest-hot';
@@ -6542,11 +7170,7 @@ window.resetLandingOverride = function(domain, propKey) {
       if (propKey === 'hardTimeSeconds') uiId = 'studio-landing-hard-time';
       if (propKey === 'softTimeSeconds') uiId = 'studio-landing-soft-time';
     }
-    
-    if (uiId && document.getElementById(uiId)) {
-      document.getElementById(uiId).value = "";
-    }
-    
+    if (uiId && document.getElementById(uiId)) document.getElementById(uiId).value = "";
     syncLandingUiToJson();
   }
 };
@@ -6563,7 +7187,6 @@ function updateEffectiveSummary() {
   const effectiveEval = { ...intentEval, ...landingEval };
   const effectiveDest = { ...intentDest, ...landingDest };
   
-  // Render Badges
   renderOverrideBadge('dest-hot', landingDest.hot !== undefined, 'hot', 'destinations');
   renderOverrideBadge('dest-warm', landingDest.warm !== undefined, 'warm', 'destinations');
   renderOverrideBadge('dest-converted', landingDest.converted !== undefined, 'converted', 'destinations');
