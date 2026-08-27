@@ -6603,7 +6603,7 @@ window.renderOverrideBadge = function(elementId, isOverridden, propKey, domain) 
   var span = document.getElementById('lbl-badge-' + elementId);
   if (!span) return;
   if (isOverridden) {
-    span.innerHTML = "<span style='background:var(--primary); color:white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight:bold; cursor:pointer;' title='Click to Reset' onclick='resetLandingOverride("" + domain + "", "" + propKey + "")'>OVERRIDE ✕</span>";
+    span.innerHTML = "<span style='background:var(--primary); color:white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight:bold; cursor:pointer;' title='Click to Reset' onclick='resetLandingOverride(\"" + domain + "\", \"" + propKey + "\")'>OVERRIDE ✕</span>";
   } else {
     span.innerHTML = "<span style='color:var(--text-m); font-size: 0.65rem;'>Inherited</span>";
   }
@@ -6657,31 +6657,17 @@ window.updateEffectiveSummary = function() {
 
   var summEl = document.getElementById('studio-landing-effective-summary');
   if (summEl) {
-    var html = "<strong style='color:var(--primary);'>Effective Landing Configuration</strong>
-
-";
-    html += "[ SCORING ]
-";
-    html += "Hot Threshold  : " + (effectiveEval.hotThreshold !== undefined ? effectiveEval.hotThreshold : 60) + " " + (landingEval.hotThreshold !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
-    html += "Hard Click Pts : " + (effectiveEval.hardClickPoints !== undefined ? effectiveEval.hardClickPoints : 30) + " " + (landingEval.hardClickPoints !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
-    html += "Soft Click Pts : " + (effectiveEval.softClickPoints !== undefined ? effectiveEval.softClickPoints : 15) + " " + (landingEval.softClickPoints !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
-    html += "Max Time Pts   : " + (effectiveEval.hardTimeSeconds !== undefined ? effectiveEval.hardTimeSeconds : 30) + " " + (landingEval.hardTimeSeconds !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
-    html += "Min Time Pts   : " + (effectiveEval.softTimeSeconds !== undefined ? effectiveEval.softTimeSeconds : 10) + " " + (landingEval.softTimeSeconds !== undefined ? "(Overridden)" : "(Inherited)") + "
-
-";
+    var html = "<strong style='color:var(--primary);'>Effective Landing Configuration</strong>\n\n";
+    html += "[ SCORING ]\n";
+    html += "Hot Threshold  : " + (effectiveEval.hotThreshold !== undefined ? effectiveEval.hotThreshold : 60).toString().padEnd(6) + (landingEval.hotThreshold !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
+    html += "Hard Click Pts : " + (effectiveEval.hardClickPoints !== undefined ? effectiveEval.hardClickPoints : 30).toString().padEnd(6) + (landingEval.hardClickPoints !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
+    html += "Soft Click Pts : " + (effectiveEval.softClickPoints !== undefined ? effectiveEval.softClickPoints : 15).toString().padEnd(6) + (landingEval.softClickPoints !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
+        html += "Min Time Pts   : " + (effectiveEval.softTimeSeconds !== undefined ? effectiveEval.softTimeSeconds : 10) + " " + (landingEval.softTimeSeconds !== undefined ? "(Overridden)" : "(Inherited)") + "\n\n";
     
-    html += "[ ROUTING ]
-";
-    html += "Redirect Hot   : " + (effectiveDest.hot || "None") + " " + (landingDest.hot !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
-    html += "Redirect Form  : " + (effectiveDest.converted || "None") + " " + (landingDest.converted !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
-    html += "Redirect Sale  : " + (effectiveDest.sale || "None") + " " + (landingDest.sale !== undefined ? "(Overridden)" : "(Inherited)") + "
-";
+    html += "[ ROUTING ]\n";
+    html += "Redirect Hot   : " + (effectiveDest.hot || "None").toString().padEnd(30) + (landingDest.hot !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
+    html += "Redirect Form  : " + (effectiveDest.converted || "None").toString().padEnd(30) + (landingDest.converted !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
+    html += "Redirect Sale  : " + (effectiveDest.sale || "None").toString().padEnd(30) + (landingDest.sale !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
     
     summEl.innerHTML = html;
   }
