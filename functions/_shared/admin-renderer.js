@@ -614,7 +614,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">SCORE BANDS</p>
-                <button id="btn-add-score-band" class="btn-ghost btn-sm">+ Add Band</button>
+                <button id="btn-add-score-band" class="btn-ghost btn-sm" onclick="addScoreBand()">+ Add Band</button>
               </div>
               <p style="font-size: 0.75rem; color: var(--text-m); margin: 0;">Define routing states based on score ranges. Ranges must not overlap or leave gaps.</p>
               
@@ -5443,9 +5443,9 @@ window.openNewIntentModal = function(e) {
   })();
 
   /* ── Campaign Workspace Studio Mode ──────────────── */
-  var currentSelectedCampaign = null;
-  var studioCampaignConfig = null;
-  var studioCurrentEditingLanding = null;
+  window.currentSelectedCampaign = null;
+  window.studioCampaignConfig = null;
+  window.studioCurrentEditingLanding = null;
 
   async function selectCampaign(campaignName) {
     var campIndex = (typeof campaigns !== "undefined" ? campaigns : []).find(function (c) { return c.name === campaignName; });
