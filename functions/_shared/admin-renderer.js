@@ -1876,7 +1876,12 @@ window.openNewIntentModal = function(e) {
             modal.style.display = "none";
             if (typeof loadCampaignList === "function") await loadCampaignList();
             if (typeof campaigns !== "undefined" && data.campaign) {
-              if (!campaigns.find(function(c){ return c.name === name; })) campaigns.push(data.campaign);
+              var existingIdx = campaigns.findIndex(function(c){ return c.name === name; });
+              if (existingIdx === -1) {
+                campaigns.push(data.campaign);
+              } else {
+                campaigns[existingIdx] = data.campaign;
+              }
             }
             if (typeof selectCampaign === "function") selectCampaign(name);
             else if (typeof window.selectCampaign === "function") window.selectCampaign(name);
