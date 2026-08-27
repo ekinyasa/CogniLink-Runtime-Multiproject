@@ -1875,6 +1875,9 @@ window.openNewIntentModal = function(e) {
           if (res.ok) {
             modal.style.display = "none";
             if (typeof loadCampaignList === "function") await loadCampaignList();
+            if (typeof campaigns !== "undefined" && data.campaign) {
+              if (!campaigns.find(function(c){ return c.name === name; })) campaigns.push(data.campaign);
+            }
             if (typeof selectCampaign === "function") selectCampaign(name);
             else if (typeof window.selectCampaign === "function") window.selectCampaign(name);
           } else {
@@ -5440,6 +5443,7 @@ window.openNewIntentModal = function(e) {
   var studioCurrentEditingLanding = null;
 
   async function selectCampaign(campaignName) {
+    var campIndex = (typeof campaigns !== "undefined" ? campaigns : []).find(function (c) { return c.name === campaignName; });
     var previousSelectedLandingId = studioCurrentEditingLanding ? studioCurrentEditingLanding.id : null;
     currentSelectedCampaign = campaignName;
     document.getElementById("workspace-title").textContent = campaignName;
@@ -5558,7 +5562,7 @@ window.openNewIntentModal = function(e) {
     if(window.clearIntentUnsaved) window.clearIntentUnsaved();
 
     // Set Campaign index metadata settings
-    var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
+
     var aliasInputVal = campIndex ? (campIndex.alias || "") : "";
     if (campIndex && campIndex.product) {
       var prefix = normalizeSlug(campIndex.product) + "-";
