@@ -32,7 +32,8 @@ import { evaluateRules } from "./decision-engine.js";
 export async function handleDecision(request, env, opts) {
   
   const { source = "", medium = "", campaign = "", decisionRules = [], engineConfig = null, intentDestinations = null, intentEvaluation = null } = opts;
-  const reqProd = opts.productSubdomain || (campaign ? campaign.split('-')[0] : null);
+  // Use campaign (intent slug) as the primary scope key to isolate intents
+  const reqProd = opts.campaign || opts.productSubdomain || null;
 
   // 1. Read existing state
   const rawState = readCookie(request, "cos_state");

@@ -573,21 +573,55 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </div>
 
             <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-              <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">GLOBAL INTENT SCORING</p>
+              <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">SIGNAL SCORING</p>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
+                  <div>Hard Evidence Pts <span style="font-size:0.7rem;opacity:0.7">(default 10)</span></div>
+                  <input type="number" id="studio-intent-hard-click" placeholder="e.g. 10" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
+                  <div>Max Hard Pts (Cap) <span style="font-size:0.7rem;opacity:0.7">(default 30)</span></div>
+                  <input type="number" id="studio-intent-max-hard" placeholder="e.g. 30" />
+                </label>
+
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Hard Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
-                  <input type="number" id="studio-intent-hard-click" placeholder="e.g. 30" />
+                  <div>Soft Evidence Pts <span style="font-size:0.7rem;opacity:0.7">(default 2)</span></div>
+                  <input type="number" id="studio-intent-soft-click" placeholder="e.g. 2" />
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Soft Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [15] - 100)</span></div>
-                  <input type="number" id="studio-intent-soft-click" placeholder="e.g. 15" />
+                  <div>Max Soft Pts (Cap) <span style="font-size:0.7rem;opacity:0.7">(default 15)</span></div>
+                  <input type="number" id="studio-intent-max-soft" placeholder="e.g. 15" />
                 </label>
                 
-                
+                <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border);">
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                    <div>Time Min Sec <span style="font-size:0.7rem;opacity:0.7">(default 10)</span></div>
+                    <input type="number" id="studio-intent-time-min" placeholder="e.g. 10" />
+                  </label>
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                    <div>Time Max Sec <span style="font-size:0.7rem;opacity:0.7">(default 30)</span></div>
+                    <input type="number" id="studio-intent-time-max" placeholder="e.g. 30" />
+                  </label>
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                    <div>Time Max Pts <span style="font-size:0.7rem;opacity:0.7">(default 30)</span></div>
+                    <input type="number" id="studio-intent-time-pts" placeholder="e.g. 30" />
+                  </label>
+                </div>
               </div>
-                          </div>
+            </div>
+            
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">SCORE BANDS</p>
+                <button id="btn-add-score-band" class="btn-ghost btn-sm">+ Add Band</button>
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-m); margin: 0;">Define routing states based on score ranges. Ranges must not overlap or leave gaps.</p>
+              
+              <div id="studio-score-bands-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <!-- Bands will be rendered here via JS -->
+              </div>
+            </div>
 
 
             <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
@@ -5449,8 +5483,22 @@ window.openNewIntentModal = function(e) {
         }
         
         var evalCfg = (studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation) || {};
-        var elHc = document.getElementById("studio-intent-hard-click"); if (elHc) elHc.value = evalCfg.hardClickPoints || "";
-        var elSc = document.getElementById("studio-intent-soft-click"); if (elSc) elSc.value = evalCfg.softClickPoints || "";
+
+  var props = [
+    {id: "studio-intent-hard-click", key: "hardClickPoints"},
+    {id: "studio-intent-soft-click", key: "softClickPoints"},
+    {id: "studio-intent-max-hard", key: "maxHardPoints"},
+    {id: "studio-intent-max-soft", key: "maxSoftPoints"},
+    {id: "studio-intent-time-min", key: "timeMinSeconds"},
+    {id: "studio-intent-time-max", key: "timeMaxSeconds"},
+    {id: "studio-intent-time-pts", key: "timeMaxPoints"}
+  ];
+  props.forEach(function(p) {
+    var el = document.getElementById(p.id);
+    if (el) el.value = evalCfg[p.key] || (evalCfg[p.key] === 0 ? "0" : "");
+  });
+
+        if(window.renderScoreBands) window.renderScoreBands();
         
         
       }
@@ -6347,6 +6395,30 @@ window.openNewIntentModal = function(e) {
           studioCampaignConfig.product = product || null;
           studioCampaignConfig.routing = routingConfig;
 
+          
+        var bands = studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation && studioCampaignConfig.routing.evaluation.bands;
+        if (bands && bands.length > 0) {
+          bands.sort(function(a,b) { return a.min - b.min; });
+          for (var i=0; i<bands.length; i++) {
+            if (!bands[i].landing) {
+              alert("Validation Error: Band '" + bands[i].name + "' is missing a Target Landing!");
+              saveIntentBtn.disabled = false; saveIntentBtn.textContent = "Save Intent"; return;
+            }
+            if (bands[i].min > bands[i].max) {
+              alert("Validation Error: Band '" + bands[i].name + "' min is greater than max.");
+              saveIntentBtn.disabled = false; saveIntentBtn.textContent = "Save Intent"; return;
+            }
+            if (i > 0 && bands[i].min <= bands[i-1].max) {
+              alert("Validation Error: Overlap detected between Band '" + bands[i-1].name + "' and '" + bands[i].name + "'.");
+              saveIntentBtn.disabled = false; saveIntentBtn.textContent = "Save Intent"; return;
+            }
+            if (i > 0 && bands[i].min > bands[i-1].max + 1) {
+              alert("Validation Error: Gap detected between Band '" + bands[i-1].name + "' and '" + bands[i].name + "'.");
+              saveIntentBtn.disabled = false; saveIntentBtn.textContent = "Save Intent"; return;
+            }
+          }
+        }
+
           var v2Res = await apiFetch("/api/admin/intent-routing", {
             method: "POST",
             body: JSON.stringify(studioCampaignConfig)
@@ -6480,11 +6552,22 @@ window.syncIntentUiToJson = function() {
   
   var evalCfg = window.studioCampaignConfig.routing.evaluation;
   
-  var elHc = document.getElementById("studio-intent-hard-click");
-  if (elHc && elHc.value) evalCfg.hardClickPoints = Number(elHc.value); else delete evalCfg.hardClickPoints;
-  
-  var elSc = document.getElementById("studio-intent-soft-click");
-  if (elSc && elSc.value) evalCfg.softClickPoints = Number(elSc.value); else delete evalCfg.softClickPoints;
+
+  var props = [
+    {id: "studio-intent-hard-click", key: "hardClickPoints"},
+    {id: "studio-intent-soft-click", key: "softClickPoints"},
+    {id: "studio-intent-max-hard", key: "maxHardPoints"},
+    {id: "studio-intent-max-soft", key: "maxSoftPoints"},
+    {id: "studio-intent-time-min", key: "timeMinSeconds"},
+    {id: "studio-intent-time-max", key: "timeMaxSeconds"},
+    {id: "studio-intent-time-pts", key: "timeMaxPoints"}
+  ];
+  props.forEach(function(p) {
+    var el = document.getElementById(p.id);
+    if (el && el.value) evalCfg[p.key] = Number(el.value);
+    else delete evalCfg[p.key];
+  });
+
   
   var elHt = document.getElementById("studio-intent-hard-time");
   if (elHt && elHt.value) evalCfg.hardTimeSeconds = Number(elHt.value); else delete evalCfg.hardTimeSeconds;
@@ -6516,8 +6599,21 @@ window.syncIntentJsonToUi = function() {
   
   var evalCfg = window.studioCampaignConfig.routing.evaluation || {};
   
-  var elHc = document.getElementById("studio-intent-hard-click"); if (elHc) elHc.value = evalCfg.hardClickPoints || "";
-  var elSc = document.getElementById("studio-intent-soft-click"); if (elSc) elSc.value = evalCfg.softClickPoints || "";
+
+  var props = [
+    {id: "studio-intent-hard-click", key: "hardClickPoints"},
+    {id: "studio-intent-soft-click", key: "softClickPoints"},
+    {id: "studio-intent-max-hard", key: "maxHardPoints"},
+    {id: "studio-intent-max-soft", key: "maxSoftPoints"},
+    {id: "studio-intent-time-min", key: "timeMinSeconds"},
+    {id: "studio-intent-time-max", key: "timeMaxSeconds"},
+    {id: "studio-intent-time-pts", key: "timeMaxPoints"}
+  ];
+  props.forEach(function(p) {
+    var el = document.getElementById(p.id);
+    if (el) el.value = evalCfg[p.key] || (evalCfg[p.key] === 0 ? "0" : "");
+  });
+
   
   
   
@@ -6525,8 +6621,73 @@ window.syncIntentJsonToUi = function() {
   if(window.updateEffectiveSummary) window.updateEffectiveSummary();
 }
 
+
+window.renderScoreBands = function() {
+  var container = document.getElementById("studio-score-bands-container");
+  if (!container) return;
+  var bands = (window.studioCampaignConfig.routing && window.studioCampaignConfig.routing.evaluation && window.studioCampaignConfig.routing.evaluation.bands) || [];
+  
+  var html = "";
+  bands.forEach(function(b, idx) {
+    html += "<div style='display:flex; gap:0.5rem; align-items:center; background:var(--bg-hover); padding:0.5rem; border-radius:var(--radius-sm); border:1px solid var(--border);'>";
+    html += "<input type='text' placeholder='ID' value='" + (b.id || "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;id&quot;, this.value)' />";
+    html += "<input type='text' placeholder='Name' value='" + (b.name || "") + "' style='width:100px;' oninput='updateBand(" + idx + ", &quot;name&quot;, this.value)' />";
+    html += "<input type='number' placeholder='Min' value='" + (b.min !== undefined ? b.min : "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;min&quot;, this.value)' />";
+    html += "<input type='number' placeholder='Max' value='" + (b.max !== undefined ? b.max : "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;max&quot;, this.value)' />";
+    html += "<select onchange='updateBand(" + idx + ", &quot;landing&quot;, this.value)' style='flex:1;'>";
+    html += "<option value=''>-- Target Landing --</option>";
+    if (window.studioCampaignConfig.landings) {
+      window.studioCampaignConfig.landings.forEach(function(l) {
+        html += "<option value='" + l.id + "' " + (b.landing === l.id ? "selected" : "") + ">" + (l.displayName || l.id) + "</option>";
+      });
+    }
+    html += "</select>";
+    html += "<button class='btn-danger btn-sm' onclick='deleteBand(" + idx + ")'>X</button>";
+    html += "</div>";
+  });
+  
+  if (bands.length === 0) {
+    html = "<div style='color:var(--text-m); font-size:0.8rem; text-align:center; padding: 1rem; border:1px dashed var(--border); border-radius:var(--radius-sm);'>No score bands defined. Hardcoded fallback routing will be used.</div>";
+  }
+  
+  container.innerHTML = html;
+};
+
+window.updateBand = function(idx, field, value) {
+  var bands = window.studioCampaignConfig.routing.evaluation.bands;
+  if (field === 'min' || field === 'max') {
+    bands[idx][field] = value ? Number(value) : 0;
+  } else {
+    bands[idx][field] = value;
+  }
+  syncIntentUiToJson();
+};
+
+window.deleteBand = function(idx) {
+  window.studioCampaignConfig.routing.evaluation.bands.splice(idx, 1);
+  syncIntentUiToJson();
+  renderScoreBands();
+};
+
+window.addScoreBand = function() {
+  if (!window.studioCampaignConfig.routing) window.studioCampaignConfig.routing = { evaluation: {} };
+  if (!window.studioCampaignConfig.routing.evaluation) window.studioCampaignConfig.routing.evaluation = {};
+  if (!window.studioCampaignConfig.routing.evaluation.bands) window.studioCampaignConfig.routing.evaluation.bands = [];
+  
+  window.studioCampaignConfig.routing.evaluation.bands.push({
+    id: "band-" + Date.now(),
+    name: "NEW_BAND",
+    min: 0,
+    max: 100,
+    landing: ""
+  });
+  
+  syncIntentUiToJson();
+  renderScoreBands();
+};
+
 window.attachIntentSyncListeners = function() {
-  var ids = ["studio-intent-hard-click", "studio-intent-soft-click"];
+  var ids = ["studio-intent-hard-click", "studio-intent-soft-click", "studio-intent-max-hard", "studio-intent-max-soft", "studio-intent-time-min", "studio-intent-time-max", "studio-intent-time-pts"];
   ids.forEach(function(id) {
     var el = document.getElementById(id);
     if (el && !el.dataset.syncWired) {

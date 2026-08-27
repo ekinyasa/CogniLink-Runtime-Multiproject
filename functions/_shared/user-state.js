@@ -61,14 +61,15 @@ export function serializeUserState(user) {
 /**
  * Apply updates to a user state object. Can update global or product-scoped state.
  */
-export function updateUserState(user, patch, product = null) {
+export function updateUserState(user, patch, product = null, intentSlug = null) {
   const newState = { ...user, ts: Math.floor(Date.now() / 1000) };
   if (!newState.p) newState.p = {};
   
-  if (product) {
+  const scopeKey = intentSlug || product;
+  if (scopeKey) {
     // Apply patch to product scope
-    const prodState = newState.p[product] || { v: 0, f: 0, c: 0, h: 0, e: 0 };
-    newState.p[product] = { ...prodState, ...patch };
+    const prodState = newState.p[scopeKey] || { v: 0, f: 0, c: 0, h: 0, e: 0 };
+    newState.p[scopeKey] = { ...prodState, ...patch };
     
     // Also update global state as a fallback/aggregate (optional but good for backwards compat)
     if (patch.f !== undefined) newState.f = Math.max(newState.f || 0, patch.f);
@@ -84,17 +85,19 @@ export function updateUserState(user, patch, product = null) {
   return newState;
 }
 
-export function calculateVisitorIntentLevel(userState, product = null) {
+export function calculateVisitorIntentLevel(userState, product = null, intentSlug = null) {
   if (!userState) return "cold";
   
-  const state = (product && userState.p && userState.p[product]) ? userState.p[product] : userState;
+  const scopeKey = intentSlug || product;
+  const state = (scopeKey && userState.p && userState.p[scopeKey]) ? userState.p[scopeKey] : userState;
   
   if (state.c === 1) return "converted";
   if (state.f === 1) return "form_submitted";
   if (state.h === 1 || (state.e || 0) >= 60) return "hot";
-  if (state.v === 1 || (state.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
-    return "warm";
-  }
+  // Hardcoded Warm classification removed per v1 production contract
+  // if (state.v === 1 || (state.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
+    //   return "warm";
+  // }
   return "cold";
 }
 
