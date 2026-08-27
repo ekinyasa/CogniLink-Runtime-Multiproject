@@ -192,6 +192,7 @@
     bindSensors(pageType) {
       const bindClickHard = (excludedEls = []) => {
         bindSelector(C.selectors.hardCta, "click", (e, el) => {
+          if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
           if (excludedEls.includes(el) || DOMCache.has(el)) return;
           // Class-level dedup for forms: treat all inputs in a form as a single hard intent
           const form = el.closest('form');
@@ -204,6 +205,25 @@
           DOMCache.add(el);
           limits.lastStrongIntent = now;
           this.sendEvent("click_hard");
+        });
+      };
+
+            const bindFormInputs = () => {
+        document.querySelectorAll("form input, form select, form textarea").forEach(el => {
+          // Listen to change/blur to ensure we capture meaningful value
+          el.addEventListener("change", (e) => {
+            if (el.value.trim().length > 0) {
+              const form = el.closest('form');
+              if (form) {
+                if (DOMCache.has(form)) return;
+                DOMCache.add(form);
+              }
+              const now = Date.now();
+              if (now - limits.lastStrongIntent < 2000) return;
+              limits.lastStrongIntent = now;
+              this.sendEvent("click_hard");
+            }
+          });
         });
       };
 
@@ -251,6 +271,7 @@
       if (pageType === "product") {
         this.sendEvent("page_view");
         bindClickHard();
+        bindFormInputs();
         bindClickSoft();
         window.addEventListener("scroll", () => {
           if (limits.scrollSent) return;
@@ -283,6 +304,7 @@
       else if (pageType === "upsell") {
         this.sendEvent("upsell_enter");
         bindClickHard();
+        bindFormInputs();
         bindClickSoft();
       }
       else if (pageType === "newsletter") {
