@@ -540,7 +540,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">ROUTING & IDENTITY</p>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
                   Product Group
                   <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
                   <datalist id="intent-products-list"></datalist>
@@ -1207,7 +1207,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <span>Intent Name / ID (lowercase, numbers, hyphens)<br><span style="color: var(--danger, #ef4444); font-size: 0.7rem; font-style: italic;">* This name cannot be changed once set!</span></span>
             <input type="text" id="new-intent-id" placeholder="e.g. kasko-renew" style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
             Product Group
             <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>
@@ -6603,7 +6603,7 @@ window.renderOverrideBadge = function(elementId, isOverridden, propKey, domain) 
   var span = document.getElementById('lbl-badge-' + elementId);
   if (!span) return;
   if (isOverridden) {
-    span.innerHTML = "<span style='background:var(--primary); color:white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight:bold; cursor:pointer;' title='Click to Reset' onclick='resetLandingOverride(\"" + domain + "\", \"" + propKey + "\")'>OVERRIDE ✕</span>";
+    span.innerHTML = "<span style='background:var(--primary); color:white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight:bold; cursor:pointer;' title='Click to Reset' onclick='resetLandingOverride(\\\"" + domain + "\\\", \\\"" + propKey + "\\\")'>OVERRIDE ✕</span>";
   } else {
     span.innerHTML = "<span style='color:var(--text-m); font-size: 0.65rem;'>Inherited</span>";
   }
@@ -6657,18 +6657,15 @@ window.updateEffectiveSummary = function() {
 
   var summEl = document.getElementById('studio-landing-effective-summary');
   if (summEl) {
-    var html = "<strong style='color:var(--primary);'>Effective Landing Configuration</strong>\n\n";
-    html += "[ SCORING ]\n";
-    html += "Hot Threshold  : " + (effectiveEval.hotThreshold !== undefined ? effectiveEval.hotThreshold : 60).toString().padEnd(6) + (landingEval.hotThreshold !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
-    html += "Hard Click Pts : " + (effectiveEval.hardClickPoints !== undefined ? effectiveEval.hardClickPoints : 30).toString().padEnd(6) + (landingEval.hardClickPoints !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
-    html += "Soft Click Pts : " + (effectiveEval.softClickPoints !== undefined ? effectiveEval.softClickPoints : 15).toString().padEnd(6) + (landingEval.softClickPoints !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
-        html += "Min Time Pts   : " + (effectiveEval.softTimeSeconds !== undefined ? effectiveEval.softTimeSeconds : 10) + " " + (landingEval.softTimeSeconds !== undefined ? "(Overridden)" : "(Inherited)") + "\n\n";
-    
-    html += "[ ROUTING ]\n";
-    html += "Redirect Hot   : " + (effectiveDest.hot || "None").toString().padEnd(30) + (landingDest.hot !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
-    html += "Redirect Form  : " + (effectiveDest.converted || "None").toString().padEnd(30) + (landingDest.converted !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
-    html += "Redirect Sale  : " + (effectiveDest.sale || "None").toString().padEnd(30) + (landingDest.sale !== undefined ? "(Landing Override)" : "(Intent Default)") + "\n";
-    
+    var html = "<strong style='color:var(--primary);'>Effective Landing Configuration</strong>\\n\\n";
+    html += "[ SCORING ]\\n";
+    html += "Hot Threshold  : " + (effectiveEval.hotThreshold !== undefined ? effectiveEval.hotThreshold : 60).toString().padEnd(6) + (landingEval.hotThreshold !== undefined ? "(Landing Override)" : "(Intent Default)") + "\\n";
+    html += "Hard Click Pts : " + (effectiveEval.hardClickPoints !== undefined ? effectiveEval.hardClickPoints : 30).toString().padEnd(6) + (landingEval.hardClickPoints !== undefined ? "(Landing Override)" : "(Intent Default)") + "\\n";
+    html += "Soft Click Pts : " + (effectiveEval.softClickPoints !== undefined ? effectiveEval.softClickPoints : 15).toString().padEnd(6) + (landingEval.softClickPoints !== undefined ? "(Landing Override)" : "(Intent Default)") + "\\n\\n";
+    html += "[ ROUTING ]\\n";
+    html += "Redirect Hot   : " + (effectiveDest.hot || "None").toString().padEnd(30) + (landingDest.hot !== undefined ? "(Landing Override)" : "(Intent Default)") + "\\n";
+    html += "Redirect Form  : " + (effectiveDest.converted || "None").toString().padEnd(30) + (landingDest.converted !== undefined ? "(Landing Override)" : "(Intent Default)") + "\\n";
+    html += "Redirect Sale  : " + (effectiveDest.sale || "None").toString().padEnd(30) + (landingDest.sale !== undefined ? "(Landing Override)" : "(Intent Default)") + "\\n";
     summEl.innerHTML = html;
   }
 }
