@@ -5576,7 +5576,15 @@ window.openNewIntentModal = function(e) {
     }
     document.getElementById("studio-campaign-alias").value = aliasInputVal;
     console.log("DEBUG campIndex:", campIndex);
-    document.getElementById("studio-intent-product").value = campIndex ? (campIndex.product || "") : "";
+    var targetProduct = campIndex ? (campIndex.product || "") : "";
+    document.getElementById("studio-intent-product").value = targetProduct;
+    document.getElementById("studio-intent-product").setAttribute("value", targetProduct);
+    setTimeout(function() {
+      var el = document.getElementById("studio-intent-product");
+      if (el && el.value !== targetProduct) el.value = targetProduct;
+      var el2 = document.getElementById("studio-campaign-alias");
+      if (el2 && el2.value !== aliasInputVal) el2.value = aliasInputVal;
+    }, 50);
 
     // Set Archive/Restore and Delete states
     var isActive = campIndex ? (campIndex.isActive !== false) : true;
