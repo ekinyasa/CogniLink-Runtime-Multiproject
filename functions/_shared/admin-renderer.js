@@ -5568,12 +5568,14 @@ window.openNewIntentModal = function(e) {
 
     // Set Campaign index metadata settings
 
+    campIndex = (typeof campaigns !== "undefined" ? campaigns : []).find(function (c) { return c.name === campaignName; });
     var aliasInputVal = campIndex ? (campIndex.alias || "") : "";
     if (campIndex && campIndex.product) {
       var prefix = normalizeSlug(campIndex.product) + "-";
       if (aliasInputVal.startsWith(prefix)) aliasInputVal = aliasInputVal.substring(prefix.length);
     }
     document.getElementById("studio-campaign-alias").value = aliasInputVal;
+    console.log("DEBUG campIndex:", campIndex);
     document.getElementById("studio-intent-product").value = campIndex ? (campIndex.product || "") : "";
 
     // Set Archive/Restore and Delete states
