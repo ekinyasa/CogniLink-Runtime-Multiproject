@@ -584,15 +584,15 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <div>Soft Click Points <span style="font-size:0.7rem;opacity:0.7">(0 - [15] - 100)</span></div>
                   <input type="number" id="studio-intent-soft-click" placeholder="e.g. 15" />
                 </label>
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Max Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [30] - 100)</span></div>
-                  <input type="number" id="studio-intent-hard-time" placeholder="e.g. 30" />
-                </label>
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                  <div>Min Time Points <span style="font-size:0.7rem;opacity:0.7">(0 - [10] - 100)</span></div>
-                  <input type="number" id="studio-intent-soft-time" placeholder="e.g. 10" />
-                </label>
+                
+                
               </div>
+                          </div>
+
+
+            <div style="border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+              <p style="font-weight: bold; margin: 0; color: var(--primary); font-size: 0.9rem;">ADVANCED CONFIGURATION</p>
+              <p style="font-size: 0.75rem; color: var(--text-m); margin: 0;">Configure complex destinations, evaluation rules, and programmatic overrides.</p>
               
               <details id="studio-intent-json-details">
                 <summary style="font-size: 0.8rem; color: var(--accent); cursor: pointer; outline: none; margin-top: 0.5rem;">Advanced Routing & Rules (JSON) <span id="intent-json-error" style="color:var(--danger); display:none; margin-left: 0.5rem;">Invalid JSON!</span></summary>
@@ -600,6 +600,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                   <textarea id="studio-routing-config" rows="6" style="font-family: monospace; font-size: 12px; width: 100%; box-sizing: border-box;" placeholder='{ "destinations": {}, "evaluation": {}, "rules": [] }'></textarea>
                 </div>
               </details>
+
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem; width: 100%;">
@@ -765,14 +766,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                     <div style="display:flex; justify-content:space-between;">Soft Click Points <span id="lbl-badge-soft-click"></span></div>
                     <input type="number" id="studio-landing-soft-click" placeholder="Inherit from Intent" />
                   </label>
-                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                    <div style="display:flex; justify-content:space-between;">Max Time Points <span id="lbl-badge-hard-time"></span></div>
-                    <input type="number" id="studio-landing-hard-time" placeholder="Inherit from Intent" />
-                  </label>
-                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-                    <div style="display:flex; justify-content:space-between;">Min Time Points <span id="lbl-badge-soft-time"></span></div>
-                    <input type="number" id="studio-landing-soft-time" placeholder="Inherit from Intent" />
-                  </label>
+                  
+                  
                 </div>
               </details>
             </div>
@@ -5456,8 +5451,8 @@ window.openNewIntentModal = function(e) {
         var evalCfg = (studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation) || {};
         var elHc = document.getElementById("studio-intent-hard-click"); if (elHc) elHc.value = evalCfg.hardClickPoints || "";
         var elSc = document.getElementById("studio-intent-soft-click"); if (elSc) elSc.value = evalCfg.softClickPoints || "";
-        var elHt = document.getElementById("studio-intent-hard-time"); if (elHt) elHt.value = evalCfg.hardTimeSeconds || "";
-        var elSt = document.getElementById("studio-intent-soft-time"); if (elSt) elSt.value = evalCfg.softTimeSeconds || "";
+        
+        
       }
 
       // Set values
@@ -6523,15 +6518,15 @@ window.syncIntentJsonToUi = function() {
   
   var elHc = document.getElementById("studio-intent-hard-click"); if (elHc) elHc.value = evalCfg.hardClickPoints || "";
   var elSc = document.getElementById("studio-intent-soft-click"); if (elSc) elSc.value = evalCfg.softClickPoints || "";
-  var elHt = document.getElementById("studio-intent-hard-time"); if (elHt) elHt.value = evalCfg.hardTimeSeconds || "";
-  var elSt = document.getElementById("studio-intent-soft-time"); if (elSt) elSt.value = evalCfg.softTimeSeconds || "";
+  
+  
   
   if(window.markIntentUnsaved) window.markIntentUnsaved();
   if(window.updateEffectiveSummary) window.updateEffectiveSummary();
 }
 
 window.attachIntentSyncListeners = function() {
-  var ids = ["studio-intent-hard-click", "studio-intent-soft-click", "studio-intent-hard-time", "studio-intent-soft-time"];
+  var ids = ["studio-intent-hard-click", "studio-intent-soft-click"];
   ids.forEach(function(id) {
     var el = document.getElementById(id);
     if (el && !el.dataset.syncWired) {
@@ -6581,8 +6576,8 @@ window.syncLandingJsonToUi = function() {
   
   var hc = document.getElementById("studio-landing-hard-click"); if(hc) hc.value = sigs.hardClickPoints || "";
   var sc = document.getElementById("studio-landing-soft-click"); if(sc) sc.value = sigs.softClickPoints || "";
-  var ht = document.getElementById("studio-landing-hard-time"); if(ht) ht.value = sigs.hardTimeSeconds || "";
-  var st = document.getElementById("studio-landing-soft-time"); if(st) st.value = sigs.softTimeSeconds || "";
+  
+  
   
   if(window.updateEffectiveSummary) window.updateEffectiveSummary();
   if(window.markLandingUnsaved) window.markLandingUnsaved();
@@ -6628,8 +6623,8 @@ window.resetLandingOverride = function(domain, propKey) {
       if (propKey === 'conversionSelector') uiId = 'studio-landing-conv-selector';
       if (propKey === 'hardClickPoints') uiId = 'studio-landing-hard-click';
       if (propKey === 'softClickPoints') uiId = 'studio-landing-soft-click';
-      if (propKey === 'hardTimeSeconds') uiId = 'studio-landing-hard-time';
-      if (propKey === 'softTimeSeconds') uiId = 'studio-landing-soft-time';
+      
+      
     }
     if (uiId && document.getElementById(uiId)) document.getElementById(uiId).value = "";
     if(window.syncLandingUiToJson) window.syncLandingUiToJson();
@@ -6657,8 +6652,8 @@ window.updateEffectiveSummary = function() {
   renderOverrideBadge('conv-selector', landingEval.conversionSelector !== undefined, 'conversionSelector', 'signals');
   renderOverrideBadge('hard-click', landingEval.hardClickPoints !== undefined, 'hardClickPoints', 'signals');
   renderOverrideBadge('soft-click', landingEval.softClickPoints !== undefined, 'softClickPoints', 'signals');
-  renderOverrideBadge('hard-time', landingEval.hardTimeSeconds !== undefined, 'hardTimeSeconds', 'signals');
-  renderOverrideBadge('soft-time', landingEval.softTimeSeconds !== undefined, 'softTimeSeconds', 'signals');
+  
+  
 
   var summEl = document.getElementById('studio-landing-effective-summary');
   if (summEl) {
