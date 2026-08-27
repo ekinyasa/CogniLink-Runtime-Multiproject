@@ -98,12 +98,32 @@ export async function handleDecision(request, env, opts) {
       } else if (effectiveDestinations.converted) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.converted, id: "intent_converted_override" };
       }
-    } else if (pState.h === 1 && effectiveDestinations.hot) {
-      decisionMatch = { action: "redirect", target: effectiveDestinations.hot, id: "intent_hot_override" };
-    } else if (effectiveDestinations.warm) {
-      // Intent warm destination check based on pState fields (v=1 or e>=20 or tags exist)
-      if (pState.v === 1 || (pState.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
-        decisionMatch = { action: "redirect", target: effectiveDestinations.warm, id: "intent_warm_override" };
+    } else {
+      // 3. Score Bands Evaluation (Precedence: Score Bands > Legacy Fallbacks)
+      const scoreBands = (intentEvaluation && intentEvaluation.bands) ? intentEvaluation.bands : null;
+      if (scoreBands && scoreBands.length > 0) {
+        const score = pState.e || 0;
+        const matchedBand = scoreBands.find(b => score >= b.min && score <= b.max);
+        if (matchedBand && matchedBand.landing) {
+          let tUrl = matchedBand.landing;
+          if (tUrl.startsWith('version-') && !tUrl.startsWith('/l/')) {
+             tUrl = "/l/" + tUrl;
+          }
+          decisionMatch = { action: "redirect", target: tUrl, id: "intent_band_" + (matchedBand.name || "matched") };
+        }
+      }
+
+      // 4. Legacy Fallbacks (only if no band matched)
+      if (!decisionMatch) {
+        if (pState.h === 1 && effectiveDestinations.hot) {
+          decisionMatch = { action: "redirect", target: effectiveDestinations.hot, id: "intent_hot_override" };
+        } else if (effectiveDestinations.warm) {
+          // Legacy hardcoded Warm classification removed per v1 production contract.
+          // We only route to warm if they manually configured it and score >= 20 as a fallback.
+          if ((pState.e || 0) >= 20) {
+            decisionMatch = { action: "redirect", target: effectiveDestinations.warm, id: "intent_warm_override" };
+          }
+        }
       }
     }
   }

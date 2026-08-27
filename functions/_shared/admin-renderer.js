@@ -552,7 +552,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
               </div>
               
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start;">
-                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
                   Default Landing Version
                   <select id="studio-default-version-select"></select>
                 </label>
@@ -595,15 +595,15 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
                 </label>
                 
                 <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border);">
-                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
                     <div>Time Min Sec <span style="font-size:0.7rem;opacity:0.7">(default 10)</span></div>
                     <input type="number" id="studio-intent-time-min" placeholder="e.g. 10" />
                   </label>
-                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
                     <div>Time Max Sec <span style="font-size:0.7rem;opacity:0.7">(default 30)</span></div>
                     <input type="number" id="studio-intent-time-max" placeholder="e.g. 30" />
                   </label>
-                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m); margin-top: 0.9rem;">
                     <div>Time Max Pts <span style="font-size:0.7rem;opacity:0.7">(default 30)</span></div>
                     <input type="number" id="studio-intent-time-pts" placeholder="e.g. 30" />
                   </label>
@@ -5772,7 +5772,7 @@ window.openNewIntentModal = function(e) {
 
     studioCampaignConfig.landings.forEach(function (l) {
       // Fallback/migration mapping for legacy entries
-      if (!l.displayName) l.displayName = l.id.replace("version-", "Version ");
+      if (!l.displayName) l.displayName = (l.id || "").replace("version-", "Version ");
       if (!l.slug) l.slug = l.id;
       if (!l.status) l.status = "draft";
       if (!l.updatedAt) l.updatedAt = new Date().toISOString();
@@ -5901,10 +5901,10 @@ window.openNewIntentModal = function(e) {
     }
     
     // UI Scoring overrides
-    document.getElementById("studio-landing-hard-click").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardClickPoints) || "";
-    document.getElementById("studio-landing-soft-click").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.softClickPoints) || "";
-    document.getElementById("studio-landing-hard-time").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardTimeSeconds) || "";
-    document.getElementById("studio-landing-soft-time").value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.softTimeSeconds) || "";
+    var elLhc = document.getElementById("studio-landing-hard-click"); if (elLhc) elLhc.value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardClickPoints) || "";
+    var elLsc = document.getElementById("studio-landing-soft-click"); if (elLsc) elLsc.value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.softClickPoints) || "";
+    var elLht = document.getElementById("studio-landing-hard-time"); if (elLht) elLht.value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.hardTimeSeconds) || "";
+    var elLst = document.getElementById("studio-landing-soft-time"); if (elLst) elLst.value = (studioCurrentEditingLanding.signals && studioCurrentEditingLanding.signals.softTimeSeconds) || "";
     
     // Advanced JSON box
     var overrideCfg = {
