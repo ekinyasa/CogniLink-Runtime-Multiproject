@@ -131,8 +131,11 @@ export async function onRequestPost(context) {
           } catch(e) {}
         }
 
-        const evalCfg = landingData?.signals || intentData?.evaluation || intentData?.routing?.evaluation;
-        if (evalCfg) {
+        const baseEval = intentData?.evaluation || intentData?.routing?.evaluation || {};
+        const landingEval = landingData?.signals || {};
+        // Partial override safety: merge field by field
+        const evalCfg = { ...baseEval, ...landingEval };
+        if (Object.keys(evalCfg).length > 0) {
           if (evalCfg.hotThreshold !== undefined) thresholds.hot_engagement = Number(evalCfg.hotThreshold);
           if (evalCfg.hardClickPoints !== undefined) points.click_hard = evalCfg.hardClickPoints;
           if (evalCfg.softClickPoints !== undefined) points.click_soft = evalCfg.softClickPoints;

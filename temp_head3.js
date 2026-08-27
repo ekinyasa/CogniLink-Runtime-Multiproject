@@ -527,7 +527,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <!-- 1. Intent Settings -->
           <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
             <p class="card-title">Intent Settings</p>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
               Product Group
               <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
               <datalist id="intent-products-list"></datalist>
@@ -760,7 +760,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
       <div id="modal-new-intent" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
         <div style="background: var(--surface); padding: 2rem; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; gap: 1rem; border: 1px solid var(--border);">
           <h3 style="margin-top: 0;">Create New Intent</h3>
-          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
             Product Group
             <input type="text" id="new-intent-product" list="intent-products-list" placeholder="Select or type Product..." style="padding: 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
           </label>

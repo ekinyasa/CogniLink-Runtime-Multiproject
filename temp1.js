@@ -527,7 +527,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <!-- 1. Intent Settings -->
           <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
             <p class="card-title">Intent Settings</p>
-            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-m);">
               Product Group
               <input type="text" id="studio-intent-product" list="intent-products-list" placeholder="Select or type new Product..." />
               <datalist id="intent-products-list"></datalist>
