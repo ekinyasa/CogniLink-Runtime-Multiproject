@@ -5483,6 +5483,9 @@ window.openNewIntentModal = function(e) {
       if (routingEl) routingEl.value = "";
     }
     attachIntentSyncListeners();
+    if (window.updateEffectiveSummary) window.updateEffectiveSummary();
+    clearIntentUnsaved();
+    attachIntentSyncListeners();
     updateEffectiveSummary();
     clearIntentUnsaved();
 
@@ -6455,7 +6458,244 @@ window.openNewIntentModal = function(e) {
     alert("Modal element not found in DOM!");
   }
 };
-          </script>
+          
+// --- INTENT & LANDING UX REFINEMENT ---
+
+function markIntentUnsaved() {
+  var el = document.getElementById('intent-unsaved-badge');
+  if (el) el.style.display = 'inline';
+}
+
+function clearIntentUnsaved() {
+  var el = document.getElementById('intent-unsaved-badge');
+  if (el) el.style.display = 'none';
+}
+
+function markLandingUnsaved() {
+  var el = document.getElementById('landing-unsaved-badge');
+  if (el) el.style.display = 'inline';
+}
+
+function clearLandingUnsaved() {
+  var el = document.getElementById('landing-unsaved-badge');
+  if (el) el.style.display = 'none';
+}
+
+function syncIntentUiToJson() {
+  if (!window.studioCampaignConfig) return;
+  if (!window.studioCampaignConfig.routing) window.studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
+  if (!window.studioCampaignConfig.routing.evaluation) window.studioCampaignConfig.routing.evaluation = {};
+  
+  var evalCfg = window.studioCampaignConfig.routing.evaluation;
+  
+  var elHc = document.getElementById("studio-intent-hard-click");
+  if (elHc && elHc.value) evalCfg.hardClickPoints = Number(elHc.value); else delete evalCfg.hardClickPoints;
+  
+  var elSc = document.getElementById("studio-intent-soft-click");
+  if (elSc && elSc.value) evalCfg.softClickPoints = Number(elSc.value); else delete evalCfg.softClickPoints;
+  
+  var elHt = document.getElementById("studio-intent-hard-time");
+  if (elHt && elHt.value) evalCfg.hardTimeSeconds = Number(elHt.value); else delete evalCfg.hardTimeSeconds;
+  
+  var elSt = document.getElementById("studio-intent-soft-time");
+  if (elSt && elSt.value) evalCfg.softTimeSeconds = Number(elSt.value); else delete evalCfg.softTimeSeconds;
+  
+  document.getElementById("studio-routing-config").value = JSON.stringify(window.studioCampaignConfig.routing, null, 2);
+  markIntentUnsaved();
+  updateEffectiveSummary();
+}
+
+function syncIntentJsonToUi() {
+  if (!window.studioCampaignConfig) return;
+  var raw = document.getElementById("studio-routing-config").value.trim();
+  var errEl = document.getElementById("intent-json-error");
+  if (!raw) {
+    window.studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
+    errEl.style.display = 'none';
+  } else {
+    try {
+      window.studioCampaignConfig.routing = JSON.parse(raw);
+      errEl.style.display = 'none';
+    } catch(e) {
+      errEl.style.display = 'inline';
+      return;
+    }
+  }
+  
+  var evalCfg = window.studioCampaignConfig.routing.evaluation || {};
+  
+  var elHc = document.getElementById("studio-intent-hard-click"); if (elHc) elHc.value = evalCfg.hardClickPoints || "";
+  var elSc = document.getElementById("studio-intent-soft-click"); if (elSc) elSc.value = evalCfg.softClickPoints || "";
+  var elHt = document.getElementById("studio-intent-hard-time"); if (elHt) elHt.value = evalCfg.hardTimeSeconds || "";
+  var elSt = document.getElementById("studio-intent-soft-time"); if (elSt) elSt.value = evalCfg.softTimeSeconds || "";
+  
+  markIntentUnsaved();
+  updateEffectiveSummary();
+}
+
+function attachIntentSyncListeners() {
+  var ids = ["studio-intent-hard-click", "studio-intent-soft-click", "studio-intent-hard-time", "studio-intent-soft-time"];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && !el.dataset.syncWired) {
+      el.dataset.syncWired = "1";
+      el.addEventListener("input", syncIntentUiToJson);
+    }
+  });
+  
+  var jsonEl = document.getElementById("studio-routing-config");
+  if (jsonEl && !jsonEl.dataset.syncWired) {
+    jsonEl.dataset.syncWired = "1";
+    jsonEl.addEventListener("input", syncIntentJsonToUi);
+  }
+}
+
+function syncLandingJsonToUi() {
+  if (!window.studioCurrentEditingLanding) return;
+  var raw = document.getElementById("studio-landing-override-json").value.trim();
+  var errEl = document.getElementById("landing-json-error");
+  
+  if (!raw) {
+    window.studioCurrentEditingLanding.destinations = {};
+    window.studioCurrentEditingLanding.signals = {};
+    errEl.style.display = 'none';
+  } else {
+    try {
+      var parsed = JSON.parse(raw);
+      window.studioCurrentEditingLanding.destinations = parsed.destinations || {};
+      window.studioCurrentEditingLanding.signals = parsed.signals || {};
+      errEl.style.display = 'none';
+    } catch(e) {
+      errEl.style.display = 'inline';
+      return;
+    }
+  }
+  
+  var dests = window.studioCurrentEditingLanding.destinations || {};
+  var sigs = window.studioCurrentEditingLanding.signals || {};
+  
+  var dh = document.getElementById("studio-landing-dest-hot"); if(dh) dh.value = dests.hot || "";
+  var dw = document.getElementById("studio-landing-dest-warm"); if(dw) dw.value = dests.warm || "";
+  var dc = document.getElementById("studio-landing-dest-converted"); if(dc) dc.value = dests.converted || "";
+  var ds = document.getElementById("studio-landing-dest-sale"); if(ds) ds.value = dests.sale || "";
+  
+  var hht = document.getElementById("studio-landing-hot-threshold"); if(hht) hht.value = sigs.hotThreshold || "";
+  var cs = document.getElementById("studio-landing-conv-selector"); if(cs) cs.value = sigs.conversionSelector || "";
+  
+  var hc = document.getElementById("studio-landing-hard-click"); if(hc) hc.value = sigs.hardClickPoints || "";
+  var sc = document.getElementById("studio-landing-soft-click"); if(sc) sc.value = sigs.softClickPoints || "";
+  var ht = document.getElementById("studio-landing-hard-time"); if(ht) ht.value = sigs.hardTimeSeconds || "";
+  var st = document.getElementById("studio-landing-soft-time"); if(st) st.value = sigs.softTimeSeconds || "";
+  
+  updateEffectiveSummary();
+  markLandingUnsaved();
+}
+
+function syncLandingUiToJson() {
+  if (!window.studioCurrentEditingLanding) return;
+  if (!window.studioCurrentEditingLanding.destinations) window.studioCurrentEditingLanding.destinations = {};
+  if (!window.studioCurrentEditingLanding.signals) window.studioCurrentEditingLanding.signals = {};
+  
+  var toSave = {};
+  if (Object.keys(window.studioCurrentEditingLanding.destinations).length > 0) toSave.destinations = window.studioCurrentEditingLanding.destinations;
+  if (Object.keys(window.studioCurrentEditingLanding.signals).length > 0) toSave.signals = window.studioCurrentEditingLanding.signals;
+  
+  var el = document.getElementById("studio-landing-override-json");
+  if (el) el.value = Object.keys(toSave).length > 0 ? JSON.stringify(toSave, null, 2) : "";
+  
+  updateEffectiveSummary();
+  markLandingUnsaved();
+}
+
+function renderOverrideBadge(elementId, isOverridden, propKey, domain) {
+  var span = document.getElementById('lbl-badge-' + elementId);
+  if (!span) return;
+  if (isOverridden) {
+    span.innerHTML = "<span style='background:var(--primary); color:white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight:bold; cursor:pointer;' title='Click to Reset' onclick='resetLandingOverride("" + domain + "", "" + propKey + "")'>OVERRIDE ✕</span>";
+  } else {
+    span.innerHTML = "<span style='color:var(--text-m); font-size: 0.65rem;'>Inherited</span>";
+  }
+}
+
+window.resetLandingOverride = function(domain, propKey) {
+  if (window.studioCurrentEditingLanding && window.studioCurrentEditingLanding[domain]) {
+    delete window.studioCurrentEditingLanding[domain][propKey];
+    var uiId = "";
+    if (domain === 'destinations') {
+      if (propKey === 'hot') uiId = 'studio-landing-dest-hot';
+      if (propKey === 'warm') uiId = 'studio-landing-dest-warm';
+      if (propKey === 'converted') uiId = 'studio-landing-dest-converted';
+      if (propKey === 'sale') uiId = 'studio-landing-dest-sale';
+    } else if (domain === 'signals') {
+      if (propKey === 'hotThreshold') uiId = 'studio-landing-hot-threshold';
+      if (propKey === 'conversionSelector') uiId = 'studio-landing-conv-selector';
+      if (propKey === 'hardClickPoints') uiId = 'studio-landing-hard-click';
+      if (propKey === 'softClickPoints') uiId = 'studio-landing-soft-click';
+      if (propKey === 'hardTimeSeconds') uiId = 'studio-landing-hard-time';
+      if (propKey === 'softTimeSeconds') uiId = 'studio-landing-soft-time';
+    }
+    if (uiId && document.getElementById(uiId)) document.getElementById(uiId).value = "";
+    syncLandingUiToJson();
+  }
+};
+
+window.updateEffectiveSummary = function() {
+  if (!window.studioCampaignConfig || !window.studioCurrentEditingLanding) return;
+  
+  var intentEval = (window.studioCampaignConfig.routing && window.studioCampaignConfig.routing.evaluation) || {};
+  var intentDest = (window.studioCampaignConfig.routing && window.studioCampaignConfig.routing.destinations) || {};
+  
+  var landingEval = window.studioCurrentEditingLanding.signals || {};
+  var landingDest = window.studioCurrentEditingLanding.destinations || {};
+  
+  var effectiveEval = Object.assign({}, intentEval, landingEval);
+  var effectiveDest = Object.assign({}, intentDest, landingDest);
+  
+  renderOverrideBadge('dest-hot', landingDest.hot !== undefined, 'hot', 'destinations');
+  renderOverrideBadge('dest-warm', landingDest.warm !== undefined, 'warm', 'destinations');
+  renderOverrideBadge('dest-converted', landingDest.converted !== undefined, 'converted', 'destinations');
+  renderOverrideBadge('dest-sale', landingDest.sale !== undefined, 'sale', 'destinations');
+  
+  renderOverrideBadge('hot-threshold', landingEval.hotThreshold !== undefined, 'hotThreshold', 'signals');
+  renderOverrideBadge('conv-selector', landingEval.conversionSelector !== undefined, 'conversionSelector', 'signals');
+  renderOverrideBadge('hard-click', landingEval.hardClickPoints !== undefined, 'hardClickPoints', 'signals');
+  renderOverrideBadge('soft-click', landingEval.softClickPoints !== undefined, 'softClickPoints', 'signals');
+  renderOverrideBadge('hard-time', landingEval.hardTimeSeconds !== undefined, 'hardTimeSeconds', 'signals');
+  renderOverrideBadge('soft-time', landingEval.softTimeSeconds !== undefined, 'softTimeSeconds', 'signals');
+
+  var summEl = document.getElementById('studio-landing-effective-summary');
+  if (summEl) {
+    var html = "<strong style='color:var(--primary);'>Effective Landing Configuration</strong>
+
+";
+    html += "[ SCORING ]
+";
+    html += "Hot Threshold  : " + (effectiveEval.hotThreshold !== undefined ? effectiveEval.hotThreshold : 60) + " " + (landingEval.hotThreshold !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    html += "Hard Click Pts : " + (effectiveEval.hardClickPoints !== undefined ? effectiveEval.hardClickPoints : 30) + " " + (landingEval.hardClickPoints !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    html += "Soft Click Pts : " + (effectiveEval.softClickPoints !== undefined ? effectiveEval.softClickPoints : 15) + " " + (landingEval.softClickPoints !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    html += "Max Time Pts   : " + (effectiveEval.hardTimeSeconds !== undefined ? effectiveEval.hardTimeSeconds : 30) + " " + (landingEval.hardTimeSeconds !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    html += "Min Time Pts   : " + (effectiveEval.softTimeSeconds !== undefined ? effectiveEval.softTimeSeconds : 10) + " " + (landingEval.softTimeSeconds !== undefined ? "(Overridden)" : "(Inherited)") + "
+
+";
+    
+    html += "[ ROUTING ]
+";
+    html += "Redirect Hot   : " + (effectiveDest.hot || "None") + " " + (landingDest.hot !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    html += "Redirect Form  : " + (effectiveDest.converted || "None") + " " + (landingDest.converted !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    html += "Redirect Sale  : " + (effectiveDest.sale || "None") + " " + (landingDest.sale !== undefined ? "(Overridden)" : "(Inherited)") + "
+";
+    
+    summEl.innerHTML = html;
+  }
+}
+
+</script>
   </body>
 </html>`;
 }
