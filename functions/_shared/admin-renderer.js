@@ -5482,12 +5482,9 @@ window.openNewIntentModal = function(e) {
       var routingEl = document.getElementById("studio-routing-config");
       if (routingEl) routingEl.value = "";
     }
-    attachIntentSyncListeners();
+    if(window.attachIntentSyncListeners) window.attachIntentSyncListeners();
     if (window.updateEffectiveSummary) window.updateEffectiveSummary();
-    clearIntentUnsaved();
-    attachIntentSyncListeners();
-    updateEffectiveSummary();
-    clearIntentUnsaved();
+    if(window.clearIntentUnsaved) window.clearIntentUnsaved();
 
     // Set Campaign index metadata settings
     var campIndex = campaigns.find(function (c) { return c.name === campaignName; });
@@ -6167,7 +6164,7 @@ window.openNewIntentModal = function(e) {
           if (v) studioCurrentEditingLanding.signals.softTimeSeconds = Number(v); else delete studioCurrentEditingLanding.signals.softTimeSeconds;
       }},
       { id: "studio-landing-override-json", cb: function() {
-          syncLandingJsonToUi();
+          if(window.syncLandingJsonToUi) window.syncLandingJsonToUi();
       }},
       { id: "studio-version-slug", prop: "slug", cb: function() {
           if (studioCurrentEditingLanding) {
@@ -6461,27 +6458,27 @@ window.openNewIntentModal = function(e) {
           
 // --- INTENT & LANDING UX REFINEMENT ---
 
-function markIntentUnsaved() {
+window.markIntentUnsaved = function() {
   var el = document.getElementById('intent-unsaved-badge');
   if (el) el.style.display = 'inline';
 }
 
-function clearIntentUnsaved() {
+window.clearIntentUnsaved = function() {
   var el = document.getElementById('intent-unsaved-badge');
   if (el) el.style.display = 'none';
 }
 
-function markLandingUnsaved() {
+window.markLandingUnsaved = function() {
   var el = document.getElementById('landing-unsaved-badge');
   if (el) el.style.display = 'inline';
 }
 
-function clearLandingUnsaved() {
+window.clearLandingUnsaved = function() {
   var el = document.getElementById('landing-unsaved-badge');
   if (el) el.style.display = 'none';
 }
 
-function syncIntentUiToJson() {
+window.syncIntentUiToJson = function() {
   if (!window.studioCampaignConfig) return;
   if (!window.studioCampaignConfig.routing) window.studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
   if (!window.studioCampaignConfig.routing.evaluation) window.studioCampaignConfig.routing.evaluation = {};
@@ -6501,11 +6498,11 @@ function syncIntentUiToJson() {
   if (elSt && elSt.value) evalCfg.softTimeSeconds = Number(elSt.value); else delete evalCfg.softTimeSeconds;
   
   document.getElementById("studio-routing-config").value = JSON.stringify(window.studioCampaignConfig.routing, null, 2);
-  markIntentUnsaved();
-  updateEffectiveSummary();
+  if(window.markIntentUnsaved) window.markIntentUnsaved();
+  if(window.updateEffectiveSummary) window.updateEffectiveSummary();
 }
 
-function syncIntentJsonToUi() {
+window.syncIntentJsonToUi = function() {
   if (!window.studioCampaignConfig) return;
   var raw = document.getElementById("studio-routing-config").value.trim();
   var errEl = document.getElementById("intent-json-error");
@@ -6529,11 +6526,11 @@ function syncIntentJsonToUi() {
   var elHt = document.getElementById("studio-intent-hard-time"); if (elHt) elHt.value = evalCfg.hardTimeSeconds || "";
   var elSt = document.getElementById("studio-intent-soft-time"); if (elSt) elSt.value = evalCfg.softTimeSeconds || "";
   
-  markIntentUnsaved();
-  updateEffectiveSummary();
+  if(window.markIntentUnsaved) window.markIntentUnsaved();
+  if(window.updateEffectiveSummary) window.updateEffectiveSummary();
 }
 
-function attachIntentSyncListeners() {
+window.attachIntentSyncListeners = function() {
   var ids = ["studio-intent-hard-click", "studio-intent-soft-click", "studio-intent-hard-time", "studio-intent-soft-time"];
   ids.forEach(function(id) {
     var el = document.getElementById(id);
@@ -6550,7 +6547,7 @@ function attachIntentSyncListeners() {
   }
 }
 
-function syncLandingJsonToUi() {
+window.syncLandingJsonToUi = function() {
   if (!window.studioCurrentEditingLanding) return;
   var raw = document.getElementById("studio-landing-override-json").value.trim();
   var errEl = document.getElementById("landing-json-error");
@@ -6587,11 +6584,11 @@ function syncLandingJsonToUi() {
   var ht = document.getElementById("studio-landing-hard-time"); if(ht) ht.value = sigs.hardTimeSeconds || "";
   var st = document.getElementById("studio-landing-soft-time"); if(st) st.value = sigs.softTimeSeconds || "";
   
-  updateEffectiveSummary();
-  markLandingUnsaved();
+  if(window.updateEffectiveSummary) window.updateEffectiveSummary();
+  if(window.markLandingUnsaved) window.markLandingUnsaved();
 }
 
-function syncLandingUiToJson() {
+window.syncLandingUiToJson = function() {
   if (!window.studioCurrentEditingLanding) return;
   if (!window.studioCurrentEditingLanding.destinations) window.studioCurrentEditingLanding.destinations = {};
   if (!window.studioCurrentEditingLanding.signals) window.studioCurrentEditingLanding.signals = {};
@@ -6603,11 +6600,11 @@ function syncLandingUiToJson() {
   var el = document.getElementById("studio-landing-override-json");
   if (el) el.value = Object.keys(toSave).length > 0 ? JSON.stringify(toSave, null, 2) : "";
   
-  updateEffectiveSummary();
-  markLandingUnsaved();
+  if(window.updateEffectiveSummary) window.updateEffectiveSummary();
+  if(window.markLandingUnsaved) window.markLandingUnsaved();
 }
 
-function renderOverrideBadge(elementId, isOverridden, propKey, domain) {
+window.renderOverrideBadge = function(elementId, isOverridden, propKey, domain) {
   var span = document.getElementById('lbl-badge-' + elementId);
   if (!span) return;
   if (isOverridden) {
@@ -6635,7 +6632,7 @@ window.resetLandingOverride = function(domain, propKey) {
       if (propKey === 'softTimeSeconds') uiId = 'studio-landing-soft-time';
     }
     if (uiId && document.getElementById(uiId)) document.getElementById(uiId).value = "";
-    syncLandingUiToJson();
+    if(window.syncLandingUiToJson) window.syncLandingUiToJson();
   }
 };
 
