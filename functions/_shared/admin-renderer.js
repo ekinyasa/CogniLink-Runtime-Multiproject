@@ -5454,6 +5454,19 @@ window.openNewIntentModal = function(e) {
     document.getElementById("workspace-title").textContent = campaignName;
     document.getElementById("intent-workspace").style.display = "contents";
 
+    // Set Campaign index metadata settings instantly and synchronously to prevent race conditions & lag
+    var aliasInputVal = campIndex ? (campIndex.alias || "") : "";
+    if (campIndex && campIndex.product) {
+      var prefix = normalizeSlug(campIndex.product) + "-";
+      if (aliasInputVal.startsWith(prefix)) aliasInputVal = aliasInputVal.substring(prefix.length);
+    }
+    if (document.getElementById("studio-campaign-alias")) {
+      document.getElementById("studio-campaign-alias").value = aliasInputVal;
+    }
+    if (document.getElementById("studio-intent-product")) {
+      document.getElementById("studio-intent-product").value = campIndex ? (campIndex.product || "") : "";
+    }
+
     // Load campaign V2 config
     try {
       var res = await apiFetch("/api/admin/intent-routing");
@@ -5568,23 +5581,7 @@ window.openNewIntentModal = function(e) {
 
     // Set Campaign index metadata settings
 
-    campIndex = (typeof campaigns !== "undefined" ? campaigns : []).find(function (c) { return c.name === campaignName; });
-    var aliasInputVal = campIndex ? (campIndex.alias || "") : "";
-    if (campIndex && campIndex.product) {
-      var prefix = normalizeSlug(campIndex.product) + "-";
-      if (aliasInputVal.startsWith(prefix)) aliasInputVal = aliasInputVal.substring(prefix.length);
-    }
-    document.getElementById("studio-campaign-alias").value = aliasInputVal;
-    console.log("DEBUG campIndex:", campIndex);
-    var targetProduct = campIndex ? (campIndex.product || "") : "";
-    document.getElementById("studio-intent-product").value = targetProduct;
-    document.getElementById("studio-intent-product").setAttribute("value", targetProduct);
-    setTimeout(function() {
-      var el = document.getElementById("studio-intent-product");
-      if (el && el.value !== targetProduct) el.value = targetProduct;
-      var el2 = document.getElementById("studio-campaign-alias");
-      if (el2 && el2.value !== aliasInputVal) el2.value = aliasInputVal;
-    }, 50);
+
 
     // Set Archive/Restore and Delete states
     var isActive = campIndex ? (campIndex.isActive !== false) : true;
