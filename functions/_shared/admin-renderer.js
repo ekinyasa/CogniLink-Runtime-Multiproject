@@ -6672,13 +6672,14 @@ window.renderScoreBands = function() {
   var bands = (studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation && studioCampaignConfig.routing.evaluation.bands) || [];
   
   var html = "";
+  var inputStyle = "padding: 0.4rem 0.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem; box-sizing: border-box;";
   bands.forEach(function(b, idx) {
     html += "<div style='display:flex; gap:0.5rem; align-items:center; background:var(--bg-hover); padding:0.5rem; border-radius:var(--radius-sm); border:1px solid var(--border);'>";
-    html += "<input type='text' placeholder='ID' value='" + (b.id || "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;id&quot;, this.value)' />";
-    html += "<input type='text' placeholder='Name' value='" + (b.name || "") + "' style='width:100px;' oninput='updateBand(" + idx + ", &quot;name&quot;, this.value)' />";
-    html += "<input type='number' placeholder='Min' value='" + (b.min !== undefined ? b.min : "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;min&quot;, this.value)' />";
-    html += "<input type='number' placeholder='Max' value='" + (b.max !== undefined ? b.max : "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;max&quot;, this.value)' />";
-    html += "<select onchange='updateBand(" + idx + ", &quot;landing&quot;, this.value)' style='flex:1;'>";
+    html += "<input type='text' placeholder='Band ID' title='Band ID' value='" + (b.id || "") + "' style='" + inputStyle + " width:110px;' oninput='updateBand(" + idx + ", &quot;id&quot;, this.value)' />";
+    html += "<input type='text' placeholder='Band Name' title='Band Name' value='" + (b.name || "") + "' style='" + inputStyle + " width:120px;' oninput='updateBand(" + idx + ", &quot;name&quot;, this.value)' />";
+    html += "<input type='number' placeholder='Min' title='Minimum Score' value='" + (b.min !== undefined ? b.min : "") + "' style='" + inputStyle + " width:65px;' oninput='updateBand(" + idx + ", &quot;min&quot;, this.value)' />";
+    html += "<input type='number' placeholder='Max' title='Maximum Score' value='" + (b.max !== undefined ? b.max : "") + "' style='" + inputStyle + " width:65px;' oninput='updateBand(" + idx + ", &quot;max&quot;, this.value)' />";
+    html += "<select onchange='updateBand(" + idx + ", &quot;landing&quot;, this.value)' style='" + inputStyle + " flex:1; min-width:180px;'>";
     html += "<option value=''>-- Target Landing --</option>";
     if (studioCampaignConfig.landings) {
       studioCampaignConfig.landings.forEach(function(l) {
@@ -6686,7 +6687,7 @@ window.renderScoreBands = function() {
       });
     }
     html += "</select>";
-    html += "<button class='btn-danger btn-sm' onclick='deleteBand(" + idx + ")'>X</button>";
+    html += "<button class='btn-danger btn-sm' onclick='deleteBand(" + idx + ")' style='padding: 0.4rem 0.6rem; font-size: 0.8rem; height: 30px; display: flex; align-items: center; justify-content: center;'>X</button>";
     html += "</div>";
   });
   
