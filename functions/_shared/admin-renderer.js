@@ -5463,6 +5463,34 @@ window.openNewIntentModal = function(e) {
       }
       if (!studioCampaignConfig.landings) studioCampaignConfig.landings = [];
 
+      // MIGRATION: Auto-import legacy pages linked to this intent
+      if (typeof pagesStore !== "undefined" && pagesStore.length > 0) {
+        var legacyPages = pagesStore.filter(function(p) { return p.campaign === campaignName; });
+        legacyPages.forEach(function(lp) {
+          var exists = studioCampaignConfig.landings.find(function(l) { return l.id === lp.id; });
+          if (!exists) {
+            studioCampaignConfig.landings.push({
+              id: lp.id,
+              slug: lp.id,
+              displayName: (lp.headerInfo && lp.headerInfo.title) ? lp.headerInfo.title : lp.id,
+              status: "published", // legacy pages act as published
+              updatedAt: new Date().toISOString(),
+              theme: lp.theme || "dark",
+              headerInfo: lp.headerInfo || {},
+              layout: lp.layout || [],
+              components: lp.components || [],
+              customStyleCss: lp.customStyleCss || "",
+              customScript: lp.customScript || ""
+            });
+          }
+        });
+        
+        // Auto-set main landing if not set
+        if (!studioCampaignConfig.mainLandingId && studioCampaignConfig.landings.length > 0) {
+          studioCampaignConfig.mainLandingId = studioCampaignConfig.landings[0].id;
+        }
+      }
+
       var idemVal = document.getElementById("studio-intent-idem-val");
       var idemUnit = document.getElementById("studio-intent-idem-unit");
       if (idemVal && idemUnit) {
@@ -6546,11 +6574,11 @@ window.clearLandingUnsaved = function() {
 }
 
 window.syncIntentUiToJson = function() {
-  if (!window.studioCampaignConfig) return;
-  if (!window.studioCampaignConfig.routing) window.studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
-  if (!window.studioCampaignConfig.routing.evaluation) window.studioCampaignConfig.routing.evaluation = {};
+  if (!studioCampaignConfig) return;
+  if (!studioCampaignConfig.routing) studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
+  if (!studioCampaignConfig.routing.evaluation) studioCampaignConfig.routing.evaluation = {};
   
-  var evalCfg = window.studioCampaignConfig.routing.evaluation;
+  var evalCfg = studioCampaignConfig.routing.evaluation;
   
 
   var props = [
@@ -6575,21 +6603,21 @@ window.syncIntentUiToJson = function() {
   var elSt = document.getElementById("studio-intent-soft-time");
   if (elSt && elSt.value) evalCfg.softTimeSeconds = Number(elSt.value); else delete evalCfg.softTimeSeconds;
   
-  document.getElementById("studio-routing-config").value = JSON.stringify(window.studioCampaignConfig.routing, null, 2);
+  document.getElementById("studio-routing-config").value = JSON.stringify(studioCampaignConfig.routing, null, 2);
   if(window.markIntentUnsaved) window.markIntentUnsaved();
   if(window.updateEffectiveSummary) window.updateEffectiveSummary();
 }
 
 window.syncIntentJsonToUi = function() {
-  if (!window.studioCampaignConfig) return;
+  if (!studioCampaignConfig) return;
   var raw = document.getElementById("studio-routing-config").value.trim();
   var errEl = document.getElementById("intent-json-error");
   if (!raw) {
-    window.studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
+    studioCampaignConfig.routing = { destinations: {}, evaluation: {}, rules: [] };
     errEl.style.display = 'none';
   } else {
     try {
-      window.studioCampaignConfig.routing = JSON.parse(raw);
+      studioCampaignConfig.routing = JSON.parse(raw);
       errEl.style.display = 'none';
     } catch(e) {
       errEl.style.display = 'inline';
@@ -6597,7 +6625,7 @@ window.syncIntentJsonToUi = function() {
     }
   }
   
-  var evalCfg = window.studioCampaignConfig.routing.evaluation || {};
+  var evalCfg = studioCampaignConfig.routing.evaluation || {};
   
 
   var props = [
@@ -6625,7 +6653,7 @@ window.syncIntentJsonToUi = function() {
 window.renderScoreBands = function() {
   var container = document.getElementById("studio-score-bands-container");
   if (!container) return;
-  var bands = (window.studioCampaignConfig.routing && window.studioCampaignConfig.routing.evaluation && window.studioCampaignConfig.routing.evaluation.bands) || [];
+  var bands = (studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation && studioCampaignConfig.routing.evaluation.bands) || [];
   
   var html = "";
   bands.forEach(function(b, idx) {
@@ -6636,8 +6664,8 @@ window.renderScoreBands = function() {
     html += "<input type='number' placeholder='Max' value='" + (b.max !== undefined ? b.max : "") + "' style='width:60px;' oninput='updateBand(" + idx + ", &quot;max&quot;, this.value)' />";
     html += "<select onchange='updateBand(" + idx + ", &quot;landing&quot;, this.value)' style='flex:1;'>";
     html += "<option value=''>-- Target Landing --</option>";
-    if (window.studioCampaignConfig.landings) {
-      window.studioCampaignConfig.landings.forEach(function(l) {
+    if (studioCampaignConfig.landings) {
+      studioCampaignConfig.landings.forEach(function(l) {
         html += "<option value='" + l.id + "' " + (b.landing === l.id ? "selected" : "") + ">" + (l.displayName || l.id) + "</option>";
       });
     }
@@ -6654,7 +6682,7 @@ window.renderScoreBands = function() {
 };
 
 window.updateBand = function(idx, field, value) {
-  var bands = window.studioCampaignConfig.routing.evaluation.bands;
+  var bands = studioCampaignConfig.routing.evaluation.bands;
   if (field === 'min' || field === 'max') {
     bands[idx][field] = value ? Number(value) : 0;
   } else {
@@ -6664,17 +6692,17 @@ window.updateBand = function(idx, field, value) {
 };
 
 window.deleteBand = function(idx) {
-  window.studioCampaignConfig.routing.evaluation.bands.splice(idx, 1);
+  studioCampaignConfig.routing.evaluation.bands.splice(idx, 1);
   syncIntentUiToJson();
   renderScoreBands();
 };
 
 window.addScoreBand = function() {
-  if (!window.studioCampaignConfig.routing) window.studioCampaignConfig.routing = { evaluation: {} };
-  if (!window.studioCampaignConfig.routing.evaluation) window.studioCampaignConfig.routing.evaluation = {};
-  if (!window.studioCampaignConfig.routing.evaluation.bands) window.studioCampaignConfig.routing.evaluation.bands = [];
+  if (!studioCampaignConfig.routing) studioCampaignConfig.routing = { evaluation: {} };
+  if (!studioCampaignConfig.routing.evaluation) studioCampaignConfig.routing.evaluation = {};
+  if (!studioCampaignConfig.routing.evaluation.bands) studioCampaignConfig.routing.evaluation.bands = [];
   
-  window.studioCampaignConfig.routing.evaluation.bands.push({
+  studioCampaignConfig.routing.evaluation.bands.push({
     id: "band-" + Date.now(),
     name: "NEW_BAND",
     min: 0,
@@ -6793,10 +6821,10 @@ window.resetLandingOverride = function(domain, propKey) {
 };
 
 window.updateEffectiveSummary = function() {
-  if (!window.studioCampaignConfig || !window.studioCurrentEditingLanding) return;
+  if (!studioCampaignConfig || !window.studioCurrentEditingLanding) return;
   
-  var intentEval = (window.studioCampaignConfig.routing && window.studioCampaignConfig.routing.evaluation) || {};
-  var intentDest = (window.studioCampaignConfig.routing && window.studioCampaignConfig.routing.destinations) || {};
+  var intentEval = (studioCampaignConfig.routing && studioCampaignConfig.routing.evaluation) || {};
+  var intentDest = (studioCampaignConfig.routing && studioCampaignConfig.routing.destinations) || {};
   
   var landingEval = window.studioCurrentEditingLanding.signals || {};
   var landingDest = window.studioCurrentEditingLanding.destinations || {};
