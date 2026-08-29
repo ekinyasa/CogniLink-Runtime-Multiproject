@@ -189,12 +189,20 @@ export async function onRequestGet(context) {
     const targetResolved = resolveDestinationUrl(decision.target, env, request, campaign);
     try {
       const targetUrlObj = new URL(targetResolved);
-      // Loop protection: Do not redirect if target matches current pathname, slug, or the matched landing ID
-      if (
-        targetUrlObj.pathname !== url.pathname && 
-        targetUrlObj.pathname !== `/l/${slug}` && 
-        targetUrlObj.pathname !== `/l/${landing.id}`
-      ) {
+      // Loop protection: Do not redirect if target matches current pathname, slug, matched landing ID, or the landing's alias, or the target version ID matches the currently served landing version ID.
+      let targetVersionId = "";
+      const matchV = decision.target.match(/version-\d+/);
+      if (matchV) {
+        targetVersionId = matchV[0];
+      }
+
+      const isSelf = (targetVersionId && targetVersionId === landing.id) ||
+                     (targetUrlObj.pathname === url.pathname) ||
+                     (targetUrlObj.pathname === `/l/${slug}`) ||
+                     (targetUrlObj.pathname === `/l/${landing.id}`) ||
+                     (landing.alias && targetUrlObj.pathname === (landing.alias.startsWith("/") ? landing.alias : "/" + landing.alias));
+
+      if (!isSelf) {
         if (reqUtmSource)   targetUrlObj.searchParams.set("utm_source",   reqUtmSource);
         if (reqUtmMedium)   targetUrlObj.searchParams.set("utm_medium",   reqUtmMedium);
         if (reqUtmCampaign) targetUrlObj.searchParams.set("utm_campaign", reqUtmCampaign);
