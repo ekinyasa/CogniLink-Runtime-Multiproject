@@ -29,14 +29,15 @@ export function normalizeSlug(str) {
  */
 export function resolveBaseUrl(env = {}, request = null) {
   let base = "";
-  if (env && typeof env === "object") {
-    base = env.PUBLIC_DELIVERY_BASE_URL || env.PUBLIC_SITE_BASE_URL || "";
-  }
-  if (!base && request) {
+  if (request) {
     try {
       const u = new URL(request.url);
-      base = u.origin;
+      const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || u.hostname;
+      base = u.protocol + "//" + originalHost;
     } catch (e) {}
+  }
+  if (!base && env && typeof env === "object") {
+    base = env.PUBLIC_DELIVERY_BASE_URL || env.PUBLIC_SITE_BASE_URL || "";
   }
   if (!base && typeof window !== "undefined" && window && window.location) {
     try {

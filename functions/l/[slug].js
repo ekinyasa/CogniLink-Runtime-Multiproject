@@ -189,8 +189,12 @@ export async function onRequestGet(context) {
     const targetResolved = resolveDestinationUrl(decision.target, env, request);
     try {
       const targetUrlObj = new URL(targetResolved);
-      // Loop protection: Do not redirect if target matches current pathname
-      if (targetUrlObj.pathname !== url.pathname && targetUrlObj.pathname !== `/l/${slug}`) {
+      // Loop protection: Do not redirect if target matches current pathname, slug, or the matched landing ID
+      if (
+        targetUrlObj.pathname !== url.pathname && 
+        targetUrlObj.pathname !== `/l/${slug}` && 
+        targetUrlObj.pathname !== `/l/${landing.id}`
+      ) {
         if (reqUtmSource)   targetUrlObj.searchParams.set("utm_source",   reqUtmSource);
         if (reqUtmMedium)   targetUrlObj.searchParams.set("utm_medium",   reqUtmMedium);
         if (reqUtmCampaign) targetUrlObj.searchParams.set("utm_campaign", reqUtmCampaign);
