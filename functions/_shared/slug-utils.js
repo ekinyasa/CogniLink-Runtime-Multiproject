@@ -78,6 +78,12 @@ export function extractProductSubdomain(urlStr, reqHeaderHost = null) {
   try {
     const url = new URL(urlStr);
     if (!actualHost) actualHost = url.hostname;
+    
+    // Ignore Cloudflare Pages dev/staging domains
+    if (actualHost.endsWith(".pages.dev")) {
+      return "";
+    }
+    
     const hostSegments = actualHost.split('.');
     if (hostSegments.length >= 3) {
       const sub = hostSegments[0].toLowerCase();
