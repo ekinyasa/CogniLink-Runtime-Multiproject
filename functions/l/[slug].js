@@ -186,7 +186,7 @@ export async function onRequestGet(context) {
 
   // ── Redirect & Redirect Loop Protection ───────────────────────────────────
   if (decision.action === "redirect" && decision.target) {
-    const targetResolved = resolveDestinationUrl(decision.target, env, request);
+    const targetResolved = resolveDestinationUrl(decision.target, env, request, campaign);
     try {
       const targetUrlObj = new URL(targetResolved);
       // Loop protection: Do not redirect if target matches current pathname, slug, or the matched landing ID

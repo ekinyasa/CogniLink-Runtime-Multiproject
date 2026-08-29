@@ -360,7 +360,7 @@ export async function onRequestGet(context) {
   }
 
   if (decision.action === "redirect" && decision.target) {
-    const resolvedTarget = resolveDestinationUrl(decision.target, env, request);
+    const resolvedTarget = resolveDestinationUrl(decision.target, env, request, intentData || campaignData);
     let redirectUrl;
     try {
       redirectUrl = new URL(resolvedTarget);

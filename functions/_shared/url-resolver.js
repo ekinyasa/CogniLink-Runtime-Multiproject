@@ -82,11 +82,47 @@ export function buildCampaignUrl(slug, env = {}, request = null) {
  * Resolve relative or absolute destination URL against public delivery base URL.
  * e.g. "/l/sigorta-yenileme-hot" -> "https://runtime.ekinyasa.online/l/sigorta-yenileme-hot"
  */
-export function resolveDestinationUrl(targetUrl, env = {}, request = null) {
+export function resolveDestinationUrl(targetUrl, env = {}, request = null, campaignConfig = null) {
   if (!targetUrl) return "";
   if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
     return targetUrl;
   }
+  
+  // Parse version ID if present to resolve to Alias or Canonical Slug
+  let versionId = "";
+  const match = targetUrl.match(/version-\d+/);
+  if (match) {
+    versionId = match[0];
+  }
+  
+  if (versionId && campaignConfig && Array.isArray(campaignConfig.landings)) {
+    const landing = campaignConfig.landings.find(l => l.id === versionId);
+    if (landing) {
+      const alias = (landing.alias || "").trim();
+      const slug = (landing.slug || landing.id || "").trim();
+      const base = resolveBaseUrl(env, request);
+      
+      // Priority 1: Alias URL
+      if (alias) {
+        const cleanAlias = alias.startsWith("/") ? alias : "/" + alias;
+        return `${base}${cleanAlias}`;
+      }
+      
+      // Priority 2: Canonical Slug URL (with product prefix stripped if on custom domain)
+      if (slug) {
+        let clean = normalizeSlug(slug);
+        const product = campaignConfig.product || "";
+        if (product && clean) {
+          const prefix = normalizeSlug(product) + "-";
+          if (clean.startsWith(prefix)) {
+            clean = clean.substring(prefix.length);
+          }
+        }
+        return clean ? `${base}/l/${clean}` : "";
+      }
+    }
+  }
+
   const base = resolveBaseUrl(env, request);
   const cleanPath = targetUrl.startsWith("/") ? targetUrl : "/" + targetUrl;
   return `${base}${cleanPath}`;
