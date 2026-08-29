@@ -249,6 +249,58 @@ ${themeCssLink}
       } catch(e) {}
 
 
+      // Global Fetch Interceptor to inject Turnstile token for custom submit scripts
+      (function() {
+        if (typeof window === "undefined") return;
+        var originalFetch = window.fetch;
+        window.fetch = function(resource, config) {
+          if (
+            typeof resource === "string" && 
+            resource.includes("/api/lead") && 
+            config && 
+            config.method === "POST" && 
+            config.body
+          ) {
+            try {
+              var bodyObj = JSON.parse(config.body);
+              if (bodyObj && !bodyObj["cf-turnstile-response"] && typeof turnstile !== "undefined") {
+                return new Promise(function(resolve) {
+                  var tempDiv = document.createElement("div");
+                  document.body.appendChild(tempDiv);
+                  try {
+                    var widgetId = turnstile.render(tempDiv, {
+                      sitekey: "${escAttr(cfg.turnstileSiteKey || '')}",
+                      size: "invisible",
+                      callback: function(t) {
+                        resolve(t);
+                        try { tempDiv.remove(); } catch(e){}
+                      },
+                      "error-callback": function() {
+                        resolve(null);
+                        try { tempDiv.remove(); } catch(e){}
+                      }
+                    });
+                    turnstile.execute(widgetId);
+                  } catch (err) {
+                    resolve(null);
+                    try { tempDiv.remove(); } catch(e){}
+                  }
+                }).then(function(token) {
+                  if (token) {
+                    bodyObj["cf-turnstile-response"] = token;
+                    config.body = JSON.stringify(bodyObj);
+                  }
+                  return originalFetch.call(window, resource, config);
+                });
+              }
+            } catch (e) {
+              console.error("Fetch intercept error:", e);
+            }
+          }
+          return originalFetch.call(this, resource, config);
+        };
+      })();
+
       // Intercept form submits for seamless validation without reset
       var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
       var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
@@ -803,6 +855,58 @@ ${globalJsLink}
           }
         }
       } catch(e) {}
+
+      // Global Fetch Interceptor to inject Turnstile token for custom submit scripts
+      (function() {
+        if (typeof window === "undefined") return;
+        var originalFetch = window.fetch;
+        window.fetch = function(resource, config) {
+          if (
+            typeof resource === "string" && 
+            resource.includes("/api/lead") && 
+            config && 
+            config.method === "POST" && 
+            config.body
+          ) {
+            try {
+              var bodyObj = JSON.parse(config.body);
+              if (bodyObj && !bodyObj["cf-turnstile-response"] && typeof turnstile !== "undefined") {
+                return new Promise(function(resolve) {
+                  var tempDiv = document.createElement("div");
+                  document.body.appendChild(tempDiv);
+                  try {
+                    var widgetId = turnstile.render(tempDiv, {
+                      sitekey: "${escAttr(cfg.turnstileSiteKey || '')}",
+                      size: "invisible",
+                      callback: function(t) {
+                        resolve(t);
+                        try { tempDiv.remove(); } catch(e){}
+                      },
+                      "error-callback": function() {
+                        resolve(null);
+                        try { tempDiv.remove(); } catch(e){}
+                      }
+                    });
+                    turnstile.execute(widgetId);
+                  } catch (err) {
+                    resolve(null);
+                    try { tempDiv.remove(); } catch(e){}
+                  }
+                }).then(function(token) {
+                  if (token) {
+                    bodyObj["cf-turnstile-response"] = token;
+                    config.body = JSON.stringify(bodyObj);
+                  }
+                  return originalFetch.call(window, resource, config);
+                });
+              }
+            } catch (e) {
+              console.error("Fetch intercept error:", e);
+            }
+          }
+          return originalFetch.call(this, resource, config);
+        };
+      })();
 
       // Intercept form submits for seamless validation without reset
       var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
