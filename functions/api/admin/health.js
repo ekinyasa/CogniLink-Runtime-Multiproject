@@ -26,7 +26,7 @@
 
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const DATASET     = "linkhub_ops_events";
-const PROBE_ALIAS = "nb";   // known production alias used for router health check
+const PROBE_ALIAS = "yenile";   // known production alias used for router health check
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
