@@ -2,7 +2,7 @@ import { readCookie, buildSetCookie } from "../../_shared/cookie-utils.js";
 import { parseUserState, serializeUserState } from "../../_shared/user-state.js";
 
 const ALLOWED_FIELDS = [
-  "phone", "telefon", "tel", "cep",
+  "phone", "telefon", "tel", "cep", "gsm",
   "email", "eposta", "e-posta",
   "name", "isim", "ad", "ad_soyad", "full_name",
   "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",

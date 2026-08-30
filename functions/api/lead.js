@@ -90,7 +90,7 @@ export async function onRequestPost(context) {
   }
 
   const email = body.email || body.eposta || body["e-posta"];
-  const phone = body.phone || body.telefon || body.tel || body.cep;
+  const phone = body.phone || body.telefon || body.tel || body.cep || body.gsm;
   const name = body.name || body.isim || body.ad || body.ad_soyad;
   const tcValue = body.tc || body.tcKimlik || body.tckn || body.tc_kimlik || body.tc_no || body["tc-kimlik"];
   const referer = request.headers.get("referer");

@@ -513,7 +513,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
   // Client-side Draft Auto-Save
   (function() {
     var allowedFields = [
-      "phone", "telefon", "tel", "cep",
+      "phone", "telefon", "tel", "cep", "gsm",
       "email", "eposta", "e-posta",
       "name", "isim", "ad", "ad_soyad", "full_name",
       "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
@@ -1268,7 +1268,7 @@ function prefillFormHtml(html, draftValues) {
   if (!draftValues || Object.keys(draftValues).length === 0) return html;
 
   const ALLOWED_FIELDS = [
-    "phone", "telefon", "tel", "cep",
+    "phone", "telefon", "tel", "cep", "gsm",
     "email", "eposta", "e-posta",
     "name", "isim", "ad", "ad_soyad", "full_name",
     "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
@@ -1290,24 +1290,31 @@ function prefillFormHtml(html, draftValues) {
     const type = typeMatch ? typeMatch[1].toLowerCase() : "text";
     if (type === "file") return match;
 
+    let isSelfClosing = false;
+    if (attrs.endsWith("/")) {
+      attrs = attrs.slice(0, -1);
+      isSelfClosing = true;
+    }
+    const suffix = isSelfClosing ? " />" : ">";
+
     if (type === "checkbox" || type === "radio") {
       const valueAttrMatch = attrs.match(/value=["']?([^"'\s>]+)["']?/i);
       const valAttr = valueAttrMatch ? valueAttrMatch[1] : "on";
       if (String(val) === String(valAttr)) {
         if (!/checked/i.test(attrs)) {
-          return `<input${attrs} checked>`;
+          return `<input${attrs} checked${suffix}`;
         }
       } else {
-        return `<input${attrs.replace(/\s*checked/gi, "")}>`;
+        return `<input${attrs.replace(/\s*checked/gi, "")}${suffix}`;
       }
-      return match;
+      return `<input${attrs}${suffix}`;
     }
 
     const escapedVal = escAttr(val);
     if (/value=/i.test(attrs)) {
-      return `<input${attrs.replace(/value=["']?[^"'\s>]*["']?/i, `value="${escapedVal}"`)}>`;
+      return `<input${attrs.replace(/value=["']?[^"'\s>]*["']?/i, `value="${escapedVal}"`)}${suffix}`;
     } else {
-      return `<input${attrs} value="${escapedVal}">`;
+      return `<input${attrs} value="${escapedVal}"${suffix}`;
     }
   });
 
