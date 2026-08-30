@@ -34,6 +34,7 @@ export function renderHub({
   components = [],          // Live KV components (Prompt 140)
   isPreview = false,        // Admin preview mode flag
   intentConfig = {},        // Routing & Behavior JSON (Campaign V2)
+  draftValues = {},         // ADDED: Prefilled values
 } = {}) {
   const cfg = config || {};
 
@@ -49,7 +50,7 @@ export function renderHub({
   const pUpdate = (slugData && slugData.updatedAt) ? new Date(slugData.updatedAt).toLocaleString("tr-TR") : (slugData && slugData.updated_at ? new Date(slugData.updated_at).toLocaleString("tr-TR") : "Bilinmiyor");
 
   const debugString = `${pSub} | ${dCamp} | ${dMod} | C: ${cUrl} | A: ${aUrl} | ${pSlug} | ${pTheme} | Last updated: ${pUpdate}`;
-  
+
   const debugHtml = `\n<!--\nRUNTIME DEBUG INFO:\n${debugString}\n-->\n<script>console.log("RUNTIME DEBUG INFO: %c" + ${JSON.stringify(debugString)}, "color:#0284c7; font-weight:bold;");</script>`;
 
 
@@ -98,7 +99,7 @@ export function renderHub({
 
   var layoutHtml = "";
   const hasCustomLayout = !!(slugData && Array.isArray(slugData.layout));
-  
+
   var renderComponentHtml = function (c) {
     var titleHtml = c.title ? '<h3 class="comp-title">' + escHtml(c.title) + '</h3>' : '';
     var ctaHtml = (c.cta_label && c.cta_url) ? '<div class="comp-cta"><a href="' + escAttr(c.cta_url) + '" class="comp-cta-btn">' + escHtml(c.cta_label) + '</a></div>' : '';
@@ -140,8 +141,8 @@ export function renderHub({
     : "";
 
   // Title resolution order
-  const finalTitle = (slugData?.headerInfo?.title && String(slugData.headerInfo.title).trim()) || 
-                     (cfg.pageTitle && String(cfg.pageTitle).trim()) || 
+  const finalTitle = (slugData?.headerInfo?.title && String(slugData.headerInfo.title).trim()) ||
+                     (cfg.pageTitle && String(cfg.pageTitle).trim()) ||
                      "CogniLink";
 
   // Per-page header/footers only (global fallbacks headerHtml/footerHtml are removed)
@@ -255,10 +256,10 @@ ${themeCssLink}
         var originalFetch = window.fetch;
         window.fetch = function(resource, config) {
           if (
-            typeof resource === "string" && 
-            resource.includes("/api/lead") && 
-            config && 
-            config.method === "POST" && 
+            typeof resource === "string" &&
+            resource.includes("/api/lead") &&
+            config &&
+            config.method === "POST" &&
             config.body
           ) {
             try {
@@ -345,7 +346,7 @@ ${themeCssLink}
           var existingAlert = f.querySelector(".form-error-alert");
 
           if (existingAlert) existingAlert.remove();
-          
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           var originalBtnText = submitBtn ? (submitBtn.textContent || submitBtn.value) : "";
           if (submitBtn) {
@@ -369,7 +370,7 @@ ${themeCssLink}
           if (turnstileToken) {
             jsonBody["cf-turnstile-response"] = turnstileToken;
           }
-          
+
           fetch("/api/lead", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -383,13 +384,13 @@ ${themeCssLink}
             } else {
               var data = await res.json().catch(function(){ return {}; });
               var errMsg = data.error || "Geçersiz bilgi girdiniz. Lütfen kontrol edin.";
-              
+
               var d = document.createElement("div");
               d.className = "form-error-alert";
               d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
               d.textContent = errMsg;
               f.insertBefore(d, f.firstChild);
-              
+
               if (submitBtn) {
                 if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
                    turnstile.reset(turnstileWidgetId);
@@ -484,7 +485,7 @@ ${slugData?.signals?.conversionSelector ? `
     : "";
 
   /* ── Normal hub ───────────────────────────────────────────────── */
-  return `<!DOCTYPE html>
+  const finalHtml = `<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -509,6 +510,71 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
 (function () {
   "use strict";
 
+  // Client-side Draft Auto-Save
+  (function() {
+    var allowedFields = [
+      "phone", "telefon", "tel", "cep",
+      "email", "eposta", "e-posta",
+      "name", "isim", "ad", "ad_soyad", "full_name",
+      "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
+      "birth_date", "birthDate", "license_plate", "plate",
+      "contact_preference", "iletisimTercihi", "situation", "custom_fields"
+    ];
+    var lastSent = {};
+    var saveTimeout = null;
+    var pendingFields = {};
+
+    function sendDraft() {
+      if (Object.keys(pendingFields).length === 0) return;
+      var fieldsToPost = Object.assign({}, pendingFields);
+      pendingFields = {};
+
+      fetch("/api/lead/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: "${escAttr(slug)}",
+          fields: fieldsToPost
+        })
+      }).catch(function(err) {
+        console.error("Draft save failed:", err);
+      });
+    }
+
+    function queueSave(name, value) {
+      if (lastSent[name] === value) return;
+      lastSent[name] = value;
+      pendingFields[name] = value;
+
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(sendDraft, 500); // 500ms debounce
+    }
+
+    document.addEventListener("change", function(e) {
+      if (!e.target || !e.target.name) return;
+      var name = e.target.name;
+      if (allowedFields.indexOf(name) === -1) return;
+
+      var value = e.target.value;
+      if (e.target.type === "checkbox") {
+        value = e.target.checked ? e.target.value || "on" : "";
+      }
+      queueSave(name, value);
+    }, true);
+
+    document.addEventListener("blur", function(e) {
+      if (!e.target || !e.target.name) return;
+      var name = e.target.name;
+      if (allowedFields.indexOf(name) === -1) return;
+
+      var value = e.target.value;
+      if (e.target.type === "checkbox") {
+        value = e.target.checked ? e.target.value || "on" : "";
+      }
+      queueSave(name, value);
+    }, true);
+  })();
+
   // If this page is explicitly marked as a conversion goal in the engine map or slug data, fire it now.
   var isConversionGoal = ${!!(slugData?.type === "conv" || slugData?.isConversion)};
   if (isConversionGoal) {
@@ -516,8 +582,8 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-        body: JSON.stringify({ 
-          type: "form_submit", 
+        body: JSON.stringify({
+          type: "form_submit",
           meta: {
                 product: "${escAttr(productSubdomain)}",
                 slug: "${escAttr(slug)}",
@@ -794,7 +860,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
   var signalSent = false;
 
   window.addEventListener("scroll", function() {
-    var h = document.documentElement, 
+    var h = document.documentElement,
         b = document.body,
         st = 'scrollTop',
         sh = 'scrollHeight';
@@ -808,14 +874,14 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
     // Score Formula: (Scroll % * 0.4) + Time-based points (full weight only if scroll >= 15% to prevent idle bounce tab hot trigger)
     var timeWeight = maxScroll >= 15 ? Math.min(elapsed, 60) : Math.min(elapsed, 60) * 0.2;
     var score = Math.min(100, Math.floor((maxScroll * 0.4) + timeWeight));
-    
+
     if (score > 10) { // Only report if there is some activity
       fetch("/api/decision/signal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-        body: JSON.stringify({ 
-          type: "engagement", 
+        body: JSON.stringify({
+          type: "engagement",
           score: score,
           meta: {
                 product: "${escAttr(productSubdomain)}",
@@ -826,7 +892,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
         })
       }).catch(function() {});
     }
-    
+
     // Stop reporting after 2 minutes or once maxed out
     if (elapsed > 120 || score >= 100) clearInterval(engagementInterval);
   }, 10000); // Every 10s
@@ -862,10 +928,10 @@ ${globalJsLink}
         var originalFetch = window.fetch;
         window.fetch = function(resource, config) {
           if (
-            typeof resource === "string" && 
-            resource.includes("/api/lead") && 
-            config && 
-            config.method === "POST" && 
+            typeof resource === "string" &&
+            resource.includes("/api/lead") &&
+            config &&
+            config.method === "POST" &&
             config.body
           ) {
             try {
@@ -951,7 +1017,7 @@ ${globalJsLink}
           f.dataset.isSubmitting = "false";
           var existingAlert = f.querySelector(".form-error-alert");
           if (existingAlert) existingAlert.remove();
-          
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           var originalBtnText = submitBtn ? (submitBtn.textContent || submitBtn.value) : "";
           if (submitBtn) {
@@ -975,7 +1041,7 @@ ${globalJsLink}
           if (turnstileToken) {
             jsonBody["cf-turnstile-response"] = turnstileToken;
           }
-          
+
           fetch("/api/lead", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -989,13 +1055,13 @@ ${globalJsLink}
             } else {
               var data = await res.json().catch(function(){ return {}; });
               var errMsg = data.error || "Geçersiz bilgi girdiniz. Lütfen kontrol edin.";
-              
+
               var d = document.createElement("div");
               d.className = "form-error-alert";
               d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
               d.textContent = errMsg;
               f.insertBefore(d, f.firstChild);
-              
+
               if (submitBtn) {
                 if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
                    turnstile.reset(turnstileWidgetId);
@@ -1021,6 +1087,7 @@ ${globalJsLink}
   </script>
 </body>
 </html>`;
+  return prefillFormHtml(finalHtml, draftValues);
 }
 
 /* ── CSS scoping helper ────────────────────────────────────────── */
@@ -1196,5 +1263,95 @@ a:not(.link-btn):not(.comp-cta-btn):hover{
   font-size:0.8rem;opacity:0.6;
 }
 `;
+
+function prefillFormHtml(html, draftValues) {
+  if (!draftValues || Object.keys(draftValues).length === 0) return html;
+
+  const ALLOWED_FIELDS = [
+    "phone", "telefon", "tel", "cep",
+    "email", "eposta", "e-posta",
+    "name", "isim", "ad", "ad_soyad", "full_name",
+    "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
+    "birth_date", "birthDate", "license_plate", "plate",
+    "contact_preference", "iletisimTercihi", "situation", "custom_fields"
+  ];
+
+  // 1. Prefill inputs
+  html = html.replace(/<input([^>]*?)>/gi, (match, attrs) => {
+    const nameMatch = attrs.match(/name=["']?([^"'\s>]+)["']?/i);
+    if (!nameMatch) return match;
+    const name = nameMatch[1];
+    if (!ALLOWED_FIELDS.includes(name)) return match;
+
+    const val = draftValues[name];
+    if (val === undefined || val === null) return match;
+
+    const typeMatch = attrs.match(/type=["']?([^"'\s>]+)["']?/i);
+    const type = typeMatch ? typeMatch[1].toLowerCase() : "text";
+    if (type === "file") return match;
+
+    if (type === "checkbox" || type === "radio") {
+      const valueAttrMatch = attrs.match(/value=["']?([^"'\s>]+)["']?/i);
+      const valAttr = valueAttrMatch ? valueAttrMatch[1] : "on";
+      if (String(val) === String(valAttr)) {
+        if (!/checked/i.test(attrs)) {
+          return `<input${attrs} checked>`;
+        }
+      } else {
+        return `<input${attrs.replace(/\s*checked/gi, "")}>`;
+      }
+      return match;
+    }
+
+    const escapedVal = escAttr(val);
+    if (/value=/i.test(attrs)) {
+      return `<input${attrs.replace(/value=["']?[^"'\s>]*["']?/i, `value="${escapedVal}"`)}>`;
+    } else {
+      return `<input${attrs} value="${escapedVal}">`;
+    }
+  });
+
+  // 2. Prefill textareas
+  html = html.replace(/<textarea([^>]*?)>([\s\S]*?)<\/textarea>/gi, (match, attrs, content) => {
+    const nameMatch = attrs.match(/name=["']?([^"'\s>]+)["']?/i);
+    if (!nameMatch) return match;
+    const name = nameMatch[1];
+    if (!ALLOWED_FIELDS.includes(name)) return match;
+
+    const val = draftValues[name];
+    if (val === undefined || val === null) return match;
+
+    return `<textarea${attrs}>${escHtml(val)}</textarea>`;
+  });
+
+  // 3. Prefill select elements
+  html = html.replace(/<select([^>]*?)>([\s\S]*?)<\/select>/gi, (match, attrs, content) => {
+    const nameMatch = attrs.match(/name=["']?([^"'\s>]+)["']?/i);
+    if (!nameMatch) return match;
+    const name = nameMatch[1];
+    if (!ALLOWED_FIELDS.includes(name)) return match;
+
+    const val = draftValues[name];
+    if (val === undefined || val === null) return match;
+
+    const optionRegex = /<option([^>]*?)>/gi;
+    const newContent = content.replace(optionRegex, (optMatch, optAttrs) => {
+      const valAttrMatch = optAttrs.match(/value=["']?([^"'\s>]*?)["']?/i);
+      const optVal = valAttrMatch ? valAttrMatch[1] : "";
+      if (String(optVal) === String(val)) {
+        if (!/selected/i.test(optAttrs)) {
+          return `<option${optAttrs} selected>`;
+        }
+      } else {
+        return `<option${optAttrs.replace(/\s*selected/gi, "")}>`;
+      }
+      return optMatch;
+    });
+
+    return `<select${attrs}>${newContent}</select>`;
+  });
+
+  return html;
+}
 
 export const renderLanding = renderHub;

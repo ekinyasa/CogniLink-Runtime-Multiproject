@@ -19,10 +19,10 @@ export async function resolveJourneyDestination(journey, userState) {
   // - if userState.c === 1 (Converted), follow edge to "conv" or "post" nodes.
   // - if userState.h === 1 (Hot), follow edge to "hot" or "conv" nodes.
   // - if userState.v === 1 (Warm), follow edge to "warm" or "nurture" nodes.
-  // 
-  // In a robust implementation, edges should contain rich semantic conditions 
+  //
+  // In a robust implementation, edges should contain rich semantic conditions
   // (e.g. `edge.conditions = [{tag: "VIP"}, {points: ">50"}]`).
-  
+
   let targetNodeId = currentNode.id;
 
   // Let's find outbound edges from the cold node (or current node)
@@ -36,9 +36,11 @@ export async function resolveJourneyDestination(journey, userState) {
 
       if (edge.conditions && Array.isArray(edge.conditions) && edge.conditions.length > 0) {
         const matches = edge.conditions.every(cond => {
+          const hasLegacySubmit = userState.c === 1 && Array.isArray(userState.t) && userState.t.includes("lead_submitted");
+          const isConverted = userState.c === 1 && !hasLegacySubmit;
           if (cond.tag && Array.isArray(userState.t)) return userState.t.includes(cond.tag);
           if (cond.minScore !== undefined) return (userState.e || 0) >= cond.minScore;
-          if (cond.converted !== undefined) return (userState.c === 1) === Boolean(cond.converted);
+          if (cond.converted !== undefined) return isConverted === Boolean(cond.converted);
           if (cond.hot !== undefined) return (userState.h === 1) === Boolean(cond.hot);
           return true;
         });
@@ -56,7 +58,9 @@ export async function resolveJourneyDestination(journey, userState) {
         .filter(Boolean);
 
       let matchedNode = null;
-      if (userState.c === 1) {
+      const hasLegacySubmit = userState.c === 1 && Array.isArray(userState.t) && userState.t.includes("lead_submitted");
+      const isConverted = userState.c === 1 && !hasLegacySubmit;
+      if (isConverted) {
         matchedNode = candidateNodes.find(n => n.type === "post" || n.type === "conv");
       }
       if (!matchedNode && userState.h === 1) {

@@ -30,7 +30,7 @@ import { evaluateRules } from "./decision-engine.js";
  * }>}
  */
 export async function handleDecision(request, env, opts) {
-  
+
   const { source = "", medium = "", campaign = "", decisionRules = [], engineConfig = null, intentDestinations = null, intentEvaluation = null } = opts;
   // Use campaign (intent slug) as the primary scope key to isolate intents
   const reqProd = opts.campaign || opts.productSubdomain || null;
@@ -81,7 +81,7 @@ export async function handleDecision(request, env, opts) {
   // 3b. Priority 2: Intent-specific Destinations (Campaign V2) OR Legacy Engine Config
   if (!decisionMatch) {
     const checkRedirects = (engineConfig && engineConfig.redirects) ? engineConfig.redirects : {};
-    
+
     // Resolve effective destinations (Intent wins over Global Engine Config)
     const effectiveDestinations = {
       post:      (intentDestinations && intentDestinations.postConversion) ? intentDestinations.postConversion : checkRedirects.post,
@@ -91,9 +91,13 @@ export async function handleDecision(request, env, opts) {
       warm:      (intentDestinations && intentDestinations.warm) ? intentDestinations.warm : null
     };
 
-    if (pState.c === 1 && effectiveDestinations.sale) {
+    const hasLegacySubmit = pState.c === 1 && Array.isArray(userState.t) && userState.t.includes("lead_submitted");
+    const isConverted = pState.c === 1 && !hasLegacySubmit;
+    const isFormSubmitted = pState.f === 1 || hasLegacySubmit;
+
+    if (isConverted && effectiveDestinations.sale) {
       decisionMatch = { action: "redirect", target: effectiveDestinations.sale, id: "intent_sale_override" };
-    } else if (pState.f === 1 || pState.c === 1) {
+    } else if (isFormSubmitted) {
       if (pState.u === 1 && effectiveDestinations.post) {
         decisionMatch = { action: "redirect", target: effectiveDestinations.post, id: "intent_post_override" };
       } else if (effectiveDestinations.converted) {
@@ -138,7 +142,7 @@ export async function handleDecision(request, env, opts) {
   if (decisionMatch && decisionMatch.action === "redirect" && decisionMatch.target) {
     // If we're redirecting, we still want to persist the UID if it was just created
     if (stateUpdate) {
-      cookies.push(buildSetCookie("cos_state", serializeUserState(userState), { 
+      cookies.push(buildSetCookie("cos_state", serializeUserState(userState), {
         maxAge: 604800,
         secure: env.ENV_NAME !== "dev" // Disable Secure on localhost/http
       }));
@@ -160,7 +164,7 @@ export async function handleDecision(request, env, opts) {
   }
 
   if (stateUpdate) {
-    cookies.push(buildSetCookie("cos_state", serializeUserState(userState), { 
+    cookies.push(buildSetCookie("cos_state", serializeUserState(userState), {
       maxAge: 604800,
       secure: env.ENV_NAME !== "dev" // Disable Secure on localhost/http
     }));

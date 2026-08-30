@@ -6,6 +6,15 @@ import { verifyToken }     from "../_shared/auth.js";
 import { buildRedirectResponse } from "../_shared/redirect-runtime.js";
 import { extractProductSubdomain, validateProductSubdomainMatch } from "../_shared/slug-utils.js";
 import { resolveDestinationUrl, normalizeSlug } from "../_shared/url-resolver.js";
+import { readCookie } from "../_shared/cookie-utils.js";
+
+async function hashToken(token) {
+  if (!token) return "";
+  const msgBuffer = new TextEncoder().encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 const SEC_HEADERS = {
   "Content-Type":           "text/html;charset=UTF-8",
@@ -57,9 +66,9 @@ async function findLandingVersionBySlug(slug, env) {
     if (directIdx && directIdx.campaignId) {
       const campaign = await env.APP_CONFIG.get(`campaign:${directIdx.campaignId}`, { type: "json" });
       if (campaign && Array.isArray(campaign.landings)) {
-        const landing = campaign.landings.find(l => 
-          l.id === directIdx.landingId || 
-          normalizeSlug(l.slug) === clean || 
+        const landing = campaign.landings.find(l =>
+          l.id === directIdx.landingId ||
+          normalizeSlug(l.slug) === clean ||
           l.id === clean
         );
         if (landing) return { campaign, landing };
@@ -76,9 +85,9 @@ async function findLandingVersionBySlug(slug, env) {
         try {
           const campaign = await env.APP_CONFIG.get(key.name, { type: "json" });
           if (campaign && Array.isArray(campaign.landings)) {
-            const landing = campaign.landings.find(l => 
-              normalizeSlug(l.slug) === clean || 
-              l.id === clean || 
+            const landing = campaign.landings.find(l =>
+              normalizeSlug(l.slug) === clean ||
+              l.id === clean ||
               normalizeSlug(l.alias) === clean
             );
             if (landing) return { campaign, landing };
@@ -223,6 +232,25 @@ export async function onRequestGet(context) {
   // ── Render Landing Content ────────────────────────────────────────────────
   const links = resolveLinks(campaign, config);
 
+  // Load draft values if cl_draft_token exists
+  let draftValues = {};
+  const draftToken = readCookie(request, "cl_draft_token");
+  if (draftToken && env.DB) {
+    try {
+      const tokenHash = await hashToken(draftToken);
+      const matchedIntent = campaign.slug || campaign.name || slug;
+      const draftRow = await env.DB.prepare(
+        "SELECT working_payload_json, created_at FROM applications WHERE situation = ? AND status = 'draft' AND intent = ? LIMIT 1"
+      ).bind(tokenHash, matchedIntent).first();
+
+      if (draftRow && (Math.floor(Date.now() / 1000) - draftRow.created_at <= 2592000)) {
+        draftValues = JSON.parse(draftRow.working_payload_json || "{}");
+      }
+    } catch (e) {
+      console.error("Hydration draft load error:", e);
+    }
+  }
+
   // Construct effective landing config containing single selected landing version
   const landingConfigData = {
     ...campaign,
@@ -246,7 +274,8 @@ export async function onRequestGet(context) {
     slugData:    landingConfigData,
     components:  liveComponents,
     isPreview:   isAdminPreview,
-    intentConfig: landingConfigData
+    intentConfig: landingConfigData,
+    draftValues: draftValues
   });
 
   const resHeaders = new Headers({

@@ -64,13 +64,13 @@ export function serializeUserState(user) {
 export function updateUserState(user, patch, product = null, intentSlug = null) {
   const newState = { ...user, ts: Math.floor(Date.now() / 1000) };
   if (!newState.p) newState.p = {};
-  
+
   const scopeKey = intentSlug || product;
   if (scopeKey) {
     // Apply patch to product scope
     const prodState = newState.p[scopeKey] || { v: 0, f: 0, c: 0, h: 0, e: 0 };
     newState.p[scopeKey] = { ...prodState, ...patch };
-    
+
     // Also update global state as a fallback/aggregate (optional but good for backwards compat)
     if (patch.f !== undefined) newState.f = Math.max(newState.f || 0, patch.f);
     if (patch.c !== undefined) newState.c = Math.max(newState.c || 0, patch.c);
@@ -81,18 +81,20 @@ export function updateUserState(user, patch, product = null, intentSlug = null) 
     // Apply to global scope directly
     Object.assign(newState, patch);
   }
-  
+
   return newState;
 }
 
 export function calculateVisitorIntentLevel(userState, product = null, intentSlug = null) {
   if (!userState) return "cold";
-  
+
   const scopeKey = intentSlug || product;
   const state = (scopeKey && userState.p && userState.p[scopeKey]) ? userState.p[scopeKey] : userState;
-  
-  if (state.c === 1) return "converted";
-  if (state.f === 1) return "form_submitted";
+
+  const hasLegacySubmit = state.c === 1 && Array.isArray(userState.t) && userState.t.includes("lead_submitted");
+
+  if (state.c === 1 && !hasLegacySubmit) return "converted";
+  if (state.f === 1 || hasLegacySubmit) return "form_submitted";
   if (state.h === 1 || (state.e || 0) >= 60) return "hot";
   // Hardcoded Warm classification removed per v1 production contract
   // if (state.v === 1 || (state.e || 0) >= 20 || (Array.isArray(userState.t) && userState.t.length > 0)) {
@@ -104,7 +106,7 @@ export function calculateVisitorIntentLevel(userState, product = null, intentSlu
 export function getVisitorIntentSummary(userState, product = null) {
   const base = userState || DEFAULT_USER_STATE;
   const state = (product && base.p && base.p[product]) ? base.p[product] : base;
-  
+
   const tier = calculateVisitorIntentLevel(base, product);
   return {
     tier,

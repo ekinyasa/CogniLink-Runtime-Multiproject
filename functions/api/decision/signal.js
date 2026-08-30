@@ -247,7 +247,9 @@ export async function onRequestPost(context) {
       case "upsell_accept":
       case "upsell_reject":
         // Only meaningful if user has already converted
-        if (activeState.u === 0 && activeState.c === 1) {
+        const hasLegacySubmit = activeState.c === 1 && Array.isArray(user.t) && user.t.includes("lead_submitted");
+        const isConverted = activeState.c === 1 && !hasLegacySubmit;
+        if (activeState.u === 0 && isConverted) {
           user = updateUserState(user, { u: 1 }, reqProd);
           updated = true;
         }
@@ -260,7 +262,7 @@ export async function onRequestPost(context) {
           updated = true;
         }
         break;
-        
+
       case "conversion":
         if (activeState.c === 0) {
           // c=1 sets actual sale converted (usually triggered manually or from CRM).

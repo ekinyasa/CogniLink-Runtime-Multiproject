@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS applications (
   email TEXT,
   landing_version TEXT,
   original_payload_json TEXT NOT NULL,
-  working_payload_json TEXT NOT NULL
+  working_payload_json TEXT NOT NULL,
+  visitor_id TEXT
 );

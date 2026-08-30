@@ -58,6 +58,14 @@ import { readCookie, buildSetCookie }              from "./_shared/cookie-utils.
 import { parseUserState, serializeUserState, updateUserState } from "./_shared/user-state.js";
 import { handleDecision }                          from "./lib/decision-controller.js";
 
+async function hashToken(token) {
+  if (!token) return "";
+  const msgBuffer = new TextEncoder().encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ── Security headers (applied to all responses) ───────────────────────────────
 
 const SEC_HEADERS = {
@@ -198,14 +206,14 @@ export async function onRequestGet(context) {
   ) {
     let needsRedirect = false;
     let newHost = originalHost;
-    
+
     // Always force HTTPS
     if (url.protocol === "http:") {
       needsRedirect = true;
     }
-    
+
     const hostSegments = newHost.split('.');
-    
+
     // Redirect root and www teklifi.online to sigorta.teklifi.online
     if (newHost === "teklifi.online" || newHost === "www.teklifi.online") {
       newHost = "sigorta.teklifi.online";
@@ -215,10 +223,10 @@ export async function onRequestGet(context) {
       newHost = "www." + newHost;
       needsRedirect = true;
     }
-    
+
     // Safely ignore subdomains (3+ segments like dev.ekinyasa.online)
     // If the user manually typed www.dev..., we just let it be (it will likely fail at DNS level anyway)
-    
+
     if (needsRedirect) {
       return Response.redirect(`https://${newHost}${url.pathname}${url.search}`, 301);
     }
@@ -289,16 +297,16 @@ export async function onRequestGet(context) {
     // This allows the user to see the alias (e.g. /teklifal) in their address bar,
     // while the server transparently fetches the canonical content (/l/trafik-yenileme-cold).
     let targetPath = canonicalSlug;
-    
+
     // If the user requested an alias with a modifier (like /teklifal/thanks),
     // append the modifier to the canonical path (/l/trafik-yenileme-cold/thanks)
     if (modifier) {
       targetPath = targetPath.endsWith("/") ? targetPath + modifier : targetPath + "/" + modifier;
     }
-    
+
     const internalUrl = new URL(request.url);
     internalUrl.pathname = targetPath;
-    
+
     // Fetch internally
     const rewriteReq = new Request(internalUrl.toString(), request);
     return fetch(rewriteReq);
@@ -392,12 +400,12 @@ export async function onRequestGet(context) {
         const journey = await env.APP_CONFIG.get(`journey:${campRecord.journeyId}`, { type: "json" });
         if (journey) {
           // Dummy evaluate early to get visitor state from cookie without modifying it yet
-          const rawState = request.headers.get("Cookie")?.includes("cos_state=") 
+          const rawState = request.headers.get("Cookie")?.includes("cos_state=")
              ? request.headers.get("Cookie").split('cos_state=')[1].split(';')[0]
              : null;
           // Basic state (full parsing is done in decision-controller)
           const tempState = rawState ? { c: rawState.includes("%22c%22%3A1")?1:0, h: rawState.includes("%22h%22%3A1")?1:0, v: rawState.includes("%22v%22%3A1")?1:0 } : {c:0,h:0,v:0};
-          
+
           const dest = await resolveJourneyDestination(journey, tempState);
           if (dest && dest.pageId) {
             targetPageId = dest.pageId;
@@ -422,17 +430,17 @@ export async function onRequestGet(context) {
       const repo = createRuntimeRepository(env);
       const rawLegacy = await repo.fetchLegacy(targetPageId);
       const rawV2 = await repo.fetchV2(targetPageId);
-      
+
       const fetchIdentifier = isAdminPreview ? `${targetPageId}:${previewVersion}` : targetPageId;
       const rMode = isAdminPreview ? "preview" : (abActive ? "experiment" : "canonical");
       const runtimeContext = await resolveContext(fetchIdentifier, repo, { render_mode: rMode });
-      
+
       return { rawLegacy, rawV2, context: runtimeContext };
     })()
   ]);
 
   const hubConfigVal = hubConfigResult.status === "fulfilled" ? (hubConfigResult.value || null) : null;
-  
+
   // Enforce subdomain match to prevent conflicts
   if (productSubdomain && hubConfigVal && !validateProductSubdomainMatch(productSubdomain, hubConfigVal.product)) {
     return html404();
@@ -504,10 +512,10 @@ export async function onRequestGet(context) {
         globalConfig,
         intentDestinations
       });
-      
+
       const rawRules = ruleSource.rules || [];
       const validRules = rawRules; // Consolidated repository returns pre-normalized V2 rules
-      
+
       ruleShadow = {
         source: ruleSource.source,
         source_id: ruleSource.source_id,
@@ -578,7 +586,7 @@ export async function onRequestGet(context) {
   // ── Runtime Inspector (Shadow Mode) ───────────────────────────────────────
   if (verifyAdminDebug(request, env)) {
     const diff = compareRuntime(originalHubConfig, runtimeContext);
-    
+
     const debugPayload = {
       _warning: "RUNTIME INSPECTOR (Shadow Mode)",
       aliasResolution: resolution,
@@ -679,7 +687,7 @@ export async function onRequestGet(context) {
       utm_medium: utmMedium || "",
       decision_v1: decision.decisionId || "default"
     });
-    
+
     return new Response(null, {
       status: 302,
       headers: redirectResHeaders
@@ -703,17 +711,17 @@ export async function onRequestGet(context) {
     request_id: requestId,
     utm_source: defaultUtms.utm_source || "",
     utm_medium: defaultUtms.utm_medium || "",
-    ...(abActive || cacheHit ? { 
-      detail: { 
+    ...(abActive || cacheHit ? {
+      detail: {
         ...(abActive ? { ab_base: canonicalSlug, experiment: alias, variant: finalSlug } : {}),
         ...(cacheHit ? { cache_hit: true } : { cache_hit: false })
-      } 
+      }
     } : {}),
   });
   // Section 1 — utm_experiment + utm_variant: append when A/B routing is active
   if (utmExperiment) defaultUtms.utm_experiment = utmExperiment;
   if (utmVariant)    defaultUtms.utm_variant    = utmVariant;
-  
+
   // ── Outbound Parameter Injection (Cross-Domain Tracking) ────────────────
   // Append Kartra attribution parameters to all outbound links.
   defaultUtms.cos_exp = utmExperiment || finalSlug;
@@ -734,6 +742,25 @@ export async function onRequestGet(context) {
   const campaign    = (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim())
     || deriveCampaignFromSlug(finalSlug);
 
+  // Load draft values if cl_draft_token exists
+  let draftValues = {};
+  const draftToken = readCookie(request, "cl_draft_token");
+  if (draftToken && env.DB) {
+    try {
+      const tokenHash = await hashToken(draftToken);
+      const matchedIntent = campaign;
+      const draftRow = await env.DB.prepare(
+        "SELECT working_payload_json, created_at FROM applications WHERE situation = ? AND status = 'draft' AND intent = ? LIMIT 1"
+      ).bind(tokenHash, matchedIntent).first();
+
+      if (draftRow && (Math.floor(Date.now() / 1000) - draftRow.created_at <= 2592000)) {
+        draftValues = JSON.parse(draftRow.working_payload_json || "{}");
+      }
+    } catch (e) {
+      console.error("Hydration draft load error:", e);
+    }
+  }
+
   const html = renderHub({
     contextType: "campaign",
     contextId:   finalSlug,        // ← final slug (A/B variant if active)
@@ -749,6 +776,7 @@ export async function onRequestGet(context) {
     expToken:    expResult?.expToken  || "",
     utmVariant:  expResult?.finalSlug || "",
     components:  liveComponents,
+    draftValues: draftValues
   });
 
   // ── Admin overlay injection ───────────────────────────────────────────────

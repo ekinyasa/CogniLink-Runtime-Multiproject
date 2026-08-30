@@ -65,9 +65,11 @@ function evaluateCondition(condition, user, ctx) {
  * Map rule property names to actual state/context values.
  */
 function getPropertyValue(prop, user, ctx) {
+  const hasLegacySubmit = user.c === 1 && Array.isArray(user.t) && user.t.includes("lead_submitted");
   const map = {
     "user_visited": user.v === 1,
-    "user_converted": user.c === 1,
+    "user_converted": user.c === 1 && !hasLegacySubmit,
+    "user_form_submitted": user.f === 1 || hasLegacySubmit,
     "user_engaged": user.e >= 50, // threshold for "engaged"
     "user_hot": user.h === 1,
     "entered_upsell": user.u === 1,

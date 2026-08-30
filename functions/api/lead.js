@@ -2,11 +2,19 @@ import { readCookie, buildSetCookie } from "../_shared/cookie-utils.js";
 import { parseUserState, serializeUserState, updateUserState } from "../_shared/user-state.js";
 import { writeLandingSignalEvent } from "../_shared/analytics.js";
 
+async function hashToken(token) {
+  if (!token) return "";
+  const msgBuffer = new TextEncoder().encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 const getCorsHeaders = (request) => {
   const origin = request.headers.get("Origin");
   const host = request.headers.get("Host");
   const isSameOrigin = origin && host && origin.endsWith(host);
-  
+
   // Allow same-origin, localhost dev, or pages.dev previews.
   // External domains calling this API will need to be explicitly whitelisted if required.
   let allowedOrigin = "";
@@ -16,7 +24,7 @@ const getCorsHeaders = (request) => {
     allowedOrigin = origin;
   } else {
     // Rejected arbitrary origin. Prevent wide reflection.
-    allowedOrigin = "https://runtime.ekinyasa.online"; 
+    allowedOrigin = "https://runtime.ekinyasa.online";
   }
 
   return {
@@ -125,7 +133,7 @@ export async function onRequestPost(context) {
       headers: corsHeaders
     });
   }
-  
+
   let slug = body.slug;
   if (!slug) {
     const referer = request.headers.get("referer");
@@ -138,14 +146,14 @@ export async function onRequestPost(context) {
       } catch (e) {}
     }
   }
-  
+
   const form_id = body.form_id;
   const contact_preference = body.contact_preference || body.iletisimTercihi;
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = email && typeof email === "string" && emailRegex.test(email.trim());
   const cleanPhone = typeof phone === "string" ? phone.trim().slice(0, 30) : "";
-  
+
   if (!isEmailValid && !cleanPhone) {
     return new Response(JSON.stringify({ error: "Lütfen geçerli bir telefon numarası veya e-posta adresi girin." }), {
       status: 400,
@@ -162,7 +170,7 @@ export async function onRequestPost(context) {
   // 2. SOURCE / SLUG PROVENANCE
   // Source is purely server-defined. Meta source is discarded.
   const resolvedSource = "landing_form";
-  
+
   // Gap Report on Slug Spoofing:
   // We cannot robustly verify `cleanSlug` against the requested URL without a KV lookup on ROUTE_ALIAS.
   // Therefore, a client could spoof a valid `cleanSlug` of another campaign.
@@ -171,7 +179,7 @@ export async function onRequestPost(context) {
   let resolvedProduct = null;
   let resolvedIntent = null;
   let resolvedLandingVersion = null; // 3. LANDING VERSION PROVENANCE: NOT FULLY VALIDATED
-  
+
   if (cleanSlug) {
     try {
       let slugData = null;
@@ -179,7 +187,7 @@ export async function onRequestPost(context) {
       if (env.SLUG_LINKS) {
         slugData = await env.SLUG_LINKS.get(cleanSlug, { type: "json" });
       }
-      
+
       // V2: Hub APP_CONFIG (if SLUG_LINKS missed)
       if (!slugData && env.APP_CONFIG) {
         slugData = await env.APP_CONFIG.get(`hub:${cleanSlug}`, { type: "json" });
@@ -200,12 +208,10 @@ export async function onRequestPost(context) {
           resolvedCampaign = landingPtr.campaignId;
           resolvedLandingVersion = landingPtr.landingId + "_BASELINE_UNVERIFIED";
           // We can also fetch the campaign itself to get product/intent
-          if (env.CAMPAIGN_INDEX) {
-            const campRec = await env.CAMPAIGN_INDEX.get(landingPtr.campaignId, { type: "json" });
-            if (campRec) {
-              resolvedProduct = campRec.product || null;
-              resolvedIntent = campRec.alias || landingPtr.campaignId;
-            }
+          const campRec = await env.APP_CONFIG.get(`campaign:${landingPtr.campaignId}`, { type: "json" });
+          if (campRec) {
+            resolvedProduct = campRec.product || null;
+            resolvedIntent = campRec.slug || campRec.alias || landingPtr.campaignId;
           }
         }
       }
@@ -234,8 +240,15 @@ export async function onRequestPost(context) {
   let appId = crypto.randomUUID();
   const status = "new";
 
+  const rawCookie = readCookie(request, "cos_state");
+  let user = parseUserState(rawCookie);
+  if (!user.uid) {
+    user.uid = crypto.randomUUID();
+    user.ts = now;
+  }
+
   try {
-  
+
   // ── Turnstile Verification ────────────────────────────────────────────────
   if (env.TURNSTILE_SECRET_KEY && body["cf-turnstile-response"]) {
     const turnstileToken = body["cf-turnstile-response"];
@@ -244,12 +257,12 @@ export async function onRequestPost(context) {
       formData.append('secret', env.TURNSTILE_SECRET_KEY);
       formData.append('response', turnstileToken);
       formData.append('remoteip', request.headers.get('CF-Connecting-IP') || '');
-      
+
       const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
         method: 'POST',
         body: formData
       });
-      
+
       const outcome = await res.json();
       if (!outcome.success) {
         return new Response(JSON.stringify({ error: "Güvenlik doğrulaması başarısız oldu (Bot Şüphesi)." }), {
@@ -267,20 +280,29 @@ export async function onRequestPost(context) {
     });
   }
 
+  // Check if draft exists
+  const draftToken = readCookie(request, "cl_draft_token");
+  let draftRow = null;
+  if (draftToken) {
+    const tokenHash = await hashToken(draftToken);
+    draftRow = await env.DB.prepare(
+      "SELECT id, created_at FROM applications WHERE situation = ? AND status = 'draft' LIMIT 1"
+    ).bind(tokenHash).first();
+  }
 
   // 1. IDEMPOTENCY BUG FIX & SPAM PROTECTION (Roadmap V1)
     // Use TC Kimlik No for a 30-day window if available, otherwise fallback to 120-sec phone check
     const tcKimlik = typeof tcValue === "string" || typeof tcValue === "number" ? String(tcValue).trim() : "";
     let existing = null;
-    
+
     if (tcKimlik) {
       const thirtyDaysAgo = now - idemSecs;
       // SQLite JSON extract syntax for D1
       existing = await env.DB.prepare(
         `SELECT id FROM applications WHERE slug = ? AND json_extract(working_payload_json, '$.tcKimlik') = ? AND created_at > ? LIMIT 1`
       ).bind(cleanSlug, tcKimlik, thirtyDaysAgo).first();
-    } 
-    
+    }
+
     if (!existing) {
       const idempThreshold = now - idemSecs;
       if (cleanEmail) {
@@ -294,24 +316,40 @@ export async function onRequestPost(context) {
       }
     }
 
-    if (existing) {
-      appId = existing.id;
-    } else {
-      const originalPayload = JSON.stringify(body);
-      if (tcKimlik) body.tcKimlik = tcKimlik;
-      const workingPayload = JSON.stringify(body);
+    const originalPayload = JSON.stringify(body);
+    if (tcKimlik) body.tcKimlik = tcKimlik;
+    const workingPayload = JSON.stringify(body);
 
+    if (draftRow && (now - draftRow.created_at <= 2592000)) {
+      appId = draftRow.id;
       await env.DB.prepare(
-        `INSERT INTO applications (
-          id, created_at, updated_at, status, slug, campaign, source, 
-          product, intent, situation, contact_preference, phone, email, 
-          landing_version, original_payload_json, working_payload_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `UPDATE applications
+         SET status = 'new', situation = null, slug = ?, campaign = ?, source = ?,
+             product = ?, intent = ?, contact_preference = ?, phone = ?, email = ?,
+             landing_version = ?, original_payload_json = ?, working_payload_json = ?,
+             visitor_id = ?, updated_at = ?
+         WHERE id = ?`
       ).bind(
-        appId, now, now, status, cleanSlug, resolvedCampaign, resolvedSource,
-        resolvedProduct, resolvedIntent, null, cleanPref, cleanPhone, cleanEmail,
-        resolvedLandingVersion, originalPayload, workingPayload
+        cleanSlug, resolvedCampaign, resolvedSource, resolvedProduct, resolvedIntent,
+        cleanPref, cleanPhone, cleanEmail, resolvedLandingVersion, originalPayload,
+        workingPayload, user.uid, now, appId
       ).run();
+    } else {
+      if (existing) {
+        appId = existing.id;
+      } else {
+        await env.DB.prepare(
+          `INSERT INTO applications (
+            id, created_at, updated_at, status, slug, campaign, source,
+            product, intent, situation, contact_preference, phone, email,
+            landing_version, original_payload_json, working_payload_json, visitor_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          appId, now, now, status, cleanSlug, resolvedCampaign, resolvedSource,
+          resolvedProduct, resolvedIntent, null, cleanPref, cleanPhone, cleanEmail,
+          resolvedLandingVersion, originalPayload, workingPayload, user.uid
+        ).run();
+      }
     }
   } catch (e) {
     console.error("Lead D1 insert error:", e);
@@ -321,27 +359,22 @@ export async function onRequestPost(context) {
     });
   }
 
-  const rawCookie = readCookie(request, "cos_state");
-  let user = parseUserState(rawCookie);
+  const reqProd = resolvedProduct || (cleanSlug ? cleanSlug.split('-')[0] : null);
+  const currentTags = Array.isArray(user.t) ? user.t : [];
+  const newTags = currentTags.includes("lead_submitted")
+    ? currentTags
+    : [...currentTags, "lead_submitted"];
 
+  const stateKey = resolvedIntent || reqProd;
   if (!rawCookie) {
-    user.uid = crypto.randomUUID();
-    user.ts = now;
-    const reqProd = cleanSlug ? cleanSlug.split('-')[0] : null;
-    user = updateUserState(user, { v: 1, c: 1, h: 0, e: 100, u: 0, t: ["lead_submitted"] }, reqProd);
+    user = updateUserState(user, { v: 1, f: 1, c: 0, h: 0, e: 100, u: 0, t: newTags }, stateKey);
   } else {
-    const currentTags = Array.isArray(user.t) ? user.t : [];
-    const newTags = currentTags.includes("lead_submitted")
-      ? currentTags
-      : [...currentTags, "lead_submitted"];
-    
-    const reqProd = cleanSlug ? cleanSlug.split('-')[0] : null;
     user = updateUserState(user, {
-      c: 1,
+      f: 1,
       h: 0,
       e: Math.min(100, (user.e || 0) + 30),
       t: newTags
-    }, reqProd);
+    }, stateKey);
   }
 
   context.waitUntil(
@@ -391,6 +424,17 @@ export async function onRequestPost(context) {
       path: "/",
       sameSite: "None",
       secure: true,
+      httpOnly: true
+    })
+  );
+
+  response.headers.append(
+    "Set-Cookie",
+    buildSetCookie("cl_draft_token", "", {
+      maxAge: 0,
+      path: "/",
+      sameSite: "Lax",
+      secure: request.url.startsWith("https:"),
       httpOnly: true
     })
   );
