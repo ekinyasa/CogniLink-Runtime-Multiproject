@@ -255,9 +255,21 @@ ${themeCssLink}
         if (typeof window === "undefined") return;
         var originalFetch = window.fetch;
         window.fetch = function(resource, config) {
+          var urlStr = "";
+          if (typeof resource === "string") {
+            urlStr = resource;
+          } else if (resource && resource.url) {
+            urlStr = resource.url;
+          }
+          
+          var isApiLead = false;
+          try {
+            var urlObj = new URL(urlStr, window.location.origin);
+            isApiLead = (urlObj.pathname === "/api/lead" || urlObj.pathname === "/api/lead/");
+          } catch(e) {}
+
           if (
-            typeof resource === "string" &&
-            resource.includes("/api/lead") &&
+            isApiLead &&
             config &&
             config.method === "POST" &&
             config.body
@@ -821,9 +833,21 @@ ${globalJsLink}
         if (typeof window === "undefined") return;
         var originalFetch = window.fetch;
         window.fetch = function(resource, config) {
+          var urlStr = "";
+          if (typeof resource === "string") {
+            urlStr = resource;
+          } else if (resource && resource.url) {
+            urlStr = resource.url;
+          }
+          
+          var isApiLead = false;
+          try {
+            var urlObj = new URL(urlStr, window.location.origin);
+            isApiLead = (urlObj.pathname === "/api/lead" || urlObj.pathname === "/api/lead/");
+          } catch(e) {}
+
           if (
-            typeof resource === "string" &&
-            resource.includes("/api/lead") &&
+            isApiLead &&
             config &&
             config.method === "POST" &&
             config.body
