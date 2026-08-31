@@ -62,6 +62,20 @@ function isValidPhone(phone) {
   const p = typeof phone === "string" ? phone.replace(/[^0-9]/g, "") : "";
   return p.length === 10 || p.length === 11;
 }
+
+function normalizeSlug(raw) {
+  if (!raw || typeof raw !== "string") return "";
+  let s = raw.trim().replace(/^\/+/, "");
+  if (s.startsWith("l/")) {
+    s = s.substring(2).replace(/^\/+/, "");
+  }
+  s = s.split("?")[0].split("#")[0].trim();
+  if (s.includes("/") || !s) {
+    return "";
+  }
+  return s;
+}
+
 export async function onRequestPost(context) {
   try {
   const { request, env } = context;
@@ -134,31 +148,36 @@ export async function onRequestPost(context) {
     });
   }
 
-  let slug = body.slug;
-  if (!slug) {
-    const referer = request.headers.get("referer");
-    if (referer) {
-      try {
-        const url = new URL(referer);
-        if (url.pathname.startsWith("/l/")) {
-          slug = url.pathname.substring(3).split("/")[0];
-        } else {
-          const cleanPath = url.pathname.replace(/^\/|\/$/g, "").toLowerCase().trim();
-          if (cleanPath && env.ROUTE_ALIAS) {
-            const kvSlug = await env.ROUTE_ALIAS.get(`route:${cleanPath}`, { type: "text" });
-            if (kvSlug) {
-              slug = kvSlug;
-            } else if (env.APP_CONFIG) {
-              const pageExists = await env.APP_CONFIG.get(`hub:${cleanPath}`, { type: "json" });
-              if (pageExists !== null) {
-                slug = cleanPath;
-              }
+  let serverSlug = null;
+  if (referer) {
+    try {
+      const url = new URL(referer);
+      const cleanPath = url.pathname.replace(/^\/+|\/+$/g, "").toLowerCase().trim();
+      if (cleanPath.startsWith("l/")) {
+        const candidate = cleanPath.substring(2);
+        const normalized = normalizeSlug(candidate);
+        if (normalized) {
+          serverSlug = normalized;
+        }
+      } else if (cleanPath && env.ROUTE_ALIAS) {
+        const kvSlug = await env.ROUTE_ALIAS.get(`route:${cleanPath}`, { type: "text" });
+        if (kvSlug) {
+          const normalized = normalizeSlug(kvSlug);
+          if (normalized) {
+            serverSlug = normalized;
+          }
+        } else if (env.APP_CONFIG) {
+          const pageExists = await env.APP_CONFIG.get(`hub:${cleanPath}`, { type: "json" });
+          if (pageExists !== null) {
+            const normalized = normalizeSlug(cleanPath);
+            if (normalized) {
+              serverSlug = normalized;
             }
           }
         }
-      } catch (e) {
-        console.error("Provenance resolution error:", e);
       }
+    } catch (e) {
+      console.error("Provenance resolution error:", e);
     }
   }
 
@@ -178,7 +197,8 @@ export async function onRequestPost(context) {
 
   const cleanEmail = isEmailValid ? email.trim().toLowerCase() : "";
   const cleanName = typeof name === "string" ? name.trim().slice(0, 100) : "";
-  const cleanSlug = typeof slug === "string" ? slug.trim() : "";
+  // Precedence: Trusted server route context > client body.slug fallback
+  const cleanSlug = serverSlug || normalizeSlug(body.slug);
   const cleanFormId = typeof form_id === "string" ? form_id.trim() : "default_lead_form";
   const cleanPref = typeof contact_preference === "string" ? contact_preference.trim() : null;
 
