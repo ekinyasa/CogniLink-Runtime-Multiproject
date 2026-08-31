@@ -284,13 +284,20 @@ ${themeCssLink}
                     var widgetId = turnstile.render(tempDiv, {
                       sitekey: "${escAttr(cfg.turnstileSiteKey || '')}",
                       size: "invisible",
+                      execution: "execute",
                       callback: function(t) {
                         resolve(t);
-                        try { tempDiv.remove(); } catch(e){}
+                        try {
+                          turnstile.remove(widgetId);
+                          tempDiv.remove();
+                        } catch(e){}
                       },
                       "error-callback": function() {
                         resolve(null);
-                        try { tempDiv.remove(); } catch(e){}
+                        try {
+                          turnstile.remove(widgetId);
+                          tempDiv.remove();
+                        } catch(e){}
                       }
                     });
                     turnstile.execute(widgetId);
@@ -423,7 +430,7 @@ ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugDa
       "email", "eposta", "e-posta",
       "name", "isim", "ad", "ad_soyad", "full_name",
       "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
-      "birth_date", "birthDate", "license_plate", "plate",
+      "birth_date", "birthDate", "dogumTarihi", "license_plate", "plate", "plaka", "ruhsatSeriNo",
       "contact_preference", "iletisimTercihi", "situation", "custom_fields"
     ];
     var lastSent = {};
@@ -862,13 +869,20 @@ ${globalJsLink}
                     var widgetId = turnstile.render(tempDiv, {
                       sitekey: "${escAttr(cfg.turnstileSiteKey || '')}",
                       size: "invisible",
+                      execution: "execute",
                       callback: function(t) {
                         resolve(t);
-                        try { tempDiv.remove(); } catch(e){}
+                        try {
+                          turnstile.remove(widgetId);
+                          tempDiv.remove();
+                        } catch(e){}
                       },
                       "error-callback": function() {
                         resolve(null);
-                        try { tempDiv.remove(); } catch(e){}
+                        try {
+                          turnstile.remove(widgetId);
+                          tempDiv.remove();
+                        } catch(e){}
                       }
                     });
                     turnstile.execute(widgetId);
@@ -1085,7 +1099,7 @@ function prefillFormHtml(html, draftValues) {
     "email", "eposta", "e-posta",
     "name", "isim", "ad", "ad_soyad", "full_name",
     "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
-    "birth_date", "birthDate", "license_plate", "plate",
+    "birth_date", "birthDate", "dogumTarihi", "license_plate", "plate", "plaka", "ruhsatSeriNo",
     "contact_preference", "iletisimTercihi", "situation", "custom_fields"
   ];
 

@@ -6,7 +6,7 @@ const ALLOWED_FIELDS = [
   "email", "eposta", "e-posta",
   "name", "isim", "ad", "ad_soyad", "full_name",
   "tc", "tcValue", "tcKimlik", "tckn", "tc_kimlik", "tc_no", "tc-kimlik",
-  "birth_date", "birthDate", "license_plate", "plate",
+  "birth_date", "birthDate", "dogumTarihi", "license_plate", "plate", "plaka", "ruhsatSeriNo",
   "contact_preference", "iletisimTercihi", "situation", "custom_fields"
 ];
 
