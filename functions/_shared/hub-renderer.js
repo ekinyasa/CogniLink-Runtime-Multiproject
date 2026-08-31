@@ -1046,6 +1046,13 @@ ${globalJsLink}
           if (f.dataset.isSubmitting === "true") return;
           f.dataset.isSubmitting = "true";
 
+          // CAPTURE IMMUTABLE SNAPSHOT OF VALIDATED PAYLOAD
+          if (e.detail && e.detail.values) {
+            f._validatedSnapshot = Object.assign({}, e.detail.values);
+          } else {
+            f._validatedSnapshot = Object.fromEntries(new FormData(f).entries());
+          }
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           if (submitBtn) {
             f.dataset.originalBtnText = submitBtn.textContent || submitBtn.value || "";
@@ -1089,16 +1096,8 @@ ${globalJsLink}
         }
 
         function doSubmit(turnstileToken) {
-          var formData = new FormData(f);
-          var jsonBody = {};
-          formData.forEach(function(value, key) {
-            if (jsonBody[key] !== undefined) {
-              if (!Array.isArray(jsonBody[key])) jsonBody[key] = [jsonBody[key]];
-              jsonBody[key].push(value);
-            } else {
-              jsonBody[key] = value;
-            }
-          });
+          // Copy snapshot to avoid mutation
+          var jsonBody = Object.assign({}, f._validatedSnapshot || {});
 
           if (turnstileToken) {
             jsonBody["cf-turnstile-response"] = turnstileToken;
@@ -1111,7 +1110,7 @@ ${globalJsLink}
           })
           .then(async function(res) {
             if (res.ok) {
-              var red = formData.get("_redirect");
+              var red = jsonBody["_redirect"];
               if (red) window.location.href = red;
               else alert("Talebiniz başarıyla alındı.");
             } else {

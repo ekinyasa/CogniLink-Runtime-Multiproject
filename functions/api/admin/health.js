@@ -90,6 +90,26 @@ async function checkAnalytics(env) {
   }
 }
 
+async function checkD1(env) {
+  if (!env.DB || typeof env.DB.prepare !== "function") return "NOT AVAILABLE";
+  try {
+    const res = await env.DB.prepare("SELECT 1").first();
+    return res ? "ok" : "error";
+  } catch {
+    return "error";
+  }
+}
+
+async function checkKvStatus(ns) {
+  if (!ns || typeof ns.list !== "function") return "NOT AVAILABLE";
+  try {
+    await ns.list({ limit: 1 });
+    return "ok";
+  } catch {
+    return "error";
+  }
+}
+
 // ── Entrypoint ─────────────────────────────────────────────────────────────────
 
 export async function onRequest(context) {
@@ -115,6 +135,44 @@ export async function onRequest(context) {
 
   const ok = router === "ok" && kv === "ok" && analytics === "ok";
 
+  const d1Status = await checkD1(env);
+  const kvBindings = [
+    { name: "ROUTE_ALIAS", ns: env.ROUTE_ALIAS },
+    { name: "LANDING_CONFIG", ns: env.LANDING_CONFIG },
+    { name: "APP_CONFIG", ns: env.APP_CONFIG }
+  ];
+
+  const kvStatusObj = {};
+  for (const item of kvBindings) {
+    kvStatusObj[item.name] = await checkKvStatus(item.ns);
+  }
+
+  const gitCommit = env.CF_PAGES_COMMIT_SHA || "NOT AVAILABLE";
+  const gitShort = gitCommit !== "NOT AVAILABLE" ? gitCommit.slice(0, 7) : "NOT AVAILABLE";
+
+  const identity = {
+    application: "CogniLink",
+    environment: env.ENV_NAME || (env.CF_PAGES_COMMIT_SHA ? "production" : "local"),
+    git_commit: gitCommit,
+    git_short_sha: gitShort,
+    branch: env.CF_PAGES_BRANCH || "NOT AVAILABLE",
+    deployment_id: env.CF_DEPLOYMENT_ID || "NOT AVAILABLE",
+    deployment_time: env.CF_PAGES_BUILD_TIMESTAMP || "NOT AVAILABLE",
+    runtime_version: "NOT AVAILABLE",
+    primary_runtime_domain: "trafik.teklifi.online",
+    current_request_host: request.headers.get("Host") || request.headers.get("x-forwarded-host") || new URL(request.url).host || "NOT AVAILABLE",
+    cloudflare_context: env.CF_PAGES_COMMIT_SHA ? "Pages" : "NOT AVAILABLE",
+    database: {
+      binding: "DB",
+      status: d1Status
+    },
+    kv: kvStatusObj,
+    router: router,
+    analytics: analytics,
+    build_schema_version: "NOT AVAILABLE",
+    overall: ok ? "OK" : "DEGRADED"
+  };
+
   const body = JSON.stringify({
     ok,
     router,
@@ -123,6 +181,7 @@ export async function onRequest(context) {
     deployment,
     version:   deployment,
     timestamp: new Date().toISOString(),
+    identity
   });
 
   return new Response(request.method === "HEAD" ? null : body, {
