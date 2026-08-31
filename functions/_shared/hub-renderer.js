@@ -261,7 +261,7 @@ ${themeCssLink}
           } else if (resource && resource.url) {
             urlStr = resource.url;
           }
-          
+
           var isApiLead = false;
           try {
             var urlObj = new URL(urlStr, window.location.origin);
@@ -325,7 +325,7 @@ ${themeCssLink}
       // Restored from 4361888 with event isolation to coexist with Phase 2B main.js
       var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
       var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
-      
+
       forms.forEach(function(f) {
         var turnstileWidgetId = null;
         if (turnstileSiteKey && typeof turnstile !== "undefined") {
@@ -351,10 +351,18 @@ ${themeCssLink}
 
         f.addEventListener("cognilink:form-valid", function(e) {
           e.stopImmediatePropagation(); // Prevent main.js from executing its tokenless fetch
-          
+
           if (f.dataset.isSubmitting === "true") return;
           f.dataset.isSubmitting = "true";
-          
+
+          // CAPTURE IMMUTABLE SNAPSHOT OF VALIDATED PAYLOAD
+          if (e.detail && e.detail.values) {
+             f._validatedSnapshot = JSON.parse(JSON.stringify(e.detail.values));
+          } else {
+             // Fallback if somehow detail.values is missing
+             f._validatedSnapshot = Object.fromEntries(new FormData(f).entries());
+          }
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           if (submitBtn) {
             f.dataset.originalBtnText = submitBtn.textContent || submitBtn.value || "";
@@ -378,13 +386,13 @@ ${themeCssLink}
           f.dataset.isSubmitting = "false";
           var existingAlert = f.querySelector(".form-error-alert");
           if (existingAlert) existingAlert.remove();
-          
+
           var d = document.createElement("div");
           d.className = "form-error-alert";
           d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
           d.textContent = errMsg;
           f.insertBefore(d, f.firstChild);
-          
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           if (submitBtn) {
             submitBtn.disabled = false;
@@ -398,21 +406,12 @@ ${themeCssLink}
         }
 
         function doSubmit(turnstileToken) {
-          var formData = new FormData(f);
-          var jsonBody = {};
-          formData.forEach(function(value, key) {
-            if (jsonBody[key] !== undefined) {
-              if (!Array.isArray(jsonBody[key])) jsonBody[key] = [jsonBody[key]];
-              jsonBody[key].push(value);
-            } else {
-              jsonBody[key] = value;
-            }
-          });
-          
+          var jsonBody = f._validatedSnapshot || {};
+
           if (turnstileToken) {
             jsonBody["cf-turnstile-response"] = turnstileToken;
           }
-          
+
           fetch("/api/lead", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -953,7 +952,7 @@ ${globalJsLink}
           } else if (resource && resource.url) {
             urlStr = resource.url;
           }
-          
+
           var isApiLead = false;
           try {
             var urlObj = new URL(urlStr, window.location.origin);
@@ -1017,7 +1016,7 @@ ${globalJsLink}
       // Restored from 4361888 with event isolation to coexist with Phase 2B main.js
       var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
       var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
-      
+
       forms.forEach(function(f) {
         var turnstileWidgetId = null;
         if (turnstileSiteKey && typeof turnstile !== "undefined") {
@@ -1043,10 +1042,10 @@ ${globalJsLink}
 
         f.addEventListener("cognilink:form-valid", function(e) {
           e.stopImmediatePropagation(); // Prevent main.js from executing its tokenless fetch
-          
+
           if (f.dataset.isSubmitting === "true") return;
           f.dataset.isSubmitting = "true";
-          
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           if (submitBtn) {
             f.dataset.originalBtnText = submitBtn.textContent || submitBtn.value || "";
@@ -1070,13 +1069,13 @@ ${globalJsLink}
           f.dataset.isSubmitting = "false";
           var existingAlert = f.querySelector(".form-error-alert");
           if (existingAlert) existingAlert.remove();
-          
+
           var d = document.createElement("div");
           d.className = "form-error-alert";
           d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
           d.textContent = errMsg;
           f.insertBefore(d, f.firstChild);
-          
+
           var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
           if (submitBtn) {
             submitBtn.disabled = false;
@@ -1100,11 +1099,11 @@ ${globalJsLink}
               jsonBody[key] = value;
             }
           });
-          
+
           if (turnstileToken) {
             jsonBody["cf-turnstile-response"] = turnstileToken;
           }
-          
+
           fetch("/api/lead", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
