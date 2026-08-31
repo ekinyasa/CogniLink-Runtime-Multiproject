@@ -321,10 +321,117 @@ ${themeCssLink}
         };
       })();
 
-      // NOTE: Form submit handling is managed by main.js CogniLinkForms.
-      // The fetch interceptor above handles Turnstile token injection for
-      // the cognilink:form-valid event handler's fetch calls.
-      // Do not add a duplicate submit handler here.
+      // Canonical Form Submit Handling
+      // Restored from 4361888 with event isolation to coexist with Phase 2B main.js
+      var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
+      var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
+      
+      forms.forEach(function(f) {
+        var turnstileWidgetId = null;
+        if (turnstileSiteKey && typeof turnstile !== "undefined") {
+          var tdiv = document.createElement("div");
+          tdiv.className = "cf-turnstile";
+          f.appendChild(tdiv);
+          try {
+            turnstileWidgetId = turnstile.render(tdiv, {
+              sitekey: turnstileSiteKey,
+              size: "invisible",
+              execution: "execute",
+              callback: function(token) {
+                if (f.dataset.isSubmitting === "true") doSubmit(token);
+              },
+              "error-callback": function() {
+                if (f.dataset.isSubmitting === "true") abortSubmit("Güvenlik doğrulaması tamamlanamadı. Lütfen tekrar deneyin.");
+              }
+            });
+          } catch (e) {
+            console.error("Turnstile pre-render error:", e);
+          }
+        }
+
+        f.addEventListener("cognilink:form-valid", function(e) {
+          e.stopImmediatePropagation(); // Prevent main.js from executing its tokenless fetch
+          
+          if (f.dataset.isSubmitting === "true") return;
+          f.dataset.isSubmitting = "true";
+          
+          var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
+          if (submitBtn) {
+            f.dataset.originalBtnText = submitBtn.textContent || submitBtn.value || "";
+            submitBtn.disabled = true;
+            if (submitBtn.tagName === "BUTTON") submitBtn.textContent = "Lütfen Bekleyin...";
+            else submitBtn.value = "Lütfen Bekleyin...";
+          }
+
+          if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+            try {
+              turnstile.execute(turnstileWidgetId);
+            } catch (err) {
+              abortSubmit("Güvenlik sistemi başlatılamadı. Lütfen sayfayı yenileyin.");
+            }
+          } else {
+            doSubmit(null);
+          }
+        });
+
+        function abortSubmit(errMsg) {
+          f.dataset.isSubmitting = "false";
+          var existingAlert = f.querySelector(".form-error-alert");
+          if (existingAlert) existingAlert.remove();
+          
+          var d = document.createElement("div");
+          d.className = "form-error-alert";
+          d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
+          d.textContent = errMsg;
+          f.insertBefore(d, f.firstChild);
+          
+          var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            var originalBtnText = f.dataset.originalBtnText || "";
+            if (submitBtn.tagName === "BUTTON") submitBtn.textContent = originalBtnText;
+            else submitBtn.value = originalBtnText;
+          }
+          if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+            try { turnstile.reset(turnstileWidgetId); } catch(e){}
+          }
+        }
+
+        function doSubmit(turnstileToken) {
+          var formData = new FormData(f);
+          var jsonBody = {};
+          formData.forEach(function(value, key) {
+            if (jsonBody[key] !== undefined) {
+              if (!Array.isArray(jsonBody[key])) jsonBody[key] = [jsonBody[key]];
+              jsonBody[key].push(value);
+            } else {
+              jsonBody[key] = value;
+            }
+          });
+          
+          if (turnstileToken) {
+            jsonBody["cf-turnstile-response"] = turnstileToken;
+          }
+          
+          fetch("/api/lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jsonBody)
+          })
+          .then(async function(res) {
+            if (res.ok) {
+              var red = formData.get("_redirect");
+              if (red) window.location.href = red;
+              else alert("Talebiniz başarıyla alındı.");
+            } else {
+              var data = await res.json().catch(function(){ return {}; });
+              abortSubmit(data.error || "Geçersiz bilgi girdiniz. Lütfen kontrol edin.");
+            }
+          }).catch(function(err) {
+            abortSubmit("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");
+          });
+        }
+      });
     });
   </script>
 
@@ -906,10 +1013,117 @@ ${globalJsLink}
         };
       })();
 
-      // NOTE: Form submit handling is managed by main.js CogniLinkForms.
-      // The fetch interceptor above handles Turnstile token injection for
-      // the cognilink:form-valid event handler's fetch calls.
-      // Do not add a duplicate submit handler here.
+      // Canonical Form Submit Handling
+      // Restored from 4361888 with event isolation to coexist with Phase 2B main.js
+      var turnstileSiteKey = "${escAttr(cfg.turnstileSiteKey || "")}";
+      var forms = document.querySelectorAll("form:not([action]), form[action=''], form[action='/api/lead'], form[data-quote-form]");
+      
+      forms.forEach(function(f) {
+        var turnstileWidgetId = null;
+        if (turnstileSiteKey && typeof turnstile !== "undefined") {
+          var tdiv = document.createElement("div");
+          tdiv.className = "cf-turnstile";
+          f.appendChild(tdiv);
+          try {
+            turnstileWidgetId = turnstile.render(tdiv, {
+              sitekey: turnstileSiteKey,
+              size: "invisible",
+              execution: "execute",
+              callback: function(token) {
+                if (f.dataset.isSubmitting === "true") doSubmit(token);
+              },
+              "error-callback": function() {
+                if (f.dataset.isSubmitting === "true") abortSubmit("Güvenlik doğrulaması tamamlanamadı. Lütfen tekrar deneyin.");
+              }
+            });
+          } catch (e) {
+            console.error("Turnstile pre-render error:", e);
+          }
+        }
+
+        f.addEventListener("cognilink:form-valid", function(e) {
+          e.stopImmediatePropagation(); // Prevent main.js from executing its tokenless fetch
+          
+          if (f.dataset.isSubmitting === "true") return;
+          f.dataset.isSubmitting = "true";
+          
+          var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
+          if (submitBtn) {
+            f.dataset.originalBtnText = submitBtn.textContent || submitBtn.value || "";
+            submitBtn.disabled = true;
+            if (submitBtn.tagName === "BUTTON") submitBtn.textContent = "Lütfen Bekleyin...";
+            else submitBtn.value = "Lütfen Bekleyin...";
+          }
+
+          if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+            try {
+              turnstile.execute(turnstileWidgetId);
+            } catch (err) {
+              abortSubmit("Güvenlik sistemi başlatılamadı. Lütfen sayfayı yenileyin.");
+            }
+          } else {
+            doSubmit(null);
+          }
+        });
+
+        function abortSubmit(errMsg) {
+          f.dataset.isSubmitting = "false";
+          var existingAlert = f.querySelector(".form-error-alert");
+          if (existingAlert) existingAlert.remove();
+          
+          var d = document.createElement("div");
+          d.className = "form-error-alert";
+          d.style.cssText = "background:#fee2e2;color:#991b1b;padding:12px;border-radius:6px;border:1px solid #f87171;margin-bottom:16px;font-weight:500;text-align:center;font-size:14px;";
+          d.textContent = errMsg;
+          f.insertBefore(d, f.firstChild);
+          
+          var submitBtn = f.querySelector("button[type='submit']") || f.querySelector("input[type='submit']");
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            var originalBtnText = f.dataset.originalBtnText || "";
+            if (submitBtn.tagName === "BUTTON") submitBtn.textContent = originalBtnText;
+            else submitBtn.value = originalBtnText;
+          }
+          if (turnstileWidgetId !== null && typeof turnstile !== "undefined") {
+            try { turnstile.reset(turnstileWidgetId); } catch(e){}
+          }
+        }
+
+        function doSubmit(turnstileToken) {
+          var formData = new FormData(f);
+          var jsonBody = {};
+          formData.forEach(function(value, key) {
+            if (jsonBody[key] !== undefined) {
+              if (!Array.isArray(jsonBody[key])) jsonBody[key] = [jsonBody[key]];
+              jsonBody[key].push(value);
+            } else {
+              jsonBody[key] = value;
+            }
+          });
+          
+          if (turnstileToken) {
+            jsonBody["cf-turnstile-response"] = turnstileToken;
+          }
+          
+          fetch("/api/lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jsonBody)
+          })
+          .then(async function(res) {
+            if (res.ok) {
+              var red = formData.get("_redirect");
+              if (red) window.location.href = red;
+              else alert("Talebiniz başarıyla alındı.");
+            } else {
+              var data = await res.json().catch(function(){ return {}; });
+              abortSubmit(data.error || "Geçersiz bilgi girdiniz. Lütfen kontrol edin.");
+            }
+          }).catch(function(err) {
+            abortSubmit("Bağlantı hatası oluştu. Lütfen tekrar deneyin.");
+          });
+        }
+      });
     });
   </script>
 </body>
