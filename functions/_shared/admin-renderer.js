@@ -945,6 +945,24 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <div id="verify-state-result" class="hidden" style="background:var(--bg); padding:1rem; border:1px solid var(--border); border-radius:var(--radius-sm); font-size: 0.85rem; line-height: 1.6;"></div>
       </div>
 
+      <!-- ── Runtime Identity ── -->
+      <div class="card" style="grid-column: 1 / -1;">
+        <p class="card-title" style="margin-bottom:0.5rem">Runtime Identity</p>
+        <p class="hint" style="margin-bottom:1rem">Deployment and environment operational metadata.</p>
+        <div id="identity-status" class="hint">Loading identity...</div>
+        <div id="identity-result" class="hidden">
+          <table class="analytics-table" style="max-width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border);">
+                <th style="padding:0.5rem; text-align:left; font-weight:600;">Property</th>
+                <th style="padding:0.5rem; text-align:left; font-weight:600;">Value</th>
+              </tr>
+            </thead>
+            <tbody id="identity-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ── System Test (A) ── -->
       <div class="card">
         <div class="list-header" style="margin-bottom:.75rem">
@@ -1943,6 +1961,7 @@ window.openNewIntentModal = function(e) {
       if (target === "diagnostics" && !diagnosticsTabLoaded) {
         diagnosticsTabLoaded = true;
         loadBgTestLast();   // PART 6 — show last background test timestamp on first open
+        loadRuntimeIdentity();
       }
           });
   });
@@ -3039,6 +3058,81 @@ window.openNewIntentModal = function(e) {
     }
 
     if (elBtnRunSmoke) elBtnRunSmoke.disabled = false;
+  }
+
+  /* ── Runtime Identity Loader ── */
+  async function loadRuntimeIdentity() {
+    var elStatus = $("identity-status");
+    var elResult = $("identity-result");
+    var elRows = $("identity-rows");
+    if (!elStatus || !elResult || !elRows) return;
+
+    elStatus.textContent = "Loading identity...";
+    show(elStatus);
+    hide(elResult);
+
+    try {
+      var res = await apiFetch("/api/admin/health", { method: "GET" });
+      var data = await res.json();
+
+      var identity = data.identity || {};
+      function formatVal(val) {
+        if (val === undefined || val === null || val === "" || String(val).toUpperCase() === "NOT AVAILABLE") {
+          return '<span style="color:var(--text-m);font-style:italic">NOT AVAILABLE</span>';
+        }
+        return esc(String(val));
+      }
+
+      function formatStatus(status) {
+        if (!status) return formatVal(status);
+        var norm = String(status).toLowerCase();
+        if (norm === "ok" || norm === "healthy") {
+          return '<span class="badge badge-success" style="background:#2da44e;color:#fff;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600">OK</span>';
+        }
+        if (norm === "error" || norm === "unhealthy") {
+          return '<span class="badge badge-danger" style="background:#cf222e;color:#fff;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600">ERROR</span>';
+        }
+        return formatVal(status);
+      }
+
+      var rows = [
+        ["Application", identity.application],
+        ["Environment", identity.environment],
+        ["Git short SHA", identity.git_short_sha],
+        ["Git full SHA", identity.git_commit],
+        ["Branch", identity.branch],
+        ["Deployment ID", identity.deployment_id],
+        ["Deployment time", identity.deployment_time],
+        ["Runtime version", identity.runtime_version],
+        ["Primary runtime domain", identity.primary_runtime_domain],
+        ["Current request host", identity.current_request_host],
+        ["Cloudflare context", identity.cloudflare_context],
+        ["Database status", identity.database ? identity.database.status : null],
+        ["KV ROUTE_ALIAS status", identity.kv ? identity.kv.ROUTE_ALIAS : null],
+        ["KV LANDING_CONFIG status", identity.kv ? identity.kv.LANDING_CONFIG : null],
+        ["KV APP_CONFIG status", identity.kv ? identity.kv.APP_CONFIG : null],
+        ["Router", identity.router],
+        ["Analytics", identity.analytics],
+        ["Overall status", identity.overall]
+      ];
+
+      elRows.innerHTML = rows.map(function(r) {
+        var label = r[0];
+        var val = r[1];
+        var rendered = "";
+        if (label.indexOf("status") !== -1 || label === "Router" || label === "Analytics" || label === "Overall status") {
+          rendered = formatStatus(val);
+        } else {
+          rendered = formatVal(val);
+        }
+        return "<tr><td style='font-weight:600;width:240px;padding:0.5rem;'>" + esc(label) + "</td><td style='padding:0.5rem;'>" + rendered + "</td></tr>";
+      }).join("");
+
+      hide(elStatus);
+      show(elResult);
+    } catch(err) {
+      elStatus.textContent = "Failed to load runtime identity: " + (err.message || "network error");
+    }
   }
 
   if (elBtnRunSmoke) {

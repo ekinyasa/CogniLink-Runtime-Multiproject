@@ -12,13 +12,23 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify({ error: "database_not_configured" }), { status: 500 });
   }
 
+  const showDrafts = url.searchParams.get("drafts") === "true";
+
   try {
-    const { results } = await env.DB.prepare(
-      `SELECT id, created_at, status, phone, email, product, intent, situation, slug 
-       FROM applications 
-       ORDER BY created_at DESC 
-       LIMIT ? OFFSET ?`
-    ).bind(limit, offset).all();
+    const query = showDrafts
+      ? `SELECT id, created_at, status, phone, email, product, intent, situation, slug
+         FROM applications
+         ORDER BY created_at DESC
+         LIMIT ? OFFSET ?`
+      : `SELECT id, created_at, status, phone, email, product, intent, situation, slug
+         FROM applications
+         WHERE status != 'draft'
+         ORDER BY created_at DESC
+         LIMIT ? OFFSET ?`;
+
+    const { results } = await env.DB.prepare(query)
+      .bind(limit, offset)
+      .all();
 
     return new Response(JSON.stringify({ applications: results }), {
       headers: { "Content-Type": "application/json" }

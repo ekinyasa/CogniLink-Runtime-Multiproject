@@ -141,9 +141,24 @@ export async function onRequestPost(context) {
       try {
         const url = new URL(referer);
         if (url.pathname.startsWith("/l/")) {
-          slug = url.pathname.replace("/l/", "").split("/")[0];
+          slug = url.pathname.substring(3).split("/")[0];
+        } else {
+          const cleanPath = url.pathname.replace(/^\/|\/$/g, "").toLowerCase().trim();
+          if (cleanPath && env.ROUTE_ALIAS) {
+            const kvSlug = await env.ROUTE_ALIAS.get(`route:${cleanPath}`, { type: "text" });
+            if (kvSlug) {
+              slug = kvSlug;
+            } else if (env.APP_CONFIG) {
+              const pageExists = await env.APP_CONFIG.get(`hub:${cleanPath}`, { type: "json" });
+              if (pageExists !== null) {
+                slug = cleanPath;
+              }
+            }
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("Provenance resolution error:", e);
+      }
     }
   }
 
@@ -279,6 +294,9 @@ export async function onRequestPost(context) {
       headers: corsHeaders
     });
   }
+
+  // Remove Turnstile token from body before serialization to prevent persistence in DB/analytics
+  delete body["cf-turnstile-response"];
 
   // Check if draft exists
   const draftToken = readCookie(request, "cl_draft_token");

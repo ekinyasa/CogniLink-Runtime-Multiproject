@@ -164,9 +164,7 @@ export function renderHub({
 
   // Global Custom JS block as a natively-hosted external script with cache busting
   const turnstileScript = cfg.turnstileSiteKey ? `\n<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>` : "";
-  const globalJsLink = cfg.customScript
-    ? `\n<script src="/global-assets/main.js?v=${escAttr(cfg.jsVersion || "1")}"></script>`
-    : "";
+  const globalJsLink = `\n<script src="/global-assets/main.js?v=${escAttr(cfg.jsVersion || "1")}"></script>`;
 
   // Page-level Custom CSS block (unscoped)
   const slugId = slug || "";
