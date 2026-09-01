@@ -502,7 +502,7 @@ ${slugData?.signals?.conversionSelector ? `
     : "";
 
   /* ── Normal hub ───────────────────────────────────────────────── */
-  const finalHtml = `<!DOCTYPE html>
+  let finalHtml = `<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -1124,6 +1124,11 @@ ${globalJsLink}
   </script>
 </body>
 </html>`;
+  const canonicalSlug = (slug || slugData?.slug || "").trim();
+  if (canonicalSlug) {
+    const thankYouTarget = `/l/${escAttr(canonicalSlug)}/thanks`;
+    finalHtml = finalHtml.replace(/\/l\/(?:\{slug\}|slug)\/thanks/g, thankYouTarget);
+  }
   return prefillFormHtml(finalHtml, draftValues);
 }
 
