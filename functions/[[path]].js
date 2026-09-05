@@ -213,15 +213,27 @@ export async function onRequestGet(context) {
     }
 
     const hostSegments = newHost.split('.');
+    const rootDomain = (env && env.ROOT_DOMAIN) || "";
+    const canonicalMode = (env && env.CANONICAL_HOST_MODE) || "apex";
+    const wwwRedirectToApex = (env && (env.WWW_REDIRECT_TO_APEX === "true" || env.WWW_REDIRECT_TO_APEX === true));
 
-    // Redirect root and www teklifi.online to sigorta.teklifi.online
-    if (newHost === "teklifi.online" || newHost === "www.teklifi.online") {
-      newHost = "sigorta.teklifi.online";
-      needsRedirect = true;
-    } else if (hostSegments.length === 2 && !newHost.startsWith("www.")) {
-      // Canonical rule for other Root Domains (e.g., niluferormanli.com -> www.niluferormanli.com)
-      newHost = "www." + newHost;
-      needsRedirect = true;
+    if (rootDomain) {
+      if (wwwRedirectToApex && (newHost === `www.${rootDomain}`)) {
+        newHost = rootDomain;
+        needsRedirect = true;
+      } else if (canonicalMode === "www" && newHost === rootDomain) {
+        newHost = `www.${rootDomain}`;
+        needsRedirect = true;
+      }
+    } else {
+      // Legacy fallback when no ROOT_DOMAIN is configured
+      if (newHost === "teklifi.online" || newHost === "www.teklifi.online") {
+        newHost = "sigorta.teklifi.online";
+        needsRedirect = true;
+      } else if (hostSegments.length === 2 && !newHost.startsWith("www.")) {
+        newHost = "www." + newHost;
+        needsRedirect = true;
+      }
     }
 
     // Safely ignore subdomains (3+ segments like dev.ekinyasa.online)
@@ -237,8 +249,13 @@ export async function onRequestGet(context) {
     ? "/" + params.path.join("/")
     : "/" + String(params.path || "");
 
-  // ── Admin Subdomain Handling ─────────────────────────────────────────────
-  if (originalHost === "login.teklifi.online" && (rawPath === "/" || rawPath === "")) {
+  // ── Reserved Subdomains & Admin Subdomain Handling ────────────────────────
+  const rootDomain = (env && env.ROOT_DOMAIN) || "";
+  const adminSubdomain = (env && env.ADMIN_SUBDOMAIN) || "login";
+  const adminHost = rootDomain ? `${adminSubdomain}.${rootDomain}` : "login.teklifi.online";
+  const isAdminHost = originalHost === adminHost || originalHost === "login.teklifi.online";
+
+  if (isAdminHost && (rawPath === "/" || rawPath === "")) {
     return new Response(renderAdmin({
       branch: (env && env.CF_PAGES_BRANCH)     || "",
       sha:    (env && env.CF_PAGES_COMMIT_SHA) || "",
@@ -253,6 +270,18 @@ export async function onRequestGet(context) {
         "Referrer-Policy":        "no-referrer",
       },
     });
+  }
+
+  // Protect reserved subdomains (e.g. portal.niluferormanli.com reserved for Kartra)
+  if (rootDomain && originalHost.endsWith(`.${rootDomain}`)) {
+    const sub = originalHost.slice(0, -(rootDomain.length + 1)).toLowerCase();
+    const RESERVED_SUBDOMAINS = [
+      "login", "admin", "api", "assets", "static", "dash",
+      "dashboard", "my", "app", "test", "demo", "portal"
+    ];
+    if (sub !== adminSubdomain && RESERVED_SUBDOMAINS.includes(sub)) {
+      return html404();
+    }
   }
 
   // ── Step 0: Root path handling ──────────────────────────────────────────
@@ -466,7 +495,8 @@ export async function onRequestGet(context) {
     } catch (_) {}
   }
   const baseDest = campRecord?.destinations || campRecord?.routing?.destinations || {};
-  const intentDestinations = Object.keys(baseDest).length > 0 || (landingRecord?.destinations && Object.keys(landingRecord.destinations).length > 0) ? Object.assign({}, baseDest, landingRecord?.destinations || {}) : null;
+  const hasLandingDest = typeof landingRecord !== "undefined" && landingRecord?.destinations && Object.keys(landingRecord.destinations).length > 0;
+  const intentDestinations = Object.keys(baseDest).length > 0 || hasLandingDest ? Object.assign({}, baseDest, hasLandingDest ? landingRecord.destinations : {}) : null;
   const intentRules = campRecord?.rules || campRecord?.routing?.rules || hubConfigVal?.decision_rules || globalConfig?.decision_rules || [];
 
   const staticRedirect = runtimeContext?.pageContent?.redirect ?? hubConfigVal?.redirectUrl;

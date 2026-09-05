@@ -1,23 +1,24 @@
-name = "cognilink-runtime-pages"
+name = "cognilink-nilufer"
 pages_build_output_dir = "./public"
 compatibility_date = "2024-09-23"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "cognilink-db"
-database_id = "1554e86d-a10d-44b5-aabf-63e9f71f51ac"
+database_name = "cognilink-nilufer-db"
+database_id = "d2d5dfd0-9fa5-4659-9020-21e41665cf30"
 
 # ==============================================================================
 # DEV ENVIRONMENT : LOCAL & PREVIEW
 # ==============================================================================
-# NOTE: To use these on local dev or preview branches, uncomment and supply proper IDs. 
-# Cloudflare requires valid 32-character 'id' fields for KV bindings in wrangler.toml 
-# if they are active here. Otherwise, you can bind them in the CF Dashboard.
-
 [vars]
 ENV_NAME = "dev"
-GA4_ID = "" # REPLACE GA4_ID
-META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
+PROJECT_ID = "nilufer"
+ROOT_DOMAIN = "niluferormanli.com"
+CANONICAL_HOST_MODE = "apex"
+ADMIN_SUBDOMAIN = "login"
+WWW_REDIRECT_TO_APEX = "true"
+GA4_ID = "G-K5RNWREM5K"
+META_PIXEL_ID = "1452820495739175"
 RUNTIME_CONTEXT_READ_ENABLED = "true"
 SHADOW_TELEMETRY_ENABLED = "false"
 SHADOW_TELEMETRY_SAMPLE_RATE = "0.1"
@@ -29,62 +30,67 @@ DECISION_V2_CUTOVER_SOURCE = ""
 DECISION_V2_CUTOVER_RULE_ID = ""
 
 # ==============================================================================
-# PRODUCTION ENVIRONMENT
+# PRODUCTION ENVIRONMENT (Nilüfer Isolated Resources)
 # ==============================================================================
 [env.production]
 
 [[env.production.kv_namespaces]]
 binding = "SLUG_LINKS"
-id = "281632c6f5f1457db9e04ee79d979929" 
+id = "5cb9288c400f4ef8b616ff9a0599bb20"
 
 [[env.production.kv_namespaces]]
 binding = "CAMPAIGN_INDEX"
-id = "172ef04f783640228c68d3fd321ed33d" 
+id = "f044d2de4243428bbef1fbd5e278cc90"
 
 [[env.production.kv_namespaces]]
 binding = "LANDING_CONFIG"
-id = "b44f1b0e907a4649b9f0c28fd849ac36" 
+id = "9b6888b318e5487eb4b8e9b169ee602f"
 
 [[env.production.kv_namespaces]]
 binding = "CAMPAIGN_AB_ALIAS_INDEX"
-id = "f76395da9009447dbd630acef12b522c" 
+id = "2737fc67bdd94794b8df3b3d3566f688"
 
 [[env.production.kv_namespaces]]
 binding = "AB_INDEX"
-id = "eafe5cfff45f40738c8bd7aba82e05ac" 
+id = "f480b4c5ffa64b37b10a3f7e91fc9eae"
 
 [[env.production.kv_namespaces]]
 binding = "ROUTE_ALIAS"
-id = "bc3f8583acb3480dbe9ba84d97612593" 
+id = "b38890f386844f34a9ac9a66f20b330e"
 
 [[env.production.kv_namespaces]]
 binding = "APP_CONFIG"
-id = "2ff9d0424c9442a2919f60885097e017" 
+id = "2a5505c25d204236b37d0afeb4908940"
 
 [[env.production.kv_namespaces]]
 binding = "ANALYTICS_DATA"
-id = "2034dc1f7c3243f382e5ed9a7e6d1dd9" 
+id = "576c339ecd734442bb6b958d08963034"
 
 [[env.production.kv_namespaces]]
 binding = "GUARD_CACHE"
-id = "7b9bb0d4c1b44c6797f8d328f1b64600" 
+id = "1ee9aea9748a42948da716eb068792a4"
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_CONVERSION"
-dataset = "cognilink_runtime_conversion_prod" # NOTE: Create dataset via Wrangler or Dashboard
+dataset = "cognilink_nilufer_conversion_prod"
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_TRAFFIC"
-dataset = "cognilink_runtime_traffic_prod" # NOTE: Create dataset via Wrangler or Dashboard
+dataset = "cognilink_nilufer_traffic_prod"
 
 [[env.production.analytics_engine_datasets]]
 binding = "AE_EXPERIMENT"
-dataset = "cognilink_runtime_experiment_prod" # NOTE: Create dataset via Wrangler or Dashboard
+dataset = "cognilink_nilufer_experiment_prod"
 
 [env.production.vars]
 ENV_NAME = "production"
-GA4_ID = "" # REPLACE GA4_ID
-META_PIXEL_ID = "" # REPLACE META_PIXEL_ID
+PROJECT_ID = "nilufer"
+ROOT_DOMAIN = "niluferormanli.com"
+CANONICAL_HOST_MODE = "apex"
+ADMIN_SUBDOMAIN = "login"
+WWW_REDIRECT_TO_APEX = "true"
+GA4_ID = "G-K5RNWREM5K"
+META_PIXEL_ID = "1452820495739175"
 RUNTIME_CONTEXT_READ_ENABLED = "true"
 SHADOW_TELEMETRY_ENABLED = "true"
 SHADOW_TELEMETRY_SAMPLE_RATE = "0.1"
@@ -97,5 +103,5 @@ DECISION_V2_CUTOVER_RULE_ID = ""
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "cognilink-db"
-database_id = "1554e86d-a10d-44b5-aabf-63e9f71f51ac"
+database_name = "cognilink-nilufer-db"
+database_id = "d2d5dfd0-9fa5-4659-9020-21e41665cf30"

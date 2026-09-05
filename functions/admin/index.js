@@ -5,16 +5,19 @@ export async function onRequestGet({ request, env }) {
   const originalHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || url.hostname;
   const customDomain = env.CUSTOM_DOMAIN || originalHost;
 
-  if (originalHost === "login.teklifi.online") {
-    return Response.redirect(`https://login.teklifi.online/${url.search}`, 301);
+  const rootDomain = (env && env.ROOT_DOMAIN) || "";
+  const adminSubdomain = (env && env.ADMIN_SUBDOMAIN) || "login";
+  const adminHost = rootDomain ? `${adminSubdomain}.${rootDomain}` : "login.teklifi.online";
+
+  if (originalHost === adminHost || originalHost === "login.teklifi.online") {
+    return Response.redirect(`https://${adminHost}/${url.search}`, 301);
   }
 
-  // Enforce login.teklifi.online for admin panel
-  if (
-    originalHost.endsWith("teklifi.online") && 
-    originalHost !== "login.teklifi.online"
-  ) {
-    return Response.redirect(`https://login.teklifi.online/${url.search}`, 301);
+  // Enforce admin host for admin panel
+  const isTargetDomain = rootDomain && originalHost.endsWith(rootDomain);
+  const isTeklifi = originalHost.endsWith("teklifi.online");
+  if ((isTargetDomain || isTeklifi) && originalHost !== adminHost && originalHost !== "login.teklifi.online") {
+    return Response.redirect(`https://${adminHost}/${url.search}`, 301);
   }
 
   return new Response(renderAdmin({

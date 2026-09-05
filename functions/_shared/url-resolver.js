@@ -44,6 +44,9 @@ export function resolveBaseUrl(env = {}, request = null) {
       base = window.location.origin;
     } catch (e) {}
   }
+  if (!base && env && typeof env === "object" && env.ROOT_DOMAIN) {
+    base = "https://" + env.ROOT_DOMAIN;
+  }
   if (!base) {
     base = "https://runtime.ekinyasa.online";
   }

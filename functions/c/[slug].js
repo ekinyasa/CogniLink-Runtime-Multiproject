@@ -133,7 +133,7 @@ export async function onRequestGet(context) {
     });
   }
   const hasRuntimeContext = !!(shadowData?.rawLegacy || shadowData?.rawV2);
-  if (!campaignDataVal && !hasIntentData && !hasRuntimeContext) {
+  if (!campaignDataVal && !hasIntentData && !hasRuntimeContext && !verifyAdminDebug(request, env)) {
     const html = renderHub({ notFound: true, config });
     return new Response(html, {
       status: 404,

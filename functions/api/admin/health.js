@@ -70,7 +70,10 @@ async function checkAnalytics(env) {
 
   const envName = (env.ENV_NAME || "dev").toLowerCase();
   const isProd = envName === "production";
-  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  const defaultProdDataset = (env.PROJECT_ID === "nilufer" || env.ROOT_DOMAIN?.includes("niluferormanli"))
+    ? "cognilink_nilufer_traffic_prod"
+    : "cognilink_runtime_traffic_prod";
+  const dataset = isProd ? (env.AE_TRAFFIC_DATASET || defaultProdDataset) : `ae_traffic_${envName}`;
 
   try {
     const res = await fetch(
@@ -159,7 +162,7 @@ export async function onRequest(context) {
     deployment_id: env.CF_DEPLOYMENT_ID || "NOT AVAILABLE",
     deployment_time: env.CF_PAGES_BUILD_TIMESTAMP || "NOT AVAILABLE",
     runtime_version: "NOT AVAILABLE",
-    primary_runtime_domain: "trafik.teklifi.online",
+    primary_runtime_domain: env.ROOT_DOMAIN || "trafik.teklifi.online",
     current_request_host: request.headers.get("Host") || request.headers.get("x-forwarded-host") || new URL(request.url).host || "NOT AVAILABLE",
     cloudflare_context: env.CF_PAGES_COMMIT_SHA ? "Pages" : "NOT AVAILABLE",
     database: {

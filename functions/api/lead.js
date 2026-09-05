@@ -10,21 +10,28 @@ async function hashToken(token) {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-const getCorsHeaders = (request) => {
+const getCorsHeaders = (request, env = {}) => {
   const origin = request.headers.get("Origin");
   const host = request.headers.get("Host");
   const isSameOrigin = origin && host && origin.endsWith(host);
+  const rootDomain = (env && env.ROOT_DOMAIN) || "";
 
-  // Allow same-origin, localhost dev, or pages.dev previews.
+  // Allow same-origin, localhost dev, pages.dev previews, or project root domain.
   // External domains calling this API will need to be explicitly whitelisted if required.
   let allowedOrigin = "";
   if (!origin) {
     allowedOrigin = "*"; // Not a CORS request
-  } else if (isSameOrigin || origin.startsWith("http://localhost:") || origin.endsWith(".pages.dev") || origin.endsWith(".ekinyasa.online")) {
+  } else if (
+    isSameOrigin ||
+    origin.startsWith("http://localhost:") ||
+    origin.endsWith(".pages.dev") ||
+    origin.endsWith(".ekinyasa.online") ||
+    (rootDomain && (origin.endsWith(rootDomain) || origin.endsWith("." + rootDomain)))
+  ) {
     allowedOrigin = origin;
   } else {
     // Rejected arbitrary origin. Prevent wide reflection.
-    allowedOrigin = "https://runtime.ekinyasa.online";
+    allowedOrigin = rootDomain ? `https://${rootDomain}` : "https://runtime.ekinyasa.online";
   }
 
   return {
@@ -37,7 +44,7 @@ const getCorsHeaders = (request) => {
 };
 
 export function onRequestOptions(context) {
-  const headers = getCorsHeaders(context.request);
+  const headers = getCorsHeaders(context.request, context.env);
   headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
   headers["Access-Control-Allow-Headers"] = "Content-Type";
   return new Response(null, { status: 204, headers });

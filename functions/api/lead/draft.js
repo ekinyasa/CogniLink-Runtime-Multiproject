@@ -10,18 +10,25 @@ const ALLOWED_FIELDS = [
   "contact_preference", "iletisimTercihi", "situation", "custom_fields"
 ];
 
-const getCorsHeaders = (request) => {
+const getCorsHeaders = (request, env = {}) => {
   const origin = request.headers.get("Origin");
   const host = request.headers.get("Host");
   const isSameOrigin = origin && host && origin.endsWith(host);
+  const rootDomain = (env && env.ROOT_DOMAIN) || "";
 
   let allowedOrigin = "";
   if (!origin) {
     allowedOrigin = "*";
-  } else if (isSameOrigin || origin.startsWith("http://localhost:") || origin.endsWith(".pages.dev") || origin.endsWith(".ekinyasa.online")) {
+  } else if (
+    isSameOrigin ||
+    origin.startsWith("http://localhost:") ||
+    origin.endsWith(".pages.dev") ||
+    origin.endsWith(".ekinyasa.online") ||
+    (rootDomain && (origin.endsWith(rootDomain) || origin.endsWith("." + rootDomain)))
+  ) {
     allowedOrigin = origin;
   } else {
-    allowedOrigin = "https://runtime.ekinyasa.online";
+    allowedOrigin = rootDomain ? `https://${rootDomain}` : "https://runtime.ekinyasa.online";
   }
 
   return {
@@ -42,7 +49,7 @@ async function hashToken(token) {
 }
 
 export function onRequestOptions(context) {
-  const headers = getCorsHeaders(context.request);
+  const headers = getCorsHeaders(context.request, context.env);
   headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
   headers["Access-Control-Allow-Headers"] = "Content-Type";
   return new Response(null, { status: 204, headers });
