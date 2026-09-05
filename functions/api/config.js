@@ -2,7 +2,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../_shared/auth.js";
 
 const CONFIG_KEY = "hub_config";
 
-const ALLOWED_STRING_KEYS = ["turnstileSiteKey", "themeCssUrl", "customStyleCss", "pageTitle", "customScript"];
+const ALLOWED_STRING_KEYS = ["turnstileSiteKey", "themeCssUrl", "customStyleCss", "pageTitle", "customScript", "homepageStaticPageId"];
 
 /* ── URL helpers ─────────────────────────────────────────────────── */
 function normalizeUrl(str) {
@@ -117,6 +117,9 @@ export async function onRequestPut(context) {
   try {
     if (env.LANDING_CONFIG) {
       await env.LANDING_CONFIG.put(CONFIG_KEY, JSON.stringify(updated));
+    }
+    if (env.APP_CONFIG && ("homepageStaticPageId" in updated)) {
+      await env.APP_CONFIG.put("site:routing", JSON.stringify({ homepagePageId: updated.homepageStaticPageId || "" }));
     }
     return new Response(JSON.stringify({ ok: true, config: updated }), { headers: jsonHeaders() });
   } catch (e) {

@@ -1096,6 +1096,18 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <p class="analytics-section-title" style="margin:1.25rem 1.25rem 0 1.25rem">Default Landing Page Configuration</p>
     <form id="config-form" class="landings-grid" autocomplete="off" novalidate>
 
+      <!-- Card A: Site Routing -->
+      <div class="card">
+        <p class="card-title">Site Routing</p>
+        <p class="hint">Configure canonical root domain routing.</p>
+
+        <label for="cfg-homepage-page-id">Homepage <span class="hint-inline">(rendered at /)</span></label>
+        <select id="cfg-homepage-page-id" style="width: 100%; margin-top: 0.25rem;">
+          <option value="">-- No static page assigned (fallback to /home) --</option>
+        </select>
+        <p class="hint" style="margin-top:0.35rem;">Visitors to canonical root <code>/</code> will see the selected Published Static Page.</p>
+      </div>
+
       <!-- Card B: General Settings -->
       <div class="card">
         <p class="card-title">General Settings</p>
@@ -1147,9 +1159,16 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     </form>
   </div>
 
-  <!-- ── Tab: Components ──────────────────────────────── -->
+  <!-- ── Tab: Library (Components & Static Pages) ────────────────── -->
   <div id="tab-components" class="tab-pane hidden">
-    <div class="layout">
+    <!-- Sub-navigation: Modes -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+      <button type="button" id="subtab-btn-components" class="btn-primary btn-sm" onclick="setLibrarySubtab('components')">Components</button>
+      <button type="button" id="subtab-btn-static-pages" class="btn-ghost btn-sm" onclick="setLibrarySubtab('static-pages')" style="border: 1px solid var(--border);">Static Pages</button>
+    </div>
+
+    <!-- Subpane: Components (Untouched original behavior) -->
+    <div id="subpane-components" class="layout">
       <!-- Left: Create/Edit Form & Version Manager -->
       <div class="card form-card">
         <div id="component-editor-container">
@@ -1192,6 +1211,136 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- Subpane: Static Pages -->
+    <div id="subpane-static-pages" style="display: none; width: 100%;">
+      <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; width: 100%;">
+        <!-- Left: Static Pages List -->
+        <div class="card" style="flex: 1; min-width: 320px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <p class="card-title" style="margin: 0;">Static Pages</p>
+            <button type="button" id="btn-new-static-page" class="btn-primary btn-sm" onclick="openNewStaticPageModal()">+ New Static Page</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="data-table" id="tbl-static-pages" style="width: 100%; text-align: left;">
+              <thead>
+                <tr>
+                  <th>Page Name</th>
+                  <th>Slug</th>
+                  <th>Live Ver</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-static-pages-body">
+                <tr><td colspan="5" class="empty-state">Loading static pages...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Static Page & Version Editor -->
+        <div class="card" id="sp-editor-card" style="flex: 2; min-width: 450px; display: none; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+            <div>
+              <p class="card-title" style="margin: 0;" id="sp-editor-title">Edit Static Page</p>
+              <div id="sp-editor-meta" style="font-size: 0.75rem; color: var(--text-m); margin-top: 0.25rem;"></div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span id="sp-status-badge" class="badge" style="padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: var(--bg-alt); border: 1px solid var(--border);">Draft</span>
+              <button type="button" class="btn-ghost btn-sm" onclick="closeStaticPageEditor()" style="border: 1px solid var(--border);">Close</button>
+            </div>
+          </div>
+
+          <!-- Page Meta Controls -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Page Name
+              <input type="text" id="sp-input-name" placeholder="e.g. Privacy Policy" />
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Slug (served at /{slug})
+              <input type="text" id="sp-input-slug" placeholder="e.g. privacy-policy" />
+            </label>
+          </div>
+
+          <!-- Version Bar -->
+          <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-m);">Version:</span>
+              <select id="sp-version-select" onchange="onStaticPageVersionChange(this.value)" style="font-size: 0.8rem; padding: 4px 8px;">
+              </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn-ghost btn-sm" onclick="duplicateCurrentStaticPageVersion()" style="border: 1px solid var(--border);">Duplicate Version</button>
+              <button type="button" class="btn-ghost btn-sm" onclick="publishCurrentStaticPageVersion()" style="border: 1px solid var(--accent); color: var(--accent);">Publish This Version</button>
+            </div>
+          </div>
+
+          <!-- Public Preview Link -->
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Preview URL
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" id="sp-preview-url" readonly style="flex: 1; font-family: monospace; font-size: 0.75rem; opacity: 0.8; cursor: not-allowed;" />
+              <button type="button" class="btn-ghost btn-sm" onclick="copyStaticPagePreviewUrl()" style="border: 1px solid var(--border);">Copy</button>
+              <button type="button" class="btn-ghost btn-sm" onclick="openStaticPagePreviewUrl()" style="border: 1px solid var(--border); color: var(--accent);">Open &nearr;</button>
+            </div>
+          </label>
+
+          <!-- Page Title -->
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Page Title &lt;title&gt;
+            <input type="text" id="sp-input-title" placeholder="Page Title (browser tab)" />
+          </label>
+
+          <!-- Page Sections & Layout -->
+          <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Sections & Layout</p>
+              <span style="font-size: 0.75rem; color: var(--text-m);">Order sections top-to-bottom</span>
+            </div>
+            <div id="sp-layout-container" style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <!-- Dynamically populated sections -->
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <button type="button" class="btn-ghost btn-sm" onclick="addStaticPageCustomHtmlBlock()" style="border: 1px solid var(--border);">+ Add Custom HTML</button>
+              <select id="sp-comp-select" onchange="addStaticPageComponentBlock(this.value); this.value='';" style="padding: 4px; font-size: 0.8rem;">
+                <option value="">+ Add Component...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom CSS & JS -->
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Custom CSS
+            <textarea id="sp-input-css" rows="4" style="font-family: monospace; font-size: 12px;" placeholder="/* Page-specific styles */"></textarea>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Custom JS
+            <textarea id="sp-input-js" rows="4" style="font-family: monospace; font-size: 12px;" placeholder="// Page-specific scripts"></textarea>
+          </label>
+
+          <!-- Version Notes -->
+          <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+            Version Notes
+            <input type="text" id="sp-input-notes" placeholder="Notes on changes in this version" />
+          </label>
+
+          <!-- Action Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem;">
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn-ghost btn-sm" onclick="archiveCurrentStaticPageVersion()" style="border: 1px solid var(--border); color: var(--text-m);">Archive Version</button>
+              <button type="button" class="btn-ghost btn-sm" onclick="deleteCurrentStaticPage()" style="border: 1px solid #b91c1c; color: #b91c1c;">Delete Page</button>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn-primary btn-sm" onclick="saveStaticPageDraft()">Save Changes</button>
+            </div>
+          </div>
+          <p id="sp-save-msg" style="font-size: 0.8rem; margin: 0; text-align: right; display: none;"></p>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1946,6 +2095,7 @@ window.openNewIntentModal = function(e) {
       if (target === "components" && !componentsTabLoaded) {
         componentsTabLoaded = true;
         loadComponents();
+        loadStaticPages();
       }
       if (target === "pages" && !pagesTabLoaded) {
         pagesTabLoaded = true;
@@ -4360,6 +4510,26 @@ window.openNewIntentModal = function(e) {
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
       $("cfg-custom-js").value   = cfg.customScript || "";
       $("cfg-turnstile-site-key").value = cfg.turnstileSiteKey || "";
+
+      // Populate homepage static pages dropdown
+      try {
+        var spRes = await apiFetch("/api/admin/static-pages");
+        var spData = await spRes.json();
+        var spSelect = $("cfg-homepage-page-id");
+        if (spSelect) {
+          var currentVal = cfg.homepageStaticPageId || "";
+          spSelect.innerHTML = '<option value="">-- No static page assigned (fallback to /home) --</option>';
+          (spData.pages || []).forEach(function(p) {
+            if (p.status === "published" || p.live_version_id) {
+              var opt = document.createElement("option");
+              opt.value = p.page_id;
+              opt.textContent = p.name + " (/" + p.slug + ")";
+              if (p.page_id === currentVal) opt.selected = true;
+              spSelect.appendChild(opt);
+            }
+          });
+        }
+      } catch (_) {}
     } catch (err) {
       if (err.message !== "401") showErr(elConfigError, "Failed to load config.");
     }
@@ -4372,12 +4542,14 @@ window.openNewIntentModal = function(e) {
     elBtnSaveConfig.disabled    = true;
      elBtnSaveConfig.textContent = "Saving…";
     try {
+      var hpId = $("cfg-homepage-page-id") ? $("cfg-homepage-page-id").value.trim() : null;
       var payload = {
         pageTitle:      $("cfg-page-title").value.trim()   || null,
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
         customScript:   $("cfg-custom-js").value.trim()    || null,
         turnstileSiteKey: $("cfg-turnstile-site-key").value.trim() || null,
+        homepageStaticPageId: hpId || null,
       };
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();
@@ -4392,6 +4564,487 @@ window.openNewIntentModal = function(e) {
       elBtnSaveConfig.textContent = "Save Config";
     }
   });
+
+  /* ── Library Subtab Mode Switching ─────────────────────── */
+  var libraryCurrentSubtab = "components";
+
+  window.setLibrarySubtab = function(mode) {
+    libraryCurrentSubtab = mode;
+    var btnComps = $("subtab-btn-components");
+    var btnPages = $("subtab-btn-static-pages");
+    var paneComps = $("subpane-components");
+    var panePages = $("subpane-static-pages");
+
+    if (mode === "components") {
+      if (btnComps) { btnComps.className = "btn-primary btn-sm"; btnComps.style.border = "none"; }
+      if (btnPages) { btnPages.className = "btn-ghost btn-sm"; btnPages.style.border = "1px solid var(--border)"; }
+      if (paneComps) paneComps.style.display = "";
+      if (panePages) panePages.style.display = "none";
+    } else {
+      if (btnComps) { btnComps.className = "btn-ghost btn-sm"; btnComps.style.border = "1px solid var(--border)"; }
+      if (btnPages) { btnPages.className = "btn-primary btn-sm"; btnPages.style.border = "none"; }
+      if (paneComps) paneComps.style.display = "none";
+      if (panePages) panePages.style.display = "block";
+      loadStaticPages();
+      if (!componentFamilies || componentFamilies.length === 0) {
+        loadComponents();
+      }
+    }
+  };
+
+  /* ── Static Pages Manager Logic ────────────────────────── */
+  var staticPages = [];
+  var staticPageVersions = [];
+  var currentEditingStaticPage = null;
+  var currentEditingStaticVersion = null;
+  var staticPageLayoutItems = [];
+
+  window.loadStaticPages = async function() {
+    try {
+      var res = await apiFetch("/api/admin/static-pages");
+      var data = await res.json();
+      if (!res.ok) {
+        console.error("Failed to load static pages:", data.error);
+        return;
+      }
+      staticPages = data.pages || [];
+      staticPageVersions = data.versions || [];
+      renderStaticPagesTable();
+
+      if (currentEditingStaticPage) {
+        var refreshed = staticPages.find(function(p) { return p.page_id === currentEditingStaticPage.page_id; });
+        if (refreshed) {
+          currentEditingStaticPage = refreshed;
+          var verId = currentEditingStaticVersion ? currentEditingStaticVersion.version_id : refreshed.live_version_id;
+          var pageVers = staticPageVersions.filter(function(v) { return v.page_id === refreshed.page_id; });
+          currentEditingStaticVersion = pageVers.find(function(v) { return v.version_id === verId; }) || pageVers[pageVers.length - 1] || null;
+          renderStaticPageEditor();
+        }
+      }
+    } catch (err) {
+      if (err.message !== "401") console.error("loadStaticPages error:", err);
+    }
+  };
+
+  function renderStaticPagesTable() {
+    var tbody = $("tbl-static-pages-body");
+    if (!tbody) return;
+
+    if (!staticPages || staticPages.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No static pages created yet.</td></tr>';
+      return;
+    }
+
+    var html = "";
+    staticPages.forEach(function(p) {
+      var liveVer = staticPageVersions.find(function(v) { return v.page_id === p.page_id && v.version_id === p.live_version_id; });
+      var liveVerLabel = liveVer ? (liveVer.version_label || "v" + liveVer.version_number) : (p.live_version_id ? "live" : "—");
+      var statusBadge = p.status === "published"
+        ? '<span class="badge" style="background:#1a7f37;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Published</span>'
+        : (p.status === "archived"
+          ? '<span class="badge" style="background:#555;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Archived</span>'
+          : '<span class="badge" style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Draft</span>');
+
+      html += '<tr style="border-bottom: 1px solid var(--border);">' +
+        '<td><a href="javascript:void(0)" onclick="selectStaticPage(\'' + escHtml(p.page_id) + '\')" style="font-weight:600; color:var(--primary); text-decoration:none;">' + escHtml(p.name) + '</a></td>' +
+        '<td style="font-family:monospace; font-size:0.8rem;">/' + escHtml(p.slug) + '</td>' +
+        '<td style="font-size:0.8rem;">' + escHtml(liveVerLabel) + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td><button type="button" class="btn-ghost btn-sm" onclick="selectStaticPage(\'' + escHtml(p.page_id) + '\')" style="border: 1px solid var(--border); padding: 2px 8px;">Edit</button></td>' +
+        '</tr>';
+    });
+    tbody.innerHTML = html;
+  }
+
+  window.selectStaticPage = function(pageId) {
+    var p = staticPages.find(function(x) { return x.page_id === pageId; });
+    if (!p) return;
+    currentEditingStaticPage = p;
+
+    var pageVers = staticPageVersions.filter(function(v) { return v.page_id === p.page_id; });
+    pageVers.sort(function(a, b) { return (a.version_number || 0) - (b.version_number || 0); });
+
+    currentEditingStaticVersion = p.live_version_id
+      ? pageVers.find(function(v) { return v.version_id === p.live_version_id; }) || pageVers[pageVers.length - 1]
+      : pageVers[pageVers.length - 1] || null;
+
+    renderStaticPageEditor();
+  };
+
+  window.closeStaticPageEditor = function() {
+    var card = $("sp-editor-card");
+    if (card) card.style.display = "none";
+    currentEditingStaticPage = null;
+    currentEditingStaticVersion = null;
+  };
+
+  function renderStaticPageEditor() {
+    var card = $("sp-editor-card");
+    if (!card || !currentEditingStaticPage) return;
+    card.style.display = "flex";
+
+    var p = currentEditingStaticPage;
+    var v = currentEditingStaticVersion || {};
+
+    $("sp-editor-title").textContent = "Edit Static Page: " + p.name;
+    $("sp-editor-meta").textContent = "ID: " + p.page_id + " | Updated: " + new Date(p.updated_at).toLocaleString();
+
+    $("sp-input-name").value = p.name || "";
+    $("sp-input-slug").value = p.slug || "";
+
+    var badge = $("sp-status-badge");
+    if (badge) {
+      var st = (v.status || p.status || "draft");
+      badge.textContent = st.charAt(0).toUpperCase() + st.slice(1);
+      badge.style.background = st === "published" ? "#1a7f37" : (st === "archived" ? "#555" : "#d97706");
+      badge.style.color = "#fff";
+    }
+
+    // Populate versions dropdown
+    var vSelect = $("sp-version-select");
+    if (vSelect) {
+      var pageVers = staticPageVersions.filter(function(x) { return x.page_id === p.page_id; });
+      pageVers.sort(function(a, b) { return (a.version_number || 0) - (b.version_number || 0); });
+
+      var optHtml = "";
+      pageVers.forEach(function(ver) {
+        var isLive = ver.version_id === p.live_version_id;
+        var label = (ver.version_label || "v" + ver.version_number) + (isLive ? " (Live / Published)" : " (" + ver.status + ")");
+        var selected = (currentEditingStaticVersion && currentEditingStaticVersion.version_id === ver.version_id) ? " selected" : "";
+        optHtml += '<option value="' + escHtml(ver.version_id) + '"' + selected + '>' + escHtml(label) + '</option>';
+      });
+      vSelect.innerHTML = optHtml;
+    }
+
+    // Preview URL
+    var previewUrl = window.location.origin + "/" + p.slug + (v.version_id ? ("?preview_version=" + v.version_id) : "");
+    $("sp-preview-url").value = previewUrl;
+
+    $("sp-input-title").value = v.title || p.title || "";
+    $("sp-input-css").value = v.customStyleCss || "";
+    $("sp-input-js").value = v.customScript || "";
+    $("sp-input-notes").value = v.notes || "";
+
+    // Layout blocks
+    if (Array.isArray(v.layout) && v.layout.length > 0) {
+      staticPageLayoutItems = JSON.parse(JSON.stringify(v.layout));
+    } else if (v.customBodyHtml) {
+      staticPageLayoutItems = [{ type: "custom_html", content: v.customBodyHtml }];
+    } else {
+      staticPageLayoutItems = [];
+    }
+
+    // Populate component dropdown
+    var compSelect = $("sp-comp-select");
+    if (compSelect) {
+      compSelect.innerHTML = '<option value="">+ Add Component...</option>';
+      (componentFamilies || []).forEach(function(cf) {
+        if (cf.status === "active") {
+          var opt = document.createElement("option");
+          opt.value = cf.family_id;
+          opt.textContent = cf.family_name + " (" + cf.family_key + ")";
+          compSelect.appendChild(opt);
+        }
+      });
+    }
+
+    renderStaticPageLayout();
+  }
+
+  function renderStaticPageLayout() {
+    var container = $("sp-layout-container");
+    if (!container) return;
+
+    if (!staticPageLayoutItems || staticPageLayoutItems.length === 0) {
+      container.innerHTML = '<div style="border: 1px dashed var(--border); padding: 1.5rem; text-align: center; color: var(--text-m); font-size: 0.85rem; border-radius: 6px;">No sections added yet. Add Custom HTML or Library Components below.</div>';
+      return;
+    }
+
+    var html = "";
+    staticPageLayoutItems.forEach(function(item, idx) {
+      if (item.type === "custom_html") {
+        html += '<div class="sp-layout-block" data-idx="' + idx + '" style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem;">' +
+          '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
+          '<span style="font-size: 0.8rem; font-weight: 600; color: var(--accent);">[Custom HTML Block #' + (idx + 1) + ']</span>' +
+          '<div style="display: flex; gap: 0.25rem;">' +
+          '<button type="button" class="btn-ghost btn-sm" onclick="moveStaticPageLayoutItem(' + idx + ', -1)" style="padding: 2px 6px; border: 1px solid var(--border);" ' + (idx === 0 ? "disabled" : "") + '>&uarr;</button>' +
+          '<button type="button" class="btn-ghost btn-sm" onclick="moveStaticPageLayoutItem(' + idx + ', 1)" style="padding: 2px 6px; border: 1px solid var(--border);" ' + (idx === staticPageLayoutItems.length - 1 ? "disabled" : "") + '>&darr;</button>' +
+          '<button type="button" class="btn-ghost btn-sm" onclick="deleteStaticPageLayoutItem(' + idx + ')" style="padding: 2px 6px; border: 1px solid #b91c1c; color: #b91c1c;">&times;</button>' +
+          '</div>' +
+          '</div>' +
+          '<textarea class="sp-html-textarea" data-idx="' + idx + '" rows="5" style="width: 100%; font-family: monospace; font-size: 12px; box-sizing: border-box;" placeholder="Enter custom HTML, form tags, etc.">' + escHtml(item.content || item.body || "") + '</textarea>' +
+          '</div>';
+      } else if (item.type === "component") {
+        var cf = (componentFamilies || []).find(function(x) { return x.family_id === item.id || x.family_key === item.id; });
+        var compTitle = cf ? (cf.family_name + " (" + cf.family_key + ")") : ("Component: " + item.id);
+        html += '<div class="sp-layout-block" data-idx="' + idx + '" style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem;">' +
+          '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+          '<div>' +
+          '<span style="font-size: 0.8rem; font-weight: 600; color: #1a7f37;">[Library Component]</span> ' +
+          '<span style="font-size: 0.8rem; font-weight: 500;">' + escHtml(compTitle) + '</span>' +
+          '</div>' +
+          '<div style="display: flex; gap: 0.25rem;">' +
+          '<button type="button" class="btn-ghost btn-sm" onclick="moveStaticPageLayoutItem(' + idx + ', -1)" style="padding: 2px 6px; border: 1px solid var(--border);" ' + (idx === 0 ? "disabled" : "") + '>&uarr;</button>' +
+          '<button type="button" class="btn-ghost btn-sm" onclick="moveStaticPageLayoutItem(' + idx + ', 1)" style="padding: 2px 6px; border: 1px solid var(--border);" ' + (idx === staticPageLayoutItems.length - 1 ? "disabled" : "") + '>&darr;</button>' +
+          '<button type="button" class="btn-ghost btn-sm" onclick="deleteStaticPageLayoutItem(' + idx + ')" style="padding: 2px 6px; border: 1px solid #b91c1c; color: #b91c1c;">&times;</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>';
+      }
+    });
+    container.innerHTML = html;
+  }
+
+  function syncStaticPageHtmlBlocks() {
+    var textareas = document.querySelectorAll(".sp-html-textarea");
+    textareas.forEach(function(ta) {
+      var idx = parseInt(ta.dataset.idx, 10);
+      if (!isNaN(idx) && staticPageLayoutItems[idx] && staticPageLayoutItems[idx].type === "custom_html") {
+        staticPageLayoutItems[idx].content = ta.value;
+      }
+    });
+  }
+
+  window.addStaticPageCustomHtmlBlock = function() {
+    syncStaticPageHtmlBlocks();
+    staticPageLayoutItems.push({ type: "custom_html", content: "" });
+    renderStaticPageLayout();
+  };
+
+  window.addStaticPageComponentBlock = function(familyId) {
+    if (!familyId) return;
+    syncStaticPageHtmlBlocks();
+    staticPageLayoutItems.push({ type: "component", id: familyId });
+    renderStaticPageLayout();
+  };
+
+  window.moveStaticPageLayoutItem = function(idx, dir) {
+    syncStaticPageHtmlBlocks();
+    var targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= staticPageLayoutItems.length) return;
+    var temp = staticPageLayoutItems[idx];
+    staticPageLayoutItems[idx] = staticPageLayoutItems[targetIdx];
+    staticPageLayoutItems[targetIdx] = temp;
+    renderStaticPageLayout();
+  };
+
+  window.deleteStaticPageLayoutItem = function(idx) {
+    syncStaticPageHtmlBlocks();
+    staticPageLayoutItems.splice(idx, 1);
+    renderStaticPageLayout();
+  };
+
+  window.onStaticPageVersionChange = function(versionId) {
+    if (!currentEditingStaticPage) return;
+    var pageVers = staticPageVersions.filter(function(v) { return v.page_id === currentEditingStaticPage.page_id; });
+    var targetVer = pageVers.find(function(v) { return v.version_id === versionId; });
+    if (targetVer) {
+      currentEditingStaticVersion = targetVer;
+      renderStaticPageEditor();
+    }
+  };
+
+  window.saveStaticPageDraft = async function() {
+    if (!currentEditingStaticPage || !currentEditingStaticVersion) return;
+    syncStaticPageHtmlBlocks();
+
+    var msgEl = $("sp-save-msg");
+    if (msgEl) {
+      msgEl.style.display = "inline-block";
+      msgEl.style.color = "var(--text-m)";
+      msgEl.textContent = "Saving...";
+    }
+
+    try {
+      var newName = $("sp-input-name").value.trim();
+      var newSlug = $("sp-input-slug").value.trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+      var newTitle = $("sp-input-title").value.trim();
+      var newCss = $("sp-input-css").value;
+      var newJs = $("sp-input-js").value;
+      var newNotes = $("sp-input-notes").value;
+
+      var referencedComps = staticPageLayoutItems
+        .filter(function(x) { return x && x.type === "component" && x.id; })
+        .map(function(x) { return x.id; });
+
+      var pageRes = await apiFetch("/api/admin/static-pages", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "update_page",
+          page_id: currentEditingStaticPage.page_id,
+          name: newName,
+          slug: newSlug,
+          title: newTitle
+        })
+      });
+      if (!pageRes.ok) throw new Error("Failed to update page");
+
+      var verRes = await apiFetch("/api/admin/static-pages", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "save_version",
+          page_id: currentEditingStaticPage.page_id,
+          version_id: currentEditingStaticVersion.version_id,
+          title: newTitle,
+          layout: staticPageLayoutItems,
+          components: referencedComps,
+          customStyleCss: newCss,
+          customScript: newJs,
+          notes: newNotes
+        })
+      });
+      if (!verRes.ok) throw new Error("Failed to save version");
+
+      if (msgEl) {
+        msgEl.style.color = "#1a7f37";
+        msgEl.textContent = "Saved successfully!";
+        setTimeout(function() { msgEl.style.display = "none"; }, 3000);
+      }
+
+      await loadStaticPages();
+    } catch (err) {
+      if (msgEl) {
+        msgEl.style.color = "#b91c1c";
+        msgEl.textContent = "Save failed: " + err.message;
+      }
+    }
+  };
+
+  window.publishCurrentStaticPageVersion = async function() {
+    if (!currentEditingStaticPage || !currentEditingStaticVersion) return;
+    if (!confirm("Publish this version live for /" + currentEditingStaticPage.slug + "?")) return;
+
+    try {
+      await saveStaticPageDraft();
+      var res = await apiFetch("/api/admin/static-pages", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "publish_version",
+          page_id: currentEditingStaticPage.page_id,
+          version_id: currentEditingStaticVersion.version_id
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Publish failed");
+
+      alert("Version published live successfully!");
+      await loadStaticPages();
+    } catch (err) {
+      alert("Error publishing: " + err.message);
+    }
+  };
+
+  window.duplicateCurrentStaticPageVersion = async function() {
+    if (!currentEditingStaticPage || !currentEditingStaticVersion) return;
+    try {
+      var res = await apiFetch("/api/admin/static-pages", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "duplicate_version",
+          page_id: currentEditingStaticPage.page_id,
+          version_id: currentEditingStaticVersion.version_id
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Duplicate failed");
+
+      alert("New version created: " + (data.version.version_label || "v" + data.version.version_number));
+      currentEditingStaticVersion = data.version;
+      await loadStaticPages();
+    } catch (err) {
+      alert("Error duplicating: " + err.message);
+    }
+  };
+
+  window.archiveCurrentStaticPageVersion = async function() {
+    if (!currentEditingStaticPage || !currentEditingStaticVersion) return;
+    if (!confirm("Archive version " + (currentEditingStaticVersion.version_label || "v" + currentEditingStaticVersion.version_number) + "?")) return;
+
+    try {
+      var res = await apiFetch("/api/admin/static-pages", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "archive_version",
+          page_id: currentEditingStaticPage.page_id,
+          version_id: currentEditingStaticVersion.version_id
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Archive failed");
+
+      alert("Version archived.");
+      await loadStaticPages();
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  window.deleteCurrentStaticPage = async function() {
+    if (!currentEditingStaticPage) return;
+    var name = currentEditingStaticPage.name;
+    if (!confirm("Are you sure you want to completely DELETE page \"" + name + "\" and all its versions? This cannot be undone.")) return;
+
+    try {
+      var res = await apiFetch("/api/admin/static-pages?page_id=" + encodeURIComponent(currentEditingStaticPage.page_id), {
+        method: "DELETE"
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+
+      alert("Page \"" + name + "\" deleted.");
+      closeStaticPageEditor();
+      await loadStaticPages();
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  window.openNewStaticPageModal = async function() {
+    var name = prompt("Enter Static Page Name (e.g. Privacy Policy):");
+    if (!name || !name.trim()) return;
+    var defaultSlug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    var slug = prompt("Enter Public Slug (served at /{slug}):", defaultSlug);
+    if (!slug || !slug.trim()) return;
+
+    try {
+      var res = await apiFetch("/api/admin/static-pages", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "create_page",
+          name: name.trim(),
+          slug: slug.trim(),
+          status: "draft"
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create page");
+
+      await loadStaticPages();
+      selectStaticPage(data.page.page_id);
+    } catch (err) {
+      alert("Error creating static page: " + err.message);
+    }
+  };
+
+  window.copyStaticPagePreviewUrl = function() {
+    var input = $("sp-preview-url");
+    if (input) {
+      navigator.clipboard.writeText(input.value).then(function() {
+        alert("Preview URL copied to clipboard!");
+      }).catch(function() {
+        input.select();
+        document.execCommand("copy");
+        alert("Preview URL copied!");
+      });
+    }
+  };
+
+  window.openStaticPagePreviewUrl = function() {
+    var input = $("sp-preview-url");
+    if (input && input.value) {
+      window.open(input.value, "_blank");
+    }
+  };
 
   /* ── Components Tab Logic ───────────────────────────── */
   async function loadComponents() {

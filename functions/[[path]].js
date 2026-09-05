@@ -284,6 +284,121 @@ export async function onRequestGet(context) {
     }
   }
 
+  // ── Static Pages & Homepage Resolution ──────────────────────────────────
+  if (rawPath === "/" || !rawPath) {
+    // 1. Root / -> Check Homepage Static Page
+    let homepagePageId = "";
+    if (env && env.APP_CONFIG) {
+      try {
+        const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
+        if (routing && routing.homepagePageId) homepagePageId = routing.homepagePageId;
+      } catch (_) {}
+    }
+    if (!homepagePageId && env && env.LANDING_CONFIG) {
+      try {
+        const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+        if (cfg && cfg.homepageStaticPageId) homepagePageId = cfg.homepageStaticPageId;
+      } catch (_) {}
+    }
+
+    if (homepagePageId && env && env.APP_CONFIG) {
+      try {
+        const page = await env.APP_CONFIG.get(`static_page:${homepagePageId}`, { type: "json" });
+        if (page && (page.status === "published" || isAdminPreview)) {
+          const versionId = (isAdminPreview && previewVersion) ? previewVersion : page.live_version_id;
+          if (versionId) {
+            const version = await env.APP_CONFIG.get(`static_page_ver:${homepagePageId}:${versionId}`, { type: "json" });
+            if (version) {
+              const [configResult, liveComponentsResult] = await Promise.allSettled([
+                env.LANDING_CONFIG ? env.LANDING_CONFIG.get("hub_config", { type: "json" }) : Promise.resolve(null),
+                env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([])
+              ]);
+              const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
+              const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
+
+              const html = renderLanding({
+                contextType: "static",
+                contextId: page.slug || "home",
+                slug: page.slug || "home",
+                slugData: version,
+                components: liveComponents,
+                config,
+                isPreview: isAdminPreview
+              });
+
+              return new Response(html, {
+                status: 200,
+                headers: {
+                  "Content-Type": "text/html; charset=utf-8",
+                  ...SEC_HEADERS
+                }
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[catch-all] Failed to render homepage static page:", err);
+      }
+    }
+  } else {
+    // 2. /{slug} -> Check Static Page Slugs
+    const candidateStaticSlug = rawPath.replace(/^\/+|\/+$/g, "");
+    if (candidateStaticSlug && env && env.APP_CONFIG) {
+      try {
+        let pageId = null;
+        let versionId = null;
+
+        const indexData = await env.APP_CONFIG.get(`static_slug:${candidateStaticSlug}`, { type: "json" });
+        if (indexData && indexData.page_id) {
+          pageId = indexData.page_id;
+          versionId = (isAdminPreview && previewVersion) ? previewVersion : indexData.version_id;
+        } else if (isAdminPreview) {
+          const queryPageId = url.searchParams.get("page_id");
+          if (queryPageId) {
+            pageId = queryPageId;
+            versionId = previewVersion;
+          }
+        }
+
+        if (pageId && versionId) {
+          const [page, version] = await Promise.all([
+            env.APP_CONFIG.get(`static_page:${pageId}`, { type: "json" }),
+            env.APP_CONFIG.get(`static_page_ver:${pageId}:${versionId}`, { type: "json" }),
+          ]);
+
+          if (page && version && (page.status === "published" || isAdminPreview)) {
+            const [configResult, liveComponentsResult] = await Promise.allSettled([
+              env.LANDING_CONFIG ? env.LANDING_CONFIG.get("hub_config", { type: "json" }) : Promise.resolve(null),
+              env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([])
+            ]);
+            const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
+            const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
+
+            const html = renderLanding({
+              contextType: "static",
+              contextId: candidateStaticSlug,
+              slug: candidateStaticSlug,
+              slugData: version,
+              components: liveComponents,
+              config,
+              isPreview: isAdminPreview
+            });
+
+            return new Response(html, {
+              status: 200,
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                ...SEC_HEADERS
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`[catch-all] Error resolving static slug ${candidateStaticSlug}:`, err);
+      }
+    }
+  }
+
   // ── Step 0: Root path handling ──────────────────────────────────────────
   // If no path is specified, attempt to serve the "home" page.
   const finalRawPath = (rawPath === "/" || !rawPath) ? "/home" : rawPath;

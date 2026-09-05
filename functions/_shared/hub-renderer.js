@@ -142,6 +142,8 @@ export function renderHub({
 
   // Title resolution order
   const finalTitle = (slugData?.headerInfo?.title && String(slugData.headerInfo.title).trim()) ||
+                     (slugData?.title && String(slugData.title).trim()) ||
+                     (slugData?.pageTitle && String(slugData.pageTitle).trim()) ||
                      (cfg.pageTitle && String(cfg.pageTitle).trim()) ||
                      "CogniLink";
 
