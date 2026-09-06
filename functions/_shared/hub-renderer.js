@@ -35,16 +35,34 @@ export function renderHub({
   isPreview = false,        // Admin preview mode flag
   intentConfig = {},        // Routing & Behavior JSON (Campaign V2)
   draftValues = {},         // ADDED: Prefilled values
+  rootDomain = "",
+  requestHost = "",
 } = {}) {
   const cfg = config || {};
 
   // --- DEBUG INFO INJECTION ---
-  const pSub = productSubdomain || (slug ? slug.split('-')[0] : "unknown");
-  const dCamp = campaign || (slug ? slug.split('-')[1] : "unknown");
-  const dMod = modifier || (slug ? slug.split('-').slice(2).join('-') : "unknown");
-  const cUrl = "https://" + pSub + ".teklifi.online/l/" + slug;
-  const alias = slugData && slugData.alias ? slugData.alias : null;
-  const aUrl = alias ? "https://" + pSub + ".teklifi.online/" + alias : "N/A";
+  const effectiveHost = (requestHost || rootDomain || cfg.rootDomain || "").trim();
+
+  let pSub, dCamp, dMod, cUrl, aUrl;
+  if (contextType === "static") {
+    const host = effectiveHost || "localhost";
+    pSub = productSubdomain || "static";
+    dCamp = campaign || (slugData && (slugData.name || slugData.title)) || slug || "static";
+    dMod = modifier || (slugData && (slugData.version_label || (slugData.version_number ? ("v" + slugData.version_number) : null))) || "live";
+    const pathSlug = (slug === "home" || !slug) ? "" : "/" + slug;
+    cUrl = "https://" + host + (pathSlug ? pathSlug : "/");
+    const alias = slugData && slugData.alias ? slugData.alias : null;
+    aUrl = alias ? ("https://" + host + "/" + alias) : "N/A";
+  } else {
+    pSub = productSubdomain || (slug ? slug.split('-')[0] : "unknown");
+    dCamp = campaign || (slug ? slug.split('-')[1] : "unknown");
+    dMod = modifier || (slug ? slug.split('-').slice(2).join('-') : "unknown");
+    const domain = rootDomain || (effectiveHost ? effectiveHost.split('.').slice(-2).join('.') : "") || "teklifi.online";
+    cUrl = "https://" + pSub + "." + domain + "/l/" + slug;
+    const alias = slugData && slugData.alias ? slugData.alias : null;
+    aUrl = alias ? "https://" + pSub + "." + domain + "/" + alias : "N/A";
+  }
+
   const pSlug = "{" + slug + "}";
   const pTheme = (slugData && slugData.theme) ? slugData.theme : "Default";
   const pUpdate = (slugData && slugData.updatedAt) ? new Date(slugData.updatedAt).toLocaleString("tr-TR") : (slugData && slugData.updated_at ? new Date(slugData.updated_at).toLocaleString("tr-TR") : "Bilinmiyor");

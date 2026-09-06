@@ -244,6 +244,8 @@ const runTests = async () => {
     assert.ok(html.includes("Gizlilik Politikası Detayları"));
     assert.ok(html.includes("Nilüfer Ormanlı - Gizlilik Politikası"));
     assert.ok(html.includes(".gdpr-text { font-size: 16px; }"));
+    assert.ok(!html.includes("teklifi.online"), "Static page must not contain teklifi.online");
+    assert.ok(html.includes("C: https://niluferormanli.com/privacy-policy"), "Static page canonical URL must derive from ROOT_DOMAIN");
 
     console.log("✅ PASS: 3. Static page slug routing renders published page from root domain");
   }
@@ -282,6 +284,8 @@ const runTests = async () => {
     assert.ok(html.includes("N İ L Ü F E R   O R M A N L I"));
     assert.ok(html.includes("Launching soon."));
     assert.ok(html.includes("letter-spacing: 0.3em;"));
+    assert.ok(!html.includes("teklifi.online"), "Homepage static page must not contain teklifi.online");
+    assert.ok(html.includes("C: https://niluferormanli.com/"), "Homepage canonical URL must derive from ROOT_DOMAIN");
 
     console.log("✅ PASS: 4. Root / resolves and renders configured homepage static page");
   }
@@ -550,14 +554,16 @@ const runTests = async () => {
     console.log("✅ PASS: 10. Active Homepage Delete Protection enforces that active homepage cannot be deleted, non-homepage can be deleted, and version delete works cleanly");
   }
 
-  // Test 11: Admin UI canonical esc usage and delete protection markup validation
+  // Test 11: Admin UI canonical esc usage, library mode button styling, and delete protection markup validation
   {
-    const html = renderAdmin({});
+    const html = renderAdmin({ rootDomain: "niluferormanli.com" });
     assert.ok(!html.includes("escHtml("), "renderAdmin must not contain any escHtml calls");
     assert.ok(html.includes('id="sp-btn-delete-page"'), "renderAdmin must contain #sp-btn-delete-page");
     assert.ok(html.includes('id="sp-homepage-notice"'), "renderAdmin must contain #sp-homepage-notice");
     assert.ok(html.includes("activeHomepageStaticPageId"), "renderAdmin must track activeHomepageStaticPageId");
-    console.log("✅ PASS: 11. Admin UI uses canonical esc helper exclusively and renders delete protection elements");
+    assert.ok(html.includes('window.ROOT_DOMAIN = "niluferormanli.com"'), "renderAdmin must expose window.ROOT_DOMAIN");
+    assert.ok(html.includes('#subtab-btn-components,#subtab-btn-static-pages{flex:0 0 auto !important;width:auto !important}'), "Library subtab buttons must prevent flex:1 width expansion");
+    console.log("✅ PASS: 11. Admin UI uses canonical esc helper exclusively, prevents library button width expansion, and renders delete protection elements");
   }
 
   console.log("\nAll Static Pages & Homepage Routing Tests Passed! (11/11)");

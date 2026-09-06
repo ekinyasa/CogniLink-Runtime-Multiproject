@@ -259,7 +259,8 @@ export async function onRequestGet(context) {
     return new Response(renderAdmin({
       branch: (env && env.CF_PAGES_BRANCH)     || "",
       sha:    (env && env.CF_PAGES_COMMIT_SHA) || "",
-      customDomain: url.hostname
+      customDomain: url.hostname,
+      rootDomain: rootDomain
     }), {
       headers: {
         "Content-Type":           "text/html;charset=UTF-8",
@@ -323,7 +324,9 @@ export async function onRequestGet(context) {
                 slugData: version,
                 components: liveComponents,
                 config,
-                isPreview: isAdminPreview
+                isPreview: isAdminPreview,
+                rootDomain: rootDomain,
+                requestHost: originalHost
               });
 
               return new Response(html, {
@@ -381,7 +384,9 @@ export async function onRequestGet(context) {
               slugData: version,
               components: liveComponents,
               config,
-              isPreview: isAdminPreview
+              isPreview: isAdminPreview,
+              rootDomain: rootDomain,
+              requestHost: originalHost
             });
 
             return new Response(html, {
@@ -921,7 +926,9 @@ export async function onRequestGet(context) {
     expToken:    expResult?.expToken  || "",
     utmVariant:  expResult?.finalSlug || "",
     components:  liveComponents,
-    draftValues: draftValues
+    draftValues: draftValues,
+    rootDomain:  rootDomain,
+    requestHost: originalHost
   });
 
   // ── Admin overlay injection ───────────────────────────────────────────────

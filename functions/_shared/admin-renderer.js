@@ -3,7 +3,7 @@
  * Token management and API calls are entirely client-side.
  * The word "admin" never appears in user-visible text.
  */
-export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.ekinyasa.online" } = {}) {
+export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.ekinyasa.online", rootDomain = "" } = {}) {
   // Derive version tag from CF Pages branch (e.g. "feat/v9-diagnostics" → "v9")
   var vMatch = branch.match(/v(\d+)/);
   var vTag = vMatch ? "v" + vMatch[1] : "v9";
@@ -1163,8 +1163,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
   <div id="tab-components" class="tab-pane hidden">
     <!-- Sub-navigation: Modes -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
-      <button type="button" id="subtab-btn-components" class="btn-primary btn-sm" onclick="setLibrarySubtab('components')">Components</button>
-      <button type="button" id="subtab-btn-static-pages" class="btn-ghost btn-sm" onclick="setLibrarySubtab('static-pages')" style="border: 1px solid var(--border);">Static Pages</button>
+      <button type="button" id="subtab-btn-components" class="btn-primary btn-sm" onclick="setLibrarySubtab('components')" style="flex: 0 0 auto; width: auto;">Components</button>
+      <button type="button" id="subtab-btn-static-pages" class="btn-ghost btn-sm" onclick="setLibrarySubtab('static-pages')" style="flex: 0 0 auto; width: auto; border: 1px solid var(--border);">Static Pages</button>
     </div>
 
     <!-- Subpane: Components (Untouched original behavior) -->
@@ -4581,13 +4581,13 @@ window.openNewIntentModal = function(e) {
     var panePages = $("subpane-static-pages");
 
     if (mode === "components") {
-      if (btnComps) { btnComps.className = "btn-primary btn-sm"; btnComps.style.border = "none"; }
-      if (btnPages) { btnPages.className = "btn-ghost btn-sm"; btnPages.style.border = "1px solid var(--border)"; }
+      if (btnComps) { btnComps.className = "btn-primary btn-sm"; btnComps.style.border = "none"; btnComps.style.flex = "0 0 auto"; }
+      if (btnPages) { btnPages.className = "btn-ghost btn-sm"; btnPages.style.border = "1px solid var(--border)"; btnPages.style.flex = "0 0 auto"; }
       if (paneComps) paneComps.style.display = "";
       if (panePages) panePages.style.display = "none";
     } else {
-      if (btnComps) { btnComps.className = "btn-ghost btn-sm"; btnComps.style.border = "1px solid var(--border)"; }
-      if (btnPages) { btnPages.className = "btn-primary btn-sm"; btnPages.style.border = "none"; }
+      if (btnComps) { btnComps.className = "btn-ghost btn-sm"; btnComps.style.border = "1px solid var(--border)"; btnComps.style.flex = "0 0 auto"; }
+      if (btnPages) { btnPages.className = "btn-primary btn-sm"; btnPages.style.border = "none"; btnPages.style.flex = "0 0 auto"; }
       if (paneComps) paneComps.style.display = "none";
       if (panePages) panePages.style.display = "block";
       loadStaticPages();
@@ -6209,6 +6209,7 @@ window.openNewIntentModal = function(e) {
 
   /* ── Boot ────────────────────────────────────────────── */
   window.CUSTOM_DOMAIN = "${customDomain}";
+  window.ROOT_DOMAIN = "${rootDomain}";
   loadToken(); // Clears legacy token
 
   (async function initAuth() {
@@ -6476,6 +6477,9 @@ window.openNewIntentModal = function(e) {
   }
 
   function getRootDomain() {
+    if (typeof window !== "undefined" && window.ROOT_DOMAIN) {
+      return window.ROOT_DOMAIN;
+    }
     var base = "";
     if (typeof window !== "undefined" && window.location) {
       base = window.location.hostname;
@@ -6483,7 +6487,7 @@ window.openNewIntentModal = function(e) {
     if (!base && typeof window !== "undefined" && window.CUSTOM_DOMAIN) {
       base = window.CUSTOM_DOMAIN;
     }
-    if (!base) return "teklifi.online";
+    if (!base) return window.ROOT_DOMAIN || "teklifi.online";
     var parts = base.split('.');
     if (parts.length >= 3) {
       return parts.slice(-2).join('.');
@@ -7855,6 +7859,7 @@ select.field-error{border-color:var(--danger)!important;box-shadow:0 0 0 2px rgb
 .btn-ghost:hover{background:var(--border);color:var(--text)}
 .btn-sm{padding:.375rem .75rem;font-size:.8125rem}
 .btn-xs{padding:.25rem .625rem;font-size:.75rem}
+#subtab-btn-components,#subtab-btn-static-pages{flex:0 0 auto !important;width:auto !important}
 .btn-danger{padding:.25rem .625rem;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:28px;font-family:var(--font);font-size:.75rem;font-weight:500;cursor:pointer;transition:background .12s,color .12s}
 .btn-danger:hover{background:var(--danger);color:var(--danger-t)}
 .btn-danger:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
