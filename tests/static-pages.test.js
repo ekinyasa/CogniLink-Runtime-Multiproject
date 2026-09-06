@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
+import vm from "node:vm";
+import { renderAdmin } from "../functions/_shared/admin-renderer.js";
 import { onRequestGet as catchAllHandler } from "../functions/[[path]].js";
 import {
   onRequestGet as staticPagesGet,
@@ -439,7 +441,23 @@ const runTests = async () => {
     console.log("✅ PASS: 8. Existing campaign and alias pipeline is completely untouched");
   }
 
-  console.log("\nAll Static Pages & Homepage Routing Tests Passed! (8/8)");
+  // Test 9: Admin Renderer client scripts syntax validation
+  {
+    const html = renderAdmin({});
+    const scriptRegex = /<script>([\s\S]*?)<\/script>/gi;
+    let match;
+    let count = 0;
+    while ((match = scriptRegex.exec(html)) !== null) {
+      count++;
+      // If there are syntax errors, vm.Script will throw SyntaxError
+      new vm.Script(match[1], { filename: `admin-inline-script-${count}.js` });
+    }
+    assert.ok(count >= 2, "Expected at least 2 inline script tags in admin page");
+
+    console.log("✅ PASS: 9. Admin renderer scripts are syntactically valid with zero browser parse errors");
+  }
+
+  console.log("\nAll Static Pages & Homepage Routing Tests Passed! (9/9)");
 };
 
 runTests().catch((err) => {

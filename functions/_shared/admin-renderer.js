@@ -4646,14 +4646,21 @@ window.openNewIntentModal = function(e) {
           : '<span class="badge" style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Draft</span>');
 
       html += '<tr style="border-bottom: 1px solid var(--border);">' +
-        '<td><a href="javascript:void(0)" onclick="selectStaticPage(\'' + escHtml(p.page_id) + '\')" style="font-weight:600; color:var(--primary); text-decoration:none;">' + escHtml(p.name) + '</a></td>' +
+        '<td><a href="javascript:void(0)" class="sp-link-select" data-page-id="' + escHtml(p.page_id) + '" style="font-weight:600; color:var(--primary); text-decoration:none;">' + escHtml(p.name) + '</a></td>' +
         '<td style="font-family:monospace; font-size:0.8rem;">/' + escHtml(p.slug) + '</td>' +
         '<td style="font-size:0.8rem;">' + escHtml(liveVerLabel) + '</td>' +
         '<td>' + statusBadge + '</td>' +
-        '<td><button type="button" class="btn-ghost btn-sm" onclick="selectStaticPage(\'' + escHtml(p.page_id) + '\')" style="border: 1px solid var(--border); padding: 2px 8px;">Edit</button></td>' +
+        '<td><button type="button" class="btn-ghost btn-sm sp-btn-select" data-page-id="' + escHtml(p.page_id) + '" style="border: 1px solid var(--border); padding: 2px 8px;">Edit</button></td>' +
         '</tr>';
     });
     tbody.innerHTML = html;
+    tbody.querySelectorAll(".sp-link-select, .sp-btn-select").forEach(function(el) {
+      el.addEventListener("click", function(e) {
+        e.preventDefault();
+        var pid = this.getAttribute("data-page-id");
+        if (pid) selectStaticPage(pid);
+      });
+    });
   }
 
   window.selectStaticPage = function(pageId) {
@@ -4857,7 +4864,7 @@ window.openNewIntentModal = function(e) {
 
     try {
       var newName = $("sp-input-name").value.trim();
-      var newSlug = $("sp-input-slug").value.trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+      var newSlug = $("sp-input-slug").value.trim().toLowerCase().replace(/^[/]+|[/]+$/g, "");
       var newTitle = $("sp-input-title").value.trim();
       var newCss = $("sp-input-css").value;
       var newJs = $("sp-input-js").value;
@@ -4982,7 +4989,7 @@ window.openNewIntentModal = function(e) {
   window.deleteCurrentStaticPage = async function() {
     if (!currentEditingStaticPage) return;
     var name = currentEditingStaticPage.name;
-    if (!confirm("Are you sure you want to completely DELETE page \"" + name + "\" and all its versions? This cannot be undone.")) return;
+    if (!confirm('Are you sure you want to completely DELETE page "' + name + '" and all its versions? This cannot be undone.')) return;
 
     try {
       var res = await apiFetch("/api/admin/static-pages?page_id=" + encodeURIComponent(currentEditingStaticPage.page_id), {
@@ -4991,7 +4998,7 @@ window.openNewIntentModal = function(e) {
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || "Delete failed");
 
-      alert("Page \"" + name + "\" deleted.");
+      alert('Page "' + name + '" deleted.');
       closeStaticPageEditor();
       await loadStaticPages();
     } catch (err) {
