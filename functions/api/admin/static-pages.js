@@ -422,13 +422,38 @@ export async function onRequestDelete(context) {
       if (page && page.live_version_id === versionId) {
         page.live_version_id = null;
         page.status = "draft";
-        await env.APP_CONFIG.put(`static_page:${page_id}`, JSON.stringify(page));
+        await env.APP_CONFIG.put(`static_page:${pageId}`, JSON.stringify(page));
         await env.APP_CONFIG.delete(`static_slug:${page.slug}`);
       }
       return new Response(JSON.stringify({ success: true }), { status: 200, headers: jsonHeaders() });
     }
 
     if (pageId) {
+      // Active Homepage Delete Protection: Homepage must not be deletable
+      let currentHomepageId = "";
+      if (env.APP_CONFIG) {
+        try {
+          const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
+          if (routing && routing.homepagePageId) currentHomepageId = routing.homepagePageId;
+        } catch (_) {}
+      }
+      if (!currentHomepageId && env.LANDING_CONFIG) {
+        try {
+          const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+          if (cfg && cfg.homepageStaticPageId) currentHomepageId = cfg.homepageStaticPageId;
+        } catch (_) {}
+      }
+
+      if (currentHomepageId && currentHomepageId === pageId) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before deleting it."
+          }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
+
       // Delete entire page and all its versions
       const page = await env.APP_CONFIG.get(`static_page:${pageId}`, { type: "json" });
       if (page && page.slug) {

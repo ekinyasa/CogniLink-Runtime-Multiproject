@@ -457,7 +457,110 @@ const runTests = async () => {
     console.log("✅ PASS: 9. Admin renderer scripts are syntactically valid with zero browser parse errors");
   }
 
-  console.log("\nAll Static Pages & Homepage Routing Tests Passed! (9/9)");
+  // Test 10: Active Homepage Delete Protection & Version Deletion
+  {
+    const env = createMockEnv();
+    const authHeaders = { authorization: "Bearer secret_admin" };
+
+    // 1. Create two static pages: page A (homepage) and page B (other)
+    const createReqA = createMockRequest("https://niluferormanli.com/api/admin/static-pages", "POST", authHeaders, JSON.stringify({
+      action: "create_page",
+      name: "Main Homepage",
+      slug: "main-home",
+      status: "published"
+    }));
+    const resA = await staticPagesPost(createMockContext(createReqA, env));
+    assert.equal(resA.status, 200);
+    const dataA = await resA.json();
+    const hpPageId = dataA.page.page_id;
+
+    const createReqB = createMockRequest("https://niluferormanli.com/api/admin/static-pages", "POST", authHeaders, JSON.stringify({
+      action: "create_page",
+      name: "Other Page",
+      slug: "other-page",
+      status: "draft"
+    }));
+    const resB = await staticPagesPost(createMockContext(createReqB, env));
+    assert.equal(resB.status, 200);
+    const dataB = await resB.json();
+    const otherPageId = dataB.page.page_id;
+
+    // 2. Set page A as active Homepage in site:routing
+    const routeReq = createMockRequest("https://niluferormanli.com/api/admin/site-routing", "POST", authHeaders, JSON.stringify({
+      homepagePageId: hpPageId
+    }));
+    const routeRes = await siteRoutingPost(createMockContext(routeReq, env));
+    assert.equal(routeRes.status, 200);
+
+    // 3. Attempt to delete active homepage -> MUST FAIL with 400
+    const delHpReq = createMockRequest(`https://niluferormanli.com/api/admin/static-pages?page_id=${hpPageId}`, "DELETE", authHeaders);
+    const delHpRes = await staticPagesDelete(createMockContext(delHpReq, env));
+    assert.equal(delHpRes.status, 400);
+    const delHpData = await delHpRes.json();
+    assert.equal(delHpData.success, false);
+    assert.ok(delHpData.error.includes("This page is currently assigned as the Homepage"));
+
+    // Verify page A still exists in KV
+    const pageAInKv = await env.APP_CONFIG.get(`static_page:${hpPageId}`, { type: "json" });
+    assert.ok(pageAInKv);
+    assert.equal(pageAInKv.name, "Main Homepage");
+
+    // 4. Attempt to delete non-homepage page B -> MUST SUCCEED with 200
+    const delOtherReq = createMockRequest(`https://niluferormanli.com/api/admin/static-pages?page_id=${otherPageId}`, "DELETE", authHeaders);
+    const delOtherRes = await staticPagesDelete(createMockContext(delOtherReq, env));
+    assert.equal(delOtherRes.status, 200);
+    const delOtherData = await delOtherRes.json();
+    assert.equal(delOtherData.success, true);
+
+    // Verify page B is deleted from KV
+    const pageBInKv = await env.APP_CONFIG.get(`static_page:${otherPageId}`, { type: "json" });
+    assert.equal(pageBInKv, null);
+
+    // 5. Unassign page A as homepage, then delete -> MUST SUCCEED
+    await siteRoutingPost(createMockContext(createMockRequest("https://niluferormanli.com/api/admin/site-routing", "POST", authHeaders, JSON.stringify({
+      homepagePageId: ""
+    })), env));
+
+    const delHpReq2 = createMockRequest(`https://niluferormanli.com/api/admin/static-pages?page_id=${hpPageId}`, "DELETE", authHeaders);
+    const delHpRes2 = await staticPagesDelete(createMockContext(delHpReq2, env));
+    assert.equal(delHpRes2.status, 200);
+    const pageAAfterUnset = await env.APP_CONFIG.get(`static_page:${hpPageId}`, { type: "json" });
+    assert.equal(pageAAfterUnset, null);
+
+    // 6. Test version deletion and verify line 425 fix (pageId vs page_id)
+    const createReqC = createMockRequest("https://niluferormanli.com/api/admin/static-pages", "POST", authHeaders, JSON.stringify({
+      action: "create_page",
+      name: "Version Test Page",
+      slug: "version-test",
+      status: "published"
+    }));
+    const resC = await staticPagesPost(createMockContext(createReqC, env));
+    const dataC = await resC.json();
+    const verId1 = dataC.version.version_id;
+
+    const delVerReq = createMockRequest(`https://niluferormanli.com/api/admin/static-pages?page_id=${dataC.page.page_id}&version_id=${verId1}`, "DELETE", authHeaders);
+    const delVerRes = await staticPagesDelete(createMockContext(delVerReq, env));
+    assert.equal(delVerRes.status, 200);
+    // Ensure page was updated without reference error or invalid key
+    const pageCInKv = await env.APP_CONFIG.get(`static_page:${dataC.page.page_id}`, { type: "json" });
+    assert.ok(pageCInKv);
+    assert.equal(pageCInKv.live_version_id, null);
+    assert.equal(pageCInKv.status, "draft");
+
+    console.log("✅ PASS: 10. Active Homepage Delete Protection enforces that active homepage cannot be deleted, non-homepage can be deleted, and version delete works cleanly");
+  }
+
+  // Test 11: Admin UI canonical esc usage and delete protection markup validation
+  {
+    const html = renderAdmin({});
+    assert.ok(!html.includes("escHtml("), "renderAdmin must not contain any escHtml calls");
+    assert.ok(html.includes('id="sp-btn-delete-page"'), "renderAdmin must contain #sp-btn-delete-page");
+    assert.ok(html.includes('id="sp-homepage-notice"'), "renderAdmin must contain #sp-homepage-notice");
+    assert.ok(html.includes("activeHomepageStaticPageId"), "renderAdmin must track activeHomepageStaticPageId");
+    console.log("✅ PASS: 11. Admin UI uses canonical esc helper exclusively and renders delete protection elements");
+  }
+
+  console.log("\nAll Static Pages & Homepage Routing Tests Passed! (11/11)");
 };
 
 runTests().catch((err) => {

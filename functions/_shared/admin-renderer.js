@@ -1332,11 +1332,14 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem;">
             <div style="display: flex; gap: 0.5rem;">
               <button type="button" class="btn-ghost btn-sm" onclick="archiveCurrentStaticPageVersion()" style="border: 1px solid var(--border); color: var(--text-m);">Archive Version</button>
-              <button type="button" class="btn-ghost btn-sm" onclick="deleteCurrentStaticPage()" style="border: 1px solid #b91c1c; color: #b91c1c;">Delete Page</button>
+              <button type="button" id="sp-btn-delete-page" class="btn-ghost btn-sm" onclick="deleteCurrentStaticPage()" style="border: 1px solid #b91c1c; color: #b91c1c;">Delete Page</button>
             </div>
             <div style="display: flex; gap: 0.5rem;">
               <button type="button" class="btn-primary btn-sm" onclick="saveStaticPageDraft()">Save Changes</button>
             </div>
+          </div>
+          <div id="sp-homepage-notice" style="display: none; font-size: 0.8rem; color: #b91c1c; margin-top: 0.5rem; background: rgba(185, 28, 28, 0.08); padding: 8px 12px; border-radius: 4px; border: 1px solid rgba(185, 28, 28, 0.2);">
+            This page is currently assigned as the Homepage. Select another Homepage in Settings &gt; Site Routing before deleting it.
           </div>
           <p id="sp-save-msg" style="font-size: 0.8rem; margin: 0; text-align: right; display: none;"></p>
         </div>
@@ -4518,6 +4521,7 @@ window.openNewIntentModal = function(e) {
         var spSelect = $("cfg-homepage-page-id");
         if (spSelect) {
           var currentVal = cfg.homepageStaticPageId || "";
+          activeHomepageStaticPageId = currentVal;
           spSelect.innerHTML = '<option value="">-- No static page assigned (fallback to /home) --</option>';
           (spData.pages || []).forEach(function(p) {
             if (p.status === "published" || p.live_version_id) {
@@ -4554,6 +4558,7 @@ window.openNewIntentModal = function(e) {
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();
       if (!res.ok) { showErr(elConfigError, data.error || "Save failed."); return; }
+      activeHomepageStaticPageId = hpId || "";
       elConfigSuccess.textContent = "Saved.";
       show(elConfigSuccess);
       setTimeout(function () { hide(elConfigSuccess); }, 3000);
@@ -4598,14 +4603,24 @@ window.openNewIntentModal = function(e) {
   var currentEditingStaticPage = null;
   var currentEditingStaticVersion = null;
   var staticPageLayoutItems = [];
+  var activeHomepageStaticPageId = "";
 
   window.loadStaticPages = async function() {
     try {
-      var res = await apiFetch("/api/admin/static-pages");
-      var data = await res.json();
-      if (!res.ok) {
+      var [spRes, routingRes] = await Promise.all([
+        apiFetch("/api/admin/static-pages"),
+        apiFetch("/api/admin/site-routing")
+      ]);
+      var data = await spRes.json();
+      if (!spRes.ok) {
         console.error("Failed to load static pages:", data.error);
         return;
+      }
+      if (routingRes && routingRes.ok) {
+        try {
+          var rData = await routingRes.json();
+          activeHomepageStaticPageId = rData.homepagePageId || "";
+        } catch (_) {}
       }
       staticPages = data.pages || [];
       staticPageVersions = data.versions || [];
@@ -4646,11 +4661,11 @@ window.openNewIntentModal = function(e) {
           : '<span class="badge" style="background:#d97706;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Draft</span>');
 
       html += '<tr style="border-bottom: 1px solid var(--border);">' +
-        '<td><a href="javascript:void(0)" class="sp-link-select" data-page-id="' + escHtml(p.page_id) + '" style="font-weight:600; color:var(--primary); text-decoration:none;">' + escHtml(p.name) + '</a></td>' +
-        '<td style="font-family:monospace; font-size:0.8rem;">/' + escHtml(p.slug) + '</td>' +
-        '<td style="font-size:0.8rem;">' + escHtml(liveVerLabel) + '</td>' +
+        '<td><a href="javascript:void(0)" class="sp-link-select" data-page-id="' + esc(p.page_id) + '" style="font-weight:600; color:var(--primary); text-decoration:none;">' + esc(p.name) + '</a></td>' +
+        '<td style="font-family:monospace; font-size:0.8rem;">/' + esc(p.slug) + '</td>' +
+        '<td style="font-size:0.8rem;">' + esc(liveVerLabel) + '</td>' +
         '<td>' + statusBadge + '</td>' +
-        '<td><button type="button" class="btn-ghost btn-sm sp-btn-select" data-page-id="' + escHtml(p.page_id) + '" style="border: 1px solid var(--border); padding: 2px 8px;">Edit</button></td>' +
+        '<td><button type="button" class="btn-ghost btn-sm sp-btn-select" data-page-id="' + esc(p.page_id) + '" style="border: 1px solid var(--border); padding: 2px 8px;">Edit</button></td>' +
         '</tr>';
     });
     tbody.innerHTML = html;
@@ -4718,9 +4733,21 @@ window.openNewIntentModal = function(e) {
         var isLive = ver.version_id === p.live_version_id;
         var label = (ver.version_label || "v" + ver.version_number) + (isLive ? " (Live / Published)" : " (" + ver.status + ")");
         var selected = (currentEditingStaticVersion && currentEditingStaticVersion.version_id === ver.version_id) ? " selected" : "";
-        optHtml += '<option value="' + escHtml(ver.version_id) + '"' + selected + '>' + escHtml(label) + '</option>';
+        optHtml += '<option value="' + esc(ver.version_id) + '"' + selected + '>' + esc(label) + '</option>';
       });
       vSelect.innerHTML = optHtml;
+    }
+
+    // Active Homepage Delete Protection: disable/hide Delete Page for active homepage
+    var isHomepage = Boolean(activeHomepageStaticPageId && activeHomepageStaticPageId === p.page_id);
+    var btnDel = $("sp-btn-delete-page");
+    var noticeDel = $("sp-homepage-notice");
+    if (btnDel) {
+      btnDel.disabled = isHomepage;
+      btnDel.style.display = isHomepage ? "none" : "inline-block";
+    }
+    if (noticeDel) {
+      noticeDel.style.display = isHomepage ? "block" : "none";
     }
 
     // Preview URL
@@ -4779,7 +4806,7 @@ window.openNewIntentModal = function(e) {
           '<button type="button" class="btn-ghost btn-sm" onclick="deleteStaticPageLayoutItem(' + idx + ')" style="padding: 2px 6px; border: 1px solid #b91c1c; color: #b91c1c;">&times;</button>' +
           '</div>' +
           '</div>' +
-          '<textarea class="sp-html-textarea" data-idx="' + idx + '" rows="5" style="width: 100%; font-family: monospace; font-size: 12px; box-sizing: border-box;" placeholder="Enter custom HTML, form tags, etc.">' + escHtml(item.content || item.body || "") + '</textarea>' +
+          '<textarea class="sp-html-textarea" data-idx="' + idx + '" rows="5" style="width: 100%; font-family: monospace; font-size: 12px; box-sizing: border-box;" placeholder="Enter custom HTML, form tags, etc.">' + esc(item.content || item.body || "") + '</textarea>' +
           '</div>';
       } else if (item.type === "component") {
         var cf = (componentFamilies || []).find(function(x) { return x.family_id === item.id || x.family_key === item.id; });
@@ -4788,7 +4815,7 @@ window.openNewIntentModal = function(e) {
           '<div style="display: flex; justify-content: space-between; align-items: center;">' +
           '<div>' +
           '<span style="font-size: 0.8rem; font-weight: 600; color: #1a7f37;">[Library Component]</span> ' +
-          '<span style="font-size: 0.8rem; font-weight: 500;">' + escHtml(compTitle) + '</span>' +
+          '<span style="font-size: 0.8rem; font-weight: 500;">' + esc(compTitle) + '</span>' +
           '</div>' +
           '<div style="display: flex; gap: 0.25rem;">' +
           '<button type="button" class="btn-ghost btn-sm" onclick="moveStaticPageLayoutItem(' + idx + ', -1)" style="padding: 2px 6px; border: 1px solid var(--border);" ' + (idx === 0 ? "disabled" : "") + '>&uarr;</button>' +
@@ -4988,6 +5015,10 @@ window.openNewIntentModal = function(e) {
 
   window.deleteCurrentStaticPage = async function() {
     if (!currentEditingStaticPage) return;
+    if (activeHomepageStaticPageId && activeHomepageStaticPageId === currentEditingStaticPage.page_id) {
+      alert("This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before deleting it.");
+      return;
+    }
     var name = currentEditingStaticPage.name;
     if (!confirm('Are you sure you want to completely DELETE page "' + name + '" and all its versions? This cannot be undone.')) return;
 
