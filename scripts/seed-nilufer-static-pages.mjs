@@ -243,6 +243,8 @@ const customHtml = `<section class="coming-soon-hero">
       <div>© 2026 - Nilufer Ormanlı LLC. - All rights reserved.</div>
       <div class="footer-links">
         <a href="https://app.kartra.com/redirect_to/?asset=page&id=ZHstCpwEU3rK" target="_blank" rel="noopener">Privacy Policy</a>
+        <a href="https://app.kartra.com/redirect_to/?asset=page&id=ZHstCpwEU3rK" target="_blank" rel="noopener">Cookie Policy</a>
+        <a href="javascript:void(0)" data-cl-consent-preferences>Cookie Preferences</a>
         <a href="https://app.kartra.com/redirect_to/?asset=page&id=28WNkF0QoqCp" target="_blank" rel="noopener">Terms of Use</a>
       </div>
     </div>
@@ -289,15 +291,175 @@ const slugRecord = {
   version_id,
 };
 
-const siteRoutingRecord = {
-  homepagePageId: page_id,
+const policyCommonCss = `@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;600;700&display=swap');
+body, html {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #070a23;
+  color: #fff;
+  font-family: 'Cabin', sans-serif;
+  line-height: 1.6;
+}
+.policy-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+}
+.policy-header {
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 24px;
+}
+.policy-header h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  letter-spacing: 0.02em;
+}
+.policy-header .last-updated {
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+.policy-content h2 {
+  font-size: 1.35rem;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  color: #e5e7eb;
+}
+.policy-content h3 {
+  font-size: 1.1rem;
+  margin-top: 24px;
+  margin-bottom: 8px;
+  color: #cbd5e1;
+}
+.policy-content p, .policy-content li {
+  font-size: 1rem;
+  color: #d1d5db;
+  line-height: 1.7;
+}
+.policy-content ul {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+.policy-content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.policy-content a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.policy-back-btn {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.policy-back-btn:hover {
+  color: #fff;
+}
+`;
+
+// Note: Route and template infrastructure is implemented.
+// Actual official legal text is pending final supply/publication by the legal team.
+const privacyHtml = `<div class="policy-container">
+  <a href="/" class="policy-back-btn">← Back to Nilüfer Ormanlı</a>
+  <div class="policy-header">
+    <h1>Privacy Policy</h1>
+  </div>
+  <div class="policy-content">
+    <p>The official Privacy Policy for Nilüfer Ormanlı is currently being finalized and will be published here shortly.</p>
+    <p>For inquiries regarding data privacy or to exercise your rights, please contact us directly.</p>
+  </div>
+</div>`;
+
+const cookieHtml = `<div class="policy-container">
+  <a href="/" class="policy-back-btn">← Back to Nilüfer Ormanlı</a>
+  <div class="policy-header">
+    <h1>Cookie Policy</h1>
+  </div>
+  <div class="policy-content">
+    <p>The official Cookie Policy for Nilüfer Ormanlı is currently being finalized and will be published here shortly.</p>
+    <p>You can review and update your cookie preferences at any time using the link below:</p>
+    <p style="margin: 24px 0;">
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" data-cl-consent-preferences style="padding: 10px 20px; font-size: 1rem;">Cookie Preferences</button>
+    </p>
+  </div>
+</div>`;
+
+const privacyPageRecord = {
+  page_id: "sp_privacy_policy",
+  name: "Privacy Policy",
+  slug: "privacy-policy",
+  title: "Privacy Policy - Nilüfer Ormanlı",
+  status: "draft",
+  live_version_id: "",
+  created_at: now,
+  updated_at: now,
+};
+
+const privacyVersionRecord = {
+  version_id: "spv_privacy_policy_v1",
+  page_id: "sp_privacy_policy",
+  version_number: 1,
+  version_label: "v1",
+  title: "Privacy Policy - Nilüfer Ormanlı",
+  status: "draft",
+  layout: [{ type: "custom_html", content: privacyHtml }],
+  components: [],
+  customStyleCss: policyCommonCss,
+  customScript: "",
+  customBodyHtml: privacyHtml,
+  customHeaderHtml: "",
+  customFooterHtml: "",
+  notes: "Pending official legal copy",
+  created_at: now,
+  updated_at: now,
+};
+
+const cookiePageRecord = {
+  page_id: "sp_cookie_policy",
+  name: "Cookie Policy",
+  slug: "cookie-policy",
+  title: "Cookie Policy - Nilüfer Ormanlı",
+  status: "draft",
+  live_version_id: "",
+  created_at: now,
+  updated_at: now,
+};
+
+const cookieVersionRecord = {
+  version_id: "spv_cookie_policy_v1",
+  page_id: "sp_cookie_policy",
+  version_number: 1,
+  version_label: "v1",
+  title: "Cookie Policy - Nilüfer Ormanlı",
+  status: "draft",
+  layout: [{ type: "custom_html", content: cookieHtml }],
+  components: [],
+  customStyleCss: policyCommonCss,
+  customScript: "",
+  customBodyHtml: cookieHtml,
+  customHeaderHtml: "",
+  customFooterHtml: "",
+  notes: "Pending official legal copy",
+  created_at: now,
+  updated_at: now,
 };
 
 export {
   pageRecord,
   versionRecord,
   slugRecord,
-  siteRoutingRecord
+  siteRoutingRecord,
+  privacyPageRecord,
+  privacyVersionRecord,
+  cookiePageRecord,
+  cookieVersionRecord
 };
 
 // If run directly via node, seed into Cloudflare KV using wrangler kv key put
@@ -312,6 +474,8 @@ if (process.argv[1] && process.argv[1].endsWith("seed-nilufer-static-pages.mjs")
     [`static_page_ver:${page_id}:${version_id}`]: versionRecord,
     [`static_slug:${slug}`]: slugRecord,
     [`site:routing`]: siteRoutingRecord,
+    // Note: /privacy-policy and /cookie-policy route infrastructure is ready in code.
+    // KV publishing is withheld until real official legal copy is supplied.
   };
 
   for (const [key, data] of Object.entries(files)) {

@@ -200,30 +200,322 @@ export function renderHub({
   // Body tag: add id for CSS scoping on campaign pages
   const bodyTag = slugId ? `<body id="slug-${escAttr(slugId)}">` : "<body>";
 
-  /* ── GA4 snippet ──────────────────────────────────────────────── */
-  const ga4Snippet = ga4Id ? `
-  <script async src="https://www.googletagmanager.com/gtag/js?id=${ga4Id}"></script>
+  /* ── Consent & Tracking Gate System ──────────────────────────── */
+  const consentBootstrapScript = `
   <script>
-    window.dataLayer=window.dataLayer||[];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js',new Date());
-    gtag('config','${ga4Id}',{send_page_view:true});
+  (function() {
+    var COOKIE_NAME = "cl_consent";
+    var ROOT_DOMAIN = "${escJsString(rootDomain || "")}";
+
+    function getCookieDomain() {
+      if (ROOT_DOMAIN && ROOT_DOMAIN.indexOf(".") !== -1) {
+        return "." + ROOT_DOMAIN.replace(/^\\.+/, "");
+      }
+      var h = window.location.hostname;
+      return (h && h.indexOf(".") !== -1 && h !== "localhost") ? "." + h : "";
+    }
+
+    function readConsentCookie() {
+      try {
+        var match = document.cookie.match(new RegExp('(^|;\\\\s*)' + COOKIE_NAME + '=([^;]+)'));
+        if (!match) return null;
+        var parsed = JSON.parse(decodeURIComponent(match[2]));
+        if (parsed && typeof parsed === "object" && parsed.v === 1) {
+          return {
+            v: 1,
+            nec: true,
+            ana: Boolean(parsed.ana),
+            mkt: Boolean(parsed.mkt),
+            ts: parsed.ts || 0
+          };
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    var listeners = [];
+    var currentConsent = readConsentCookie();
+    var hasExplicitChoice = currentConsent !== null;
+    if (!currentConsent) {
+      currentConsent = { v: 1, nec: true, ana: false, mkt: false, ts: 0 };
+    }
+
+    window.__clConsent = {
+      hasChoice: function() { return hasExplicitChoice; },
+      get: function() { return Object.assign({}, currentConsent); },
+      has: function(cat) {
+        if (cat === "nec" || cat === "necessary") return true;
+        if (cat === "ana" || cat === "analytics") return Boolean(currentConsent.ana);
+        if (cat === "mkt" || cat === "marketing") return Boolean(currentConsent.mkt);
+        return false;
+      },
+      onChange: function(fn) {
+        if (typeof fn === "function") {
+          listeners.push(fn);
+        }
+      },
+      set: function(prefs) {
+        var updated = {
+          v: 1,
+          nec: true,
+          ana: Boolean(prefs && prefs.ana),
+          mkt: Boolean(prefs && prefs.mkt),
+          ts: Math.floor(Date.now() / 1000)
+        };
+        currentConsent = updated;
+        hasExplicitChoice = true;
+
+        var dom = getCookieDomain();
+        var cookieStr = COOKIE_NAME + "=" + encodeURIComponent(JSON.stringify(updated)) + "; path=/; max-age=31536000; SameSite=Lax; Secure" + (dom ? "; domain=" + dom : "");
+        document.cookie = cookieStr;
+
+        if (typeof window.gtag === "function") {
+          window.gtag("consent", "update", {
+            "analytics_storage": updated.ana ? "granted" : "denied",
+            "ad_storage": updated.mkt ? "granted" : "denied",
+            "ad_user_data": updated.mkt ? "granted" : "denied",
+            "ad_personalization": updated.mkt ? "granted" : "denied"
+          });
+        }
+        if (!updated.ana) {
+          removeGaCookies();
+        }
+
+        for (var i = 0; i < listeners.length; i++) {
+          try { listeners[i](updated); } catch(e) {}
+        }
+        try {
+          window.dispatchEvent(new CustomEvent("cl_consent_updated", { detail: updated }));
+        } catch(e) {}
+
+        var banner = document.getElementById("cl-consent-banner");
+        if (banner) banner.style.display = "none";
+        var modal = document.getElementById("cl-consent-modal");
+        if (modal) modal.style.display = "none";
+      },
+      openPreferences: function() {
+        var modal = document.getElementById("cl-consent-modal");
+        if (!modal) return;
+        var anaInput = document.getElementById("cl-pref-ana");
+        var mktInput = document.getElementById("cl-pref-mkt");
+        if (anaInput) anaInput.checked = Boolean(currentConsent.ana);
+        if (mktInput) mktInput.checked = Boolean(currentConsent.mkt);
+        modal.style.display = "flex";
+      },
+      closePreferences: function() {
+        var modal = document.getElementById("cl-consent-modal");
+        if (modal) modal.style.display = "none";
+      },
+      saveFromModal: function() {
+        var anaInput = document.getElementById("cl-pref-ana");
+        var mktInput = document.getElementById("cl-pref-mkt");
+        window.__clConsent.set({
+          nec: true,
+          ana: Boolean(anaInput && anaInput.checked),
+          mkt: Boolean(mktInput && mktInput.checked)
+        });
+      }
+    };
+
+    function removeGaCookies() {
+      try {
+        var cookies = document.cookie.split(";");
+        var host = window.location.hostname;
+        var dom = getCookieDomain();
+        var domains = ["", dom, host, "." + host];
+        var paths = ["/", window.location.pathname];
+        for (var i = 0; i < cookies.length; i++) {
+          var eqPos = cookies[i].indexOf("=");
+          var name = (eqPos > -1 ? cookies[i].substr(0, eqPos) : cookies[i]).trim();
+          if (name === "_ga" || name === "_gid" || name.indexOf("_ga_") === 0 || name.indexOf("_gat") === 0) {
+            for (var d = 0; d < domains.length; d++) {
+              for (var p = 0; p < paths.length; p++) {
+                var domPart = domains[d] ? "; domain=" + domains[d] : "";
+                document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=" + paths[p] + domPart;
+              }
+            }
+          }
+        }
+      } catch(_) {}
+    }
+
+    ${ga4Id ? `
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      if (window.__clConsent && !window.__clConsent.has("analytics")) {
+        var firstArg = arguments[0];
+        if (firstArg !== "consent") return;
+      }
+      dataLayer.push(arguments);
+    }
+    window.gtag = gtag;
+    gtag("consent", "default", {
+      "analytics_storage": currentConsent.ana ? "granted" : "denied",
+      "ad_storage": currentConsent.mkt ? "granted" : "denied",
+      "ad_user_data": currentConsent.mkt ? "granted" : "denied",
+      "ad_personalization": currentConsent.mkt ? "granted" : "denied",
+      "wait_for_update": 500
+    });
+    ` : ""}
+  })();
+  </script>`;
+
+  /* ── GA4 snippet (Strictly Gated Dynamic Loader) ────────────────── */
+  const ga4Snippet = ga4Id ? `
+  <script>
+  (function() {
+    var gaLoaded = false;
+    function loadGA4() {
+      if (gaLoaded) return;
+      gaLoaded = true;
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=${escAttr(ga4Id)}";
+      var first = document.getElementsByTagName("script")[0];
+      if (first && first.parentNode) {
+        first.parentNode.insertBefore(s, first);
+      } else {
+        document.head.appendChild(s);
+      }
+      gtag('js', new Date());
+      gtag('config', '${escJsString(ga4Id)}', { send_page_view: true });
+    }
+
+    if (window.__clConsent && window.__clConsent.has('analytics')) {
+      loadGA4();
+    } else if (window.__clConsent) {
+      window.__clConsent.onChange(function(c) {
+        if (c && c.ana) {
+          loadGA4();
+        }
+      });
+    }
+  })();
   </script>` : "";
 
-  /* ── Meta Pixel snippet ───────────────────────────────────────── */
+  /* ── Meta Pixel snippet (Strict Consent Gated) ──────────────────── */
   const pixelSnippet = metaPixelId ? `
   <script>
-    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
-    n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
-    s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-    (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init','${metaPixelId}');
-    fbq('track','PageView');
-  </script>
-  <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1"/></noscript>` : "";
+  (function() {
+    var pixelLoaded = false;
+    function initMetaPixel() {
+      if (pixelLoaded) return;
+      pixelLoaded = true;
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
+      n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+      s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+      (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init','${escJsString(metaPixelId)}');
+      fbq('track','PageView');
+    }
+
+    if (window.__clConsent && window.__clConsent.has('marketing')) {
+      initMetaPixel();
+    } else if (window.__clConsent) {
+      window.__clConsent.onChange(function(c) {
+        if (c && c.mkt) initMetaPixel();
+      });
+    }
+  })();
+  </script>` : "";
+
+  const consentCfg = cfg?.consent || {};
+  const privacyPolicyUrl = consentCfg.privacyPolicyUrl || "/privacy-policy";
+
+  /* ── Consent Banner & Preferences Modal ────────────────────────── */
+  const consentUiSnippet = !isPreview ? `
+<div id="cl-consent-banner" class="cl-consent-banner" style="display:none;" role="region" aria-label="Cookie and Privacy Notice">
+  <div class="cl-consent-banner-inner">
+    <div class="cl-consent-banner-text">
+      <strong>Cookie Preferences</strong>
+      <p>We use necessary cookies to ensure our site works properly. With your consent, we also use optional analytics and marketing cookies to improve your experience and measure engagement. You can adjust your preferences anytime. <a href="${escAttr(privacyPolicyUrl)}" target="_blank" rel="noopener">Privacy Policy</a></p>
+    </div>
+    <div class="cl-consent-banner-actions">
+      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent.openPreferences()">Manage preferences</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent.set({nec:true,ana:false,mkt:false})">Reject non-essential</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent.set({nec:true,ana:true,mkt:true})">Accept all</button>
+    </div>
+  </div>
+</div>
+
+<div id="cl-consent-modal" class="cl-consent-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="cl-modal-title">
+  <div class="cl-consent-modal">
+    <div class="cl-consent-modal-header">
+      <h3 id="cl-modal-title">Cookie Preferences</h3>
+      <button type="button" class="cl-consent-modal-close" onclick="window.__clConsent.closePreferences()" aria-label="Close">&times;</button>
+    </div>
+    <div class="cl-consent-modal-body">
+      <p class="cl-consent-modal-desc">When you visit our website, cookies may be stored on your device. You can customize which cookie categories you allow below.</p>
+
+      <div class="cl-consent-pref-item">
+        <div class="cl-consent-pref-info">
+          <div class="cl-consent-pref-title">
+            <span>Necessary</span>
+            <span class="cl-consent-badge">Always Active</span>
+          </div>
+          <p>Required for basic site functionality, security, and session routing. Cannot be disabled.</p>
+        </div>
+        <div class="cl-consent-pref-toggle">
+          <input type="checkbox" checked disabled id="cl-pref-nec">
+        </div>
+      </div>
+
+      <div class="cl-consent-pref-item">
+        <div class="cl-consent-pref-info">
+          <div class="cl-consent-pref-title">
+            <label for="cl-pref-ana">Analytics</label>
+          </div>
+          <p>Helps us understand how visitors interact with the site to improve performance and user experience (e.g. Google Analytics 4).</p>
+        </div>
+        <div class="cl-consent-pref-toggle">
+          <input type="checkbox" id="cl-pref-ana">
+        </div>
+      </div>
+
+      <div class="cl-consent-pref-item">
+        <div class="cl-consent-pref-info">
+          <div class="cl-consent-pref-title">
+            <label for="cl-pref-mkt">Marketing</label>
+          </div>
+          <p>Used to deliver tailored content and measure the effectiveness of promotional campaigns (e.g. Meta Pixel).</p>
+        </div>
+        <div class="cl-consent-pref-toggle">
+          <input type="checkbox" id="cl-pref-mkt">
+        </div>
+      </div>
+    </div>
+    <div class="cl-consent-modal-footer">
+      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent.set({nec:true,ana:false,mkt:false})">Reject non-essential</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent.saveFromModal()">Save preferences</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent.set({nec:true,ana:true,mkt:true})">Accept all</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function checkConsentBanner() {
+    if (window.__clConsent && !window.__clConsent.hasChoice()) {
+      var b = document.getElementById("cl-consent-banner");
+      if (b) b.style.display = "block";
+    }
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", checkConsentBanner);
+  } else {
+    checkConsentBanner();
+  }
+  document.addEventListener("click", function(e) {
+    var t = e.target && e.target.closest && e.target.closest("[data-cl-consent-preferences], .cl-consent-preferences-trigger");
+    if (t && window.__clConsent) {
+      e.preventDefault();
+      window.__clConsent.openPreferences();
+    }
+  });
+})();
+</script>` : "";
 
   /* ── 404 variant ──────────────────────────────────────────────── */
   if (notFound) {
@@ -236,7 +528,7 @@ export function renderHub({
 <title>${escHtml(finalTitle)}</title>
 ${debugHtml}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-${ga4Snippet}${pixelSnippet}
+${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
 ${themeCssLink}
 </style>
@@ -245,6 +537,7 @@ ${themeCssLink}
 <div class="page-shell">
   <p class="not-found-msg" style="text-align:center;font-size:.9375rem;opacity:.55;margin:2.5rem 0;">Aradığınız sayfa aktif değil veya bulunamadı.</p>
 </div>
+${consentUiSnippet}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       try {
@@ -533,13 +826,14 @@ ${debugHtml}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
-${ga4Snippet}${pixelSnippet}
+${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
 ${themeCssLink}${globalCssLink}
 ${turnstileScript}${pageCssBlock}
 </head>
 ${bodyTag}
 ${renderedContent}
+${consentUiSnippet}
 
 ${slugData?.customScript && slugData.customScript.trim() ? `\n<script>\n${slugData.customScript.replace(/<\/script>/gi, "<\\/script>")}\n</script>` : ""}
 
@@ -1225,12 +1519,47 @@ function escJsString(jsonStr) {
 }
 
 /* ── CSS ────────────────────────────────────────────────────────── */
+const CONSENT_CSS = `
+/* ── Consent Banner & Modal Styles ── */
+.cl-consent-banner{position:fixed;bottom:0;left:0;right:0;z-index:999990;background:rgba(18,18,20,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.12);color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding:1rem 1.25rem;box-shadow:0 -4px 24px rgba(0,0,0,0.4)}
+.cl-consent-banner-inner{max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap}
+.cl-consent-banner-text{flex:1 1 480px;font-size:0.875rem;line-height:1.45}
+.cl-consent-banner-text strong{display:block;font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;color:#ffffff}
+.cl-consent-banner-text p{margin:0;color:#9ca3af}
+.cl-consent-banner-text a{color:#60a5fa;text-decoration:underline;text-underline-offset:2px}
+.cl-consent-banner-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
+.cl-consent-btn{padding:0.55rem 1rem;border-radius:6px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .15s ease;border:1px solid transparent;white-space:nowrap;font-family:inherit}
+.cl-consent-btn-accept{background:#2563eb;color:#ffffff;border-color:#2563eb}
+.cl-consent-btn-accept:hover{background:#1d4ed8}
+.cl-consent-btn-reject{background:rgba(255,255,255,0.08);color:#e5e7eb;border-color:rgba(255,255,255,0.15)}
+.cl-consent-btn-reject:hover{background:rgba(255,255,255,0.14)}
+.cl-consent-btn-manage{background:transparent;color:#9ca3af;border-color:transparent;text-decoration:underline}
+.cl-consent-btn-manage:hover{color:#ffffff}
+
+.cl-consent-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
+.cl-consent-modal{background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:12px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column}
+.cl-consent-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.08)}
+.cl-consent-modal-header h3{margin:0;font-size:1.1rem;font-weight:600}
+.cl-consent-modal-close{background:none;border:none;color:#9ca3af;font-size:1.5rem;cursor:pointer;line-height:1;padding:0}
+.cl-consent-modal-close:hover{color:#fff}
+.cl-consent-modal-body{padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+.cl-consent-modal-desc{margin:0;font-size:0.85rem;color:#9ca3af;line-height:1.45}
+.cl-consent-pref-item{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px}
+.cl-consent-pref-info{flex:1}
+.cl-consent-pref-title{display:flex;align-items:center;gap:0.5rem;font-weight:600;font-size:0.9rem;margin-bottom:0.25rem}
+.cl-consent-pref-info p{margin:0;font-size:0.8rem;color:#9ca3af;line-height:1.35}
+.cl-consent-badge{font-size:0.7rem;font-weight:500;background:rgba(255,255,255,0.1);color:#d1d5db;padding:0.15rem 0.4rem;border-radius:4px}
+.cl-consent-pref-toggle input[type="checkbox"]{width:1.25rem;height:1.25rem;accent-color:#2563eb;cursor:pointer}
+.cl-consent-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap}
+`;
+
 const BASE_CSS = `
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;min-height:100dvh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
 img,video{max-width:100%;height:auto}
 button,input,select,textarea{font-family:inherit}
 .page-shell{width:100%;max-width:none;margin:0;padding:0;display:block}
+${CONSENT_CSS}
 `;
 
 const HUB_CSS = `

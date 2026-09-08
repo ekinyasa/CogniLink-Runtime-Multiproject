@@ -239,7 +239,9 @@ export async function onRequestGet(context) {
     slugData: campaignDataVal,
     components: liveComponents,
     isPreview: isAdminPreview,
-    intentConfig: intentData || {}
+    intentConfig: intentData || {},
+    rootDomain: env.ROOT_DOMAIN || "teklifi.online",
+    requestHost: new URL(request.url).hostname
   });
 
   return new Response(html, {

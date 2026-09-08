@@ -324,6 +324,8 @@ export async function onRequestGet(context) {
                 slugData: version,
                 components: liveComponents,
                 config,
+                ga4Id: env.GA4_ID || "",
+                metaPixelId: env.META_PIXEL_ID || "",
                 isPreview: isAdminPreview,
                 rootDomain: rootDomain,
                 requestHost: originalHost
@@ -384,6 +386,8 @@ export async function onRequestGet(context) {
               slugData: version,
               components: liveComponents,
               config,
+              ga4Id: env.GA4_ID || "",
+              metaPixelId: env.META_PIXEL_ID || "",
               isPreview: isAdminPreview,
               rootDomain: rootDomain,
               requestHost: originalHost
