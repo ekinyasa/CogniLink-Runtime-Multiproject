@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 import { renderLanding } from "../functions/_shared/hub-renderer.js";
 import { onRequestGet as catchAllHandler } from "../functions/[[path]].js";
 
@@ -251,5 +252,142 @@ describe("CogniLink Consent & Privacy Layer Tests", () => {
     assert.ok(html.includes(".cl-consent-modal-overlay{"), "CSS must contain modal overlay styles");
     assert.ok(html.includes(".cl-consent-btn-accept{"), "CSS must contain accept button styles");
     assert.ok(html.includes(".cl-consent-btn-reject{"), "CSS must contain reject button styles");
+  });
+
+  test("9. GA4 in-session lifecycle: OFF -> ON -> OFF -> ON", () => {
+    const ga4Id = "G-K5RNWREM5K";
+    const html = renderLanding({
+      contextType: "static",
+      contextId: "home",
+      slug: "home",
+      ga4Id,
+      rootDomain: "niluferormanli.com"
+    });
+
+    // Extract script blocks
+    const scriptRegex = /<script(?:\s+id="[^"]*")?>([\s\S]*?)<\/script>/gi;
+    let match;
+    const scripts = [];
+    while ((match = scriptRegex.exec(html)) !== null) {
+      scripts.push(match[1]);
+    }
+
+    const bootstrapScript = scripts.find(s => s.includes("__clConsent ="));
+    const ga4LoaderScript = scripts.find(s => s.includes("enableGA4") && s.includes(ga4Id));
+
+    assert.ok(bootstrapScript, "Must contain bootstrap script");
+    assert.ok(ga4LoaderScript, "Must contain GA4 dynamic loader script");
+
+    // Create a mock browser execution context
+    const injectedScripts = [];
+    const elementsById = {};
+    const sandbox = {
+      window: null,
+      document: {
+        cookie: "",
+        createElement: (tag) => ({
+          tagName: tag.toUpperCase(),
+          src: "",
+          async: false,
+          parentNode: null
+        }),
+        getElementsByTagName: (tag) => {
+          if (tag.toLowerCase() === "script") {
+            return [{
+              parentNode: {
+                insertBefore: (newEl, refEl) => {
+                  injectedScripts.push(newEl);
+                }
+              }
+            }];
+          }
+          return [];
+        },
+        getElementById: (id) => {
+          if (!elementsById[id]) {
+            elementsById[id] = { style: {}, checked: false };
+          }
+          return elementsById[id];
+        },
+        head: {
+          appendChild: (el) => { injectedScripts.push(el); }
+        }
+      },
+      location: {
+        hostname: "niluferormanli.com",
+        pathname: "/"
+      },
+      CustomEvent: class {
+        constructor(type, init) {
+          this.type = type;
+          this.detail = init?.detail;
+        }
+      },
+      Date: Date,
+      JSON: JSON,
+      Math: Math,
+      encodeURIComponent: encodeURIComponent,
+      Boolean: Boolean,
+      Object: Object,
+      console: console
+    };
+    sandbox.window = sandbox;
+    sandbox.window.location = sandbox.location;
+    sandbox.window.document = sandbox.document;
+    sandbox.window.dispatchEvent = () => {};
+
+    vm.createContext(sandbox);
+
+    // Execute bootstrap script
+    vm.runInContext(bootstrapScript, sandbox);
+    // Execute GA4 loader script
+    vm.runInContext(ga4LoaderScript, sandbox);
+
+    // Stage 1: Initial state (OFF)
+    assert.equal(sandbox.window[`ga-disable-${ga4Id}`], true, "Initial state: ga-disable must be true");
+    assert.equal(injectedScripts.length, 0, "Initial state: zero gtag.js scripts injected");
+    sandbox.window.gtag("event", "initial_unconsented_event");
+    assert.ok(
+      !sandbox.window.dataLayer.some(args => args[0] === "event" && args[1] === "initial_unconsented_event"),
+      "Initial state: non-consent gtag event must be dropped"
+    );
+
+    // Stage 2: First enable (OFF -> ON)
+    sandbox.window.__clConsent.set({ nec: true, ana: true, mkt: false });
+    assert.equal(sandbox.window[`ga-disable-${ga4Id}`], false, "OFF -> ON: ga-disable must be false");
+    assert.equal(injectedScripts.length, 1, "OFF -> ON: gtag.js script must be injected");
+    assert.ok(injectedScripts[0].src.includes(`googletagmanager.com/gtag/js?id=${ga4Id}`), "Injected script must target ga4Id");
+    sandbox.window.gtag("event", "consented_event_1");
+    assert.ok(
+      sandbox.window.dataLayer.some(args => args[0] === "event" && args[1] === "consented_event_1"),
+      "OFF -> ON: consented event must be queued in dataLayer"
+    );
+
+    // Stage 3: Revocation (ON -> OFF)
+    sandbox.window.__clConsent.set({ nec: true, ana: false, mkt: false });
+    assert.equal(sandbox.window[`ga-disable-${ga4Id}`], true, "ON -> OFF: ga-disable must be set to true on revocation");
+    sandbox.window.gtag("event", "revoked_event_2");
+    assert.ok(
+      !sandbox.window.dataLayer.some(args => args[0] === "event" && args[1] === "revoked_event_2"),
+      "ON -> OFF: gtag event after revocation must be dropped"
+    );
+
+    // Stage 4: Re-enable in same session without page reload (OFF -> ON)
+    sandbox.window.__clConsent.set({ nec: true, ana: true, mkt: false });
+    assert.equal(
+      sandbox.window[`ga-disable-${ga4Id}`],
+      false,
+      "OFF -> ON (re-enable): ga-disable must be explicitly reset to false"
+    );
+    assert.equal(
+      injectedScripts.length,
+      1,
+      "OFF -> ON (re-enable): must NOT inject duplicate gtag.js script element"
+    );
+    sandbox.window.gtag("event", "resumed_event_3");
+    assert.ok(
+      sandbox.window.dataLayer.some(args => args[0] === "event" && args[1] === "resumed_event_3"),
+      "OFF -> ON (re-enable): GA4 events must resume normally without page reload"
+    );
   });
 });
