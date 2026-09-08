@@ -38,9 +38,11 @@ function jsonHeaders() {
   };
 }
 
-async function checkRouter(baseUrl) {
+async function checkRouter(baseUrl, env) {
+  const isNilufer = env?.PROJECT_ID === "nilufer" || env?.ROOT_DOMAIN?.includes("niluferormanli");
+  const probePath = isNilufer ? "coming-soon" : PROBE_ALIAS;
   try {
-    const res = await fetch(`${baseUrl}/${PROBE_ALIAS}`, { redirect: "follow" });
+    const res = await fetch(`${baseUrl}/${probePath}`, { redirect: "follow" });
     return res.status === 200 || res.status === 302 ? "ok" : "error";
   } catch {
     return "error";
@@ -131,7 +133,7 @@ export async function onRequest(context) {
 
   // Run all checks in parallel for minimal latency
   const [router, kv, analytics] = await Promise.all([
-    checkRouter(baseUrl),
+    checkRouter(baseUrl, env),
     checkKv(env),
     checkAnalytics(env),
   ]);

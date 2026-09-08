@@ -75,6 +75,7 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
         <button class="tab-btn" data-tab="routing">Traffic</button>
     <button class="tab-btn" data-tab="components">Library</button>
     <button class="tab-btn" data-tab="config">Settings</button>
+    <button class="tab-btn" data-tab="consent">Privacy &amp; Consent</button>
     <button class="tab-btn" data-tab="applications">Applications</button>
     <button class="tab-btn" data-tab="diagnostics">Health</button>
   </div>
@@ -1353,6 +1354,278 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
 </div>
 
+  <!-- ── Tab: Privacy & Consent ───────────────────────────────── -->
+  <div id="tab-consent" class="tab-pane hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:1.25rem 1.25rem 0 1.25rem;flex-wrap:wrap;gap:0.75rem;">
+      <div>
+        <p class="analytics-section-title" style="margin:0;">Privacy &amp; Consent Configuration</p>
+        <p class="hint" style="margin:0.25rem 0 0 0;">Manage cookie notice copy and visual appearance. Underlying tracking gating, analytics hooks, and engine rules remain in shared runtime code.</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <button type="button" class="btn-ghost btn-sm" id="btn-reset-consent" onclick="resetConsentToDefaults()">Reset to Defaults</button>
+        <button type="button" class="btn-primary btn-sm" id="btn-save-consent" onclick="saveConsentConfig()">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- Subtab Bar -->
+    <div style="display:flex;gap:0.5rem;margin:1.25rem 1.25rem 1rem 1.25rem;align-items:center;flex-wrap:wrap;">
+      <button type="button" id="subtab-btn-consent-content" class="btn-primary btn-sm" onclick="setConsentSubtab('content')" style="flex:0 0 auto;width:auto;">Content</button>
+      <button type="button" id="subtab-btn-consent-appearance" class="btn-ghost btn-sm" onclick="setConsentSubtab('appearance')" style="flex:0 0 auto;width:auto;border:1px solid var(--border);">Appearance</button>
+      <button type="button" id="subtab-btn-consent-preview" class="btn-ghost btn-sm" onclick="setConsentSubtab('preview')" style="flex:0 0 auto;width:auto;border:1px solid var(--border);">Preview</button>
+      <span id="consent-save-status" style="margin-left:auto;font-size:0.8125rem;color:var(--text-m);font-weight:500;"></span>
+    </div>
+
+    <!-- Subpane: Content -->
+    <div id="subpane-consent-content" class="landings-grid" style="margin:0 1.25rem 1.5rem 1.25rem;">
+      <!-- Card A: Banner Copy -->
+      <div class="card">
+        <p class="card-title">Notice Banner Copy</p>
+        <p class="hint">The initial consent notice presented to new visitors.</p>
+
+        <label for="consent-banner-title">Banner Title</label>
+        <input id="consent-banner-title" type="text" placeholder="Cookie Preferences" />
+
+        <label for="consent-banner-body">Banner Body Message</label>
+        <textarea id="consent-banner-body" rows="4" placeholder="We use necessary cookies to ensure our site works properly..."></textarea>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-privacy-label">Privacy Policy Link Text</label>
+            <input id="consent-privacy-label" type="text" placeholder="Privacy Policy" />
+          </div>
+          <div>
+            <label for="consent-privacy-url">Privacy Policy Target URL</label>
+            <input id="consent-privacy-url" type="text" placeholder="https://app.kartra.com/..." />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-btn-accept">Accept All Button</label>
+            <input id="consent-btn-accept" type="text" placeholder="Accept all" />
+          </div>
+          <div>
+            <label for="consent-btn-reject">Reject Button</label>
+            <input id="consent-btn-reject" type="text" placeholder="Reject non-essential" />
+          </div>
+          <div>
+            <label for="consent-btn-manage">Manage Button</label>
+            <input id="consent-btn-manage" type="text" placeholder="Manage preferences" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Card B: Modal Copy -->
+      <div class="card">
+        <p class="card-title">Preferences Modal Copy</p>
+        <p class="hint">Granular consent toggles and explanatory text.</p>
+
+        <label for="consent-modal-title">Modal Title</label>
+        <input id="consent-modal-title" type="text" placeholder="Cookie Preferences" />
+
+        <label for="consent-modal-desc">Modal Intro Description</label>
+        <textarea id="consent-modal-desc" rows="2" placeholder="When you visit our website..."></textarea>
+
+        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;">
+            <div>
+              <label for="consent-nec-title">Necessary Category Title</label>
+              <input id="consent-nec-title" type="text" placeholder="Necessary" />
+            </div>
+            <div>
+              <label for="consent-nec-badge">Badge Text</label>
+              <input id="consent-nec-badge" type="text" placeholder="Always Active" />
+            </div>
+          </div>
+          <label for="consent-nec-desc" style="margin-top:0.35rem;">Necessary Category Description</label>
+          <input id="consent-nec-desc" type="text" placeholder="Required for basic site functionality..." />
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+          <label for="consent-ana-title">Analytics Category Title</label>
+          <input id="consent-ana-title" type="text" placeholder="Analytics" />
+          <label for="consent-ana-desc" style="margin-top:0.35rem;">Analytics Category Description</label>
+          <input id="consent-ana-desc" type="text" placeholder="Helps us understand how visitors interact..." />
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+          <label for="consent-mkt-title">Marketing Category Title</label>
+          <input id="consent-mkt-title" type="text" placeholder="Marketing" />
+          <label for="consent-mkt-desc" style="margin-top:0.35rem;">Marketing Category Description</label>
+          <input id="consent-mkt-desc" type="text" placeholder="Used to deliver tailored content..." />
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-btn-save">Save Button Text</label>
+            <input id="consent-btn-save" type="text" placeholder="Save preferences" />
+          </div>
+          <div>
+            <label for="consent-fallback-label">Fallback Trigger Label</label>
+            <input id="consent-fallback-label" type="text" placeholder="Cookie Preferences" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subpane: Appearance -->
+    <div id="subpane-consent-appearance" class="landings-grid hidden" style="margin:0 1.25rem 1.5rem 1.25rem;">
+      <!-- Card A: Banner Appearance -->
+      <div class="card">
+        <p class="card-title">Notice Banner &amp; Container</p>
+        <p class="hint">Color scheme and geometry of the bottom banner.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-bannerBg">Banner Background</label>
+            <input id="consent-vis-bannerBg" type="text" placeholder="rgba(18, 18, 20, 0.96)" />
+          </div>
+          <div>
+            <label for="consent-vis-borderColor">Border Color</label>
+            <input id="consent-vis-borderColor" type="text" placeholder="rgba(255, 255, 255, 0.12)" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-textColor">Primary Text Color</label>
+            <input id="consent-vis-textColor" type="text" placeholder="#f3f4f6" />
+          </div>
+          <div>
+            <label for="consent-vis-secondaryTextColor">Secondary Text Color</label>
+            <input id="consent-vis-secondaryTextColor" type="text" placeholder="#9ca3af" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-backdropBlur">Backdrop Blur</label>
+            <input id="consent-vis-backdropBlur" type="text" placeholder="12px" />
+          </div>
+          <div>
+            <label for="consent-vis-bannerRadius">Banner Corner Radius</label>
+            <input id="consent-vis-bannerRadius" type="text" placeholder="0px" />
+          </div>
+          <div>
+            <label for="consent-vis-maxWidth">Max Width</label>
+            <input id="consent-vis-maxWidth" type="text" placeholder="1140px" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-paddingY">Padding Top/Bottom</label>
+            <input id="consent-vis-paddingY" type="text" placeholder="1rem" />
+          </div>
+          <div>
+            <label for="consent-vis-paddingX">Padding Left/Right</label>
+            <input id="consent-vis-paddingX" type="text" placeholder="1.25rem" />
+          </div>
+          <div>
+            <label for="consent-vis-mobilePaddingY">Mobile Padding Y</label>
+            <input id="consent-vis-mobilePaddingY" type="text" placeholder="0.75rem" />
+          </div>
+          <div>
+            <label for="consent-vis-mobilePaddingX">Mobile Padding X</label>
+            <input id="consent-vis-mobilePaddingX" type="text" placeholder="1rem" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Card B: Buttons, Links & Modal Appearance -->
+      <div class="card">
+        <p class="card-title">Buttons, Links &amp; Preferences Modal</p>
+        <p class="hint">Styling of interactive elements and preferences modal dialog.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-buttonRadius">Button Radius</label>
+            <input id="consent-vis-buttonRadius" type="text" placeholder="6px" />
+          </div>
+          <div>
+            <label for="consent-vis-linkColor">Link Color</label>
+            <input id="consent-vis-linkColor" type="text" placeholder="#60a5fa" />
+          </div>
+          <div>
+            <label for="consent-vis-accentColor">Accent / Checkbox Color</label>
+            <input id="consent-vis-accentColor" type="text" placeholder="#2563eb" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-btnPrimaryBg">Primary Button BG</label>
+            <input id="consent-vis-btnPrimaryBg" type="text" placeholder="#2563eb" />
+          </div>
+          <div>
+            <label for="consent-vis-btnPrimaryText">Primary Button Text</label>
+            <input id="consent-vis-btnPrimaryText" type="text" placeholder="#ffffff" />
+          </div>
+          <div>
+            <label for="consent-vis-btnPrimaryBorder">Primary Button Border</label>
+            <input id="consent-vis-btnPrimaryBorder" type="text" placeholder="#2563eb" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-btnSecondaryBg">Secondary Button BG</label>
+            <input id="consent-vis-btnSecondaryBg" type="text" placeholder="rgba(255, 255, 255, 0.08)" />
+          </div>
+          <div>
+            <label for="consent-vis-btnSecondaryText">Secondary Button Text</label>
+            <input id="consent-vis-btnSecondaryText" type="text" placeholder="#e5e7eb" />
+          </div>
+          <div>
+            <label for="consent-vis-btnSecondaryBorder">Secondary Button Border</label>
+            <input id="consent-vis-btnSecondaryBorder" type="text" placeholder="rgba(255, 255, 255, 0.15)" />
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-modalBg">Modal Background</label>
+            <input id="consent-vis-modalBg" type="text" placeholder="#18181b" />
+          </div>
+          <div>
+            <label for="consent-vis-modalBorder">Modal Border</label>
+            <input id="consent-vis-modalBorder" type="text" placeholder="rgba(255, 255, 255, 0.12)" />
+          </div>
+          <div>
+            <label for="consent-vis-modalRadius">Modal Radius</label>
+            <input id="consent-vis-modalRadius" type="text" placeholder="12px" />
+          </div>
+          <div>
+            <label for="consent-vis-overlayOpacity">Overlay Opacity</label>
+            <input id="consent-vis-overlayOpacity" type="text" placeholder="0.72" />
+          </div>
+        </div>
+
+        <label for="consent-vis-fontFamily" style="margin-top:0.75rem;">Font Family</label>
+        <input id="consent-vis-fontFamily" type="text" placeholder="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" />
+      </div>
+    </div>
+
+    <!-- Subpane: Preview -->
+    <div id="subpane-consent-preview" class="hidden" style="margin:0 1.25rem 1.5rem 1.25rem;">
+      <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+          <p class="card-title" style="margin:0;">Live Visual Preview</p>
+          <div style="display:flex;gap:0.5rem;">
+            <button type="button" id="preview-mode-banner" class="btn-primary btn-sm" onclick="setConsentPreviewMode('banner')" style="flex:0 0 auto;width:auto;">Banner</button>
+            <button type="button" id="preview-mode-modal" class="btn-ghost btn-sm" onclick="setConsentPreviewMode('modal')" style="flex:0 0 auto;width:auto;border:1px solid var(--border);">Preferences Modal</button>
+            <button type="button" id="preview-mode-both" class="btn-ghost btn-sm" onclick="setConsentPreviewMode('both')" style="flex:0 0 auto;width:auto;border:1px solid var(--border);">Both</button>
+          </div>
+        </div>
+        <p class="hint" style="margin-bottom:1rem;">Real-time rendering of the consent banner and preferences modal using your current Content and Appearance configuration.</p>
+
+        <!-- Preview canvas with scoped styles -->
+        <div id="consent-preview-canvas" style="background:#090d16;border:1px solid var(--border);border-radius:8px;padding:1.5rem;min-height:350px;position:relative;overflow:hidden;">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Tab: Applications ───────────────────────────────────── -->
   <div id="tab-applications" class="tab-pane hidden">
     <div class="layout" style="grid-template-columns: 1fr 2fr;">
@@ -1596,6 +1869,7 @@ window.openNewIntentModal = function(e) {
   var rawAnalyticsRecent        = [];      // PART 3: raw recent-events rows
   var campaignsTabLoaded        = false;
   var configTabLoaded           = false;
+  var consentTabLoaded          = false;
   var componentsTabLoaded       = false;
   var componentFamilies         = [];
   var componentVersions         = [];
@@ -2094,6 +2368,10 @@ window.openNewIntentModal = function(e) {
       if (target === "config" && !configTabLoaded) {
         configTabLoaded = true;
         loadConfig();
+      }
+      if (target === "consent" && !consentTabLoaded) {
+        consentTabLoaded = true;
+        loadConsentConfig();
       }
       if (target === "components" && !componentsTabLoaded) {
         componentsTabLoaded = true;
@@ -4569,6 +4847,372 @@ window.openNewIntentModal = function(e) {
       elBtnSaveConfig.textContent = "Save Config";
     }
   });
+
+  /* ── Privacy & Consent Configuration ───────────────────── */
+  var consentCurrentSubtab = "content";
+  var consentPreviewMode = "banner";
+  var consentDefaultsCache = null;
+
+  window.setConsentSubtab = function(subtab) {
+    consentCurrentSubtab = subtab;
+    var btnContent = $("subtab-btn-consent-content");
+    var btnAppearance = $("subtab-btn-consent-appearance");
+    var btnPreview = $("subtab-btn-consent-preview");
+    var paneContent = $("subpane-consent-content");
+    var paneAppearance = $("subpane-consent-appearance");
+    var panePreview = $("subpane-consent-preview");
+
+    [
+      [btnContent, paneContent, "content"],
+      [btnAppearance, paneAppearance, "appearance"],
+      [btnPreview, panePreview, "preview"]
+    ].forEach(function(item) {
+      var btn = item[0];
+      var pane = item[1];
+      var name = item[2];
+      if (name === subtab) {
+        if (btn) {
+          btn.className = "btn-primary btn-sm";
+          btn.style.border = "none";
+        }
+        if (pane) pane.classList.remove("hidden");
+      } else {
+        if (btn) {
+          btn.className = "btn-ghost btn-sm";
+          btn.style.border = "1px solid var(--border)";
+        }
+        if (pane) pane.classList.add("hidden");
+      }
+    });
+
+    if (subtab === "preview") {
+      updateConsentPreview();
+    }
+  };
+
+  window.setConsentPreviewMode = function(mode) {
+    consentPreviewMode = mode;
+    var btnBanner = $("preview-mode-banner");
+    var btnModal = $("preview-mode-modal");
+    var btnBoth = $("preview-mode-both");
+
+    [
+      [btnBanner, "banner"],
+      [btnModal, "modal"],
+      [btnBoth, "both"]
+    ].forEach(function(item) {
+      var btn = item[0];
+      var name = item[1];
+      if (btn) {
+        if (name === mode) {
+          btn.className = "btn-primary btn-sm";
+          btn.style.border = "none";
+        } else {
+          btn.className = "btn-ghost btn-sm";
+          btn.style.border = "1px solid var(--border)";
+        }
+      }
+    });
+
+    updateConsentPreview();
+  };
+
+  function getConsentInputValue(id, fallback) {
+    var el = $(id);
+    if (!el) return fallback || "";
+    var v = el.value.trim();
+    return v !== "" ? v : (fallback || "");
+  }
+
+  function setConsentInputValue(id, val) {
+    var el = $(id);
+    if (el) el.value = val != null ? val : "";
+  }
+
+  function populateConsentForm(data) {
+    if (!data) return;
+    var c = data.content || {};
+    var v = data.visual || {};
+
+    // Content fields
+    setConsentInputValue("consent-banner-title", c.bannerTitle);
+    setConsentInputValue("consent-banner-body", c.bannerBody);
+    setConsentInputValue("consent-privacy-label", c.privacyPolicyLabel);
+    setConsentInputValue("consent-privacy-url", c.privacyPolicyUrl);
+    setConsentInputValue("consent-btn-accept", c.btnAcceptAll);
+    setConsentInputValue("consent-btn-reject", c.btnRejectNonEssential);
+    setConsentInputValue("consent-btn-manage", c.btnManagePreferences);
+    setConsentInputValue("consent-modal-title", c.modalTitle);
+    setConsentInputValue("consent-modal-desc", c.modalDescription);
+    setConsentInputValue("consent-nec-title", c.necessaryTitle);
+    setConsentInputValue("consent-nec-badge", c.necessaryBadge);
+    setConsentInputValue("consent-nec-desc", c.necessaryDescription);
+    setConsentInputValue("consent-ana-title", c.analyticsTitle);
+    setConsentInputValue("consent-ana-desc", c.analyticsDescription);
+    setConsentInputValue("consent-mkt-title", c.marketingTitle);
+    setConsentInputValue("consent-mkt-desc", c.marketingDescription);
+    setConsentInputValue("consent-btn-save", c.btnSavePreferences);
+    setConsentInputValue("consent-fallback-label", c.fallbackTriggerLabel);
+
+    // Visual fields
+    setConsentInputValue("consent-vis-bannerBg", v.bannerBg);
+    setConsentInputValue("consent-vis-borderColor", v.borderColor);
+    setConsentInputValue("consent-vis-textColor", v.textColor);
+    setConsentInputValue("consent-vis-secondaryTextColor", v.secondaryTextColor);
+    setConsentInputValue("consent-vis-backdropBlur", v.backdropBlur);
+    setConsentInputValue("consent-vis-bannerRadius", v.bannerRadius);
+    setConsentInputValue("consent-vis-maxWidth", v.maxWidth);
+    setConsentInputValue("consent-vis-paddingY", v.paddingY);
+    setConsentInputValue("consent-vis-paddingX", v.paddingX);
+    setConsentInputValue("consent-vis-mobilePaddingY", v.mobilePaddingY);
+    setConsentInputValue("consent-vis-mobilePaddingX", v.mobilePaddingX);
+    setConsentInputValue("consent-vis-buttonRadius", v.buttonRadius);
+    setConsentInputValue("consent-vis-linkColor", v.linkColor);
+    setConsentInputValue("consent-vis-accentColor", v.accentColor);
+    setConsentInputValue("consent-vis-btnPrimaryBg", v.btnPrimaryBg);
+    setConsentInputValue("consent-vis-btnPrimaryText", v.btnPrimaryText);
+    setConsentInputValue("consent-vis-btnPrimaryBorder", v.btnPrimaryBorder);
+    setConsentInputValue("consent-vis-btnSecondaryBg", v.btnSecondaryBg);
+    setConsentInputValue("consent-vis-btnSecondaryText", v.btnSecondaryText);
+    setConsentInputValue("consent-vis-btnSecondaryBorder", v.btnSecondaryBorder);
+    setConsentInputValue("consent-vis-modalBg", v.modalBg);
+    setConsentInputValue("consent-vis-modalBorder", v.modalBorder);
+    setConsentInputValue("consent-vis-modalRadius", v.modalRadius);
+    setConsentInputValue("consent-vis-overlayOpacity", v.overlayOpacity);
+    setConsentInputValue("consent-vis-fontFamily", v.fontFamily);
+  }
+
+  function collectConsentFormData() {
+    return {
+      content: {
+        bannerTitle: getConsentInputValue("consent-banner-title"),
+        bannerBody: getConsentInputValue("consent-banner-body"),
+        privacyPolicyLabel: getConsentInputValue("consent-privacy-label"),
+        privacyPolicyUrl: getConsentInputValue("consent-privacy-url"),
+        btnAcceptAll: getConsentInputValue("consent-btn-accept"),
+        btnRejectNonEssential: getConsentInputValue("consent-btn-reject"),
+        btnManagePreferences: getConsentInputValue("consent-btn-manage"),
+        modalTitle: getConsentInputValue("consent-modal-title"),
+        modalDescription: getConsentInputValue("consent-modal-desc"),
+        necessaryTitle: getConsentInputValue("consent-nec-title"),
+        necessaryBadge: getConsentInputValue("consent-nec-badge"),
+        necessaryDescription: getConsentInputValue("consent-nec-desc"),
+        analyticsTitle: getConsentInputValue("consent-ana-title"),
+        analyticsDescription: getConsentInputValue("consent-ana-desc"),
+        marketingTitle: getConsentInputValue("consent-mkt-title"),
+        marketingDescription: getConsentInputValue("consent-mkt-desc"),
+        btnSavePreferences: getConsentInputValue("consent-btn-save"),
+        fallbackTriggerLabel: getConsentInputValue("consent-fallback-label")
+      },
+      visual: {
+        bannerBg: getConsentInputValue("consent-vis-bannerBg"),
+        borderColor: getConsentInputValue("consent-vis-borderColor"),
+        textColor: getConsentInputValue("consent-vis-textColor"),
+        secondaryTextColor: getConsentInputValue("consent-vis-secondaryTextColor"),
+        backdropBlur: getConsentInputValue("consent-vis-backdropBlur"),
+        bannerRadius: getConsentInputValue("consent-vis-bannerRadius"),
+        maxWidth: getConsentInputValue("consent-vis-maxWidth"),
+        paddingY: getConsentInputValue("consent-vis-paddingY"),
+        paddingX: getConsentInputValue("consent-vis-paddingX"),
+        mobilePaddingY: getConsentInputValue("consent-vis-mobilePaddingY"),
+        mobilePaddingX: getConsentInputValue("consent-vis-mobilePaddingX"),
+        buttonRadius: getConsentInputValue("consent-vis-buttonRadius"),
+        linkColor: getConsentInputValue("consent-vis-linkColor"),
+        accentColor: getConsentInputValue("consent-vis-accentColor"),
+        btnPrimaryBg: getConsentInputValue("consent-vis-btnPrimaryBg"),
+        btnPrimaryText: getConsentInputValue("consent-vis-btnPrimaryText"),
+        btnPrimaryBorder: getConsentInputValue("consent-vis-btnPrimaryBorder"),
+        btnSecondaryBg: getConsentInputValue("consent-vis-btnSecondaryBg"),
+        btnSecondaryText: getConsentInputValue("consent-vis-btnSecondaryText"),
+        btnSecondaryBorder: getConsentInputValue("consent-vis-btnSecondaryBorder"),
+        modalBg: getConsentInputValue("consent-vis-modalBg"),
+        modalBorder: getConsentInputValue("consent-vis-modalBorder"),
+        modalRadius: getConsentInputValue("consent-vis-modalRadius"),
+        overlayOpacity: getConsentInputValue("consent-vis-overlayOpacity"),
+        fontFamily: getConsentInputValue("consent-vis-fontFamily")
+      }
+    };
+  }
+
+  window.loadConsentConfig = async function() {
+    try {
+      var res = await apiFetch("/api/admin/consent");
+      var data = await res.json();
+      if (!res.ok) {
+        console.error("Failed to load consent configuration:", data.error);
+        return;
+      }
+      consentDefaultsCache = data.defaults || null;
+      populateConsentForm(data.consent || data.defaults);
+      updateConsentPreview();
+      initConsentLiveListeners();
+    } catch (err) {
+      if (err.message !== "401") console.error("loadConsentConfig error:", err);
+    }
+  };
+
+  window.saveConsentConfig = async function() {
+    var btn = $("btn-save-consent");
+    var status = $("consent-save-status");
+    if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
+    if (status) { status.textContent = ""; status.style.color = "var(--text-m)"; }
+
+    try {
+      var payload = collectConsentFormData();
+      var res = await apiFetch("/api/admin/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json();
+      if (!res.ok) {
+        if (status) { status.textContent = "Error: " + (data.error || "Save failed."); status.style.color = "var(--danger)"; }
+        return;
+      }
+      if (status) { status.textContent = "Saved successfully."; status.style.color = "var(--accent)"; }
+      setTimeout(function() {
+        if (status) status.textContent = "";
+      }, 3500);
+      updateConsentPreview();
+    } catch (err) {
+      if (status) { status.textContent = "Request error: " + err.message; status.style.color = "var(--danger)"; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "Save Changes"; }
+    }
+  };
+
+  window.resetConsentToDefaults = function() {
+    if (!consentDefaultsCache) return;
+    if (!confirm("Reset all consent copy and appearance tokens to system defaults?")) return;
+    populateConsentForm(consentDefaultsCache);
+    updateConsentPreview();
+    var status = $("consent-save-status");
+    if (status) {
+      status.textContent = "Form reset to defaults. Click 'Save Changes' to apply.";
+      status.style.color = "var(--text-m)";
+    }
+  };
+
+  function updateConsentPreview() {
+    var canvas = $("consent-preview-canvas");
+    if (!canvas) return;
+
+    var data = collectConsentFormData();
+    var c = data.content;
+    var v = data.visual;
+
+    var vars = [
+      "--cl-consent-banner-bg:" + (v.bannerBg || "rgba(18,18,20,0.96)"),
+      "--cl-consent-text-color:" + (v.textColor || "#f3f4f6"),
+      "--cl-consent-secondary-text:" + (v.secondaryTextColor || "#9ca3af"),
+      "--cl-consent-border-color:" + (v.borderColor || "rgba(255,255,255,0.12)"),
+      "--cl-consent-backdrop-blur:" + (v.backdropBlur || "12px"),
+      "--cl-consent-banner-radius:" + (v.bannerRadius || "0px"),
+      "--cl-consent-padding-y:" + (v.paddingY || "1rem"),
+      "--cl-consent-padding-x:" + (v.paddingX || "1.25rem"),
+      "--cl-consent-max-width:" + (v.maxWidth || "1140px"),
+      "--cl-consent-button-radius:" + (v.buttonRadius || "6px"),
+      "--cl-consent-btn-primary-bg:" + (v.btnPrimaryBg || "#2563eb"),
+      "--cl-consent-btn-primary-text:" + (v.btnPrimaryText || "#ffffff"),
+      "--cl-consent-btn-primary-border:" + (v.btnPrimaryBorder || "#2563eb"),
+      "--cl-consent-btn-secondary-bg:" + (v.btnSecondaryBg || "rgba(255,255,255,0.08)"),
+      "--cl-consent-btn-secondary-text:" + (v.btnSecondaryText || "#e5e7eb"),
+      "--cl-consent-btn-secondary-border:" + (v.btnSecondaryBorder || "rgba(255,255,255,0.15)"),
+      "--cl-consent-link-color:" + (v.linkColor || "#60a5fa"),
+      "--cl-consent-modal-bg:" + (v.modalBg || "#18181b"),
+      "--cl-consent-modal-border:" + (v.modalBorder || "rgba(255,255,255,0.12)"),
+      "--cl-consent-modal-radius:" + (v.modalRadius || "12px"),
+      "--cl-consent-overlay-opacity:" + (v.overlayOpacity || "0.72"),
+      "--cl-consent-accent-color:" + (v.accentColor || "#2563eb"),
+      "--cl-consent-font-family:" + (v.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"),
+      "--cl-consent-mobile-padding-y:" + (v.mobilePaddingY || "0.75rem"),
+      "--cl-consent-mobile-padding-x:" + (v.mobilePaddingX || "1rem")
+    ].join(";");
+
+    var showBanner = (consentPreviewMode === "banner" || consentPreviewMode === "both");
+    var showModal = (consentPreviewMode === "modal" || consentPreviewMode === "both");
+
+    var bannerHtml = showBanner ? (
+      '<div class="cl-consent-banner" style="position:relative;margin-bottom:' + (showModal ? '1.5rem;' : '0;') + '">' +
+        '<div class="cl-consent-banner-inner">' +
+          '<div class="cl-consent-banner-text">' +
+            '<strong>' + esc(c.bannerTitle || "Cookie Preferences") + '</strong>' +
+            '<p>' + esc(c.bannerBody || "") + ' ' + (c.privacyPolicyUrl ? '<a href="' + esc(c.privacyPolicyUrl) + '" target="_blank" rel="noopener">' + esc(c.privacyPolicyLabel || "Privacy Policy") + '</a>' : '') + '</p>' +
+          '</div>' +
+          '<div class="cl-consent-banner-actions">' +
+            '<button type="button" class="cl-consent-btn cl-consent-btn-manage">' + esc(c.btnManagePreferences || "Manage preferences") + '</button>' +
+            '<button type="button" class="cl-consent-btn cl-consent-btn-reject">' + esc(c.btnRejectNonEssential || "Reject non-essential") + '</button>' +
+            '<button type="button" class="cl-consent-btn cl-consent-btn-accept">' + esc(c.btnAcceptAll || "Accept all") + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    ) : '';
+
+    var modalHtml = showModal ? (
+      '<div class="cl-consent-modal" style="max-width:100%;box-shadow:none;">' +
+        '<div class="cl-consent-modal-header">' +
+          '<h3>' + esc(c.modalTitle || "Cookie Preferences") + '</h3>' +
+          '<button type="button" class="cl-consent-modal-close" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="cl-consent-modal-body">' +
+          '<p class="cl-consent-modal-desc">' + esc(c.modalDescription || "") + '</p>' +
+          '<div class="cl-consent-pref-item">' +
+            '<div class="cl-consent-pref-info">' +
+              '<div class="cl-consent-pref-title">' +
+                '<span>' + esc(c.necessaryTitle || "Necessary") + '</span>' +
+                '<span class="cl-consent-badge">' + esc(c.necessaryBadge || "Always Active") + '</span>' +
+              '</div>' +
+              '<p>' + esc(c.necessaryDescription || "") + '</p>' +
+            '</div>' +
+            '<div class="cl-consent-pref-toggle"><input type="checkbox" checked disabled></div>' +
+          '</div>' +
+          '<div class="cl-consent-pref-item">' +
+            '<div class="cl-consent-pref-info">' +
+              '<div class="cl-consent-pref-title">' +
+                '<label>' + esc(c.analyticsTitle || "Analytics") + '</label>' +
+              '</div>' +
+              '<p>' + esc(c.analyticsDescription || "") + '</p>' +
+            '</div>' +
+            '<div class="cl-consent-pref-toggle"><input type="checkbox" checked></div>' +
+          '</div>' +
+          '<div class="cl-consent-pref-item">' +
+            '<div class="cl-consent-pref-info">' +
+              '<div class="cl-consent-pref-title">' +
+                '<label>' + esc(c.marketingTitle || "Marketing") + '</label>' +
+              '</div>' +
+              '<p>' + esc(c.marketingDescription || "") + '</p>' +
+            '</div>' +
+            '<div class="cl-consent-pref-toggle"><input type="checkbox"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cl-consent-modal-footer">' +
+          '<button type="button" class="cl-consent-btn cl-consent-btn-reject">' + esc(c.btnRejectNonEssential || "Reject non-essential") + '</button>' +
+          '<button type="button" class="cl-consent-btn cl-consent-btn-manage">' + esc(c.btnSavePreferences || "Save preferences") + '</button>' +
+          '<button type="button" class="cl-consent-btn cl-consent-btn-accept">' + esc(c.btnAcceptAll || "Accept all") + '</button>' +
+        '</div>' +
+      '</div>'
+    ) : '';
+
+    canvas.innerHTML = '<div style="' + vars + '">' + bannerHtml + modalHtml + '</div>';
+  }
+
+  var consentListenersBound = false;
+  function initConsentLiveListeners() {
+    if (consentListenersBound) return;
+    consentListenersBound = true;
+    var pane = $("tab-consent");
+    if (!pane) return;
+    pane.addEventListener("input", function() {
+      if (consentCurrentSubtab === "preview") {
+        updateConsentPreview();
+      }
+    });
+    pane.addEventListener("change", function() {
+      if (consentCurrentSubtab === "preview") {
+        updateConsentPreview();
+      }
+    });
+  }
 
   /* ── Library Subtab Mode Switching ─────────────────────── */
   var libraryCurrentSubtab = "components";

@@ -1,3 +1,221 @@
+export const DEFAULT_CONSENT_CONFIG = {
+  content: {
+    bannerTitle: "Cookie Preferences",
+    bannerBody: "We use necessary cookies to ensure our site works properly. With your consent, we also use optional analytics and marketing cookies to improve your experience and measure engagement. You can adjust your preferences anytime.",
+    btnAcceptAll: "Accept all",
+    btnRejectNonEssential: "Reject non-essential",
+    btnManagePreferences: "Manage preferences",
+    modalTitle: "Cookie Preferences",
+    modalDescription: "When you visit our website, cookies may be stored on your device. You can customize which cookie categories you allow below.",
+    necessaryTitle: "Necessary",
+    necessaryDescription: "Required for basic site functionality, security, and session routing. Cannot be disabled.",
+    necessaryBadge: "Always Active",
+    analyticsTitle: "Analytics",
+    analyticsDescription: "Helps us understand how visitors interact with the site to improve performance and user experience (e.g. Google Analytics 4).",
+    marketingTitle: "Marketing",
+    marketingDescription: "Used to deliver tailored content and measure the effectiveness of promotional campaigns (e.g. Meta Pixel).",
+    btnSavePreferences: "Save preferences",
+    privacyPolicyLabel: "Privacy Policy",
+    privacyPolicyUrl: "https://app.kartra.com/redirect_to/?asset=page&id=ZHstCpwEU3rK",
+    fallbackTriggerLabel: "Cookie Preferences"
+  },
+  visual: {
+    bannerBg: "rgba(18, 18, 20, 0.96)",
+    textColor: "#f3f4f6",
+    secondaryTextColor: "#9ca3af",
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    backdropBlur: "12px",
+    bannerRadius: "0px",
+    paddingY: "1rem",
+    paddingX: "1.25rem",
+    maxWidth: "1140px",
+    buttonRadius: "6px",
+    btnPrimaryBg: "#2563eb",
+    btnPrimaryText: "#ffffff",
+    btnPrimaryBorder: "#2563eb",
+    btnSecondaryBg: "rgba(255, 255, 255, 0.08)",
+    btnSecondaryText: "#e5e7eb",
+    btnSecondaryBorder: "rgba(255, 255, 255, 0.15)",
+    linkColor: "#60a5fa",
+    modalBg: "#18181b",
+    modalBorder: "rgba(255, 255, 255, 0.12)",
+    modalRadius: "12px",
+    overlayOpacity: "0.72",
+    accentColor: "#2563eb",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+    mobilePaddingY: "0.75rem",
+    mobilePaddingX: "1rem"
+  }
+};
+
+export function resolveConsentConfig(raw) {
+  const c = raw?.content || {};
+  const v = raw?.visual || {};
+  const dC = DEFAULT_CONSENT_CONFIG.content;
+  const dV = DEFAULT_CONSENT_CONFIG.visual;
+
+  return {
+    content: {
+      bannerTitle: (c.bannerTitle != null && c.bannerTitle !== "") ? String(c.bannerTitle) : dC.bannerTitle,
+      bannerBody: (c.bannerBody != null && c.bannerBody !== "") ? String(c.bannerBody) : dC.bannerBody,
+      btnAcceptAll: (c.btnAcceptAll != null && c.btnAcceptAll !== "") ? String(c.btnAcceptAll) : dC.btnAcceptAll,
+      btnRejectNonEssential: (c.btnRejectNonEssential != null && c.btnRejectNonEssential !== "") ? String(c.btnRejectNonEssential) : dC.btnRejectNonEssential,
+      btnManagePreferences: (c.btnManagePreferences != null && c.btnManagePreferences !== "") ? String(c.btnManagePreferences) : dC.btnManagePreferences,
+      modalTitle: (c.modalTitle != null && c.modalTitle !== "") ? String(c.modalTitle) : dC.modalTitle,
+      modalDescription: (c.modalDescription != null && c.modalDescription !== "") ? String(c.modalDescription) : dC.modalDescription,
+      necessaryTitle: (c.necessaryTitle != null && c.necessaryTitle !== "") ? String(c.necessaryTitle) : dC.necessaryTitle,
+      necessaryDescription: (c.necessaryDescription != null && c.necessaryDescription !== "") ? String(c.necessaryDescription) : dC.necessaryDescription,
+      necessaryBadge: (c.necessaryBadge != null && c.necessaryBadge !== "") ? String(c.necessaryBadge) : dC.necessaryBadge,
+      analyticsTitle: (c.analyticsTitle != null && c.analyticsTitle !== "") ? String(c.analyticsTitle) : dC.analyticsTitle,
+      analyticsDescription: (c.analyticsDescription != null && c.analyticsDescription !== "") ? String(c.analyticsDescription) : dC.analyticsDescription,
+      marketingTitle: (c.marketingTitle != null && c.marketingTitle !== "") ? String(c.marketingTitle) : dC.marketingTitle,
+      marketingDescription: (c.marketingDescription != null && c.marketingDescription !== "") ? String(c.marketingDescription) : dC.marketingDescription,
+      btnSavePreferences: (c.btnSavePreferences != null && c.btnSavePreferences !== "") ? String(c.btnSavePreferences) : dC.btnSavePreferences,
+      privacyPolicyLabel: (c.privacyPolicyLabel != null && c.privacyPolicyLabel !== "") ? String(c.privacyPolicyLabel) : dC.privacyPolicyLabel,
+      privacyPolicyUrl: (c.privacyPolicyUrl != null && c.privacyPolicyUrl !== "") ? String(c.privacyPolicyUrl) : (raw?.privacyPolicyUrl || dC.privacyPolicyUrl),
+      fallbackTriggerLabel: (c.fallbackTriggerLabel != null && c.fallbackTriggerLabel !== "") ? String(c.fallbackTriggerLabel) : dC.fallbackTriggerLabel
+    },
+    visual: {
+      bannerBg: v.bannerBg || dV.bannerBg,
+      textColor: v.textColor || dV.textColor,
+      secondaryTextColor: v.secondaryTextColor || dV.secondaryTextColor,
+      borderColor: v.borderColor || dV.borderColor,
+      backdropBlur: v.backdropBlur || dV.backdropBlur,
+      bannerRadius: v.bannerRadius || dV.bannerRadius,
+      paddingY: v.paddingY || dV.paddingY,
+      paddingX: v.paddingX || dV.paddingX,
+      maxWidth: v.maxWidth || dV.maxWidth,
+      buttonRadius: v.buttonRadius || dV.buttonRadius,
+      btnPrimaryBg: v.btnPrimaryBg || dV.btnPrimaryBg,
+      btnPrimaryText: v.btnPrimaryText || dV.btnPrimaryText,
+      btnPrimaryBorder: v.btnPrimaryBorder || dV.btnPrimaryBorder,
+      btnSecondaryBg: v.btnSecondaryBg || dV.btnSecondaryBg,
+      btnSecondaryText: v.btnSecondaryText || dV.btnSecondaryText,
+      btnSecondaryBorder: v.btnSecondaryBorder || dV.btnSecondaryBorder,
+      linkColor: v.linkColor || dV.linkColor,
+      modalBg: v.modalBg || dV.modalBg,
+      modalBorder: v.modalBorder || dV.modalBorder,
+      modalRadius: v.modalRadius || dV.modalRadius,
+      overlayOpacity: v.overlayOpacity || dV.overlayOpacity,
+      accentColor: v.accentColor || dV.accentColor,
+      fontFamily: v.fontFamily || dV.fontFamily,
+      mobilePaddingY: v.mobilePaddingY || dV.mobilePaddingY,
+      mobilePaddingX: v.mobilePaddingX || dV.mobilePaddingX
+    }
+  };
+}
+
+export function getConsentCssVariables(visual = {}) {
+  const v = visual;
+  return `
+  --cl-consent-banner-bg: ${v.bannerBg || "rgba(18, 18, 20, 0.96)"};
+  --cl-consent-text-color: ${v.textColor || "#f3f4f6"};
+  --cl-consent-secondary-text: ${v.secondaryTextColor || "#9ca3af"};
+  --cl-consent-border-color: ${v.borderColor || "rgba(255, 255, 255, 0.12)"};
+  --cl-consent-backdrop-blur: ${v.backdropBlur || "12px"};
+  --cl-consent-banner-radius: ${v.bannerRadius || "0px"};
+  --cl-consent-padding-y: ${v.paddingY || "1rem"};
+  --cl-consent-padding-x: ${v.paddingX || "1.25rem"};
+  --cl-consent-max-width: ${v.maxWidth || "1140px"};
+  --cl-consent-button-radius: ${v.buttonRadius || "6px"};
+  --cl-consent-btn-primary-bg: ${v.btnPrimaryBg || "#2563eb"};
+  --cl-consent-btn-primary-text: ${v.btnPrimaryText || "#ffffff"};
+  --cl-consent-btn-primary-border: ${v.btnPrimaryBorder || "#2563eb"};
+  --cl-consent-btn-secondary-bg: ${v.btnSecondaryBg || "rgba(255, 255, 255, 0.08)"};
+  --cl-consent-btn-secondary-text: ${v.btnSecondaryText || "#e5e7eb"};
+  --cl-consent-btn-secondary-border: ${v.btnSecondaryBorder || "rgba(255, 255, 255, 0.15)"};
+  --cl-consent-link-color: ${v.linkColor || "#60a5fa"};
+  --cl-consent-modal-bg: ${v.modalBg || "#18181b"};
+  --cl-consent-modal-border: ${v.modalBorder || "rgba(255, 255, 255, 0.12)"};
+  --cl-consent-modal-radius: ${v.modalRadius || "12px"};
+  --cl-consent-overlay-opacity: ${v.overlayOpacity || "0.72"};
+  --cl-consent-accent-color: ${v.accentColor || "#2563eb"};
+  --cl-consent-font-family: ${v.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"};
+  --cl-consent-mobile-padding-y: ${v.mobilePaddingY || "0.75rem"};
+  --cl-consent-mobile-padding-x: ${v.mobilePaddingX || "1rem"};
+  `;
+}
+
+export function renderConsentSnippet(rawConsent = {}, { isPreview = false } = {}) {
+  const resolved = resolveConsentConfig(rawConsent);
+  const c = resolved.content;
+  const privacyPolicyUrl = c.privacyPolicyUrl || "/privacy-policy";
+
+  return `
+<div id="cl-consent-banner" class="cl-consent-banner" style="${isPreview ? 'position:relative;margin-bottom:2rem;' : 'display:none;'}" role="region" aria-label="Cookie and Privacy Notice">
+  <div class="cl-consent-banner-inner">
+    <div class="cl-consent-banner-text">
+      <strong>${escHtml(c.bannerTitle)}</strong>
+      <p>${escHtml(c.bannerBody)} ${privacyPolicyUrl ? `<a href="${escAttr(privacyPolicyUrl)}" target="_blank" rel="noopener">${escHtml(c.privacyPolicyLabel || "Privacy Policy")}</a>` : ""}</p>
+    </div>
+    <div class="cl-consent-banner-actions">
+      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent ? window.__clConsent.openPreferences() : null">${escHtml(c.btnManagePreferences)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:false,mkt:false}) : null">${escHtml(c.btnRejectNonEssential)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:true,mkt:true}) : null">${escHtml(c.btnAcceptAll)}</button>
+    </div>
+  </div>
+</div>
+
+<div id="cl-consent-modal" class="cl-consent-modal-overlay" style="${isPreview ? 'position:relative;background:transparent;padding:0;' : 'display:none;'}" role="dialog" aria-modal="true" aria-labelledby="cl-modal-title">
+  <div class="cl-consent-modal" style="${isPreview ? 'max-width:100%;box-shadow:none;' : ''}">
+    <div class="cl-consent-modal-header">
+      <h3 id="cl-modal-title">${escHtml(c.modalTitle)}</h3>
+      <button type="button" class="cl-consent-modal-close" onclick="window.__clConsent ? window.__clConsent.closePreferences() : null" aria-label="Close">&times;</button>
+    </div>
+    <div class="cl-consent-modal-body">
+      <p class="cl-consent-modal-desc">${escHtml(c.modalDescription)}</p>
+
+      <div class="cl-consent-pref-item">
+        <div class="cl-consent-pref-info">
+          <div class="cl-consent-pref-title">
+            <span>${escHtml(c.necessaryTitle)}</span>
+            <span class="cl-consent-badge">${escHtml(c.necessaryBadge)}</span>
+          </div>
+          <p>${escHtml(c.necessaryDescription)}</p>
+        </div>
+        <div class="cl-consent-pref-toggle">
+          <input type="checkbox" checked disabled id="cl-pref-nec">
+        </div>
+      </div>
+
+      <div class="cl-consent-pref-item">
+        <div class="cl-consent-pref-info">
+          <div class="cl-consent-pref-title">
+            <label for="cl-pref-ana">${escHtml(c.analyticsTitle)}</label>
+          </div>
+          <p>${escHtml(c.analyticsDescription)}</p>
+        </div>
+        <div class="cl-consent-pref-toggle">
+          <input type="checkbox" id="cl-pref-ana">
+        </div>
+      </div>
+
+      <div class="cl-consent-pref-item">
+        <div class="cl-consent-pref-info">
+          <div class="cl-consent-pref-title">
+            <label for="cl-pref-mkt">${escHtml(c.marketingTitle)}</label>
+          </div>
+          <p>${escHtml(c.marketingDescription)}</p>
+        </div>
+        <div class="cl-consent-pref-toggle">
+          <input type="checkbox" id="cl-pref-mkt">
+        </div>
+      </div>
+    </div>
+    <div class="cl-consent-modal-footer">
+      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:false,mkt:false}) : null">${escHtml(c.btnRejectNonEssential)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent ? window.__clConsent.saveFromModal() : null">${escHtml(c.btnSavePreferences)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:true,mkt:true}) : null">${escHtml(c.btnAcceptAll)}</button>
+    </div>
+  </div>
+</div>
+
+<button type="button" id="cl-consent-fallback-trigger" class="cl-consent-fallback-trigger" style="display:none;" aria-label="${escAttr(c.fallbackTriggerLabel || 'Cookie Preferences')}">
+  ${escHtml(c.fallbackTriggerLabel || "Cookie Preferences")}
+</button>
+`;
+}
+
 /**
  * Renders the complete hub page HTML — v6.
  *
@@ -195,7 +413,9 @@ export function renderHub({
   }
 
   // Load old HUB_CSS conditionally (only when rendering link buttons)
-  const baseCssBlock = `<style>${BASE_CSS}</style>`;
+  const consentResolved = resolveConsentConfig(cfg?.consent);
+  const consentCssVars = `:root {\n${getConsentCssVariables(consentResolved.visual)}\n}`;
+  const baseCssBlock = `<style>${BASE_CSS}\n${consentCssVars}</style>`;
 
   // Body tag: add id for CSS scoping on campaign pages
   const bodyTag = slugId ? `<body id="slug-${escAttr(slugId)}">` : "<body>";
@@ -295,14 +515,17 @@ export function renderHub({
         if (banner) banner.style.display = "none";
         var modal = document.getElementById("cl-consent-modal");
         if (modal) modal.style.display = "none";
+        if (typeof window.__clConsentSync === "function") {
+          try { window.__clConsentSync(); } catch(_) {}
+        }
       },
       openPreferences: function() {
         var modal = document.getElementById("cl-consent-modal");
         if (!modal) return;
         var anaInput = document.getElementById("cl-pref-ana");
         var mktInput = document.getElementById("cl-pref-mkt");
-        if (anaInput) anaInput.checked = Boolean(currentConsent.ana);
-        if (mktInput) mktInput.checked = Boolean(currentConsent.mkt);
+        if (anaInput) anaInput.checked = Boolean(currentConsent && currentConsent.ana);
+        if (mktInput) mktInput.checked = Boolean(currentConsent && currentConsent.mkt);
         modal.style.display = "flex";
       },
       closePreferences: function() {
@@ -317,6 +540,8 @@ export function renderHub({
           ana: Boolean(anaInput && anaInput.checked),
           mkt: Boolean(mktInput && mktInput.checked)
         });
+        var modal = document.getElementById("cl-consent-modal");
+        if (modal) modal.style.display = "none";
       }
     };
 
@@ -439,21 +664,21 @@ export function renderHub({
   })();
   </script>` : "";
 
-  const consentCfg = cfg?.consent || {};
-  const privacyPolicyUrl = consentCfg.privacyPolicyUrl || "/privacy-policy";
+  const c = consentResolved.content;
+  const privacyPolicyUrl = c.privacyPolicyUrl || "/privacy-policy";
 
   /* ── Consent Banner & Preferences Modal ────────────────────────── */
   const consentUiSnippet = !isPreview ? `
 <div id="cl-consent-banner" class="cl-consent-banner" style="display:none;" role="region" aria-label="Cookie and Privacy Notice">
   <div class="cl-consent-banner-inner">
     <div class="cl-consent-banner-text">
-      <strong>Cookie Preferences</strong>
-      <p>We use necessary cookies to ensure our site works properly. With your consent, we also use optional analytics and marketing cookies to improve your experience and measure engagement. You can adjust your preferences anytime. <a href="${escAttr(privacyPolicyUrl)}" target="_blank" rel="noopener">Privacy Policy</a></p>
+      <strong>${escHtml(c.bannerTitle)}</strong>
+      <p>${escHtml(c.bannerBody)} ${privacyPolicyUrl ? `<a href="${escAttr(privacyPolicyUrl)}" target="_blank" rel="noopener">${escHtml(c.privacyPolicyLabel || "Privacy Policy")}</a>` : ""}</p>
     </div>
     <div class="cl-consent-banner-actions">
-      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent.openPreferences()">Manage preferences</button>
-      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent.set({nec:true,ana:false,mkt:false})">Reject non-essential</button>
-      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent.set({nec:true,ana:true,mkt:true})">Accept all</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent ? window.__clConsent.openPreferences() : null">${escHtml(c.btnManagePreferences)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:false,mkt:false}) : null">${escHtml(c.btnRejectNonEssential)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:true,mkt:true}) : null">${escHtml(c.btnAcceptAll)}</button>
     </div>
   </div>
 </div>
@@ -461,19 +686,19 @@ export function renderHub({
 <div id="cl-consent-modal" class="cl-consent-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="cl-modal-title">
   <div class="cl-consent-modal">
     <div class="cl-consent-modal-header">
-      <h3 id="cl-modal-title">Cookie Preferences</h3>
-      <button type="button" class="cl-consent-modal-close" onclick="window.__clConsent.closePreferences()" aria-label="Close">&times;</button>
+      <h3 id="cl-modal-title">${escHtml(c.modalTitle)}</h3>
+      <button type="button" class="cl-consent-modal-close" onclick="window.__clConsent ? window.__clConsent.closePreferences() : null" aria-label="Close">&times;</button>
     </div>
     <div class="cl-consent-modal-body">
-      <p class="cl-consent-modal-desc">When you visit our website, cookies may be stored on your device. You can customize which cookie categories you allow below.</p>
+      <p class="cl-consent-modal-desc">${escHtml(c.modalDescription)}</p>
 
       <div class="cl-consent-pref-item">
         <div class="cl-consent-pref-info">
           <div class="cl-consent-pref-title">
-            <span>Necessary</span>
-            <span class="cl-consent-badge">Always Active</span>
+            <span>${escHtml(c.necessaryTitle)}</span>
+            <span class="cl-consent-badge">${escHtml(c.necessaryBadge)}</span>
           </div>
-          <p>Required for basic site functionality, security, and session routing. Cannot be disabled.</p>
+          <p>${escHtml(c.necessaryDescription)}</p>
         </div>
         <div class="cl-consent-pref-toggle">
           <input type="checkbox" checked disabled id="cl-pref-nec">
@@ -483,9 +708,9 @@ export function renderHub({
       <div class="cl-consent-pref-item">
         <div class="cl-consent-pref-info">
           <div class="cl-consent-pref-title">
-            <label for="cl-pref-ana">Analytics</label>
+            <label for="cl-pref-ana">${escHtml(c.analyticsTitle)}</label>
           </div>
-          <p>Helps us understand how visitors interact with the site to improve performance and user experience (e.g. Google Analytics 4).</p>
+          <p>${escHtml(c.analyticsDescription)}</p>
         </div>
         <div class="cl-consent-pref-toggle">
           <input type="checkbox" id="cl-pref-ana">
@@ -495,9 +720,9 @@ export function renderHub({
       <div class="cl-consent-pref-item">
         <div class="cl-consent-pref-info">
           <div class="cl-consent-pref-title">
-            <label for="cl-pref-mkt">Marketing</label>
+            <label for="cl-pref-mkt">${escHtml(c.marketingTitle)}</label>
           </div>
-          <p>Used to deliver tailored content and measure the effectiveness of promotional campaigns (e.g. Meta Pixel).</p>
+          <p>${escHtml(c.marketingDescription)}</p>
         </div>
         <div class="cl-consent-pref-toggle">
           <input type="checkbox" id="cl-pref-mkt">
@@ -505,28 +730,50 @@ export function renderHub({
       </div>
     </div>
     <div class="cl-consent-modal-footer">
-      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent.set({nec:true,ana:false,mkt:false})">Reject non-essential</button>
-      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent.saveFromModal()">Save preferences</button>
-      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent.set({nec:true,ana:true,mkt:true})">Accept all</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-reject" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:false,mkt:false}) : null">${escHtml(c.btnRejectNonEssential)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-manage" onclick="window.__clConsent ? window.__clConsent.saveFromModal() : null">${escHtml(c.btnSavePreferences)}</button>
+      <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:true,mkt:true}) : null">${escHtml(c.btnAcceptAll)}</button>
     </div>
   </div>
 </div>
 
+<button type="button" id="cl-consent-fallback-trigger" class="cl-consent-fallback-trigger" style="display:none;" aria-label="${escAttr(c.fallbackTriggerLabel || 'Cookie Preferences')}">${escHtml(c.fallbackTriggerLabel || "Cookie Preferences")}</button>
+
 <script>
 (function() {
-  function checkConsentBanner() {
-    if (window.__clConsent && !window.__clConsent.hasChoice()) {
-      var b = document.getElementById("cl-consent-banner");
-      if (b) b.style.display = "block";
+  function syncConsentTriggers() {
+    if (!window.__clConsent) return;
+    var hasChoice = window.__clConsent.hasChoice();
+    var banner = document.getElementById("cl-consent-banner");
+    if (banner) banner.style.display = hasChoice ? "none" : "block";
+
+    var fallback = document.getElementById("cl-consent-fallback-trigger");
+    if (fallback) {
+      var footerTrigger = document.querySelector("footer [data-cl-consent-preferences], .coming-soon-footer [data-cl-consent-preferences], [data-cl-consent-preferences]:not(#cl-consent-fallback-trigger), .cl-consent-preferences-trigger:not(#cl-consent-fallback-trigger)");
+      if (hasChoice && !footerTrigger) {
+        fallback.style.display = "block";
+      } else {
+        fallback.style.display = "none";
+      }
     }
   }
+
+  window.__clConsentSync = syncConsentTriggers;
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", checkConsentBanner);
+    document.addEventListener("DOMContentLoaded", syncConsentTriggers);
   } else {
-    checkConsentBanner();
+    syncConsentTriggers();
   }
+
+  if (window.__clConsent) {
+    window.__clConsent.onChange(function() {
+      syncConsentTriggers();
+    });
+  }
+
   document.addEventListener("click", function(e) {
-    var t = e.target && e.target.closest && e.target.closest("[data-cl-consent-preferences], .cl-consent-preferences-trigger");
+    var t = e.target && e.target.closest && e.target.closest("[data-cl-consent-preferences], .cl-consent-preferences-trigger, #cl-consent-fallback-trigger");
     if (t && window.__clConsent) {
       e.preventDefault();
       window.__clConsent.openPreferences();
@@ -1539,36 +1786,45 @@ function escJsString(jsonStr) {
 /* ── CSS ────────────────────────────────────────────────────────── */
 const CONSENT_CSS = `
 /* ── Consent Banner & Modal Styles ── */
-.cl-consent-banner{position:fixed;bottom:0;left:0;right:0;z-index:999990;background:rgba(18,18,20,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.12);color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding:1rem 1.25rem;box-shadow:0 -4px 24px rgba(0,0,0,0.4)}
-.cl-consent-banner-inner{max-width:1140px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap}
-.cl-consent-banner-text{flex:1 1 480px;font-size:0.875rem;line-height:1.45}
-.cl-consent-banner-text strong{display:block;font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;color:#ffffff}
-.cl-consent-banner-text p{margin:0;color:#9ca3af}
-.cl-consent-banner-text a{color:#60a5fa;text-decoration:underline;text-underline-offset:2px}
+.cl-consent-banner{position:fixed;bottom:0;left:0;right:0;z-index:999990;background:var(--cl-consent-banner-bg,rgba(18,18,20,0.96));backdrop-filter:blur(var(--cl-consent-backdrop-blur,12px));-webkit-backdrop-filter:blur(var(--cl-consent-backdrop-blur,12px));border-top:1px solid var(--cl-consent-border-color,rgba(255,255,255,0.12));border-radius:var(--cl-consent-banner-radius,0px);color:var(--cl-consent-text-color,#f3f4f6);font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);padding:var(--cl-consent-padding-y,1rem) var(--cl-consent-padding-x,1.25rem);box-shadow:0 -4px 24px rgba(0,0,0,0.4)}
+.cl-consent-banner-inner{max-width:var(--cl-consent-max-width,1140px);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap}
+.cl-consent-banner-text{flex:1 1 480px;font-size:0.875rem;line-height:1.45;color:var(--cl-consent-text-color,#f3f4f6)}
+.cl-consent-banner-text strong{display:block;font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;color:var(--cl-consent-text-color,#ffffff)}
+.cl-consent-banner-text p{margin:0;color:var(--cl-consent-secondary-text,#9ca3af)}
+.cl-consent-banner-text a{color:var(--cl-consent-link-color,#60a5fa);text-decoration:underline;text-underline-offset:2px}
 .cl-consent-banner-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
-.cl-consent-btn{padding:0.55rem 1rem;border-radius:6px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .15s ease;border:1px solid transparent;white-space:nowrap;font-family:inherit}
-.cl-consent-btn-accept{background:#2563eb;color:#ffffff;border-color:#2563eb}
-.cl-consent-btn-accept:hover{background:#1d4ed8}
-.cl-consent-btn-reject{background:rgba(255,255,255,0.08);color:#e5e7eb;border-color:rgba(255,255,255,0.15)}
-.cl-consent-btn-reject:hover{background:rgba(255,255,255,0.14)}
-.cl-consent-btn-manage{background:transparent;color:#9ca3af;border-color:transparent;text-decoration:underline}
-.cl-consent-btn-manage:hover{color:#ffffff}
+.cl-consent-btn{padding:0.55rem 1rem;border-radius:var(--cl-consent-button-radius,6px);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .15s ease;border:1px solid transparent;white-space:nowrap;font-family:inherit}
+.cl-consent-btn-accept{background:var(--cl-consent-btn-primary-bg,#2563eb);color:var(--cl-consent-btn-primary-text,#ffffff);border-color:var(--cl-consent-btn-primary-border,#2563eb)}
+.cl-consent-btn-accept:hover{filter:brightness(1.1)}
+.cl-consent-btn-reject{background:var(--cl-consent-btn-secondary-bg,rgba(255,255,255,0.08));color:var(--cl-consent-btn-secondary-text,#e5e7eb);border-color:var(--cl-consent-btn-secondary-border,rgba(255,255,255,0.15))}
+.cl-consent-btn-reject:hover{filter:brightness(1.15)}
+.cl-consent-btn-manage{background:transparent;color:var(--cl-consent-secondary-text,#9ca3af);border-color:transparent;text-decoration:underline}
+.cl-consent-btn-manage:hover{color:var(--cl-consent-text-color,#ffffff)}
 
-.cl-consent-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
-.cl-consent-modal{background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:12px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column}
-.cl-consent-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.08)}
-.cl-consent-modal-header h3{margin:0;font-size:1.1rem;font-weight:600}
-.cl-consent-modal-close{background:none;border:none;color:#9ca3af;font-size:1.5rem;cursor:pointer;line-height:1;padding:0}
-.cl-consent-modal-close:hover{color:#fff}
+.cl-consent-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,var(--cl-consent-overlay-opacity,0.72));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
+.cl-consent-modal{background:var(--cl-consent-modal-bg,#18181b);border:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.12));border-radius:var(--cl-consent-modal-radius,12px);width:100%;max-width:540px;max-height:90vh;overflow-y:auto;color:var(--cl-consent-text-color,#f3f4f6);font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column}
+.cl-consent-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.08))}
+.cl-consent-modal-header h3{margin:0;font-size:1.1rem;font-weight:600;color:var(--cl-consent-text-color,#ffffff)}
+.cl-consent-modal-close{background:none;border:none;color:var(--cl-consent-secondary-text,#9ca3af);font-size:1.5rem;cursor:pointer;line-height:1;padding:0}
+.cl-consent-modal-close:hover{color:var(--cl-consent-text-color,#fff)}
 .cl-consent-modal-body{padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
-.cl-consent-modal-desc{margin:0;font-size:0.85rem;color:#9ca3af;line-height:1.45}
-.cl-consent-pref-item{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px}
+.cl-consent-modal-desc{margin:0;font-size:0.85rem;color:var(--cl-consent-secondary-text,#9ca3af);line-height:1.45}
+.cl-consent-pref-item{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.03);border:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.06));border-radius:8px}
 .cl-consent-pref-info{flex:1}
-.cl-consent-pref-title{display:flex;align-items:center;gap:0.5rem;font-weight:600;font-size:0.9rem;margin-bottom:0.25rem}
-.cl-consent-pref-info p{margin:0;font-size:0.8rem;color:#9ca3af;line-height:1.35}
-.cl-consent-badge{font-size:0.7rem;font-weight:500;background:rgba(255,255,255,0.1);color:#d1d5db;padding:0.15rem 0.4rem;border-radius:4px}
-.cl-consent-pref-toggle input[type="checkbox"]{width:1.25rem;height:1.25rem;accent-color:#2563eb;cursor:pointer}
-.cl-consent-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.08);flex-wrap:wrap}
+.cl-consent-pref-title{display:flex;align-items:center;gap:0.5rem;font-weight:600;font-size:0.9rem;margin-bottom:0.25rem;color:var(--cl-consent-text-color,#f3f4f6)}
+.cl-consent-pref-info p{margin:0;font-size:0.8rem;color:var(--cl-consent-secondary-text,#9ca3af);line-height:1.35}
+.cl-consent-badge{font-size:0.7rem;font-weight:500;background:rgba(255,255,255,0.1);color:var(--cl-consent-secondary-text,#d1d5db);padding:0.15rem 0.4rem;border-radius:4px}
+.cl-consent-pref-toggle input[type="checkbox"]{width:1.25rem;height:1.25rem;accent-color:var(--cl-consent-accent-color,#2563eb);cursor:pointer}
+.cl-consent-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;padding:1rem 1.5rem;border-top:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.08));flex-wrap:wrap}
+
+.cl-consent-fallback-trigger{position:fixed;bottom:1rem;left:1rem;z-index:999980;background:var(--cl-consent-banner-bg,rgba(18,18,20,0.92));color:var(--cl-consent-secondary-text,#9ca3af);border:1px solid var(--cl-consent-border-color,rgba(255,255,255,0.15));border-radius:var(--cl-consent-button-radius,6px);padding:0.4rem 0.75rem;font-size:0.75rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);backdrop-filter:blur(8px);transition:color .15s,border-color .15s;display:none;font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif)}
+.cl-consent-fallback-trigger:hover{color:var(--cl-consent-text-color,#ffffff);border-color:rgba(255,255,255,0.3)}
+
+@media (max-width: 640px) {
+  .cl-consent-banner{padding:var(--cl-consent-mobile-padding-y,0.75rem) var(--cl-consent-mobile-padding-x,1rem)}
+  .cl-consent-banner-actions{width:100%;justify-content:stretch}
+  .cl-consent-banner-actions .cl-consent-btn{flex:1 1 100%;text-align:center}
+}
 `;
 
 const BASE_CSS = `

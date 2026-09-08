@@ -1,7 +1,14 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import { renderLanding } from "../functions/_shared/hub-renderer.js";
+import {
+  renderLanding,
+  DEFAULT_CONSENT_CONFIG,
+  resolveConsentConfig,
+  getConsentCssVariables,
+  renderConsentSnippet
+} from "../functions/_shared/hub-renderer.js";
+import { onRequestGet as adminConsentGet, onRequestPost as adminConsentPost } from "../functions/api/admin/consent.js";
 import { onRequestGet as catchAllHandler } from "../functions/[[path]].js";
 
 function createMockEnv(overrides = {}) {
@@ -389,5 +396,243 @@ describe("CogniLink Consent & Privacy Layer Tests", () => {
       sandbox.window.dataLayer.some(args => args[0] === "event" && args[1] === "resumed_event_3"),
       "OFF -> ON (re-enable): GA4 events must resume normally without page reload"
     );
+  });
+
+  test("10. Persistent preferences reopen: openPreferences populates saved state and survives multiple cycles", () => {
+    const html = renderLanding({
+      contextType: "static",
+      contextId: "home",
+      slug: "home",
+      rootDomain: "niluferormanli.com"
+    });
+
+    const scriptRegex = /<script(?:\s+id="[^"]*")?>([\s\S]*?)<\/script>/gi;
+    let match;
+    const scripts = [];
+    while ((match = scriptRegex.exec(html)) !== null) {
+      scripts.push(match[1]);
+    }
+    const bootstrapScript = scripts.find(s => s.includes("__clConsent ="));
+    assert.ok(bootstrapScript);
+
+    const elementsById = {
+      "cl-consent-banner": { style: { display: "none" } },
+      "cl-consent-modal": { style: { display: "none" } },
+      "cl-pref-nec": { checked: true, disabled: true },
+      "cl-pref-ana": { checked: false },
+      "cl-pref-mkt": { checked: false },
+      "cl-consent-fallback-trigger": { style: { display: "none" } }
+    };
+
+    const sandbox = {
+      window: null,
+      document: {
+        cookie: "",
+        getElementById: (id) => elementsById[id] || { style: {}, checked: false },
+        querySelector: () => null,
+        addEventListener: () => {}
+      },
+      location: { hostname: "niluferormanli.com", pathname: "/" },
+      CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+      Date: Date,
+      JSON: JSON,
+      Math: Math,
+      Boolean: Boolean,
+      Object: Object,
+      encodeURIComponent: encodeURIComponent,
+      decodeURIComponent: decodeURIComponent,
+      console: console
+    };
+    sandbox.window = sandbox;
+    sandbox.window.location = sandbox.location;
+    sandbox.window.document = sandbox.document;
+    sandbox.window.dispatchEvent = () => {};
+
+    vm.createContext(sandbox);
+    vm.runInContext(bootstrapScript, sandbox);
+
+    // Initial state: no choice
+    assert.equal(sandbox.window.__clConsent.hasChoice(), false);
+
+    // User chooses: ana: true, mkt: false
+    sandbox.window.__clConsent.set({ nec: true, ana: true, mkt: false });
+    assert.equal(sandbox.window.__clConsent.hasChoice(), true);
+    assert.equal(sandbox.window.__clConsent.has("analytics"), true);
+    assert.equal(sandbox.window.__clConsent.has("marketing"), false);
+
+    // Open preferences modal: must populate checkboxes with saved state
+    sandbox.window.__clConsent.openPreferences();
+    assert.equal(elementsById["cl-consent-modal"].style.display, "flex");
+    assert.equal(elementsById["cl-pref-ana"].checked, true, "Analytics checkbox must be true from saved consent");
+    assert.equal(elementsById["cl-pref-mkt"].checked, false, "Marketing checkbox must be false from saved consent");
+
+    // Close preferences modal
+    sandbox.window.__clConsent.closePreferences();
+    assert.equal(elementsById["cl-consent-modal"].style.display, "none");
+
+    // Cycle 2: User reopens, changes marketing to true, saves via saveFromModal()
+    sandbox.window.__clConsent.openPreferences();
+    elementsById["cl-pref-mkt"].checked = true;
+    sandbox.window.__clConsent.saveFromModal();
+
+    assert.equal(sandbox.window.__clConsent.has("marketing"), true, "Marketing must now be true after saving from modal");
+    assert.equal(elementsById["cl-consent-modal"].style.display, "none", "Modal must close on save");
+
+    // Cycle 3: Reopen again to ensure no corruption
+    sandbox.window.__clConsent.openPreferences();
+    assert.equal(elementsById["cl-pref-ana"].checked, true);
+    assert.equal(elementsById["cl-pref-mkt"].checked, true);
+  });
+
+  test("11. Fallback persistent trigger: renders fallback trigger markup and syncs based on footer presence", () => {
+    const html = renderLanding({
+      contextType: "static",
+      contextId: "home",
+      slug: "home",
+      rootDomain: "niluferormanli.com"
+    });
+
+    assert.ok(html.includes('id="cl-consent-fallback-trigger"'), "HTML must include #cl-consent-fallback-trigger element");
+    assert.ok(html.includes("syncConsentTriggers"), "Script must include syncConsentTriggers function");
+    assert.ok(html.includes("data-cl-consent-preferences"), "Script must check for data-cl-consent-preferences");
+  });
+
+  test("12. Panel configuration: custom copy and visual appearance tokens apply cleanly", () => {
+    const customConsent = {
+      content: {
+        bannerTitle: "Custom Cookie Title",
+        bannerBody: "Custom banner explanation message.",
+        btnAcceptAll: "Allow Everything",
+        btnRejectNonEssential: "Only Essential",
+        btnManagePreferences: "Custom Settings",
+        modalTitle: "Configure Privacy",
+        modalDescription: "Custom modal description text.",
+        necessaryTitle: "Essential Only",
+        necessaryBadge: "Permanent",
+        analyticsTitle: "Performance Tracking",
+        marketingTitle: "Advertising Data",
+        btnSavePreferences: "Apply Choices",
+        fallbackTriggerLabel: "Privacy Settings"
+      },
+      visual: {
+        bannerBg: "rgba(10, 10, 15, 0.98)",
+        textColor: "#ffffff",
+        secondaryTextColor: "#888888",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        buttonRadius: "10px",
+        btnPrimaryBg: "#ff0055",
+        modalBg: "#0f0f15",
+        modalRadius: "16px"
+      }
+    };
+
+    const html = renderLanding({
+      contextType: "static",
+      contextId: "home",
+      slug: "home",
+      config: { consent: customConsent },
+      rootDomain: "niluferormanli.com"
+    });
+
+    // Verify custom content strings
+    assert.ok(html.includes("Custom Cookie Title"), "Must render custom banner title");
+    assert.ok(html.includes("Custom banner explanation message."), "Must render custom banner body");
+    assert.ok(html.includes("Allow Everything"), "Must render custom accept button");
+    assert.ok(html.includes("Only Essential"), "Must render custom reject button");
+    assert.ok(html.includes("Configure Privacy"), "Must render custom modal title");
+    assert.ok(html.includes("Essential Only"), "Must render custom necessary title");
+    assert.ok(html.includes("Permanent"), "Must render custom necessary badge");
+    assert.ok(html.includes("Performance Tracking"), "Must render custom analytics title");
+    assert.ok(html.includes("Advertising Data"), "Must render custom marketing title");
+    assert.ok(html.includes("Apply Choices"), "Must render custom save button");
+    assert.ok(html.includes("Privacy Settings"), "Must render custom fallback trigger label");
+
+    // Verify injected CSS custom properties
+    assert.ok(html.includes("--cl-consent-banner-bg: rgba(10, 10, 15, 0.98)"), "Must inject custom banner-bg variable");
+    assert.ok(html.includes("--cl-consent-button-radius: 10px"), "Must inject custom button-radius variable");
+    assert.ok(html.includes("--cl-consent-btn-primary-bg: #ff0055"), "Must inject custom primary button bg variable");
+    assert.ok(html.includes("--cl-consent-modal-bg: #0f0f15"), "Must inject custom modal-bg variable");
+    assert.ok(html.includes("--cl-consent-modal-radius: 16px"), "Must inject custom modal-radius variable");
+  });
+
+  test("13. Fallback defaults: cleanly falls back to English defaults when consent config is absent", () => {
+    const resolved = resolveConsentConfig(null);
+    assert.equal(resolved.content.bannerTitle, DEFAULT_CONSENT_CONFIG.content.bannerTitle);
+    assert.equal(resolved.content.btnAcceptAll, "Accept all");
+    assert.equal(resolved.content.btnRejectNonEssential, "Reject non-essential");
+    assert.equal(resolved.visual.btnPrimaryBg, "#2563eb");
+    assert.equal(resolved.visual.modalRadius, "12px");
+
+    const cssVars = getConsentCssVariables(resolved.visual);
+    assert.ok(cssVars.includes("--cl-consent-btn-primary-bg: #2563eb"));
+    assert.ok(cssVars.includes("--cl-consent-modal-radius: 12px"));
+  });
+
+  test("14. Admin Consent API: GET returns config and defaults; POST validates and sanitizes", async () => {
+    const token = "valid-token-secret";
+    const env = createMockEnv({ ADMIN_TOKEN: token });
+
+    const getReq = new Request("https://niluferormanli.com/api/admin/consent", {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    const getRes = await adminConsentGet(createMockContext(getReq, env));
+    assert.equal(getRes.status, 200);
+    const getData = await getRes.json();
+    assert.equal(getData.ok, true);
+    assert.equal(getData.consent.content.bannerTitle, "Cookie Preferences");
+    assert.ok(getData.defaults);
+
+    // POST update with valid customization + attempt script injection
+    const payload = {
+      content: {
+        bannerTitle: "Brand New Notice",
+        bannerBody: "Safe body text <script>alert(1)</script> with link",
+        btnAcceptAll: "Got It"
+      },
+      visual: {
+        bannerBg: "#112233",
+        btnPrimaryBg: "#334455"
+      },
+      gatingRules: "bypass",
+      cookieName: "evil_cookie"
+    };
+
+    const postReq = new Request("https://niluferormanli.com/api/admin/consent", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const postRes = await adminConsentPost(createMockContext(postReq, env));
+    assert.equal(postRes.status, 200);
+    const postData = await postRes.json();
+    assert.equal(postData.ok, true);
+    assert.equal(postData.consent.content.bannerTitle, "Brand New Notice");
+    assert.equal(postData.consent.content.btnAcceptAll, "Got It");
+    // Verify script tags were stripped
+    assert.ok(!postData.consent.content.bannerBody.includes("<script>"));
+    // Verify engine tampering fields were rejected / not stored
+    assert.equal(postData.consent.gatingRules, undefined);
+    assert.equal(postData.consent.cookieName, undefined);
+
+    // Verify stored in LANDING_CONFIG hub_config
+    const storedHub = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+    assert.equal(storedHub.consent.content.bannerTitle, "Brand New Notice");
+  });
+
+  test("15. renderConsentSnippet: outputs valid standalone markup for admin preview", () => {
+    const snippet = renderConsentSnippet({
+      content: { bannerTitle: "Preview Notice" }
+    }, { isPreview: true });
+
+    assert.ok(snippet.includes("Preview Notice"));
+    assert.ok(snippet.includes('id="cl-consent-banner"'));
+    assert.ok(snippet.includes('id="cl-consent-modal"'));
+    assert.ok(snippet.includes('id="cl-consent-fallback-trigger"'));
   });
 });

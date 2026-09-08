@@ -52,7 +52,17 @@ export async function verifyToken(request, env) {
   const a   = enc.encode(token);
   const b   = enc.encode(env.ADMIN_TOKEN);
   if (a.byteLength !== b.byteLength) return false;
-  return crypto.subtle.timingSafeEqual(a, b);
+  if (typeof crypto.subtle?.timingSafeEqual === "function") {
+    return crypto.subtle.timingSafeEqual(a, b);
+  }
+  if (typeof crypto.timingSafeEqual === "function") {
+    return crypto.timingSafeEqual(a, b);
+  }
+  let diff = 0;
+  for (let i = 0; i < a.byteLength; i++) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
 }
 
 export function unauthorized() {
