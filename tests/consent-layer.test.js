@@ -6,8 +6,11 @@ import {
   DEFAULT_CONSENT_CONFIG,
   resolveConsentConfig,
   getConsentCssVariables,
-  renderConsentSnippet
+  renderConsentSnippet,
+  formatOverlayBg,
+  CONSENT_CSS
 } from "../functions/_shared/hub-renderer.js";
+import { renderAdmin } from "../functions/_shared/admin-renderer.js";
 import { onRequestGet as adminConsentGet, onRequestPost as adminConsentPost } from "../functions/api/admin/consent.js";
 import { onRequestGet as catchAllHandler } from "../functions/[[path]].js";
 
@@ -634,5 +637,263 @@ describe("CogniLink Consent & Privacy Layer Tests", () => {
     assert.ok(snippet.includes('id="cl-consent-banner"'));
     assert.ok(snippet.includes('id="cl-consent-modal"'));
     assert.ok(snippet.includes('id="cl-consent-fallback-trigger"'));
+  });
+
+  test("16. Expanded Appearance tokens accepted and persisted in Admin API", async () => {
+    const token = "secret123";
+    const env = createMockEnv({ ADMIN_TOKEN: token });
+
+    const visualPayload = {
+      bannerBg: "rgba(20,20,22,0.98)",
+      textColor: "#ffffff",
+      secondaryTextColor: "#888888",
+      borderColor: "rgba(255,255,255,0.2)",
+      backdropBlur: "16px",
+      bannerRadius: "4px",
+      maxWidth: "1200px",
+      paddingY: "1.25rem",
+      paddingX: "1.5rem",
+      mobilePaddingY: "0.85rem",
+      mobilePaddingX: "1.15rem",
+      buttonRadius: "8px",
+      linkColor: "#38bdf8",
+      accentColor: "#3b82f6",
+      btnPrimaryBg: "#1d4ed8",
+      btnPrimaryText: "#ffffff",
+      btnPrimaryBorder: "#1d4ed8",
+      btnSecondaryBg: "rgba(255,255,255,0.1)",
+      btnSecondaryText: "#f3f4f6",
+      btnSecondaryBorder: "rgba(255,255,255,0.2)",
+      modalBg: "#111827",
+      modalBorder: "rgba(255,255,255,0.15)",
+      modalRadius: "16px",
+      overlayOpacity: 0.8,
+      fontFamily: "Inter, sans-serif",
+      // New visual tokens
+      bannerBottom: "12px",
+      bannerBorderWidth: "2px",
+      bannerAlignment: "center",
+      desktopActionLayout: "stacked",
+      mobileActionLayout: "horizontal",
+      titleBodyGap: "0.5rem",
+      bodyActionsGap: "1.5rem",
+      actionGap: "0.75rem",
+      btnPaddingX: "1.25rem",
+      btnPaddingY: "0.65rem",
+      btnMinHeight: "42px",
+      modalMaxWidth: "600px",
+      modalHeaderPadding: "1.5rem",
+      modalBodyPadding: "1.5rem",
+      modalFooterPadding: "1.25rem",
+      cardBg: "rgba(255,255,255,0.05)",
+      cardBorderColor: "rgba(255,255,255,0.08)",
+      cardBorderWidth: "2px",
+      cardRadius: "10px",
+      cardGap: "1rem",
+      cardPadding: "1rem 1.25rem",
+      overlayColor: "#0f172a",
+      closeColor: "#f87171",
+      closeSize: "1.75rem",
+      checkboxSize: "1.5rem",
+      mobileMaxWidth: "92%"
+    };
+
+    const postReq = new Request("https://niluferormanli.com/api/admin/consent", {
+      method: "POST",
+      headers: {
+        "Host": "niluferormanli.com",
+        "Authorization": "Bearer secret123",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        content: { bannerTitle: "Updated Custom Notice" },
+        visual: visualPayload
+      })
+    });
+
+    const res = await adminConsentPost(createMockContext(postReq, env));
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.ok, true);
+    assert.equal(body.consent.visual.bannerBottom, "12px");
+    assert.equal(body.consent.visual.bannerBorderWidth, "2px");
+    assert.equal(body.consent.visual.bannerAlignment, "center");
+    assert.equal(body.consent.visual.desktopActionLayout, "stacked");
+    assert.equal(body.consent.visual.mobileActionLayout, "horizontal");
+    assert.equal(body.consent.visual.titleBodyGap, "0.5rem");
+    assert.equal(body.consent.visual.bodyActionsGap, "1.5rem");
+    assert.equal(body.consent.visual.actionGap, "0.75rem");
+    assert.equal(body.consent.visual.btnPaddingX, "1.25rem");
+    assert.equal(body.consent.visual.btnPaddingY, "0.65rem");
+    assert.equal(body.consent.visual.btnMinHeight, "42px");
+    assert.equal(body.consent.visual.modalMaxWidth, "600px");
+    assert.equal(body.consent.visual.modalHeaderPadding, "1.5rem");
+    assert.equal(body.consent.visual.modalBodyPadding, "1.5rem");
+    assert.equal(body.consent.visual.modalFooterPadding, "1.25rem");
+    assert.equal(body.consent.visual.cardBg, "rgba(255,255,255,0.05)");
+    assert.equal(body.consent.visual.cardBorderColor, "rgba(255,255,255,0.08)");
+    assert.equal(body.consent.visual.cardBorderWidth, "2px");
+    assert.equal(body.consent.visual.cardRadius, "10px");
+    assert.equal(body.consent.visual.cardGap, "1rem");
+    assert.equal(body.consent.visual.cardPadding, "1rem 1.25rem");
+    assert.equal(body.consent.visual.overlayColor, "#0f172a");
+    assert.equal(body.consent.visual.overlayOpacity, "0.8");
+    assert.equal(body.consent.visual.closeColor, "#f87171");
+    assert.equal(body.consent.visual.closeSize, "1.75rem");
+    assert.equal(body.consent.visual.checkboxSize, "1.5rem");
+    assert.equal(body.consent.visual.mobileMaxWidth, "92%");
+
+    // Verify stored in LANDING_CONFIG
+    const stored = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+    assert.equal(stored.consent.visual.bannerAlignment, "center");
+    assert.equal(stored.consent.visual.desktopActionLayout, "stacked");
+    assert.equal(stored.consent.visual.modalMaxWidth, "600px");
+  });
+
+  test("17. Visual token sanitization & CSS injection protection", async () => {
+    const token = "secret123";
+    const env = createMockEnv({ ADMIN_TOKEN: token });
+
+    const injectionPayload = {
+      bannerBottom: "0px; position: fixed; background: red;",
+      bannerBorderWidth: "expression(alert(1))",
+      bannerAlignment: "invalid_alignment",
+      desktopActionLayout: "grid",
+      mobileActionLayout: "flex",
+      overlayColor: "red; background: url('https://evil.com')",
+      overlayOpacity: 5.5,
+      modalMaxWidth: "<script>alert(1)</script>"
+    };
+
+    const postReq = new Request("https://niluferormanli.com/api/admin/consent", {
+      method: "POST",
+      headers: {
+        "Host": "niluferormanli.com",
+        "Authorization": "Bearer secret123",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        content: {},
+        visual: injectionPayload
+      })
+    });
+
+    const res = await adminConsentPost(createMockContext(postReq, env));
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    const v = body.consent.visual;
+
+    // Semicolon/CSS injection rejected -> sanitized to safe defaults
+    assert.equal(v.bannerBottom, "0px");
+    assert.equal(v.bannerBorderWidth, "1px");
+    assert.equal(v.overlayColor, "#000000");
+    assert.equal(v.modalMaxWidth, "540px");
+    // Enums safely fall back
+    assert.equal(v.bannerAlignment, "left");
+    assert.equal(v.desktopActionLayout, "horizontal");
+    assert.equal(v.mobileActionLayout, "stacked");
+    // Opacity clamped to 1
+    assert.equal(v.overlayOpacity, "1");
+  });
+
+  test("18. Backwards compatibility for configs without new tokens", () => {
+    // Config without any new tokens
+    const legacyConfig = {
+      content: { bannerTitle: "Legacy Title" },
+      visual: {
+        bannerBg: "#111111",
+        textColor: "#ffffff"
+      }
+    };
+
+    const resolved = resolveConsentConfig(legacyConfig);
+    assert.equal(resolved.content.bannerTitle, "Legacy Title");
+    assert.equal(resolved.visual.bannerBg, "#111111");
+    // Fallback defaults present for all new tokens
+    assert.equal(resolved.visual.bannerBottom, DEFAULT_CONSENT_CONFIG.visual.bannerBottom);
+    assert.equal(resolved.visual.bannerBorderWidth, DEFAULT_CONSENT_CONFIG.visual.bannerBorderWidth);
+    assert.equal(resolved.visual.bannerAlignment, "left");
+    assert.equal(resolved.visual.desktopActionLayout, "horizontal");
+    assert.equal(resolved.visual.mobileActionLayout, "stacked");
+    assert.equal(resolved.visual.btnPaddingX, DEFAULT_CONSENT_CONFIG.visual.btnPaddingX);
+    assert.equal(resolved.visual.modalMaxWidth, DEFAULT_CONSENT_CONFIG.visual.modalMaxWidth);
+    assert.equal(resolved.visual.cardBg, DEFAULT_CONSENT_CONFIG.visual.cardBg);
+    assert.equal(resolved.visual.overlayColor, DEFAULT_CONSENT_CONFIG.visual.overlayColor);
+    assert.equal(resolved.visual.closeColor, DEFAULT_CONSENT_CONFIG.visual.closeColor);
+    assert.equal(resolved.visual.checkboxSize, DEFAULT_CONSENT_CONFIG.visual.checkboxSize);
+  });
+
+  test("19. formatOverlayBg formats hex, rgb, rgba and clamps opacity safely", () => {
+    // Hex 3-digit
+    assert.equal(formatOverlayBg("#000", 0.5), "rgba(0, 0, 0, 0.5)");
+    assert.equal(formatOverlayBg("#fff", 0.8), "rgba(255, 255, 255, 0.8)");
+    // Hex 6-digit
+    assert.equal(formatOverlayBg("#111827", 0.9), "rgba(17, 24, 39, 0.9)");
+    // rgb()
+    assert.equal(formatOverlayBg("rgb(24, 24, 27)", 0.72), "rgba(24, 24, 27, 0.72)");
+    // rgba()
+    assert.equal(formatOverlayBg("rgba(10, 10, 10, 0.85)", 0.5), "rgba(10, 10, 10, 0.85)");
+    // Fallback
+    assert.equal(formatOverlayBg("", 0.72), "rgba(0, 0, 0, 0.72)");
+  });
+
+  test("20. CSS variables generation and responsive preview styling", () => {
+    const cssVars = getConsentCssVariables({
+      bannerAlignment: "center",
+      desktopActionLayout: "stacked",
+      mobileActionLayout: "horizontal",
+      modalMaxWidth: "650px",
+      cardBg: "rgba(255,255,255,0.04)",
+      overlayColor: "#000000",
+      overlayOpacity: "0.8"
+    });
+
+    assert.ok(cssVars.includes("--cl-consent-content-align: center;"));
+    assert.ok(cssVars.includes("--cl-consent-desktop-action-direction: column;"));
+    assert.ok(cssVars.includes("--cl-consent-desktop-action-align: stretch;"));
+    assert.ok(cssVars.includes("--cl-consent-mobile-action-direction: row;"));
+    assert.ok(cssVars.includes("--cl-consent-mobile-action-align: center;"));
+    assert.ok(cssVars.includes("--cl-consent-modal-max-width: 650px;"));
+    assert.ok(cssVars.includes("--cl-consent-card-bg: rgba(255,255,255,0.04);"));
+    assert.ok(cssVars.includes("--cl-consent-overlay-bg: rgba(0, 0, 0, 0.8);"));
+
+    // Verify CONSENT_CSS responsive media query and preview stage overrides
+    assert.ok(CONSENT_CSS.includes("@media (max-width: 640px)"));
+    assert.ok(CONSENT_CSS.includes(".cl-consent-preview-stage"));
+    assert.ok(CONSENT_CSS.includes(".cl-consent-preview-stage.cl-is-mobile"));
+  });
+
+  test("21. Studio Panel admin renderer parity: CONSENT_CSS injected, all 7 groups and viewport toggles exist", () => {
+    const html = renderAdmin({ branch: "main", sha: "abcdef1" });
+
+    // CSS Parity: CONSENT_CSS injected into studio panel style
+    assert.ok(html.includes(".cl-consent-banner{position:fixed"));
+    assert.ok(html.includes(".cl-consent-preview-stage"));
+
+    // Subpane and groups in DOM
+    assert.ok(html.includes('id="subpane-consent-appearance"'));
+    assert.ok(html.includes('id="consent-vis-bannerAlignment"'));
+    assert.ok(html.includes('id="consent-vis-desktopActionLayout"'));
+    assert.ok(html.includes('id="consent-vis-bannerBottom"'));
+    assert.ok(html.includes('id="consent-vis-btnMinHeight"'));
+    assert.ok(html.includes('id="consent-vis-modalMaxWidth"'));
+    assert.ok(html.includes('id="consent-vis-cardBg"'));
+    assert.ok(html.includes('id="consent-vis-overlayColor"'));
+    assert.ok(html.includes('id="consent-vis-closeColor"'));
+    assert.ok(html.includes('id="consent-vis-checkboxSize"'));
+    assert.ok(html.includes('id="consent-vis-mobileMaxWidth"'));
+    assert.ok(html.includes('id="consent-vis-mobileActionLayout"'));
+
+    // Preview viewport controls
+    assert.ok(html.includes('id="preview-viewport-desktop"'));
+    assert.ok(html.includes('id="preview-viewport-mobile"'));
+    assert.ok(html.includes('id="consent-preview-viewport"'));
+    assert.ok(html.includes('id="consent-preview-canvas"'));
+
+    // JS Controller functions present
+    assert.ok(html.includes("setConsentPreviewViewport"));
+    assert.ok(html.includes("setConsentPreviewMode"));
+    assert.ok(html.includes("updateConsentPreview"));
+    assert.ok(html.includes("initConsentLiveListeners"));
   });
 });

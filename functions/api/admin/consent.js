@@ -27,9 +27,42 @@ function sanitizeColorOrStyle(val, fallback, maxLen = 150) {
   if (val == null) return fallback;
   const str = String(val).trim();
   if (!str) return fallback;
-  // Disallow semicolon or curly braces breaking CSS injection
-  const clean = str.replace(/[;{}]/g, "");
-  return clean.slice(0, maxLen);
+  // Disallow semicolon, curly braces, quotes, url(), expression to prevent CSS injection
+  if (/[;{}<>"']|url\(|expression\(/i.test(str)) return fallback;
+  return str.slice(0, maxLen);
+}
+
+function sanitizeEnum(val, allowedArray, fallback) {
+  if (val == null) return fallback;
+  const str = String(val).trim().toLowerCase();
+  return allowedArray.includes(str) ? str : fallback;
+}
+
+const DIMENSION_TOKEN_REGEX = /^(0|0px|\d+(\.\d+)?(px|rem|em|%|vh|vw))$/i;
+
+function sanitizeDimension(val, fallback, { allowAuto = false, allowNone = false } = {}) {
+  if (val == null) return fallback;
+  const str = String(val).trim();
+  if (!str) return fallback;
+
+  if (allowAuto && str.toLowerCase() === "auto") return "auto";
+  if (allowNone && str.toLowerCase() === "none") return "none";
+
+  const tokens = str.split(/\s+/);
+  if (tokens.length === 0 || tokens.length > 4) return fallback;
+
+  for (const t of tokens) {
+    if (!DIMENSION_TOKEN_REGEX.test(t)) return fallback;
+  }
+  return str;
+}
+
+function sanitizeOpacity(val, fallback) {
+  if (val == null || val === "") return fallback;
+  const num = parseFloat(val);
+  if (isNaN(num)) return fallback;
+  const clamped = Math.max(0, Math.min(1, num));
+  return String(clamped);
 }
 
 export async function onRequestGet(context) {
@@ -125,12 +158,12 @@ async function handleSave(context) {
       textColor: sanitizeColorOrStyle(inputVisual.textColor, dV.textColor),
       secondaryTextColor: sanitizeColorOrStyle(inputVisual.secondaryTextColor, dV.secondaryTextColor),
       borderColor: sanitizeColorOrStyle(inputVisual.borderColor, dV.borderColor),
-      backdropBlur: sanitizeColorOrStyle(inputVisual.backdropBlur, dV.backdropBlur),
-      bannerRadius: sanitizeColorOrStyle(inputVisual.bannerRadius, dV.bannerRadius),
-      paddingY: sanitizeColorOrStyle(inputVisual.paddingY, dV.paddingY),
-      paddingX: sanitizeColorOrStyle(inputVisual.paddingX, dV.paddingX),
-      maxWidth: sanitizeColorOrStyle(inputVisual.maxWidth, dV.maxWidth),
-      buttonRadius: sanitizeColorOrStyle(inputVisual.buttonRadius, dV.buttonRadius),
+      backdropBlur: sanitizeDimension(inputVisual.backdropBlur, dV.backdropBlur),
+      bannerRadius: sanitizeDimension(inputVisual.bannerRadius, dV.bannerRadius),
+      paddingY: sanitizeDimension(inputVisual.paddingY, dV.paddingY),
+      paddingX: sanitizeDimension(inputVisual.paddingX, dV.paddingX),
+      maxWidth: sanitizeDimension(inputVisual.maxWidth, dV.maxWidth, { allowNone: true, allowAuto: true }),
+      buttonRadius: sanitizeDimension(inputVisual.buttonRadius, dV.buttonRadius),
       btnPrimaryBg: sanitizeColorOrStyle(inputVisual.btnPrimaryBg, dV.btnPrimaryBg),
       btnPrimaryText: sanitizeColorOrStyle(inputVisual.btnPrimaryText, dV.btnPrimaryText),
       btnPrimaryBorder: sanitizeColorOrStyle(inputVisual.btnPrimaryBorder, dV.btnPrimaryBorder),
@@ -140,12 +173,48 @@ async function handleSave(context) {
       linkColor: sanitizeColorOrStyle(inputVisual.linkColor, dV.linkColor),
       modalBg: sanitizeColorOrStyle(inputVisual.modalBg, dV.modalBg),
       modalBorder: sanitizeColorOrStyle(inputVisual.modalBorder, dV.modalBorder),
-      modalRadius: sanitizeColorOrStyle(inputVisual.modalRadius, dV.modalRadius),
-      overlayOpacity: sanitizeColorOrStyle(inputVisual.overlayOpacity, dV.overlayOpacity),
+      modalRadius: sanitizeDimension(inputVisual.modalRadius, dV.modalRadius),
+      overlayOpacity: sanitizeOpacity(inputVisual.overlayOpacity, dV.overlayOpacity),
       accentColor: sanitizeColorOrStyle(inputVisual.accentColor, dV.accentColor),
-      fontFamily: sanitizeColorOrStyle(inputVisual.fontFamily, dV.fontFamily),
-      mobilePaddingY: sanitizeColorOrStyle(inputVisual.mobilePaddingY, dV.mobilePaddingY),
-      mobilePaddingX: sanitizeColorOrStyle(inputVisual.mobilePaddingX, dV.mobilePaddingX)
+      fontFamily: sanitizeColorOrStyle(inputVisual.fontFamily, dV.fontFamily, 250),
+      mobilePaddingY: sanitizeDimension(inputVisual.mobilePaddingY, dV.mobilePaddingY),
+      mobilePaddingX: sanitizeDimension(inputVisual.mobilePaddingX, dV.mobilePaddingX),
+
+      // Layout & Geometry
+      bannerBottom: sanitizeDimension(inputVisual.bannerBottom, dV.bannerBottom),
+      bannerBorderWidth: sanitizeDimension(inputVisual.bannerBorderWidth, dV.bannerBorderWidth),
+      bannerAlignment: sanitizeEnum(inputVisual.bannerAlignment, ["left", "center"], dV.bannerAlignment),
+      desktopActionLayout: sanitizeEnum(inputVisual.desktopActionLayout, ["horizontal", "stacked"], dV.desktopActionLayout),
+      mobileActionLayout: sanitizeEnum(inputVisual.mobileActionLayout, ["horizontal", "stacked"], dV.mobileActionLayout),
+      titleBodyGap: sanitizeDimension(inputVisual.titleBodyGap, dV.titleBodyGap),
+      bodyActionsGap: sanitizeDimension(inputVisual.bodyActionsGap, dV.bodyActionsGap),
+      actionGap: sanitizeDimension(inputVisual.actionGap, dV.actionGap),
+
+      // Button Geometry
+      btnPaddingX: sanitizeDimension(inputVisual.btnPaddingX, dV.btnPaddingX),
+      btnPaddingY: sanitizeDimension(inputVisual.btnPaddingY, dV.btnPaddingY),
+      btnMinHeight: sanitizeDimension(inputVisual.btnMinHeight, dV.btnMinHeight, { allowAuto: true }),
+
+      // Modal Geometry
+      modalMaxWidth: sanitizeDimension(inputVisual.modalMaxWidth, dV.modalMaxWidth),
+      modalHeaderPadding: sanitizeDimension(inputVisual.modalHeaderPadding, dV.modalHeaderPadding),
+      modalBodyPadding: sanitizeDimension(inputVisual.modalBodyPadding, dV.modalBodyPadding),
+      modalFooterPadding: sanitizeDimension(inputVisual.modalFooterPadding, dV.modalFooterPadding),
+
+      // Category Cards
+      cardBg: sanitizeColorOrStyle(inputVisual.cardBg, dV.cardBg),
+      cardBorderColor: sanitizeColorOrStyle(inputVisual.cardBorderColor, dV.cardBorderColor),
+      cardBorderWidth: sanitizeDimension(inputVisual.cardBorderWidth, dV.cardBorderWidth),
+      cardRadius: sanitizeDimension(inputVisual.cardRadius, dV.cardRadius),
+      cardGap: sanitizeDimension(inputVisual.cardGap, dV.cardGap),
+      cardPadding: sanitizeDimension(inputVisual.cardPadding, dV.cardPadding),
+
+      // Overlay & Controls
+      overlayColor: sanitizeColorOrStyle(inputVisual.overlayColor, dV.overlayColor),
+      closeColor: sanitizeColorOrStyle(inputVisual.closeColor, dV.closeColor),
+      closeSize: sanitizeDimension(inputVisual.closeSize, dV.closeSize),
+      checkboxSize: sanitizeDimension(inputVisual.checkboxSize, dV.checkboxSize),
+      mobileMaxWidth: sanitizeDimension(inputVisual.mobileMaxWidth, dV.mobileMaxWidth, { allowNone: true, allowAuto: true })
     }
   };
 

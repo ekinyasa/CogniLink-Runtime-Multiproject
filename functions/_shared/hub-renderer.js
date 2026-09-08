@@ -44,9 +44,74 @@ export const DEFAULT_CONSENT_CONFIG = {
     accentColor: "#2563eb",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     mobilePaddingY: "0.75rem",
-    mobilePaddingX: "1rem"
+    mobilePaddingX: "1rem",
+
+    // Layout & Geometry
+    bannerBottom: "0px",
+    bannerBorderWidth: "1px",
+    bannerAlignment: "left",
+    desktopActionLayout: "horizontal",
+    mobileActionLayout: "stacked",
+    titleBodyGap: "0.25rem",
+    bodyActionsGap: "1.25rem",
+    actionGap: "0.5rem",
+
+    // Button Geometry
+    btnPaddingX: "1rem",
+    btnPaddingY: "0.55rem",
+    btnMinHeight: "auto",
+
+    // Modal Geometry
+    modalMaxWidth: "540px",
+    modalHeaderPadding: "1.25rem 1.5rem",
+    modalBodyPadding: "1.25rem 1.5rem",
+    modalFooterPadding: "1rem 1.5rem",
+
+    // Category Cards
+    cardBg: "rgba(255, 255, 255, 0.03)",
+    cardBorderColor: "rgba(255, 255, 255, 0.06)",
+    cardBorderWidth: "1px",
+    cardRadius: "8px",
+    cardGap: "0.75rem",
+    cardPadding: "0.75rem 1rem",
+
+    // Overlay & Controls
+    overlayColor: "#000000",
+    closeColor: "#9ca3af",
+    closeSize: "1.5rem",
+    checkboxSize: "1.25rem",
+    mobileMaxWidth: "100%"
   }
 };
+
+export function formatOverlayBg(color, opacity) {
+  const op = (opacity != null && opacity !== "" && !isNaN(parseFloat(opacity))) ? parseFloat(opacity) : 0.72;
+  const col = String(color || "#000000").trim();
+  if (col.startsWith("#")) {
+    const hex = col.slice(1);
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16) || 0;
+      g = parseInt(hex[1] + hex[1], 16) || 0;
+      b = parseInt(hex[2] + hex[2], 16) || 0;
+    } else if (hex.length === 6) {
+      r = parseInt(hex.slice(0, 2), 16) || 0;
+      g = parseInt(hex.slice(2, 4), 16) || 0;
+      b = parseInt(hex.slice(4, 6), 16) || 0;
+    }
+    return `rgba(${r}, ${g}, ${b}, ${op})`;
+  }
+  if (col.startsWith("rgb(")) {
+    const parts = col.replace(/[^\d,]/g, "").split(",");
+    if (parts.length >= 3) {
+      return `rgba(${parts[0].trim()}, ${parts[1].trim()}, ${parts[2].trim()}, ${op})`;
+    }
+  }
+  if (col.startsWith("rgba(")) {
+    return col;
+  }
+  return `rgba(0, 0, 0, ${op})`;
+}
 
 export function resolveConsentConfig(raw) {
   const c = raw?.content || {};
@@ -96,43 +161,111 @@ export function resolveConsentConfig(raw) {
       modalBg: v.modalBg || dV.modalBg,
       modalBorder: v.modalBorder || dV.modalBorder,
       modalRadius: v.modalRadius || dV.modalRadius,
-      overlayOpacity: v.overlayOpacity || dV.overlayOpacity,
+      overlayOpacity: (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity,
       accentColor: v.accentColor || dV.accentColor,
       fontFamily: v.fontFamily || dV.fontFamily,
       mobilePaddingY: v.mobilePaddingY || dV.mobilePaddingY,
-      mobilePaddingX: v.mobilePaddingX || dV.mobilePaddingX
+      mobilePaddingX: v.mobilePaddingX || dV.mobilePaddingX,
+
+      bannerBottom: v.bannerBottom || dV.bannerBottom,
+      bannerBorderWidth: v.bannerBorderWidth || dV.bannerBorderWidth,
+      bannerAlignment: (v.bannerAlignment === "center") ? "center" : "left",
+      desktopActionLayout: (v.desktopActionLayout === "stacked") ? "stacked" : "horizontal",
+      mobileActionLayout: (v.mobileActionLayout === "horizontal") ? "horizontal" : "stacked",
+      titleBodyGap: v.titleBodyGap || dV.titleBodyGap,
+      bodyActionsGap: v.bodyActionsGap || dV.bodyActionsGap,
+      actionGap: v.actionGap || dV.actionGap,
+      btnPaddingX: v.btnPaddingX || dV.btnPaddingX,
+      btnPaddingY: v.btnPaddingY || dV.btnPaddingY,
+      btnMinHeight: v.btnMinHeight || dV.btnMinHeight,
+      modalMaxWidth: v.modalMaxWidth || dV.modalMaxWidth,
+      modalHeaderPadding: v.modalHeaderPadding || dV.modalHeaderPadding,
+      modalBodyPadding: v.modalBodyPadding || dV.modalBodyPadding,
+      modalFooterPadding: v.modalFooterPadding || dV.modalFooterPadding,
+      cardBg: v.cardBg || dV.cardBg,
+      cardBorderColor: v.cardBorderColor || dV.cardBorderColor,
+      cardBorderWidth: v.cardBorderWidth || dV.cardBorderWidth,
+      cardRadius: v.cardRadius || dV.cardRadius,
+      cardGap: v.cardGap || dV.cardGap,
+      cardPadding: v.cardPadding || dV.cardPadding,
+      overlayColor: v.overlayColor || dV.overlayColor,
+      closeColor: v.closeColor || dV.closeColor,
+      closeSize: v.closeSize || dV.closeSize,
+      checkboxSize: v.checkboxSize || dV.checkboxSize,
+      mobileMaxWidth: v.mobileMaxWidth || dV.mobileMaxWidth
     }
   };
 }
 
 export function getConsentCssVariables(visual = {}) {
   const v = visual;
+  const dV = DEFAULT_CONSENT_CONFIG.visual;
+
+  const bannerAlignment = (v.bannerAlignment === "center") ? "center" : "left";
+  const desktopActionLayout = (v.desktopActionLayout === "stacked") ? "column" : "row";
+  const desktopActionAlign = (v.desktopActionLayout === "stacked") ? "stretch" : "center";
+  const mobileActionLayout = (v.mobileActionLayout === "horizontal") ? "row" : "column";
+  const mobileActionAlign = (v.mobileActionLayout === "horizontal") ? "center" : "stretch";
+  const overlayColor = v.overlayColor || dV.overlayColor;
+  const overlayOpacity = (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity;
+  const overlayBg = formatOverlayBg(overlayColor, overlayOpacity);
+
   return `
-  --cl-consent-banner-bg: ${v.bannerBg || "rgba(18, 18, 20, 0.96)"};
-  --cl-consent-text-color: ${v.textColor || "#f3f4f6"};
-  --cl-consent-secondary-text: ${v.secondaryTextColor || "#9ca3af"};
-  --cl-consent-border-color: ${v.borderColor || "rgba(255, 255, 255, 0.12)"};
-  --cl-consent-backdrop-blur: ${v.backdropBlur || "12px"};
-  --cl-consent-banner-radius: ${v.bannerRadius || "0px"};
-  --cl-consent-padding-y: ${v.paddingY || "1rem"};
-  --cl-consent-padding-x: ${v.paddingX || "1.25rem"};
-  --cl-consent-max-width: ${v.maxWidth || "1140px"};
-  --cl-consent-button-radius: ${v.buttonRadius || "6px"};
-  --cl-consent-btn-primary-bg: ${v.btnPrimaryBg || "#2563eb"};
-  --cl-consent-btn-primary-text: ${v.btnPrimaryText || "#ffffff"};
-  --cl-consent-btn-primary-border: ${v.btnPrimaryBorder || "#2563eb"};
-  --cl-consent-btn-secondary-bg: ${v.btnSecondaryBg || "rgba(255, 255, 255, 0.08)"};
-  --cl-consent-btn-secondary-text: ${v.btnSecondaryText || "#e5e7eb"};
-  --cl-consent-btn-secondary-border: ${v.btnSecondaryBorder || "rgba(255, 255, 255, 0.15)"};
-  --cl-consent-link-color: ${v.linkColor || "#60a5fa"};
-  --cl-consent-modal-bg: ${v.modalBg || "#18181b"};
-  --cl-consent-modal-border: ${v.modalBorder || "rgba(255, 255, 255, 0.12)"};
-  --cl-consent-modal-radius: ${v.modalRadius || "12px"};
-  --cl-consent-overlay-opacity: ${v.overlayOpacity || "0.72"};
-  --cl-consent-accent-color: ${v.accentColor || "#2563eb"};
-  --cl-consent-font-family: ${v.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"};
-  --cl-consent-mobile-padding-y: ${v.mobilePaddingY || "0.75rem"};
-  --cl-consent-mobile-padding-x: ${v.mobilePaddingX || "1rem"};
+  --cl-consent-banner-bg: ${v.bannerBg || dV.bannerBg};
+  --cl-consent-text-color: ${v.textColor || dV.textColor};
+  --cl-consent-secondary-text: ${v.secondaryTextColor || dV.secondaryTextColor};
+  --cl-consent-border-color: ${v.borderColor || dV.borderColor};
+  --cl-consent-backdrop-blur: ${v.backdropBlur || dV.backdropBlur};
+  --cl-consent-banner-radius: ${v.bannerRadius || dV.bannerRadius};
+  --cl-consent-padding-y: ${v.paddingY || dV.paddingY};
+  --cl-consent-padding-x: ${v.paddingX || dV.paddingX};
+  --cl-consent-max-width: ${v.maxWidth || dV.maxWidth};
+  --cl-consent-button-radius: ${v.buttonRadius || dV.buttonRadius};
+  --cl-consent-btn-primary-bg: ${v.btnPrimaryBg || dV.btnPrimaryBg};
+  --cl-consent-btn-primary-text: ${v.btnPrimaryText || dV.btnPrimaryText};
+  --cl-consent-btn-primary-border: ${v.btnPrimaryBorder || dV.btnPrimaryBorder};
+  --cl-consent-btn-secondary-bg: ${v.btnSecondaryBg || dV.btnSecondaryBg};
+  --cl-consent-btn-secondary-text: ${v.btnSecondaryText || dV.btnSecondaryText};
+  --cl-consent-btn-secondary-border: ${v.btnSecondaryBorder || dV.btnSecondaryBorder};
+  --cl-consent-link-color: ${v.linkColor || dV.linkColor};
+  --cl-consent-modal-bg: ${v.modalBg || dV.modalBg};
+  --cl-consent-modal-border: ${v.modalBorder || dV.modalBorder};
+  --cl-consent-modal-radius: ${v.modalRadius || dV.modalRadius};
+  --cl-consent-overlay-opacity: ${overlayOpacity};
+  --cl-consent-overlay-color: ${overlayColor};
+  --cl-consent-overlay-bg: ${overlayBg};
+  --cl-consent-accent-color: ${v.accentColor || dV.accentColor};
+  --cl-consent-font-family: ${v.fontFamily || dV.fontFamily};
+  --cl-consent-mobile-padding-y: ${v.mobilePaddingY || dV.mobilePaddingY};
+  --cl-consent-mobile-padding-x: ${v.mobilePaddingX || dV.mobilePaddingX};
+
+  --cl-consent-banner-bottom: ${v.bannerBottom || dV.bannerBottom};
+  --cl-consent-banner-border-width: ${v.bannerBorderWidth || dV.bannerBorderWidth};
+  --cl-consent-content-align: ${bannerAlignment};
+  --cl-consent-desktop-action-direction: ${desktopActionLayout};
+  --cl-consent-desktop-action-align: ${desktopActionAlign};
+  --cl-consent-mobile-action-direction: ${mobileActionLayout};
+  --cl-consent-mobile-action-align: ${mobileActionAlign};
+  --cl-consent-title-body-gap: ${v.titleBodyGap || dV.titleBodyGap};
+  --cl-consent-body-actions-gap: ${v.bodyActionsGap || dV.bodyActionsGap};
+  --cl-consent-action-gap: ${v.actionGap || dV.actionGap};
+  --cl-consent-btn-padding-x: ${v.btnPaddingX || dV.btnPaddingX};
+  --cl-consent-btn-padding-y: ${v.btnPaddingY || dV.btnPaddingY};
+  --cl-consent-btn-min-height: ${v.btnMinHeight || dV.btnMinHeight};
+  --cl-consent-modal-max-width: ${v.modalMaxWidth || dV.modalMaxWidth};
+  --cl-consent-modal-header-padding: ${v.modalHeaderPadding || dV.modalHeaderPadding};
+  --cl-consent-modal-body-padding: ${v.modalBodyPadding || dV.modalBodyPadding};
+  --cl-consent-modal-footer-padding: ${v.modalFooterPadding || dV.modalFooterPadding};
+  --cl-consent-card-bg: ${v.cardBg || dV.cardBg};
+  --cl-consent-card-border-color: ${v.cardBorderColor || dV.cardBorderColor};
+  --cl-consent-card-border-width: ${v.cardBorderWidth || dV.cardBorderWidth};
+  --cl-consent-card-radius: ${v.cardRadius || dV.cardRadius};
+  --cl-consent-card-gap: ${v.cardGap || dV.cardGap};
+  --cl-consent-card-padding: ${v.cardPadding || dV.cardPadding};
+  --cl-consent-close-color: ${v.closeColor || dV.closeColor};
+  --cl-consent-close-size: ${v.closeSize || dV.closeSize};
+  --cl-consent-checkbox-size: ${v.checkboxSize || dV.checkboxSize};
+  --cl-consent-mobile-max-width: ${v.mobileMaxWidth || dV.mobileMaxWidth};
   `;
 }
 
@@ -141,8 +274,8 @@ export function renderConsentSnippet(rawConsent = {}, { isPreview = false } = {}
   const c = resolved.content;
   const privacyPolicyUrl = c.privacyPolicyUrl || "/privacy-policy";
 
-  return `
-<div id="cl-consent-banner" class="cl-consent-banner" style="${isPreview ? 'position:relative;margin-bottom:2rem;' : 'display:none;'}" role="region" aria-label="Cookie and Privacy Notice">
+  const banner = `
+<div id="cl-consent-banner" class="cl-consent-banner" style="${isPreview ? 'margin-bottom:1.5rem;' : 'display:none;'}" role="region" aria-label="Cookie and Privacy Notice">
   <div class="cl-consent-banner-inner">
     <div class="cl-consent-banner-text">
       <strong>${escHtml(c.bannerTitle)}</strong>
@@ -154,10 +287,11 @@ export function renderConsentSnippet(rawConsent = {}, { isPreview = false } = {}
       <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:true,mkt:true}) : null">${escHtml(c.btnAcceptAll)}</button>
     </div>
   </div>
-</div>
+</div>`;
 
-<div id="cl-consent-modal" class="cl-consent-modal-overlay" style="${isPreview ? 'position:relative;background:transparent;padding:0;' : 'display:none;'}" role="dialog" aria-modal="true" aria-labelledby="cl-modal-title">
-  <div class="cl-consent-modal" style="${isPreview ? 'max-width:100%;box-shadow:none;' : ''}">
+  const modal = `
+<div id="cl-consent-modal" class="cl-consent-modal-overlay" style="${isPreview ? '' : 'display:none;'}" role="dialog" aria-modal="true" aria-labelledby="cl-modal-title">
+  <div class="cl-consent-modal">
     <div class="cl-consent-modal-header">
       <h3 id="cl-modal-title">${escHtml(c.modalTitle)}</h3>
       <button type="button" class="cl-consent-modal-close" onclick="window.__clConsent ? window.__clConsent.closePreferences() : null" aria-label="Close">&times;</button>
@@ -208,12 +342,17 @@ export function renderConsentSnippet(rawConsent = {}, { isPreview = false } = {}
       <button type="button" class="cl-consent-btn cl-consent-btn-accept" onclick="window.__clConsent ? window.__clConsent.set({nec:true,ana:true,mkt:true}) : null">${escHtml(c.btnAcceptAll)}</button>
     </div>
   </div>
-</div>
+</div>`;
 
+  const trigger = `
 <button type="button" id="cl-consent-fallback-trigger" class="cl-consent-fallback-trigger" style="display:none;" aria-label="${escAttr(c.fallbackTriggerLabel || 'Cookie Preferences')}">
   ${escHtml(c.fallbackTriggerLabel || "Cookie Preferences")}
-</button>
-`;
+</button>`;
+
+  if (isPreview) {
+    return `<div class="cl-consent-preview-stage">${banner}${modal}${trigger}</div>`;
+  }
+  return `${banner}\n${modal}\n${trigger}`;
 }
 
 /**
@@ -1784,16 +1923,16 @@ function escJsString(jsonStr) {
 }
 
 /* ── CSS ────────────────────────────────────────────────────────── */
-const CONSENT_CSS = `
+export const CONSENT_CSS = `
 /* ── Consent Banner & Modal Styles ── */
-.cl-consent-banner{position:fixed;bottom:0;left:0;right:0;z-index:999990;background:var(--cl-consent-banner-bg,rgba(18,18,20,0.96));backdrop-filter:blur(var(--cl-consent-backdrop-blur,12px));-webkit-backdrop-filter:blur(var(--cl-consent-backdrop-blur,12px));border-top:1px solid var(--cl-consent-border-color,rgba(255,255,255,0.12));border-radius:var(--cl-consent-banner-radius,0px);color:var(--cl-consent-text-color,#f3f4f6);font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);padding:var(--cl-consent-padding-y,1rem) var(--cl-consent-padding-x,1.25rem);box-shadow:0 -4px 24px rgba(0,0,0,0.4)}
-.cl-consent-banner-inner{max-width:var(--cl-consent-max-width,1140px);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap}
-.cl-consent-banner-text{flex:1 1 480px;font-size:0.875rem;line-height:1.45;color:var(--cl-consent-text-color,#f3f4f6)}
-.cl-consent-banner-text strong{display:block;font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;color:var(--cl-consent-text-color,#ffffff)}
+.cl-consent-banner{position:fixed;bottom:var(--cl-consent-banner-bottom,0px);left:0;right:0;z-index:999990;background:var(--cl-consent-banner-bg,rgba(18,18,20,0.96));backdrop-filter:blur(var(--cl-consent-backdrop-blur,12px));-webkit-backdrop-filter:blur(var(--cl-consent-backdrop-blur,12px));border-top:var(--cl-consent-banner-border-width,1px) solid var(--cl-consent-border-color,rgba(255,255,255,0.12));border-radius:var(--cl-consent-banner-radius,0px);color:var(--cl-consent-text-color,#f3f4f6);font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);padding:var(--cl-consent-padding-y,1rem) var(--cl-consent-padding-x,1.25rem);box-shadow:0 -4px 24px rgba(0,0,0,0.4)}
+.cl-consent-banner-inner{max-width:var(--cl-consent-max-width,1140px);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:var(--cl-consent-body-actions-gap,1.25rem);flex-wrap:wrap}
+.cl-consent-banner-text{flex:1 1 480px;font-size:0.875rem;line-height:1.45;color:var(--cl-consent-text-color,#f3f4f6);text-align:var(--cl-consent-content-align,left)}
+.cl-consent-banner-text strong{display:block;font-size:0.95rem;font-weight:600;margin-bottom:var(--cl-consent-title-body-gap,0.25rem);color:var(--cl-consent-text-color,#ffffff)}
 .cl-consent-banner-text p{margin:0;color:var(--cl-consent-secondary-text,#9ca3af)}
 .cl-consent-banner-text a{color:var(--cl-consent-link-color,#60a5fa);text-decoration:underline;text-underline-offset:2px}
-.cl-consent-banner-actions{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
-.cl-consent-btn{padding:0.55rem 1rem;border-radius:var(--cl-consent-button-radius,6px);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .15s ease;border:1px solid transparent;white-space:nowrap;font-family:inherit}
+.cl-consent-banner-actions{display:flex;flex-direction:var(--cl-consent-desktop-action-direction,row);align-items:var(--cl-consent-desktop-action-align,center);gap:var(--cl-consent-action-gap,0.5rem);flex-wrap:wrap}
+.cl-consent-btn{display:inline-flex;align-items:center;justify-content:center;padding:var(--cl-consent-btn-padding-y,0.55rem) var(--cl-consent-btn-padding-x,1rem);min-height:var(--cl-consent-btn-min-height,auto);border-radius:var(--cl-consent-button-radius,6px);font-size:0.85rem;font-weight:500;cursor:pointer;transition:all .15s ease;border:1px solid transparent;white-space:nowrap;font-family:inherit;text-align:center}
 .cl-consent-btn-accept{background:var(--cl-consent-btn-primary-bg,#2563eb);color:var(--cl-consent-btn-primary-text,#ffffff);border-color:var(--cl-consent-btn-primary-border,#2563eb)}
 .cl-consent-btn-accept:hover{filter:brightness(1.1)}
 .cl-consent-btn-reject{background:var(--cl-consent-btn-secondary-bg,rgba(255,255,255,0.08));color:var(--cl-consent-btn-secondary-text,#e5e7eb);border-color:var(--cl-consent-btn-secondary-border,rgba(255,255,255,0.15))}
@@ -1801,30 +1940,41 @@ const CONSENT_CSS = `
 .cl-consent-btn-manage{background:transparent;color:var(--cl-consent-secondary-text,#9ca3af);border-color:transparent;text-decoration:underline}
 .cl-consent-btn-manage:hover{color:var(--cl-consent-text-color,#ffffff)}
 
-.cl-consent-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,var(--cl-consent-overlay-opacity,0.72));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
-.cl-consent-modal{background:var(--cl-consent-modal-bg,#18181b);border:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.12));border-radius:var(--cl-consent-modal-radius,12px);width:100%;max-width:540px;max-height:90vh;overflow-y:auto;color:var(--cl-consent-text-color,#f3f4f6);font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column}
-.cl-consent-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.08))}
+.cl-consent-modal-overlay{position:fixed;inset:0;z-index:999999;background:var(--cl-consent-overlay-bg,rgba(0,0,0,var(--cl-consent-overlay-opacity,0.72)));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
+.cl-consent-modal{background:var(--cl-consent-modal-bg,#18181b);border:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.12));border-radius:var(--cl-consent-modal-radius,12px);width:100%;max-width:var(--cl-consent-modal-max-width,540px);max-height:90vh;overflow-y:auto;color:var(--cl-consent-text-color,#f3f4f6);font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif);box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column}
+.cl-consent-modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--cl-consent-modal-header-padding,1.25rem 1.5rem);border-bottom:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.08))}
 .cl-consent-modal-header h3{margin:0;font-size:1.1rem;font-weight:600;color:var(--cl-consent-text-color,#ffffff)}
-.cl-consent-modal-close{background:none;border:none;color:var(--cl-consent-secondary-text,#9ca3af);font-size:1.5rem;cursor:pointer;line-height:1;padding:0}
+.cl-consent-modal-close{background:none;border:none;color:var(--cl-consent-close-color,#9ca3af);font-size:var(--cl-consent-close-size,1.5rem);cursor:pointer;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .cl-consent-modal-close:hover{color:var(--cl-consent-text-color,#fff)}
-.cl-consent-modal-body{padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
-.cl-consent-modal-desc{margin:0;font-size:0.85rem;color:var(--cl-consent-secondary-text,#9ca3af);line-height:1.45}
-.cl-consent-pref-item{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.03);border:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.06));border-radius:8px}
+.cl-consent-modal-body{padding:var(--cl-consent-modal-body-padding,1.25rem 1.5rem);display:flex;flex-direction:column;gap:var(--cl-consent-card-gap,0.75rem)}
+.cl-consent-modal-desc{margin:0 0 0.25rem 0;font-size:0.85rem;color:var(--cl-consent-secondary-text,#9ca3af);line-height:1.45}
+.cl-consent-pref-item{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:var(--cl-consent-card-padding,0.75rem 1rem);background:var(--cl-consent-card-bg,rgba(255,255,255,0.03));border:var(--cl-consent-card-border-width,1px) solid var(--cl-consent-card-border-color,rgba(255,255,255,0.06));border-radius:var(--cl-consent-card-radius,8px)}
 .cl-consent-pref-info{flex:1}
 .cl-consent-pref-title{display:flex;align-items:center;gap:0.5rem;font-weight:600;font-size:0.9rem;margin-bottom:0.25rem;color:var(--cl-consent-text-color,#f3f4f6)}
 .cl-consent-pref-info p{margin:0;font-size:0.8rem;color:var(--cl-consent-secondary-text,#9ca3af);line-height:1.35}
 .cl-consent-badge{font-size:0.7rem;font-weight:500;background:rgba(255,255,255,0.1);color:var(--cl-consent-secondary-text,#d1d5db);padding:0.15rem 0.4rem;border-radius:4px}
-.cl-consent-pref-toggle input[type="checkbox"]{width:1.25rem;height:1.25rem;accent-color:var(--cl-consent-accent-color,#2563eb);cursor:pointer}
-.cl-consent-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;padding:1rem 1.5rem;border-top:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.08));flex-wrap:wrap}
+.cl-consent-pref-toggle input[type="checkbox"]{width:var(--cl-consent-checkbox-size,1.25rem);height:var(--cl-consent-checkbox-size,1.25rem);accent-color:var(--cl-consent-accent-color,#2563eb);cursor:pointer}
+.cl-consent-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:var(--cl-consent-action-gap,0.5rem);padding:var(--cl-consent-modal-footer-padding,1rem 1.5rem);border-top:1px solid var(--cl-consent-modal-border,rgba(255,255,255,0.08));flex-wrap:wrap}
 
 .cl-consent-fallback-trigger{position:fixed;bottom:1rem;left:1rem;z-index:999980;background:var(--cl-consent-banner-bg,rgba(18,18,20,0.92));color:var(--cl-consent-secondary-text,#9ca3af);border:1px solid var(--cl-consent-border-color,rgba(255,255,255,0.15));border-radius:var(--cl-consent-button-radius,6px);padding:0.4rem 0.75rem;font-size:0.75rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);backdrop-filter:blur(8px);transition:color .15s,border-color .15s;display:none;font-family:var(--cl-consent-font-family,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif)}
 .cl-consent-fallback-trigger:hover{color:var(--cl-consent-text-color,#ffffff);border-color:rgba(255,255,255,0.3)}
 
 @media (max-width: 640px) {
   .cl-consent-banner{padding:var(--cl-consent-mobile-padding-y,0.75rem) var(--cl-consent-mobile-padding-x,1rem)}
-  .cl-consent-banner-actions{width:100%;justify-content:stretch}
+  .cl-consent-banner-inner{max-width:var(--cl-consent-mobile-max-width,100%)}
+  .cl-consent-banner-actions{width:100%;flex-direction:var(--cl-consent-mobile-action-direction,column);align-items:var(--cl-consent-mobile-action-align,stretch);justify-content:stretch}
   .cl-consent-banner-actions .cl-consent-btn{flex:1 1 100%;text-align:center}
 }
+
+/* Scoped preview stage overrides for Studio Panel */
+.cl-consent-preview-stage{position:relative;width:100%;box-sizing:border-box}
+.cl-consent-preview-stage .cl-consent-banner{position:relative!important;bottom:auto!important;left:auto!important;right:auto!important;margin:0 auto}
+.cl-consent-preview-stage .cl-consent-modal-overlay{position:relative!important;inset:auto!important;padding:1.5rem!important;border-radius:8px!important;display:flex!important;margin:0 auto}
+.cl-consent-preview-stage .cl-consent-modal{margin:0 auto!important}
+.cl-consent-preview-stage.cl-is-mobile .cl-consent-banner{padding:var(--cl-consent-mobile-padding-y,0.75rem) var(--cl-consent-mobile-padding-x,1rem)}
+.cl-consent-preview-stage.cl-is-mobile .cl-consent-banner-inner{max-width:var(--cl-consent-mobile-max-width,100%)}
+.cl-consent-preview-stage.cl-is-mobile .cl-consent-banner-actions{width:100%;flex-direction:var(--cl-consent-mobile-action-direction,column);align-items:var(--cl-consent-mobile-action-align,stretch);justify-content:stretch}
+.cl-consent-preview-stage.cl-is-mobile .cl-consent-banner-actions .cl-consent-btn{flex:1 1 100%;text-align:center}
 `;
 
 const BASE_CSS = `

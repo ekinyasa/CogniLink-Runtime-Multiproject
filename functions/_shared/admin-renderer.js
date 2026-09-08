@@ -1,3 +1,5 @@
+import { CONSENT_CSS } from "./hub-renderer.js";
+
 /**
  * Renders the studio panel HTML.
  * Token management and API calls are entirely client-side.
@@ -22,7 +24,8 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=info,lock,workspace_premium" />
 <title>${panelLogo}${panelTitle}</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<style>${ADMIN_CSS}</style>
+<style>${ADMIN_CSS}
+${CONSENT_CSS}</style>
 </head>
 <body>
 
@@ -1470,10 +1473,10 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
 
     <!-- Subpane: Appearance -->
     <div id="subpane-consent-appearance" class="landings-grid hidden" style="margin:0 1.25rem 1.5rem 1.25rem;">
-      <!-- Card A: Banner Appearance -->
+      <!-- Group 1: Banner & Container -->
       <div class="card">
-        <p class="card-title">Notice Banner &amp; Container</p>
-        <p class="hint">Color scheme and geometry of the bottom banner.</p>
+        <p class="card-title">Banner &amp; Container</p>
+        <p class="hint">Base colors, borders, and backdrop filtering for the notice banner.</p>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
           <div>
@@ -1503,16 +1506,46 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <input id="consent-vis-backdropBlur" type="text" placeholder="12px" />
           </div>
           <div>
-            <label for="consent-vis-bannerRadius">Banner Corner Radius</label>
+            <label for="consent-vis-bannerRadius">Corner Radius</label>
             <input id="consent-vis-bannerRadius" type="text" placeholder="0px" />
           </div>
           <div>
-            <label for="consent-vis-maxWidth">Max Width</label>
-            <input id="consent-vis-maxWidth" type="text" placeholder="1140px" />
+            <label for="consent-vis-bannerBorderWidth">Border Width</label>
+            <input id="consent-vis-bannerBorderWidth" type="text" placeholder="1px" />
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+        <label for="consent-vis-fontFamily" style="margin-top:0.75rem;">Font Family</label>
+        <input id="consent-vis-fontFamily" type="text" placeholder="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" />
+      </div>
+
+      <!-- Group 2: Layout & Spacing -->
+      <div class="card">
+        <p class="card-title">Layout &amp; Spacing</p>
+        <p class="hint">Alignment, banner bottom offset, gaps, and desktop action arrangement.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-bannerAlignment">Content Alignment</label>
+            <select id="consent-vis-bannerAlignment" style="width:100%;padding:0.5rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;">
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+            </select>
+          </div>
+          <div>
+            <label for="consent-vis-desktopActionLayout">Desktop Actions Layout</label>
+            <select id="consent-vis-desktopActionLayout" style="width:100%;padding:0.5rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;">
+              <option value="horizontal">Horizontal</option>
+              <option value="stacked">Stacked</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-bannerBottom">Bottom Offset</label>
+            <input id="consent-vis-bannerBottom" type="text" placeholder="0px" />
+          </div>
           <div>
             <label for="consent-vis-paddingY">Padding Top/Bottom</label>
             <input id="consent-vis-paddingY" type="text" placeholder="1rem" />
@@ -1521,34 +1554,45 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <label for="consent-vis-paddingX">Padding Left/Right</label>
             <input id="consent-vis-paddingX" type="text" placeholder="1.25rem" />
           </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
           <div>
-            <label for="consent-vis-mobilePaddingY">Mobile Padding Y</label>
-            <input id="consent-vis-mobilePaddingY" type="text" placeholder="0.75rem" />
+            <label for="consent-vis-titleBodyGap">Title → Body Gap</label>
+            <input id="consent-vis-titleBodyGap" type="text" placeholder="0.25rem" />
           </div>
           <div>
-            <label for="consent-vis-mobilePaddingX">Mobile Padding X</label>
-            <input id="consent-vis-mobilePaddingX" type="text" placeholder="1rem" />
+            <label for="consent-vis-bodyActionsGap">Body → Actions Gap</label>
+            <input id="consent-vis-bodyActionsGap" type="text" placeholder="1.25rem" />
+          </div>
+          <div>
+            <label for="consent-vis-actionGap">Action / Button Gap</label>
+            <input id="consent-vis-actionGap" type="text" placeholder="0.5rem" />
           </div>
         </div>
       </div>
 
-      <!-- Card B: Buttons, Links & Modal Appearance -->
+      <!-- Group 3: Buttons & Links -->
       <div class="card">
-        <p class="card-title">Buttons, Links &amp; Preferences Modal</p>
-        <p class="hint">Styling of interactive elements and preferences modal dialog.</p>
+        <p class="card-title">Buttons &amp; Links</p>
+        <p class="hint">Geometry, colors, and borders for primary, secondary, and link actions.</p>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;">
           <div>
             <label for="consent-vis-buttonRadius">Button Radius</label>
             <input id="consent-vis-buttonRadius" type="text" placeholder="6px" />
           </div>
           <div>
-            <label for="consent-vis-linkColor">Link Color</label>
-            <input id="consent-vis-linkColor" type="text" placeholder="#60a5fa" />
+            <label for="consent-vis-btnPaddingX">Padding Horizontal</label>
+            <input id="consent-vis-btnPaddingX" type="text" placeholder="1rem" />
           </div>
           <div>
-            <label for="consent-vis-accentColor">Accent / Checkbox Color</label>
-            <input id="consent-vis-accentColor" type="text" placeholder="#2563eb" />
+            <label for="consent-vis-btnPaddingY">Padding Vertical</label>
+            <input id="consent-vis-btnPaddingY" type="text" placeholder="0.55rem" />
+          </div>
+          <div>
+            <label for="consent-vis-btnMinHeight">Min Height</label>
+            <input id="consent-vis-btnMinHeight" type="text" placeholder="auto" />
           </div>
         </div>
 
@@ -1582,7 +1626,22 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
           </div>
         </div>
 
-        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;">
+        <div style="margin-top:0.75rem;">
+          <label for="consent-vis-linkColor">Link Color</label>
+          <input id="consent-vis-linkColor" type="text" placeholder="#60a5fa" />
+        </div>
+      </div>
+
+      <!-- Group 4: Preferences Modal -->
+      <div class="card">
+        <p class="card-title">Preferences Modal</p>
+        <p class="hint">Modal window dimensions, surface styling, and section padding.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-modalMaxWidth">Modal Max Width</label>
+            <input id="consent-vis-modalMaxWidth" type="text" placeholder="540px" />
+          </div>
           <div>
             <label for="consent-vis-modalBg">Modal Background</label>
             <input id="consent-vis-modalBg" type="text" placeholder="#18181b" />
@@ -1595,14 +1654,129 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
             <label for="consent-vis-modalRadius">Modal Radius</label>
             <input id="consent-vis-modalRadius" type="text" placeholder="12px" />
           </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
           <div>
-            <label for="consent-vis-overlayOpacity">Overlay Opacity</label>
+            <label for="consent-vis-modalHeaderPadding">Header Padding</label>
+            <input id="consent-vis-modalHeaderPadding" type="text" placeholder="1.25rem 1.5rem" />
+          </div>
+          <div>
+            <label for="consent-vis-modalBodyPadding">Body Padding</label>
+            <input id="consent-vis-modalBodyPadding" type="text" placeholder="1.25rem 1.5rem" />
+          </div>
+          <div>
+            <label for="consent-vis-modalFooterPadding">Footer Padding</label>
+            <input id="consent-vis-modalFooterPadding" type="text" placeholder="1rem 1.5rem" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 5: Category Cards -->
+      <div class="card">
+        <p class="card-title">Category Cards</p>
+        <p class="hint">Appearance of the Necessary, Analytics, and Marketing category cards.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-cardBg">Card Background</label>
+            <input id="consent-vis-cardBg" type="text" placeholder="rgba(255, 255, 255, 0.03)" />
+          </div>
+          <div>
+            <label for="consent-vis-cardBorderColor">Card Border Color</label>
+            <input id="consent-vis-cardBorderColor" type="text" placeholder="rgba(255, 255, 255, 0.06)" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-cardBorderWidth">Border Width</label>
+            <input id="consent-vis-cardBorderWidth" type="text" placeholder="1px" />
+          </div>
+          <div>
+            <label for="consent-vis-cardRadius">Corner Radius</label>
+            <input id="consent-vis-cardRadius" type="text" placeholder="8px" />
+          </div>
+          <div>
+            <label for="consent-vis-cardPadding">Internal Padding</label>
+            <input id="consent-vis-cardPadding" type="text" placeholder="0.75rem 1rem" />
+          </div>
+          <div>
+            <label for="consent-vis-cardGap">Card Gap</label>
+            <input id="consent-vis-cardGap" type="text" placeholder="0.75rem" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 6: Overlay & Controls -->
+      <div class="card">
+        <p class="card-title">Overlay &amp; Controls</p>
+        <p class="hint">Modal backdrop overlay, close icon, and category checkbox presentation.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-overlayColor">Backdrop Color</label>
+            <input id="consent-vis-overlayColor" type="text" placeholder="#000000" />
+          </div>
+          <div>
+            <label for="consent-vis-overlayOpacity">Backdrop Opacity (0 to 1)</label>
             <input id="consent-vis-overlayOpacity" type="text" placeholder="0.72" />
           </div>
         </div>
 
-        <label for="consent-vis-fontFamily" style="margin-top:0.75rem;">Font Family</label>
-        <input id="consent-vis-fontFamily" type="text" placeholder="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" />
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-closeColor">Close Icon Color</label>
+            <input id="consent-vis-closeColor" type="text" placeholder="#9ca3af" />
+          </div>
+          <div>
+            <label for="consent-vis-closeSize">Close Icon Size</label>
+            <input id="consent-vis-closeSize" type="text" placeholder="1.5rem" />
+          </div>
+          <div>
+            <label for="consent-vis-accentColor">Checkbox Accent Color</label>
+            <input id="consent-vis-accentColor" type="text" placeholder="#2563eb" />
+          </div>
+          <div>
+            <label for="consent-vis-checkboxSize">Checkbox Size</label>
+            <input id="consent-vis-checkboxSize" type="text" placeholder="1.25rem" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 7: Responsive -->
+      <div class="card">
+        <p class="card-title">Responsive &amp; Mobile</p>
+        <p class="hint">Desktop/mobile container constraints and mobile layout overrides.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+          <div>
+            <label for="consent-vis-maxWidth">Desktop Max Width</label>
+            <input id="consent-vis-maxWidth" type="text" placeholder="1140px" />
+          </div>
+          <div>
+            <label for="consent-vis-mobileMaxWidth">Mobile Max Width</label>
+            <input id="consent-vis-mobileMaxWidth" type="text" placeholder="100%" />
+          </div>
+          <div>
+            <label for="consent-vis-mobileActionLayout">Mobile Actions Layout</label>
+            <select id="consent-vis-mobileActionLayout" style="width:100%;padding:0.5rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;">
+              <option value="stacked">Stacked</option>
+              <option value="horizontal">Horizontal</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+          <div>
+            <label for="consent-vis-mobilePaddingY">Mobile Padding Y</label>
+            <input id="consent-vis-mobilePaddingY" type="text" placeholder="0.75rem" />
+          </div>
+          <div>
+            <label for="consent-vis-mobilePaddingX">Mobile Padding X</label>
+            <input id="consent-vis-mobilePaddingX" type="text" placeholder="1rem" />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1610,17 +1784,26 @@ export function renderAdmin({ branch = "", sha = "", customDomain = "runtime.eki
     <div id="subpane-consent-preview" class="hidden" style="margin:0 1.25rem 1.5rem 1.25rem;">
       <div class="card" style="padding:1.25rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-          <p class="card-title" style="margin:0;">Live Visual Preview</p>
-          <div style="display:flex;gap:0.5rem;">
-            <button type="button" id="preview-mode-banner" class="btn-primary btn-sm" onclick="setConsentPreviewMode('banner')" style="flex:0 0 auto;width:auto;">Banner</button>
-            <button type="button" id="preview-mode-modal" class="btn-ghost btn-sm" onclick="setConsentPreviewMode('modal')" style="flex:0 0 auto;width:auto;border:1px solid var(--border);">Preferences Modal</button>
-            <button type="button" id="preview-mode-both" class="btn-ghost btn-sm" onclick="setConsentPreviewMode('both')" style="flex:0 0 auto;width:auto;border:1px solid var(--border);">Both</button>
+          <div>
+            <p class="card-title" style="margin:0;">Live Visual Preview</p>
+            <p class="hint" style="margin:0.25rem 0 0 0;">Real-time rendering of the consent banner and modal using production CSS and active configuration tokens.</p>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+            <div style="display:flex;gap:0.25rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px;">
+              <button type="button" id="preview-viewport-desktop" class="btn-primary btn-sm" onclick="setConsentPreviewViewport('desktop')" style="border:none;">Desktop</button>
+              <button type="button" id="preview-viewport-mobile" class="btn-ghost btn-sm" onclick="setConsentPreviewViewport('mobile')" style="border:none;">Mobile (390px)</button>
+            </div>
+            <div style="display:flex;gap:0.25rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px;">
+              <button type="button" id="preview-mode-banner" class="btn-primary btn-sm" onclick="setConsentPreviewMode('banner')" style="border:none;">Banner</button>
+              <button type="button" id="preview-mode-modal" class="btn-ghost btn-sm" onclick="setConsentPreviewMode('modal')" style="border:none;">Preferences Modal</button>
+              <button type="button" id="preview-mode-both" class="btn-ghost btn-sm" onclick="setConsentPreviewMode('both')" style="border:none;">Both</button>
+            </div>
           </div>
         </div>
-        <p class="hint" style="margin-bottom:1rem;">Real-time rendering of the consent banner and preferences modal using your current Content and Appearance configuration.</p>
 
-        <!-- Preview canvas with scoped styles -->
-        <div id="consent-preview-canvas" style="background:#090d16;border:1px solid var(--border);border-radius:8px;padding:1.5rem;min-height:350px;position:relative;overflow:hidden;">
+        <div id="consent-preview-viewport" style="width:100%;transition:max-width .2s ease;margin:0 auto;">
+          <div id="consent-preview-canvas" style="background:#090d16;border:1px solid var(--border);border-radius:8px;padding:1.5rem;min-height:350px;position:relative;overflow:hidden;">
+          </div>
         </div>
       </div>
     </div>
@@ -4890,6 +5073,33 @@ window.openNewIntentModal = function(e) {
     }
   };
 
+  var consentPreviewViewport = "desktop";
+  window.setConsentPreviewViewport = function(vp) {
+    consentPreviewViewport = vp;
+    var btnDesktop = $("preview-viewport-desktop");
+    var btnMobile = $("preview-viewport-mobile");
+    var vpContainer = $("consent-preview-viewport");
+
+    if (vp === "mobile") {
+      if (btnDesktop) { btnDesktop.className = "btn-ghost btn-sm"; btnDesktop.style.border = "none"; }
+      if (btnMobile) { btnMobile.className = "btn-primary btn-sm"; btnMobile.style.border = "none"; }
+      if (vpContainer) {
+        vpContainer.style.maxWidth = "390px";
+        vpContainer.style.boxShadow = "0 0 0 1px rgba(255,255,255,0.1), 0 12px 32px rgba(0,0,0,0.5)";
+        vpContainer.style.borderRadius = "12px";
+      }
+    } else {
+      if (btnDesktop) { btnDesktop.className = "btn-primary btn-sm"; btnDesktop.style.border = "none"; }
+      if (btnMobile) { btnMobile.className = "btn-ghost btn-sm"; btnMobile.style.border = "none"; }
+      if (vpContainer) {
+        vpContainer.style.maxWidth = "100%";
+        vpContainer.style.boxShadow = "none";
+        vpContainer.style.borderRadius = "0";
+      }
+    }
+    updateConsentPreview();
+  };
+
   window.setConsentPreviewMode = function(mode) {
     consentPreviewMode = mode;
     var btnBanner = $("preview-mode-banner");
@@ -4909,7 +5119,7 @@ window.openNewIntentModal = function(e) {
           btn.style.border = "none";
         } else {
           btn.className = "btn-ghost btn-sm";
-          btn.style.border = "1px solid var(--border)";
+          btn.style.border = "none";
         }
       }
     });
@@ -4961,25 +5171,51 @@ window.openNewIntentModal = function(e) {
     setConsentInputValue("consent-vis-secondaryTextColor", v.secondaryTextColor);
     setConsentInputValue("consent-vis-backdropBlur", v.backdropBlur);
     setConsentInputValue("consent-vis-bannerRadius", v.bannerRadius);
-    setConsentInputValue("consent-vis-maxWidth", v.maxWidth);
+    setConsentInputValue("consent-vis-bannerBorderWidth", v.bannerBorderWidth);
+    setConsentInputValue("consent-vis-bannerAlignment", v.bannerAlignment || "left");
+    setConsentInputValue("consent-vis-desktopActionLayout", v.desktopActionLayout || "horizontal");
+    setConsentInputValue("consent-vis-bannerBottom", v.bannerBottom);
     setConsentInputValue("consent-vis-paddingY", v.paddingY);
     setConsentInputValue("consent-vis-paddingX", v.paddingX);
-    setConsentInputValue("consent-vis-mobilePaddingY", v.mobilePaddingY);
-    setConsentInputValue("consent-vis-mobilePaddingX", v.mobilePaddingX);
+    setConsentInputValue("consent-vis-titleBodyGap", v.titleBodyGap);
+    setConsentInputValue("consent-vis-bodyActionsGap", v.bodyActionsGap);
+    setConsentInputValue("consent-vis-actionGap", v.actionGap);
     setConsentInputValue("consent-vis-buttonRadius", v.buttonRadius);
-    setConsentInputValue("consent-vis-linkColor", v.linkColor);
-    setConsentInputValue("consent-vis-accentColor", v.accentColor);
+    setConsentInputValue("consent-vis-btnPaddingX", v.btnPaddingX);
+    setConsentInputValue("consent-vis-btnPaddingY", v.btnPaddingY);
+    setConsentInputValue("consent-vis-btnMinHeight", v.btnMinHeight);
     setConsentInputValue("consent-vis-btnPrimaryBg", v.btnPrimaryBg);
     setConsentInputValue("consent-vis-btnPrimaryText", v.btnPrimaryText);
     setConsentInputValue("consent-vis-btnPrimaryBorder", v.btnPrimaryBorder);
     setConsentInputValue("consent-vis-btnSecondaryBg", v.btnSecondaryBg);
     setConsentInputValue("consent-vis-btnSecondaryText", v.btnSecondaryText);
     setConsentInputValue("consent-vis-btnSecondaryBorder", v.btnSecondaryBorder);
+    setConsentInputValue("consent-vis-linkColor", v.linkColor);
+    setConsentInputValue("consent-vis-modalMaxWidth", v.modalMaxWidth);
     setConsentInputValue("consent-vis-modalBg", v.modalBg);
     setConsentInputValue("consent-vis-modalBorder", v.modalBorder);
     setConsentInputValue("consent-vis-modalRadius", v.modalRadius);
+    setConsentInputValue("consent-vis-modalHeaderPadding", v.modalHeaderPadding);
+    setConsentInputValue("consent-vis-modalBodyPadding", v.modalBodyPadding);
+    setConsentInputValue("consent-vis-modalFooterPadding", v.modalFooterPadding);
+    setConsentInputValue("consent-vis-cardBg", v.cardBg);
+    setConsentInputValue("consent-vis-cardBorderColor", v.cardBorderColor);
+    setConsentInputValue("consent-vis-cardBorderWidth", v.cardBorderWidth);
+    setConsentInputValue("consent-vis-cardRadius", v.cardRadius);
+    setConsentInputValue("consent-vis-cardPadding", v.cardPadding);
+    setConsentInputValue("consent-vis-cardGap", v.cardGap);
+    setConsentInputValue("consent-vis-overlayColor", v.overlayColor);
     setConsentInputValue("consent-vis-overlayOpacity", v.overlayOpacity);
+    setConsentInputValue("consent-vis-closeColor", v.closeColor);
+    setConsentInputValue("consent-vis-closeSize", v.closeSize);
+    setConsentInputValue("consent-vis-accentColor", v.accentColor);
+    setConsentInputValue("consent-vis-checkboxSize", v.checkboxSize);
     setConsentInputValue("consent-vis-fontFamily", v.fontFamily);
+    setConsentInputValue("consent-vis-maxWidth", v.maxWidth);
+    setConsentInputValue("consent-vis-mobileMaxWidth", v.mobileMaxWidth);
+    setConsentInputValue("consent-vis-mobileActionLayout", v.mobileActionLayout || "stacked");
+    setConsentInputValue("consent-vis-mobilePaddingY", v.mobilePaddingY);
+    setConsentInputValue("consent-vis-mobilePaddingX", v.mobilePaddingX);
   }
 
   function collectConsentFormData() {
@@ -5011,25 +5247,51 @@ window.openNewIntentModal = function(e) {
         secondaryTextColor: getConsentInputValue("consent-vis-secondaryTextColor"),
         backdropBlur: getConsentInputValue("consent-vis-backdropBlur"),
         bannerRadius: getConsentInputValue("consent-vis-bannerRadius"),
-        maxWidth: getConsentInputValue("consent-vis-maxWidth"),
+        bannerBorderWidth: getConsentInputValue("consent-vis-bannerBorderWidth"),
+        bannerAlignment: getConsentInputValue("consent-vis-bannerAlignment", "left"),
+        desktopActionLayout: getConsentInputValue("consent-vis-desktopActionLayout", "horizontal"),
+        bannerBottom: getConsentInputValue("consent-vis-bannerBottom"),
         paddingY: getConsentInputValue("consent-vis-paddingY"),
         paddingX: getConsentInputValue("consent-vis-paddingX"),
-        mobilePaddingY: getConsentInputValue("consent-vis-mobilePaddingY"),
-        mobilePaddingX: getConsentInputValue("consent-vis-mobilePaddingX"),
+        titleBodyGap: getConsentInputValue("consent-vis-titleBodyGap"),
+        bodyActionsGap: getConsentInputValue("consent-vis-bodyActionsGap"),
+        actionGap: getConsentInputValue("consent-vis-actionGap"),
         buttonRadius: getConsentInputValue("consent-vis-buttonRadius"),
-        linkColor: getConsentInputValue("consent-vis-linkColor"),
-        accentColor: getConsentInputValue("consent-vis-accentColor"),
+        btnPaddingX: getConsentInputValue("consent-vis-btnPaddingX"),
+        btnPaddingY: getConsentInputValue("consent-vis-btnPaddingY"),
+        btnMinHeight: getConsentInputValue("consent-vis-btnMinHeight"),
         btnPrimaryBg: getConsentInputValue("consent-vis-btnPrimaryBg"),
         btnPrimaryText: getConsentInputValue("consent-vis-btnPrimaryText"),
         btnPrimaryBorder: getConsentInputValue("consent-vis-btnPrimaryBorder"),
         btnSecondaryBg: getConsentInputValue("consent-vis-btnSecondaryBg"),
         btnSecondaryText: getConsentInputValue("consent-vis-btnSecondaryText"),
         btnSecondaryBorder: getConsentInputValue("consent-vis-btnSecondaryBorder"),
+        linkColor: getConsentInputValue("consent-vis-linkColor"),
+        modalMaxWidth: getConsentInputValue("consent-vis-modalMaxWidth"),
         modalBg: getConsentInputValue("consent-vis-modalBg"),
         modalBorder: getConsentInputValue("consent-vis-modalBorder"),
         modalRadius: getConsentInputValue("consent-vis-modalRadius"),
+        modalHeaderPadding: getConsentInputValue("consent-vis-modalHeaderPadding"),
+        modalBodyPadding: getConsentInputValue("consent-vis-modalBodyPadding"),
+        modalFooterPadding: getConsentInputValue("consent-vis-modalFooterPadding"),
+        cardBg: getConsentInputValue("consent-vis-cardBg"),
+        cardBorderColor: getConsentInputValue("consent-vis-cardBorderColor"),
+        cardBorderWidth: getConsentInputValue("consent-vis-cardBorderWidth"),
+        cardRadius: getConsentInputValue("consent-vis-cardRadius"),
+        cardPadding: getConsentInputValue("consent-vis-cardPadding"),
+        cardGap: getConsentInputValue("consent-vis-cardGap"),
+        overlayColor: getConsentInputValue("consent-vis-overlayColor"),
         overlayOpacity: getConsentInputValue("consent-vis-overlayOpacity"),
-        fontFamily: getConsentInputValue("consent-vis-fontFamily")
+        closeColor: getConsentInputValue("consent-vis-closeColor"),
+        closeSize: getConsentInputValue("consent-vis-closeSize"),
+        accentColor: getConsentInputValue("consent-vis-accentColor"),
+        checkboxSize: getConsentInputValue("consent-vis-checkboxSize"),
+        fontFamily: getConsentInputValue("consent-vis-fontFamily"),
+        maxWidth: getConsentInputValue("consent-vis-maxWidth"),
+        mobileMaxWidth: getConsentInputValue("consent-vis-mobileMaxWidth"),
+        mobileActionLayout: getConsentInputValue("consent-vis-mobileActionLayout", "stacked"),
+        mobilePaddingY: getConsentInputValue("consent-vis-mobilePaddingY"),
+        mobilePaddingX: getConsentInputValue("consent-vis-mobilePaddingX")
       }
     };
   }
@@ -5093,13 +5355,51 @@ window.openNewIntentModal = function(e) {
     }
   };
 
+  function formatOverlayBgClient(color, opacity) {
+    var op = (opacity != null && opacity !== "" && !isNaN(parseFloat(opacity))) ? parseFloat(opacity) : 0.72;
+    var col = String(color || "#000000").trim();
+    if (col.charAt(0) === "#") {
+      var hex = col.slice(1);
+      var r = 0, g = 0, b = 0;
+      if (hex.length === 3) {
+        r = parseInt(hex.charAt(0) + hex.charAt(0), 16) || 0;
+        g = parseInt(hex.charAt(1) + hex.charAt(1), 16) || 0;
+        b = parseInt(hex.charAt(2) + hex.charAt(2), 16) || 0;
+      } else if (hex.length === 6) {
+        r = parseInt(hex.slice(0, 2), 16) || 0;
+        g = parseInt(hex.slice(2, 4), 16) || 0;
+        b = parseInt(hex.slice(4, 6), 16) || 0;
+      }
+      return "rgba(" + r + "," + g + "," + b + "," + op + ")";
+    }
+    if (col.indexOf("rgb(") === 0) {
+      var parts = col.replace(/[^\d,]/g, "").split(",");
+      if (parts.length >= 3) {
+        return "rgba(" + parts[0].trim() + "," + parts[1].trim() + "," + parts[2].trim() + "," + op + ")";
+      }
+    }
+    if (col.indexOf("rgba(") === 0) {
+      return col;
+    }
+    return "rgba(0,0,0," + op + ")";
+  }
+
   function updateConsentPreview() {
     var canvas = $("consent-preview-canvas");
     if (!canvas) return;
 
     var data = collectConsentFormData();
-    var c = data.content;
-    var v = data.visual;
+    var c = data.content || {};
+    var v = data.visual || {};
+
+    var bannerAlignment = (v.bannerAlignment === "center") ? "center" : "left";
+    var desktopActionDirection = (v.desktopActionLayout === "stacked") ? "column" : "row";
+    var desktopActionAlign = (v.desktopActionLayout === "stacked") ? "stretch" : "center";
+    var mobileActionDirection = (v.mobileActionLayout === "horizontal") ? "row" : "column";
+    var mobileActionAlign = (v.mobileActionLayout === "horizontal") ? "center" : "stretch";
+    var overlayColor = v.overlayColor || "#000000";
+    var overlayOpacity = (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : "0.72";
+    var overlayBg = formatOverlayBgClient(overlayColor, overlayOpacity);
 
     var vars = [
       "--cl-consent-banner-bg:" + (v.bannerBg || "rgba(18,18,20,0.96)"),
@@ -5122,18 +5422,50 @@ window.openNewIntentModal = function(e) {
       "--cl-consent-modal-bg:" + (v.modalBg || "#18181b"),
       "--cl-consent-modal-border:" + (v.modalBorder || "rgba(255,255,255,0.12)"),
       "--cl-consent-modal-radius:" + (v.modalRadius || "12px"),
-      "--cl-consent-overlay-opacity:" + (v.overlayOpacity || "0.72"),
+      "--cl-consent-overlay-opacity:" + overlayOpacity,
+      "--cl-consent-overlay-color:" + overlayColor,
+      "--cl-consent-overlay-bg:" + overlayBg,
       "--cl-consent-accent-color:" + (v.accentColor || "#2563eb"),
       "--cl-consent-font-family:" + (v.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"),
       "--cl-consent-mobile-padding-y:" + (v.mobilePaddingY || "0.75rem"),
-      "--cl-consent-mobile-padding-x:" + (v.mobilePaddingX || "1rem")
+      "--cl-consent-mobile-padding-x:" + (v.mobilePaddingX || "1rem"),
+      "--cl-consent-banner-bottom:" + (v.bannerBottom || "0px"),
+      "--cl-consent-banner-border-width:" + (v.bannerBorderWidth || "1px"),
+      "--cl-consent-content-align:" + bannerAlignment,
+      "--cl-consent-desktop-action-direction:" + desktopActionDirection,
+      "--cl-consent-desktop-action-align:" + desktopActionAlign,
+      "--cl-consent-mobile-action-direction:" + mobileActionDirection,
+      "--cl-consent-mobile-action-align:" + mobileActionAlign,
+      "--cl-consent-title-body-gap:" + (v.titleBodyGap || "0.25rem"),
+      "--cl-consent-body-actions-gap:" + (v.bodyActionsGap || "1.25rem"),
+      "--cl-consent-action-gap:" + (v.actionGap || "0.5rem"),
+      "--cl-consent-btn-padding-x:" + (v.btnPaddingX || "1rem"),
+      "--cl-consent-btn-padding-y:" + (v.btnPaddingY || "0.55rem"),
+      "--cl-consent-btn-min-height:" + (v.btnMinHeight || "auto"),
+      "--cl-consent-modal-max-width:" + (v.modalMaxWidth || "540px"),
+      "--cl-consent-modal-header-padding:" + (v.modalHeaderPadding || "1.25rem 1.5rem"),
+      "--cl-consent-modal-body-padding:" + (v.modalBodyPadding || "1.25rem 1.5rem"),
+      "--cl-consent-modal-footer-padding:" + (v.modalFooterPadding || "1rem 1.5rem"),
+      "--cl-consent-card-bg:" + (v.cardBg || "rgba(255,255,255,0.03)"),
+      "--cl-consent-card-border-color:" + (v.cardBorderColor || "rgba(255,255,255,0.06)"),
+      "--cl-consent-card-border-width:" + (v.cardBorderWidth || "1px"),
+      "--cl-consent-card-radius:" + (v.cardRadius || "8px"),
+      "--cl-consent-card-gap:" + (v.cardGap || "0.75rem"),
+      "--cl-consent-card-padding:" + (v.cardPadding || "0.75rem 1rem"),
+      "--cl-consent-close-color:" + (v.closeColor || "#9ca3af"),
+      "--cl-consent-close-size:" + (v.closeSize || "1.5rem"),
+      "--cl-consent-checkbox-size:" + (v.checkboxSize || "1.25rem"),
+      "--cl-consent-mobile-max-width:" + (v.mobileMaxWidth || "100%")
     ].join(";");
+
+    var isMobile = (consentPreviewViewport === "mobile");
+    var stageClass = "cl-consent-preview-stage" + (isMobile ? " cl-is-mobile" : "");
 
     var showBanner = (consentPreviewMode === "banner" || consentPreviewMode === "both");
     var showModal = (consentPreviewMode === "modal" || consentPreviewMode === "both");
 
     var bannerHtml = showBanner ? (
-      '<div class="cl-consent-banner" style="position:relative;margin-bottom:' + (showModal ? '1.5rem;' : '0;') + '">' +
+      '<div class="cl-consent-banner" style="margin-bottom:' + (showModal ? '1.5rem;' : '0;') + '">' +
         '<div class="cl-consent-banner-inner">' +
           '<div class="cl-consent-banner-text">' +
             '<strong>' + esc(c.bannerTitle || "Cookie Preferences") + '</strong>' +
@@ -5149,51 +5481,53 @@ window.openNewIntentModal = function(e) {
     ) : '';
 
     var modalHtml = showModal ? (
-      '<div class="cl-consent-modal" style="max-width:100%;box-shadow:none;">' +
-        '<div class="cl-consent-modal-header">' +
-          '<h3>' + esc(c.modalTitle || "Cookie Preferences") + '</h3>' +
-          '<button type="button" class="cl-consent-modal-close" aria-label="Close">&times;</button>' +
-        '</div>' +
-        '<div class="cl-consent-modal-body">' +
-          '<p class="cl-consent-modal-desc">' + esc(c.modalDescription || "") + '</p>' +
-          '<div class="cl-consent-pref-item">' +
-            '<div class="cl-consent-pref-info">' +
-              '<div class="cl-consent-pref-title">' +
-                '<span>' + esc(c.necessaryTitle || "Necessary") + '</span>' +
-                '<span class="cl-consent-badge">' + esc(c.necessaryBadge || "Always Active") + '</span>' +
-              '</div>' +
-              '<p>' + esc(c.necessaryDescription || "") + '</p>' +
-            '</div>' +
-            '<div class="cl-consent-pref-toggle"><input type="checkbox" checked disabled></div>' +
+      '<div class="cl-consent-modal-overlay">' +
+        '<div class="cl-consent-modal" role="dialog" aria-modal="true">' +
+          '<div class="cl-consent-modal-header">' +
+            '<h3>' + esc(c.modalTitle || "Cookie Preferences") + '</h3>' +
+            '<button type="button" class="cl-consent-modal-close" aria-label="Close">&times;</button>' +
           '</div>' +
-          '<div class="cl-consent-pref-item">' +
-            '<div class="cl-consent-pref-info">' +
-              '<div class="cl-consent-pref-title">' +
-                '<label>' + esc(c.analyticsTitle || "Analytics") + '</label>' +
+          '<div class="cl-consent-modal-body">' +
+            '<p class="cl-consent-modal-desc">' + esc(c.modalDescription || "") + '</p>' +
+            '<div class="cl-consent-pref-item">' +
+              '<div class="cl-consent-pref-info">' +
+                '<div class="cl-consent-pref-title">' +
+                  '<span>' + esc(c.necessaryTitle || "Necessary") + '</span>' +
+                  '<span class="cl-consent-badge">' + esc(c.necessaryBadge || "Always Active") + '</span>' +
+                '</div>' +
+                '<p>' + esc(c.necessaryDescription || "") + '</p>' +
               '</div>' +
-              '<p>' + esc(c.analyticsDescription || "") + '</p>' +
+              '<div class="cl-consent-pref-toggle"><input type="checkbox" checked disabled></div>' +
             '</div>' +
-            '<div class="cl-consent-pref-toggle"><input type="checkbox" checked></div>' +
-          '</div>' +
-          '<div class="cl-consent-pref-item">' +
-            '<div class="cl-consent-pref-info">' +
-              '<div class="cl-consent-pref-title">' +
-                '<label>' + esc(c.marketingTitle || "Marketing") + '</label>' +
+            '<div class="cl-consent-pref-item">' +
+              '<div class="cl-consent-pref-info">' +
+                '<div class="cl-consent-pref-title">' +
+                  '<label>' + esc(c.analyticsTitle || "Analytics") + '</label>' +
+                '</div>' +
+                '<p>' + esc(c.analyticsDescription || "") + '</p>' +
               '</div>' +
-              '<p>' + esc(c.marketingDescription || "") + '</p>' +
+              '<div class="cl-consent-pref-toggle"><input type="checkbox" checked></div>' +
             '</div>' +
-            '<div class="cl-consent-pref-toggle"><input type="checkbox"></div>' +
+            '<div class="cl-consent-pref-item">' +
+              '<div class="cl-consent-pref-info">' +
+                '<div class="cl-consent-pref-title">' +
+                  '<label>' + esc(c.marketingTitle || "Marketing") + '</label>' +
+                '</div>' +
+                '<p>' + esc(c.marketingDescription || "") + '</p>' +
+              '</div>' +
+              '<div class="cl-consent-pref-toggle"><input type="checkbox"></div>' +
+            '</div>' +
           '</div>' +
-        '</div>' +
-        '<div class="cl-consent-modal-footer">' +
-          '<button type="button" class="cl-consent-btn cl-consent-btn-reject">' + esc(c.btnRejectNonEssential || "Reject non-essential") + '</button>' +
-          '<button type="button" class="cl-consent-btn cl-consent-btn-manage">' + esc(c.btnSavePreferences || "Save preferences") + '</button>' +
-          '<button type="button" class="cl-consent-btn cl-consent-btn-accept">' + esc(c.btnAcceptAll || "Accept all") + '</button>' +
+          '<div class="cl-consent-modal-footer">' +
+            '<button type="button" class="cl-consent-btn cl-consent-btn-reject">' + esc(c.btnRejectNonEssential || "Reject non-essential") + '</button>' +
+            '<button type="button" class="cl-consent-btn cl-consent-btn-manage">' + esc(c.btnSavePreferences || "Save preferences") + '</button>' +
+            '<button type="button" class="cl-consent-btn cl-consent-btn-accept">' + esc(c.btnAcceptAll || "Accept all") + '</button>' +
+          '</div>' +
         '</div>' +
       '</div>'
     ) : '';
 
-    canvas.innerHTML = '<div style="' + vars + '">' + bannerHtml + modalHtml + '</div>';
+    canvas.innerHTML = '<div class="' + stageClass + '" style="' + vars + '">' + bannerHtml + modalHtml + '</div>';
   }
 
   var consentListenersBound = false;
