@@ -1,8 +1,24 @@
 import { verifyToken, unauthorized, jsonHeaders } from "../_shared/auth.js";
+import { sanitizeHeadCode } from "../_shared/hub-renderer.js";
 
 const CONFIG_KEY = "hub_config";
 
-const ALLOWED_STRING_KEYS = ["turnstileSiteKey", "themeCssUrl", "customStyleCss", "pageTitle", "customScript", "homepageStaticPageId"];
+const ALLOWED_STRING_KEYS = [
+  "turnstileSiteKey",
+  "themeCssUrl",
+  "customStyleCss",
+  "pageTitle",
+  "customScript",
+  "homepageStaticPageId",
+  "metaDescription",
+  "language",
+  "robots",
+  "faviconUrl",
+  "ogTitle",
+  "ogDescription",
+  "ogImage",
+  "additionalHeadHtml"
+];
 
 /* ── URL helpers ─────────────────────────────────────────────────── */
 function normalizeUrl(str) {
@@ -83,11 +99,26 @@ export async function onRequestPut(context) {
       } else if (typeof v === "string") {
         if (k === "customStyleCss" || k === "customScript") {
           updated[k] = v; // Remove character limit on global CSS/JS
+        } else if (k === "additionalHeadHtml") {
+          const sanitized = sanitizeHeadCode(v);
+          if (sanitized) {
+            updated[k] = sanitized;
+          } else {
+            delete updated[k];
+          }
         } else {
           updated[k] = v.slice(0, 5000);
         }
       }
     }
+  }
+
+  // Sanitize faviconUrl and ogImage against javascript: pseudo-protocols
+  if (updated.faviconUrl && /^\s*javascript:/i.test(updated.faviconUrl)) {
+    delete updated.faviconUrl;
+  }
+  if (updated.ogImage && /^\s*javascript:/i.test(updated.ogImage)) {
+    delete updated.ogImage;
   }
 
   // Update cssVersion for cache busting when customStyleCss changes

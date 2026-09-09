@@ -84,6 +84,21 @@ export const DEFAULT_CONSENT_CONFIG = {
   }
 };
 
+export function sanitizeHeadCode(rawHtml) {
+  if (!rawHtml || typeof rawHtml !== "string") return "";
+  let sanitized = rawHtml;
+  // 1. Strip script tags and content
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+  // 2. Strip opening/closing/broken script tags
+  sanitized = sanitized.replace(/<\/?script\b[^>]*>/gi, "");
+  sanitized = sanitized.replace(/<script\b[^>]*$/gi, "");
+  // 3. Strip inline event handlers (onload, onerror, onclick, etc.)
+  sanitized = sanitized.replace(/\s+on[a-zA-Z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  // 4. Strip javascript: pseudo-protocols
+  sanitized = sanitized.replace(/javascript\s*:/gi, "");
+  return sanitized.trim();
+}
+
 export function formatOverlayBg(color, opacity) {
   const op = (opacity != null && opacity !== "" && !isNaN(parseFloat(opacity))) ? parseFloat(opacity) : 0.72;
   const col = String(color || "#000000").trim();
@@ -515,12 +530,72 @@ export function renderHub({
     ? `<link rel="stylesheet" href="${escAttr(cfg.themeCssUrl)}">`
     : "";
 
-  // Title resolution order
-  const finalTitle = (slugData?.headerInfo?.title && String(slugData.headerInfo.title).trim()) ||
+  // 3-Layer Head Property Resolution
+  const head = slugData?.head || {};
+
+  // 1. Language
+  const finalLang = (head.language && String(head.language).trim()) ||
+                    (cfg.language && String(cfg.language).trim()) ||
+                    "en";
+
+  // 2. Title resolution order: Page SEO Title -> Page Header Title -> Page Title -> Config Page Title -> "CogniLink"
+  const finalTitle = (head.seoTitle && String(head.seoTitle).trim()) ||
+                     (slugData?.headerInfo?.title && String(slugData.headerInfo.title).trim()) ||
                      (slugData?.title && String(slugData.title).trim()) ||
                      (slugData?.pageTitle && String(slugData.pageTitle).trim()) ||
                      (cfg.pageTitle && String(cfg.pageTitle).trim()) ||
                      "CogniLink";
+
+  // 3. Robots policy: 404, preview, or draft forced to noindex, nofollow; otherwise Page -> Config -> "index, follow"
+  let finalRobots = "index, follow";
+  if (notFound || isPreview || (slugData && slugData.status === "draft")) {
+    finalRobots = "noindex, nofollow";
+  } else if (head.robots && String(head.robots).trim()) {
+    finalRobots = String(head.robots).trim();
+  } else if (cfg.robots && String(cfg.robots).trim()) {
+    finalRobots = String(cfg.robots).trim();
+  }
+
+  // 4. Canonical URL resolution: Page Canonical URL -> Derived URL (cUrl) -> empty if 404
+  const finalCanonicalUrl = (head.canonicalUrl && String(head.canonicalUrl).trim()) || (notFound ? "" : cUrl);
+
+  // 5. Meta Description resolution: Page Meta Description -> Config Meta Description -> empty
+  const finalMetaDesc = (head.metaDescription && String(head.metaDescription).trim()) ||
+                        (cfg.metaDescription && String(cfg.metaDescription).trim()) ||
+                        "";
+
+  // 6. Favicon URL resolution: Page Favicon -> Config Favicon -> "/favicon.svg"
+  const finalFaviconUrl = (head.faviconUrl && String(head.faviconUrl).trim()) ||
+                          (cfg.faviconUrl && String(cfg.faviconUrl).trim()) ||
+                          "/favicon.svg";
+
+  // 7. Open Graph metadata
+  const finalOgTitle = (head.ogTitle && String(head.ogTitle).trim()) ||
+                       (head.seoTitle && String(head.seoTitle).trim()) ||
+                       (cfg.ogTitle && String(cfg.ogTitle).trim()) ||
+                       finalTitle;
+
+  const finalOgDesc = (head.ogDescription && String(head.ogDescription).trim()) ||
+                      (head.metaDescription && String(head.metaDescription).trim()) ||
+                      (cfg.ogDescription && String(cfg.ogDescription).trim()) ||
+                      finalMetaDesc;
+
+  const finalOgImage = (head.ogImage && String(head.ogImage).trim()) ||
+                       (cfg.ogImage && String(cfg.ogImage).trim()) ||
+                       "";
+
+  const ogTags = [
+    `<meta property="og:type" content="website">`,
+    finalOgTitle ? `<meta property="og:title" content="${escAttr(finalOgTitle)}">` : "",
+    finalOgDesc ? `<meta property="og:description" content="${escAttr(finalOgDesc)}">` : "",
+    (finalCanonicalUrl && !notFound) ? `<meta property="og:url" content="${escAttr(finalCanonicalUrl)}">` : "",
+    finalOgImage ? `<meta property="og:image" content="${escAttr(finalOgImage)}">` : ""
+  ].filter(Boolean).join("\n");
+
+  // 8. Additional Head Code (Strictly sanitized: permits <link>, <meta>, <style>, <noscript>; strips executable scripts)
+  const siteHeadCode = sanitizeHeadCode(cfg.additionalHeadHtml || "");
+  const pageHeadCode = sanitizeHeadCode(head.additionalHeadHtml || "");
+  const additionalHeadBlock = [siteHeadCode, pageHeadCode].filter(Boolean).join("\n");
 
   // Per-page header/footers only (global fallbacks headerHtml/footerHtml are removed)
   const headerRaw = hasCustomLayout ? "" : (slugData?.customHeaderHtml || "");
@@ -924,18 +999,17 @@ export function renderHub({
   /* ── 404 variant ──────────────────────────────────────────────── */
   if (notFound) {
     return `<!DOCTYPE html>
-<html lang="tr">
+<html lang="${escAttr(finalLang)}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>${escHtml(finalTitle)}</title>
-${debugHtml}
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
+${finalMetaDesc ? `<meta name="description" content="${escAttr(finalMetaDesc)}">\n` : ""}<link rel="icon" href="${escAttr(finalFaviconUrl)}">
+${ogTags ? ogTags + "\n" : ""}${debugHtml}
+${additionalHeadBlock ? additionalHeadBlock + "\n" : ""}${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
 ${themeCssLink}
-</style>
 </head>
 <body>
 <div class="page-shell">
@@ -1220,17 +1294,17 @@ ${slugData?.signals?.conversionSelector ? `
 
   /* ── Normal hub ───────────────────────────────────────────────── */
   let finalHtml = `<!DOCTYPE html>
-<html lang="tr">
+<html lang="${escAttr(finalLang)}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
+<meta name="robots" content="${escAttr(finalRobots)}">
 <title>${escHtml(finalTitle)}</title>
-${debugHtml}
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+${finalMetaDesc ? `<meta name="description" content="${escAttr(finalMetaDesc)}">\n` : ""}${finalCanonicalUrl ? `<link rel="canonical" href="${escAttr(finalCanonicalUrl)}">\n` : ""}<link rel="icon" href="${escAttr(finalFaviconUrl)}">
+${ogTags ? ogTags + "\n" : ""}${debugHtml}
 <meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
-${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
+${additionalHeadBlock ? additionalHeadBlock + "\n" : ""}${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
 ${themeCssLink}${globalCssLink}
 ${turnstileScript}${pageCssBlock}

@@ -1120,6 +1120,39 @@ ${CONSENT_CSS}</style>
         <label for="cfg-page-title">Default Page Title <span class="hint-inline">(shown in browser tab)</span></label>
         <input id="cfg-page-title" type="text" placeholder="Official Links" maxlength="200" />
 
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <label for="cfg-language">Default Language <span class="hint-inline">(e.g. en, tr)</span>
+            <input id="cfg-language" type="text" placeholder="en" maxlength="10" />
+          </label>
+          <label for="cfg-robots">Default Robots Policy <span class="hint-inline">(indexing)</span>
+            <input id="cfg-robots" type="text" placeholder="index, follow" maxlength="100" />
+          </label>
+        </div>
+
+        <label for="cfg-meta-desc">Default Meta Description <span class="hint-inline">(SEO summary)</span></label>
+        <textarea id="cfg-meta-desc" rows="2" placeholder="Site-wide default meta description" maxlength="500"></textarea>
+
+        <label for="cfg-favicon-url">Favicon URL <span class="hint-inline">(/favicon.svg or https://...)</span></label>
+        <input id="cfg-favicon-url" type="text" placeholder="/favicon.svg" />
+
+        <div style="border-top: 1px solid var(--border); margin-top: 0.75rem; padding-top: 0.75rem;">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-m); display: block; margin-bottom: 0.5rem;">Default Open Graph (Social Sharing)</span>
+          <label for="cfg-og-title">OG Title <span class="hint-inline">(defaults to Page Title)</span></label>
+          <input id="cfg-og-title" type="text" placeholder="Official Site" maxlength="200" />
+
+          <label for="cfg-og-desc">OG Description <span class="hint-inline">(defaults to Meta Description)</span></label>
+          <textarea id="cfg-og-desc" rows="2" placeholder="Default social share description" maxlength="500"></textarea>
+
+          <label for="cfg-og-image">OG Image URL <span class="hint-inline">(https://...)</span></label>
+          <input id="cfg-og-image" type="url" placeholder="https://example.com/og-image.jpg" />
+        </div>
+
+        <div style="border-top: 1px solid var(--border); margin-top: 0.75rem; padding-top: 0.75rem;">
+          <label for="cfg-head-code">Site-Wide Additional Head Code <span class="hint-inline">(&lt;link&gt;, &lt;meta&gt;, &lt;style&gt; only)</span></label>
+          <textarea id="cfg-head-code" rows="3" placeholder="&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;" style="font-family: monospace;"></textarea>
+          <p class="hint" style="margin-top:0.25rem; font-size:0.75rem;">Only &lt;link&gt;, &lt;meta&gt;, &lt;style&gt;, and &lt;noscript&gt; tags are permitted. Executable &lt;script&gt; tags are strictly stripped.</p>
+        </div>
+
         <label for="cfg-css">External CSS URL <span class="hint-inline">(optional; https only)</span></label>
         <input id="cfg-css" type="url" placeholder="https://cdn.example.com/theme.css" />
 
@@ -1298,6 +1331,63 @@ ${CONSENT_CSS}</style>
             Page Title &lt;title&gt;
             <input type="text" id="sp-input-title" placeholder="Page Title (browser tab)" />
           </label>
+
+          <!-- Page Metadata & Head Settings -->
+          <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Metadata &amp; Head</p>
+              <span style="font-size: 0.75rem; color: var(--text-m);">Overrides site-wide General Settings</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                SEO Title <span class="hint-inline">(browser tab &amp; OG)</span>
+                <input type="text" id="sp-input-seo-title" placeholder="Overrides Page Title" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Canonical URL <span class="hint-inline">(optional override)</span>
+                <input type="text" id="sp-input-canonical-url" placeholder="Auto-derived: https://domain/slug" />
+              </label>
+            </div>
+
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Meta Description
+              <textarea id="sp-input-meta-desc" rows="2" placeholder="Page-specific description (overrides default)"></textarea>
+            </label>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Language <span class="hint-inline">(e.g. en, tr)</span>
+                <input type="text" id="sp-input-lang" placeholder="Inherits from General Settings" />
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Robots Directive <span class="hint-inline">(e.g. index, follow)</span>
+                <input type="text" id="sp-input-robots" placeholder="Inherits from General Settings" />
+              </label>
+            </div>
+
+            <!-- Page Open Graph -->
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-m);">Page Open Graph Overrides</span>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <input type="text" id="sp-input-og-title" placeholder="OG Title (defaults to SEO Title)" style="font-size: 0.8rem;" />
+                <input type="url" id="sp-input-og-image" placeholder="OG Image URL (https://...)" style="font-size: 0.8rem;" />
+              </div>
+              <textarea id="sp-input-og-desc" rows="2" placeholder="OG Description (defaults to Meta Description)" style="font-size: 0.8rem;"></textarea>
+            </div>
+
+            <!-- Page Additional Head Code -->
+            <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+              Additional Head Code <span class="hint-inline">(&lt;link&gt;, &lt;meta&gt;, &lt;style&gt; only)</span>
+              <textarea id="sp-input-head-code" rows="3" style="font-family: monospace; font-size: 12px;" placeholder="&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;"></textarea>
+              <span class="hint" style="font-size: 0.7rem;">Only &lt;link&gt;, &lt;meta&gt;, &lt;style&gt;, and &lt;noscript&gt; permitted. Executable &lt;script&gt; tags are strictly stripped.</span>
+            </label>
+          </div>
+
+          <!-- Implementer Handoff Notice -->
+          <div style="font-size: 0.75rem; color: var(--text-m); background: var(--bg); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border); line-height: 1.4;">
+            <strong>Implementation Notes:</strong> Comments such as <code>&lt;!-- COGNILINK: ... --&gt;</code> are documentation reference markers only and are not template syntax. Custom HTML blocks are body fragments only (do not include <code>&lt;html&gt;</code> or <code>&lt;head&gt;</code> tags). Ordered block composition is preserved.
+          </div>
 
           <!-- Page Sections & Layout -->
           <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
@@ -4970,6 +5060,14 @@ window.openNewIntentModal = function(e) {
       var data = await res.json();
       var cfg  = data.config || {};
       $("cfg-page-title").value  = cfg.pageTitle    || "";
+      if ($("cfg-language"))     $("cfg-language").value     = cfg.language || "";
+      if ($("cfg-robots"))       $("cfg-robots").value       = cfg.robots || "";
+      if ($("cfg-meta-desc"))    $("cfg-meta-desc").value    = cfg.metaDescription || "";
+      if ($("cfg-favicon-url"))  $("cfg-favicon-url").value  = cfg.faviconUrl || "";
+      if ($("cfg-og-title"))     $("cfg-og-title").value     = cfg.ogTitle || "";
+      if ($("cfg-og-desc"))      $("cfg-og-desc").value      = cfg.ogDescription || "";
+      if ($("cfg-og-image"))     $("cfg-og-image").value     = cfg.ogImage || "";
+      if ($("cfg-head-code"))    $("cfg-head-code").value    = cfg.additionalHeadHtml || "";
       $("cfg-css").value         = cfg.themeCssUrl   || "";
       $("cfg-custom-css").value  = cfg.customStyleCss || "";
       $("cfg-custom-js").value   = cfg.customScript || "";
@@ -5010,6 +5108,14 @@ window.openNewIntentModal = function(e) {
       var hpId = $("cfg-homepage-page-id") ? $("cfg-homepage-page-id").value.trim() : null;
       var payload = {
         pageTitle:      $("cfg-page-title").value.trim()   || null,
+        language:       $("cfg-language") ? $("cfg-language").value.trim() || null : null,
+        robots:         $("cfg-robots") ? $("cfg-robots").value.trim() || null : null,
+        metaDescription: $("cfg-meta-desc") ? $("cfg-meta-desc").value.trim() || null : null,
+        faviconUrl:     $("cfg-favicon-url") ? $("cfg-favicon-url").value.trim() || null : null,
+        ogTitle:        $("cfg-og-title") ? $("cfg-og-title").value.trim() || null : null,
+        ogDescription:  $("cfg-og-desc") ? $("cfg-og-desc").value.trim() || null : null,
+        ogImage:        $("cfg-og-image") ? $("cfg-og-image").value.trim() || null : null,
+        additionalHeadHtml: $("cfg-head-code") ? $("cfg-head-code").value.trim() || null : null,
         themeCssUrl:    $("cfg-css").value.trim()          || null,
         customStyleCss: $("cfg-custom-css").value.trim()   || null,
         customScript:   $("cfg-custom-js").value.trim()    || null,
@@ -5733,6 +5839,16 @@ window.openNewIntentModal = function(e) {
     $("sp-preview-url").value = previewUrl;
 
     $("sp-input-title").value = v.title || p.title || "";
+    var h = v.head || {};
+    if ($("sp-input-seo-title")) $("sp-input-seo-title").value = h.seoTitle || "";
+    if ($("sp-input-canonical-url")) $("sp-input-canonical-url").value = h.canonicalUrl || "";
+    if ($("sp-input-meta-desc")) $("sp-input-meta-desc").value = h.metaDescription || "";
+    if ($("sp-input-lang")) $("sp-input-lang").value = h.language || "";
+    if ($("sp-input-robots")) $("sp-input-robots").value = h.robots || "";
+    if ($("sp-input-og-title")) $("sp-input-og-title").value = h.ogTitle || "";
+    if ($("sp-input-og-desc")) $("sp-input-og-desc").value = h.ogDescription || "";
+    if ($("sp-input-og-image")) $("sp-input-og-image").value = h.ogImage || "";
+    if ($("sp-input-head-code")) $("sp-input-head-code").value = h.additionalHeadHtml || "";
     $("sp-input-css").value = v.customStyleCss || "";
     $("sp-input-js").value = v.customScript || "";
     $("sp-input-notes").value = v.notes || "";
@@ -5891,6 +6007,18 @@ window.openNewIntentModal = function(e) {
       });
       if (!pageRes.ok) throw new Error("Failed to update page");
 
+      var headData = {
+        seoTitle: $("sp-input-seo-title") ? $("sp-input-seo-title").value.trim() : "",
+        canonicalUrl: $("sp-input-canonical-url") ? $("sp-input-canonical-url").value.trim() : "",
+        metaDescription: $("sp-input-meta-desc") ? $("sp-input-meta-desc").value.trim() : "",
+        language: $("sp-input-lang") ? $("sp-input-lang").value.trim() : "",
+        robots: $("sp-input-robots") ? $("sp-input-robots").value.trim() : "",
+        ogTitle: $("sp-input-og-title") ? $("sp-input-og-title").value.trim() : "",
+        ogDescription: $("sp-input-og-desc") ? $("sp-input-og-desc").value.trim() : "",
+        ogImage: $("sp-input-og-image") ? $("sp-input-og-image").value.trim() : "",
+        additionalHeadHtml: $("sp-input-head-code") ? $("sp-input-head-code").value : ""
+      };
+
       var verRes = await apiFetch("/api/admin/static-pages", {
         method: "POST",
         body: JSON.stringify({
@@ -5898,6 +6026,7 @@ window.openNewIntentModal = function(e) {
           page_id: currentEditingStaticPage.page_id,
           version_id: currentEditingStaticVersion.version_id,
           title: newTitle,
+          head: headData,
           layout: staticPageLayoutItems,
           components: referencedComps,
           customStyleCss: newCss,
