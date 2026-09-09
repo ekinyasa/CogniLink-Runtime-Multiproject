@@ -1,16 +1,20 @@
 # CogniLink Runtime Execution State
 
-**Updated:** 2026-07-18
+**Updated:** 2026-09-09
 
 ### Active feature / milestone
 
-**Iterative Development Phase — Campaign & Landing Builder Integration** is currently **completed**. Integrated Landing Page Builder, versioning control, and layout editing tools directly into the main Studio Panel (/admin) under the renamed "Intents" tab as a split two-column workspace. Refactored `functions/_shared/runtime-repository.js` and `runtime-adapter.js` to dynamically resolve nested campaign landing versions with fallback logic.
+**Small Follow-up — Canonical Request URL + Shared Site Theme Tokens** is currently **completed**.
+- Automatic canonical derivation normalized to represent public request URL (`GET /` -> `https://niluferormanli.com/`, `GET /coming-soon` -> `https://niluferormanli.com/coming-soon`).
+- Site-wide OS light/dark semantic theme contract (`--site-bg`, `--site-surface`, `--site-text`, `--site-text-muted`, `--site-border`, `--site-link`, `--site-accent`) rendered into `<style id="site-theme-tokens">` via `@media (prefers-color-scheme: dark)` without JS engine or localStorage.
+- Nilüfer values stored in KV `hub_config.themeTokens` and supported by `PUT /api/config`.
+- Shared footer components (`.editorial-footer`, `.hub-footer`, `.comp-placement-footer`) updated to consume `--site-*` tokens.
 
 ## Production baseline
 
-- Last health-verified active production commit: `aea410cfb2b89f0e271be2746b8ddc35e6b303a2`
-- M1 implementation commit: `a7c881aa8f42a750c36723b4d72226ae92326100`
-- M1 verification/documentation production commit: `ea42715d0e891ca792068605cfd7ff18a08cc467`
+- Last health-verified active production commit: `eca197de1c6286c911234d064fdba11a8fdc8788` (`eca197d`)
+- Document + Head Ownership implementation commit: `ce609c3c52bd41995b78c773ec0ab9b66db60d39`
+- Canonical URL & Shared Theme Tokens implementation commit: `eca197de1c6286c911234d064fdba11a8fdc8788`
 - Health: router, KV, and Analytics Engine healthy
 - Decision response authority: Decision Engine V2 (with emergency legacy fallback)
 - Landing Runtime: `functions/p/[slug].js` dedicated route active
