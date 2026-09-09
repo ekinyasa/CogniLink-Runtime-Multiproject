@@ -99,6 +99,56 @@ export function sanitizeHeadCode(rawHtml) {
   return sanitized.trim();
 }
 
+export function renderThemeTokensCss(tokens) {
+  if (!tokens || typeof tokens !== "object") return "";
+  const light = tokens.light || {};
+  const dark = tokens.dark || {};
+
+  const tokenKeys = [
+    "--site-bg",
+    "--site-surface",
+    "--site-text",
+    "--site-text-muted",
+    "--site-border",
+    "--site-link",
+    "--site-accent"
+  ];
+
+  const sanitizeVal = (v) => {
+    if (!v || typeof v !== "string") return "";
+    return v.replace(/[^\w#(),.%\s-]/g, "").trim();
+  };
+
+  const allLightKeys = Object.keys(light).filter(k => typeof k === "string" && k.startsWith("--"));
+  const allDarkKeys = Object.keys(dark).filter(k => typeof k === "string" && k.startsWith("--"));
+  const keysToProcess = Array.from(new Set([...tokenKeys, ...allLightKeys, ...allDarkKeys]));
+
+  const lightLines = [];
+  for (const k of keysToProcess) {
+    if (light[k]) {
+      const clean = sanitizeVal(light[k]);
+      if (clean) lightLines.push(`  ${k}: ${clean};`);
+    }
+  }
+
+  const darkLines = [];
+  for (const k of keysToProcess) {
+    if (dark[k]) {
+      const clean = sanitizeVal(dark[k]);
+      if (clean) darkLines.push(`    ${k}: ${clean};`);
+    }
+  }
+
+  if (lightLines.length === 0 && darkLines.length === 0) return "";
+
+  let css = `<style id="site-theme-tokens">\n:root {\n${lightLines.join("\n")}\n}`;
+  if (darkLines.length > 0) {
+    css += `\n@media (prefers-color-scheme: dark) {\n  :root {\n${darkLines.join("\n")}\n  }\n}`;
+  }
+  css += `\n</style>`;
+  return css;
+}
+
 export function formatOverlayBg(color, opacity) {
   const op = (opacity != null && opacity !== "" && !isNaN(parseFloat(opacity))) ? parseFloat(opacity) : 0.72;
   const col = String(color || "#000000").trim();
@@ -409,6 +459,8 @@ export function renderHub({
   draftValues = {},         // ADDED: Prefilled values
   rootDomain = "",
   requestHost = "",
+  requestPath = "",
+  requestUrl = "",
 } = {}) {
   const cfg = config || {};
 
@@ -417,11 +469,39 @@ export function renderHub({
 
   let pSub, dCamp, dMod, cUrl, aUrl;
   if (contextType === "static") {
-    const host = effectiveHost || "localhost";
+    let host = effectiveHost || "localhost";
+    const canonicalMode = cfg.canonicalHostMode || "apex";
+    if (rootDomain && host === `www.${rootDomain}` && canonicalMode === "apex") {
+      host = rootDomain;
+    }
     pSub = productSubdomain || "static";
     dCamp = campaign || (slugData && (slugData.name || slugData.title)) || slug || "static";
     dMod = modifier || (slugData && (slugData.version_label || (slugData.version_number ? ("v" + slugData.version_number) : null))) || "live";
-    const pathSlug = (slug === "home" || !slug) ? "" : "/" + slug;
+
+    let rawPath = "";
+    if (requestPath != null && requestPath !== "") {
+      rawPath = String(requestPath);
+    } else if (requestUrl != null && requestUrl !== "") {
+      try {
+        rawPath = new URL(requestUrl, "https://dummy").pathname;
+      } catch (_) {
+        rawPath = String(requestUrl);
+      }
+    }
+
+    let pathSlug = "";
+    if (rawPath) {
+      const cleanPath = rawPath.split("?")[0].split("#")[0].trim();
+      const normalizedPath = cleanPath.startsWith("/") ? cleanPath : "/" + cleanPath;
+      if (normalizedPath === "/" || normalizedPath === "/home") {
+        pathSlug = "";
+      } else {
+        pathSlug = normalizedPath.replace(/\/+$/, "");
+      }
+    } else {
+      pathSlug = (slug === "home" || !slug) ? "" : "/" + slug;
+    }
+
     cUrl = "https://" + host + (pathSlug ? pathSlug : "/");
     const alias = slugData && slugData.alias ? slugData.alias : null;
     aUrl = alias ? ("https://" + host + "/" + alias) : "N/A";
@@ -596,6 +676,11 @@ export function renderHub({
   const siteHeadCode = sanitizeHeadCode(cfg.additionalHeadHtml || "");
   const pageHeadCode = sanitizeHeadCode(head.additionalHeadHtml || "");
   const additionalHeadBlock = [siteHeadCode, pageHeadCode].filter(Boolean).join("\n");
+
+  // Site-wide semantic theme tokens (<style id="site-theme-tokens">)
+  const siteThemeTokensCss = renderThemeTokensCss(cfg.themeTokens);
+  const hasExistingThemeTokensInHead = additionalHeadBlock.includes('id="site-theme-tokens"');
+  const themeTokensBlock = (siteThemeTokensCss && !hasExistingThemeTokensInHead) ? siteThemeTokensCss : "";
 
   // Per-page header/footers only (global fallbacks headerHtml/footerHtml are removed)
   const headerRaw = hasCustomLayout ? "" : (slugData?.customHeaderHtml || "");
@@ -1007,7 +1092,7 @@ export function renderHub({
 <title>${escHtml(finalTitle)}</title>
 ${finalMetaDesc ? `<meta name="description" content="${escAttr(finalMetaDesc)}">\n` : ""}<link rel="icon" href="${escAttr(finalFaviconUrl)}">
 ${ogTags ? ogTags + "\n" : ""}${debugHtml}
-${additionalHeadBlock ? additionalHeadBlock + "\n" : ""}${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
+${themeTokensBlock ? themeTokensBlock + "\n" : ""}${additionalHeadBlock ? additionalHeadBlock + "\n" : ""}${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
 ${themeCssLink}
 </head>
@@ -1304,7 +1389,7 @@ ${finalMetaDesc ? `<meta name="description" content="${escAttr(finalMetaDesc)}">
 ${ogTags ? ogTags + "\n" : ""}${debugHtml}
 <meta name="exp_token" content="${escAttr(expToken || defaultUtms.exp_token || "")}">
 <meta name="utm_variant" content="${escAttr(utmVariant || defaultUtms.utm_variant || "")}">
-${additionalHeadBlock ? additionalHeadBlock + "\n" : ""}${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
+${themeTokensBlock ? themeTokensBlock + "\n" : ""}${additionalHeadBlock ? additionalHeadBlock + "\n" : ""}${consentBootstrapScript}${ga4Snippet}${pixelSnippet}
 ${baseCssBlock}
 ${themeCssLink}${globalCssLink}
 ${turnstileScript}${pageCssBlock}
@@ -2057,6 +2142,16 @@ body{margin:0;min-height:100dvh;font-family:-apple-system,BlinkMacSystemFont,'Se
 img,video{max-width:100%;height:auto}
 button,input,select,textarea{font-family:inherit}
 .page-shell{width:100%;max-width:none;margin:0;padding:0;display:block}
+.editorial-footer,footer.editorial-footer,footer.site-footer,.hub-footer,.comp-placement-footer,.comp-placement-legal{
+  color:var(--site-text-muted,inherit);
+  border-top-color:var(--site-border,transparent);
+}
+.editorial-footer a,footer.editorial-footer a,footer.site-footer a,.hub-footer a,.comp-placement-footer a,.comp-placement-legal a{
+  color:var(--site-link,inherit);
+}
+.editorial-footer strong,footer.editorial-footer strong,footer.site-footer strong{
+  color:var(--site-text,inherit);
+}
 ${CONSENT_CSS}
 `;
 
@@ -2120,7 +2215,8 @@ a:not(.link-btn):not(.comp-cta-btn):hover{
 }
 .not-found-msg{text-align:center;font-size:.9375rem;opacity:.55;margin-bottom:1.5rem}
 .hub-header{text-align:center;font-size:.875rem;opacity:.6;margin-bottom:1rem}
-.hub-footer{text-align:center;font-size:.8125rem;opacity:.45;margin-top:1.25rem}
+.hub-footer{text-align:center;font-size:.8125rem;color:var(--site-text-muted,inherit);border-top:1px solid var(--site-border,transparent);padding-top:0.75rem;margin-top:1.25rem}
+.hub-footer a{color:var(--site-link,inherit)}
 
 /* Dynamic Components Styles */
 .comp-item{
@@ -2145,11 +2241,14 @@ a:not(.link-btn):not(.comp-cta-btn):hover{
 }
 .comp-cta-btn:hover{opacity:0.85;}
 .comp-placement-legal,.comp-placement-footer{
-  background:transparent;border:none;padding:0.5rem 0;
-  font-size:0.8rem;text-align:center;margin:0.5rem 0;
+  background:transparent;border:none;border-top:1px solid var(--site-border,transparent);padding:0.5rem 0;
+  font-size:0.8rem;text-align:center;margin:0.5rem 0;color:var(--site-text-muted,inherit);
 }
 .comp-placement-legal .comp-body,.comp-placement-footer .comp-body{
-  font-size:0.8rem;opacity:0.6;
+  font-size:0.8rem;color:var(--site-text-muted,inherit);opacity:0.8;
+}
+.comp-placement-legal a,.comp-placement-footer a{
+  color:var(--site-link,inherit);
 }
 `;
 

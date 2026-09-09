@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
-import { renderHub, renderLanding, sanitizeHeadCode } from "../functions/_shared/hub-renderer.js";
+import { renderHub, renderLanding, sanitizeHeadCode, renderThemeTokensCss } from "../functions/_shared/hub-renderer.js";
 import { renderAdmin } from "../functions/_shared/admin-renderer.js";
 import { onRequestGet as configGet, onRequestPut as configPut } from "../functions/api/config.js";
 import {
@@ -215,15 +215,28 @@ describe("Document + Head Ownership & 3-Layer Inheritance Tests", () => {
   });
 
   test("5. Canonical URL auto-derivation & explicit override", () => {
-    // Root / homepage derivation: https://domain/
+    // 1. Root / homepage derivation when static page slug is 'coming-soon': must be https://domain/ (NOT /coming-soon)
     const hHome = renderLanding({
       contextType: "static",
-      slug: "home",
+      slug: "coming-soon",
+      requestPath: "/",
       rootDomain: "niluferormanli.com"
     });
     assert.ok(hHome.includes('<link rel="canonical" href="https://niluferormanli.com/">'), "Root/home derives root domain URL");
+    assert.ok(!hHome.includes('<link rel="canonical" href="https://niluferormanli.com/coming-soon">'), "Root/home must NOT use underlying static slug");
+    assert.ok(hHome.includes('<meta property="og:url" content="https://niluferormanli.com/">'), "Root/home og:url matches canonical");
 
-    // Inner page derivation: https://domain/slug
+    // 2. Direct request to /coming-soon: must be https://domain/coming-soon
+    const hDirect = renderLanding({
+      contextType: "static",
+      slug: "coming-soon",
+      requestPath: "/coming-soon",
+      rootDomain: "niluferormanli.com"
+    });
+    assert.ok(hDirect.includes('<link rel="canonical" href="https://niluferormanli.com/coming-soon">'), "Direct request derives requested path URL");
+    assert.ok(hDirect.includes('<meta property="og:url" content="https://niluferormanli.com/coming-soon">'), "Direct request og:url matches canonical");
+
+    // 3. Inner page derivation without requestPath fallback: https://domain/slug
     const hAbout = renderLanding({
       contextType: "static",
       slug: "biography",
@@ -231,16 +244,27 @@ describe("Document + Head Ownership & 3-Layer Inheritance Tests", () => {
     });
     assert.ok(hAbout.includes('<link rel="canonical" href="https://niluferormanli.com/biography">'), "Inner page derives path URL");
 
-    // Explicit override
+    // 4. Canonical Host Normalization (www -> apex when canonicalMode is apex)
+    const hWww = renderLanding({
+      contextType: "static",
+      slug: "coming-soon",
+      requestPath: "/",
+      requestHost: "www.niluferormanli.com",
+      rootDomain: "niluferormanli.com"
+    });
+    assert.ok(hWww.includes('<link rel="canonical" href="https://niluferormanli.com/">'), "Canonical host normalizes www to apex");
+
+    // 5. Explicit override
     const hOverride = renderLanding({
       contextType: "static",
-      slug: "biography",
+      slug: "coming-soon",
+      requestPath: "/",
       rootDomain: "niluferormanli.com",
-      slugData: { head: { canonicalUrl: "https://niluferormanli.com/about-nilufer" } }
+      slugData: { head: { canonicalUrl: "https://niluferormanli.com/custom-canonical" } }
     });
-    assert.ok(hOverride.includes('<link rel="canonical" href="https://niluferormanli.com/about-nilufer">'), "Explicit canonicalUrl in head overrides auto-derivation");
+    assert.ok(hOverride.includes('<link rel="canonical" href="https://niluferormanli.com/custom-canonical">'), "Explicit canonicalUrl in head overrides auto-derivation");
 
-    // 404 page: canonical is omitted
+    // 6. 404 page: canonical is omitted
     const h404 = renderLanding({ notFound: true });
     assert.ok(!h404.includes('<link rel="canonical"'), "404 must omit canonical link");
   });
@@ -480,6 +504,91 @@ describe("Document + Head Ownership & 3-Layer Inheritance Tests", () => {
     // Implementer handoff documentation notice
     assert.ok(adminHtml.includes("&lt;!-- COGNILINK: ... --&gt;"), "Implementer handoff guidance note present in admin DOM");
     assert.ok(adminHtml.includes("Custom HTML blocks are body fragments only"), "Body fragment boundary guidance present in admin DOM");
+  });
+
+  test("12. Shared OS Light/Dark Semantic Theme Contract & Configuration", async () => {
+    const niluferTokens = {
+      light: {
+        "--site-bg": "#F1EFE8",
+        "--site-surface": "#EEECE5",
+        "--site-text": "#191918",
+        "--site-text-muted": "#77736D",
+        "--site-border": "rgba(87,86,81,.13)",
+        "--site-link": "#5F4937",
+        "--site-accent": "#89684E"
+      },
+      dark: {
+        "--site-bg": "#242321",
+        "--site-surface": "#22211F",
+        "--site-text": "#DCD8CF",
+        "--site-text-muted": "#8D8980",
+        "--site-border": "rgba(220,216,207,.10)",
+        "--site-link": "#CFC8BE",
+        "--site-accent": "#A2846F"
+      }
+    };
+
+    // 1. Helper unit verification
+    const css = renderThemeTokensCss(niluferTokens);
+    assert.ok(css.includes('<style id="site-theme-tokens">'), "Style tag has id site-theme-tokens");
+    assert.ok(css.includes(":root {"), "Contains :root rule for light mode");
+    assert.ok(css.includes("@media (prefers-color-scheme: dark)"), "Dark mode activated purely via @media (prefers-color-scheme: dark)");
+
+    // Check all 7 canonical tokens in light mode
+    assert.ok(css.includes("--site-bg: #F1EFE8;"), "Light --site-bg present");
+    assert.ok(css.includes("--site-surface: #EEECE5;"), "Light --site-surface present");
+    assert.ok(css.includes("--site-text: #191918;"), "Light --site-text present");
+    assert.ok(css.includes("--site-text-muted: #77736D;"), "Light --site-text-muted present");
+    assert.ok(css.includes("--site-border: rgba(87,86,81,.13);"), "Light --site-border present");
+    assert.ok(css.includes("--site-link: #5F4937;"), "Light --site-link present");
+    assert.ok(css.includes("--site-accent: #89684E;"), "Light --site-accent present");
+
+    // Check all 7 canonical tokens in dark mode
+    assert.ok(css.includes("--site-bg: #242321;"), "Dark --site-bg present");
+    assert.ok(css.includes("--site-surface: #22211F;"), "Dark --site-surface present");
+    assert.ok(css.includes("--site-text: #DCD8CF;"), "Dark --site-text present");
+    assert.ok(css.includes("--site-text-muted: #8D8980;"), "Dark --site-text-muted present");
+    assert.ok(css.includes("--site-border: rgba(220,216,207,.10);"), "Dark --site-border present");
+    assert.ok(css.includes("--site-link: #CFC8BE;"), "Dark --site-link present");
+    assert.ok(css.includes("--site-accent: #A2846F;"), "Dark --site-accent present");
+
+    // 2. Full render verification
+    const html = renderLanding({
+      contextType: "static",
+      slug: "home",
+      requestPath: "/",
+      config: { themeTokens: niluferTokens }
+    });
+
+    assert.ok(html.includes('<style id="site-theme-tokens">'), "Rendered HTML contains site theme tokens style tag");
+    assert.ok(html.includes("@media (prefers-color-scheme: dark)"), "Dark mode media query present in document head");
+    // Strictly verify no JS theme engine or local storage switching
+    assert.ok(!html.includes("localStorage.getItem('theme')"), "No localStorage theme read");
+    assert.ok(!html.includes("localStorage.setItem('theme'"), "No localStorage theme write");
+    assert.ok(!html.includes("theme-toggle"), "No theme toggle button");
+    // Verify shared components consume --site-* tokens
+    assert.ok(html.includes("var(--site-text-muted"), "Shared CSS consumes --site-text-muted");
+    assert.ok(html.includes("var(--site-border"), "Shared CSS consumes --site-border");
+    assert.ok(html.includes("var(--site-link"), "Shared CSS consumes --site-link");
+
+    // 3. Config API persistence test
+    const env = createMockEnv();
+    const authHeaders = { Authorization: "Bearer secret_admin" };
+
+    const putReq = createMockRequest("https://niluferormanli.com/api/config", "PUT", authHeaders, JSON.stringify({
+      themeTokens: niluferTokens
+    }));
+    const putRes = await configPut({ request: putReq, env });
+    assert.equal(putRes.status, 200);
+    const putData = await putRes.json();
+    assert.equal(putData.ok, true);
+    assert.deepEqual(putData.config.themeTokens, niluferTokens);
+
+    const getReq = createMockRequest("https://niluferormanli.com/api/config", "GET", authHeaders);
+    const getRes = await configGet({ request: getReq, env });
+    assert.equal(getRes.status, 200);
+    const getData = await getRes.json();
+    assert.deepEqual(getData.config.themeTokens, niluferTokens);
   });
 
 });

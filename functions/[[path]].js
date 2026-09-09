@@ -328,7 +328,8 @@ export async function onRequestGet(context) {
                 metaPixelId: env.META_PIXEL_ID || "",
                 isPreview: isAdminPreview,
                 rootDomain: rootDomain,
-                requestHost: originalHost
+                requestHost: originalHost,
+                requestPath: "/"
               });
 
               return new Response(html, {
@@ -390,7 +391,8 @@ export async function onRequestGet(context) {
               metaPixelId: env.META_PIXEL_ID || "",
               isPreview: isAdminPreview,
               rootDomain: rootDomain,
-              requestHost: originalHost
+              requestHost: originalHost,
+              requestPath: "/" + candidateStaticSlug
             });
 
             return new Response(html, {
@@ -932,7 +934,8 @@ export async function onRequestGet(context) {
     components:  liveComponents,
     draftValues: draftValues,
     rootDomain:  rootDomain,
-    requestHost: originalHost
+    requestHost: originalHost,
+    requestPath: rawPath || "/"
   });
 
   // ── Admin overlay injection ───────────────────────────────────────────────

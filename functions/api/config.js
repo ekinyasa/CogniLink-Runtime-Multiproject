@@ -113,6 +113,39 @@ export async function onRequestPut(context) {
     }
   }
 
+  // Process structured theme tokens
+  if ("themeTokens" in (body || {})) {
+    const tt = body.themeTokens;
+    if (tt === null || tt === "") {
+      delete updated.themeTokens;
+    } else if (typeof tt === "object") {
+      const sanitizeObj = (obj) => {
+        if (!obj || typeof obj !== "object") return {};
+        const res = {};
+        for (const [k, v] of Object.entries(obj)) {
+          if (typeof k === "string" && k.startsWith("--") && typeof v === "string") {
+            const cleanKey = k.replace(/[^\w-]/g, "").slice(0, 50);
+            const cleanVal = v.replace(/[^\w#(),.%\s-]/g, "").trim().slice(0, 100);
+            if (cleanKey && cleanVal) {
+              res[cleanKey] = cleanVal;
+            }
+          }
+        }
+        return res;
+      };
+      const cleanLight = sanitizeObj(tt.light);
+      const cleanDark = sanitizeObj(tt.dark);
+      if (Object.keys(cleanLight).length > 0 || Object.keys(cleanDark).length > 0) {
+        updated.themeTokens = {
+          light: cleanLight,
+          dark: cleanDark
+        };
+      } else {
+        delete updated.themeTokens;
+      }
+    }
+  }
+
   // Sanitize faviconUrl and ogImage against javascript: pseudo-protocols
   if (updated.faviconUrl && /^\s*javascript:/i.test(updated.faviconUrl)) {
     delete updated.faviconUrl;

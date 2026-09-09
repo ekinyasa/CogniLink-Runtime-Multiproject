@@ -285,9 +285,23 @@ const runTests = async () => {
     assert.ok(html.includes("Launching soon."));
     assert.ok(html.includes("letter-spacing: 0.3em;"));
     assert.ok(!html.includes("teklifi.online"), "Homepage static page must not contain teklifi.online");
-    assert.ok(html.includes("C: https://niluferormanli.com/"), "Homepage canonical URL must derive from ROOT_DOMAIN");
+    assert.ok(html.includes('<link rel="canonical" href="https://niluferormanli.com/">'), "Homepage canonical URL must be root /");
+    assert.ok(!html.includes('<link rel="canonical" href="https://niluferormanli.com/coming-soon">'), "Homepage canonical URL must not be /coming-soon");
+    assert.ok(html.includes('<meta property="og:url" content="https://niluferormanli.com/">'), "Homepage og:url must be root /");
 
-    console.log("✅ PASS: 4. Root / resolves and renders configured homepage static page");
+    // Direct request to /coming-soon
+    await env.APP_CONFIG.put(`static_slug:coming-soon`, JSON.stringify({
+      page_id: pageId,
+      version_id: verId
+    }));
+    const reqSlug = createMockRequest("https://niluferormanli.com/coming-soon");
+    const resSlug = await catchAllHandler(createMockContext(reqSlug, env, { path: ["coming-soon"] }));
+    assert.equal(resSlug.status, 200);
+    const htmlSlug = await resSlug.text();
+    assert.ok(htmlSlug.includes('<link rel="canonical" href="https://niluferormanli.com/coming-soon">'), "Direct request canonical must be /coming-soon");
+    assert.ok(htmlSlug.includes('<meta property="og:url" content="https://niluferormanli.com/coming-soon">'), "Direct request og:url must be /coming-soon");
+
+    console.log("✅ PASS: 4. Root / resolves and renders configured homepage static page with public request URL canonical");
   }
 
   // Test 5: Homepage Fallback when Unconfigured
