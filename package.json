@@ -7,7 +7,7 @@
     "dev": "wrangler pages dev",
     "deploy": "wrangler pages deploy",
     "provision:nilufer": "node scripts/provision-nilufer.mjs",
-    "test": "node --test tests/decision-authority.test.js tests/decision-controller.test.js tests/decision-engine-v2.test.js tests/decision-shadow-context.test.js tests/decision-signal.test.js tests/real-rule-soak.test.js tests/redirect-runtime.test.js tests/rule-compat.test.js tests/runtime-adapter.test.js tests/runtime-compat-view.test.js tests/runtime-debug-auth.test.js tests/runtime-diff.test.js tests/runtime-repository.test.js tests/shadow-telemetry.test.js tests/shadow-telemetry-endpoints.test.js tests/runtime-route-compatibility.test.js tests/static-pages.test.js tests/consent-layer.test.js tests/document-head-ownership.test.js"
+    "test": "node --test tests/decision-authority.test.js tests/decision-controller.test.js tests/decision-engine-v2.test.js tests/decision-shadow-context.test.js tests/decision-signal.test.js tests/real-rule-soak.test.js tests/redirect-runtime.test.js tests/rule-compat.test.js tests/runtime-adapter.test.js tests/runtime-compat-view.test.js tests/runtime-debug-auth.test.js tests/runtime-diff.test.js tests/runtime-repository.test.js tests/shadow-telemetry.test.js tests/shadow-telemetry-endpoints.test.js tests/runtime-route-compatibility.test.js tests/static-pages.test.js tests/consent-layer.test.js tests/document-head-ownership.test.js tests/intent-authoring-parity.test.js"
   },
   "devDependencies": {
     "wrangler": "^3.0.0"

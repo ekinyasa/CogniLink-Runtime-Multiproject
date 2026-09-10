@@ -1,4 +1,5 @@
 import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
+import { sanitizePageHead } from "../../_shared/hub-renderer.js";
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -29,6 +30,15 @@ export async function onRequestPost(context) {
     if (!data.slug) throw new Error("Missing slug");
     
     const slug = data.slug.toLowerCase().trim();
+
+    if (Array.isArray(data.landings)) {
+      for (const l of data.landings) {
+        if (l && l.head !== undefined) {
+          l.head = sanitizePageHead(l.head);
+        }
+      }
+    }
+
     if (env.APP_CONFIG) {
        await env.APP_CONFIG.put(`campaign:${slug}`, JSON.stringify(data));
        

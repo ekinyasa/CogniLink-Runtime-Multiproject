@@ -716,6 +716,63 @@ ${CONSENT_CSS}</style>
               </select>
             </label>
 
+            <!-- Page Metadata & Head Settings -->
+            <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Metadata &amp; Head</p>
+                <span style="font-size: 0.75rem; color: var(--text-m);">Overrides site-wide General Settings</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  SEO Title <span class="hint-inline">(browser tab &amp; OG)</span>
+                  <input type="text" id="studio-version-seo-title" placeholder="Overrides Page Title" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Canonical URL <span class="hint-inline">(optional override)</span>
+                  <input type="text" id="studio-version-canonical-url" placeholder="Auto-derived: https://domain/l/slug" />
+                </label>
+              </div>
+
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Meta Description
+                <textarea id="studio-version-meta-desc" rows="2" placeholder="Page-specific description (overrides default)"></textarea>
+              </label>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Language <span class="hint-inline">(e.g. en, tr)</span>
+                  <input type="text" id="studio-version-lang" placeholder="Inherits from General Settings" />
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                  Robots Directive <span class="hint-inline">(e.g. index, follow)</span>
+                  <input type="text" id="studio-version-robots" placeholder="Inherits from General Settings" />
+                </label>
+              </div>
+
+              <!-- Page Open Graph -->
+              <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-m);">Page Open Graph Overrides</span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                  <input type="text" id="studio-version-og-title" placeholder="OG Title (defaults to SEO Title)" style="font-size: 0.8rem;" />
+                  <input type="url" id="studio-version-og-image" placeholder="OG Image URL (https://...)" style="font-size: 0.8rem;" />
+                </div>
+                <textarea id="studio-version-og-desc" rows="2" placeholder="OG Description (defaults to Meta Description)" style="font-size: 0.8rem;"></textarea>
+              </div>
+
+              <!-- Page Additional Head Code -->
+              <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
+                Additional Head Code <span class="hint-inline">(&lt;link&gt;, &lt;meta&gt;, &lt;style&gt; only)</span>
+                <textarea id="studio-version-head-code" rows="3" style="font-family: monospace; font-size: 12px;" placeholder="&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;"></textarea>
+                <span class="hint" style="font-size: 0.7rem;">Only &lt;link&gt;, &lt;meta&gt;, &lt;style&gt;, and &lt;noscript&gt; permitted. Executable &lt;script&gt; tags are strictly stripped.</span>
+              </label>
+            </div>
+
+            <!-- Implementer Handoff Notice -->
+            <div style="font-size: 0.75rem; color: var(--text-m); background: var(--bg); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border); line-height: 1.4;">
+              <strong>Implementation Notes:</strong> Comments such as <code>&lt;!-- COGNILINK: ... --&gt;</code> are documentation reference markers only and are not template syntax. Custom HTML blocks are body fragments only (do not include <code>&lt;html&gt;</code> or <code>&lt;head&gt;</code> tags). External stylesheets, webfonts, and preconnect links belong in Additional Head Code. Ordered block composition is preserved.
+            </div>
+
             <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <p class="card-title" style="font-size: 0.9rem; margin: 0;">Page Sections & Layout</p>
@@ -7857,6 +7914,18 @@ window.openNewIntentModal = function(e) {
     document.getElementById("studio-version-status").value = studioCurrentEditingLanding.status;
     document.getElementById("studio-version-title").value = studioCurrentEditingLanding.headerInfo?.title || "";
     document.getElementById("studio-version-theme").value = studioCurrentEditingLanding.theme || "dark";
+
+    var h = studioCurrentEditingLanding.head || {};
+    if (document.getElementById("studio-version-seo-title")) document.getElementById("studio-version-seo-title").value = h.seoTitle || "";
+    if (document.getElementById("studio-version-canonical-url")) document.getElementById("studio-version-canonical-url").value = h.canonicalUrl || "";
+    if (document.getElementById("studio-version-meta-desc")) document.getElementById("studio-version-meta-desc").value = h.metaDescription || "";
+    if (document.getElementById("studio-version-lang")) document.getElementById("studio-version-lang").value = h.language || "";
+    if (document.getElementById("studio-version-robots")) document.getElementById("studio-version-robots").value = h.robots || "";
+    if (document.getElementById("studio-version-og-title")) document.getElementById("studio-version-og-title").value = h.ogTitle || "";
+    if (document.getElementById("studio-version-og-image")) document.getElementById("studio-version-og-image").value = h.ogImage || "";
+    if (document.getElementById("studio-version-og-desc")) document.getElementById("studio-version-og-desc").value = h.ogDescription || "";
+    if (document.getElementById("studio-version-head-code")) document.getElementById("studio-version-head-code").value = h.additionalHeadHtml || "";
+
     document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
@@ -7885,6 +7954,7 @@ window.openNewIntentModal = function(e) {
     copy.id = "version-" + Date.now();
     copy.displayName = (original.displayName || original.id.replace("version-", "Version ")) + " (Copy)";
     copy.status = "draft";
+    copy.head = JSON.parse(JSON.stringify(original.head || {}));
     copy.updatedAt = new Date().toISOString();
     studioCampaignConfig.landings.push(copy);
     renderStudioVersionsList();
@@ -8019,6 +8089,7 @@ window.openNewIntentModal = function(e) {
           updatedAt: new Date().toISOString(),
           theme: "dark",
           headerInfo: { title: "New Landing Page Version" },
+          head: {},
           layout: [],
           components: [],
           customStyleCss: "",
@@ -8183,6 +8254,15 @@ window.openNewIntentModal = function(e) {
       { id: "studio-version-name", prop: "id", cb: renderStudioVersionsList },
       { id: "studio-version-title", prop: "title", nested: "headerInfo", cb: renderStudioVersionsList },
       { id: "studio-version-theme", prop: "theme" },
+      { id: "studio-version-seo-title", prop: "seoTitle", nested: "head" },
+      { id: "studio-version-canonical-url", prop: "canonicalUrl", nested: "head" },
+      { id: "studio-version-meta-desc", prop: "metaDescription", nested: "head" },
+      { id: "studio-version-lang", prop: "language", nested: "head" },
+      { id: "studio-version-robots", prop: "robots", nested: "head" },
+      { id: "studio-version-og-title", prop: "ogTitle", nested: "head" },
+      { id: "studio-version-og-image", prop: "ogImage", nested: "head" },
+      { id: "studio-version-og-desc", prop: "ogDescription", nested: "head" },
+      { id: "studio-version-head-code", prop: "additionalHeadHtml", nested: "head" },
       { id: "studio-version-css", prop: "customStyleCss" },
       { id: "studio-version-js", prop: "customScript" }
     ];
@@ -8359,6 +8439,19 @@ window.openNewIntentModal = function(e) {
           }
         }
 
+          if (studioCurrentEditingLanding) {
+            if (!studioCurrentEditingLanding.head) studioCurrentEditingLanding.head = {};
+            if (document.getElementById("studio-version-seo-title")) studioCurrentEditingLanding.head.seoTitle = document.getElementById("studio-version-seo-title").value.trim();
+            if (document.getElementById("studio-version-canonical-url")) studioCurrentEditingLanding.head.canonicalUrl = document.getElementById("studio-version-canonical-url").value.trim();
+            if (document.getElementById("studio-version-meta-desc")) studioCurrentEditingLanding.head.metaDescription = document.getElementById("studio-version-meta-desc").value.trim();
+            if (document.getElementById("studio-version-lang")) studioCurrentEditingLanding.head.language = document.getElementById("studio-version-lang").value.trim();
+            if (document.getElementById("studio-version-robots")) studioCurrentEditingLanding.head.robots = document.getElementById("studio-version-robots").value.trim();
+            if (document.getElementById("studio-version-og-title")) studioCurrentEditingLanding.head.ogTitle = document.getElementById("studio-version-og-title").value.trim();
+            if (document.getElementById("studio-version-og-image")) studioCurrentEditingLanding.head.ogImage = document.getElementById("studio-version-og-image").value.trim();
+            if (document.getElementById("studio-version-og-desc")) studioCurrentEditingLanding.head.ogDescription = document.getElementById("studio-version-og-desc").value.trim();
+            if (document.getElementById("studio-version-head-code")) studioCurrentEditingLanding.head.additionalHeadHtml = document.getElementById("studio-version-head-code").value;
+          }
+
           var v2Res = await apiFetch("/api/admin/intent-routing", {
             method: "POST",
             body: JSON.stringify(studioCampaignConfig)
@@ -8397,6 +8490,16 @@ window.openNewIntentModal = function(e) {
 
           if (studioCurrentEditingLanding) {
             studioCurrentEditingLanding.updatedAt = new Date().toISOString();
+            if (!studioCurrentEditingLanding.head) studioCurrentEditingLanding.head = {};
+            if (document.getElementById("studio-version-seo-title")) studioCurrentEditingLanding.head.seoTitle = document.getElementById("studio-version-seo-title").value.trim();
+            if (document.getElementById("studio-version-canonical-url")) studioCurrentEditingLanding.head.canonicalUrl = document.getElementById("studio-version-canonical-url").value.trim();
+            if (document.getElementById("studio-version-meta-desc")) studioCurrentEditingLanding.head.metaDescription = document.getElementById("studio-version-meta-desc").value.trim();
+            if (document.getElementById("studio-version-lang")) studioCurrentEditingLanding.head.language = document.getElementById("studio-version-lang").value.trim();
+            if (document.getElementById("studio-version-robots")) studioCurrentEditingLanding.head.robots = document.getElementById("studio-version-robots").value.trim();
+            if (document.getElementById("studio-version-og-title")) studioCurrentEditingLanding.head.ogTitle = document.getElementById("studio-version-og-title").value.trim();
+            if (document.getElementById("studio-version-og-image")) studioCurrentEditingLanding.head.ogImage = document.getElementById("studio-version-og-image").value.trim();
+            if (document.getElementById("studio-version-og-desc")) studioCurrentEditingLanding.head.ogDescription = document.getElementById("studio-version-og-desc").value.trim();
+            if (document.getElementById("studio-version-head-code")) studioCurrentEditingLanding.head.additionalHeadHtml = document.getElementById("studio-version-head-code").value;
           }
 
           // Save V2 Configuration (Landings layout updates)

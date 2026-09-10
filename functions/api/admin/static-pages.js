@@ -11,31 +11,7 @@
  */
 
 import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
-import { sanitizeHeadCode } from "../../_shared/hub-renderer.js";
-
-function sanitizePageHead(rawHead) {
-  if (!rawHead || typeof rawHead !== "object") return {};
-  const clean = {};
-  if (typeof rawHead.seoTitle === "string") clean.seoTitle = rawHead.seoTitle.trim().slice(0, 300);
-  if (typeof rawHead.canonicalUrl === "string") {
-    const u = rawHead.canonicalUrl.trim();
-    if (!/^\s*javascript:/i.test(u)) clean.canonicalUrl = u.slice(0, 1000);
-  }
-  if (typeof rawHead.metaDescription === "string") clean.metaDescription = rawHead.metaDescription.trim().slice(0, 1000);
-  if (typeof rawHead.language === "string") clean.language = rawHead.language.trim().slice(0, 20);
-  if (typeof rawHead.robots === "string") clean.robots = rawHead.robots.trim().slice(0, 200);
-  if (typeof rawHead.ogTitle === "string") clean.ogTitle = rawHead.ogTitle.trim().slice(0, 300);
-  if (typeof rawHead.ogDescription === "string") clean.ogDescription = rawHead.ogDescription.trim().slice(0, 1000);
-  if (typeof rawHead.ogImage === "string") {
-    const u = rawHead.ogImage.trim();
-    if (!/^\s*javascript:/i.test(u)) clean.ogImage = u.slice(0, 1000);
-  }
-  if (typeof rawHead.additionalHeadHtml === "string") {
-    const s = sanitizeHeadCode(rawHead.additionalHeadHtml);
-    if (s) clean.additionalHeadHtml = s;
-  }
-  return clean;
-}
+import { sanitizeHeadCode, sanitizePageHead } from "../../_shared/hub-renderer.js";
 
 async function listAllKeys(env, prefix) {
   const keys = [];

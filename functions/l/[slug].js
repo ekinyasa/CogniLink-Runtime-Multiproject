@@ -263,6 +263,8 @@ export async function onRequestGet(context) {
     contextType: "landing",
     contextId:   slug,
     requestUrl:  request.url,
+    requestHost: originalHost,
+    rootDomain:  env.ROOT_DOMAIN || "niluferormanli.com",
     productSubdomain: productSubdomain,
     campaign:    utmCampaign,
     defaultUtms: {},

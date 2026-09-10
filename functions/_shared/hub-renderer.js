@@ -99,6 +99,43 @@ export function sanitizeHeadCode(rawHtml) {
   return sanitized.trim();
 }
 
+export function sanitizePageHead(rawHead) {
+  if (!rawHead || typeof rawHead !== "object") return {};
+  const clean = {};
+  if (typeof rawHead.seoTitle === "string") clean.seoTitle = rawHead.seoTitle.trim().slice(0, 300);
+  if (typeof rawHead.canonicalUrl === "string") {
+    const u = rawHead.canonicalUrl.trim();
+    if (!/^\s*javascript:/i.test(u)) clean.canonicalUrl = u.slice(0, 1000);
+  }
+  if (typeof rawHead.metaDescription === "string") clean.metaDescription = rawHead.metaDescription.trim().slice(0, 1000);
+  if (typeof rawHead.language === "string") clean.language = rawHead.language.trim().slice(0, 20);
+  if (typeof rawHead.robots === "string") clean.robots = rawHead.robots.trim().slice(0, 200);
+  if (typeof rawHead.ogTitle === "string") clean.ogTitle = rawHead.ogTitle.trim().slice(0, 300);
+  if (typeof rawHead.ogDescription === "string") clean.ogDescription = rawHead.ogDescription.trim().slice(0, 1000);
+  if (typeof rawHead.ogImage === "string") {
+    const u = rawHead.ogImage.trim();
+    if (!/^\s*javascript:/i.test(u)) clean.ogImage = u.slice(0, 1000);
+  }
+  if (typeof rawHead.additionalHeadHtml === "string") {
+    const s = sanitizeHeadCode(rawHead.additionalHeadHtml);
+    if (s) clean.additionalHeadHtml = s;
+  }
+  return clean;
+}
+
+/**
+ * Sanitizes HTML body fragments to ensure they do not inject outer document shell tags
+ * (<!DOCTYPE html>, <html>, <head>, <body>) into the rendered document.
+ */
+export function sanitizeBodyFragment(rawHtml) {
+  if (!rawHtml || typeof rawHtml !== "string") return "";
+  return rawHtml
+    .replace(/<!DOCTYPE[^>]*>/gi, "")
+    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+    .replace(/<\/?(?:html|head|body)[^>]*>/gi, "")
+    .trim();
+}
+
 export function renderThemeTokensCss(tokens) {
   if (!tokens || typeof tokens !== "object") return "";
   const light = tokens.light || {};
@@ -590,7 +627,7 @@ export function renderHub({
           layoutHtml += '<div style="border:1px dashed #ff4444; padding:15px; margin: 10px 0; background:rgba(255,0,0,0.05); color:#ff4444; text-align:center; font-family:monospace; font-size:12px; border-radius:4px;">[Preview Mode] Component Not Found or Inactive: ' + escHtml(item.id) + '</div>';
         }
       } else if (item.type === "custom_html") {
-        layoutHtml += item.content || item.body || "";
+        layoutHtml += sanitizeBodyFragment(item.content || item.body || "");
       }
     });
   }
@@ -683,8 +720,8 @@ export function renderHub({
   const themeTokensBlock = (siteThemeTokensCss && !hasExistingThemeTokensInHead) ? siteThemeTokensCss : "";
 
   // Per-page header/footers only (global fallbacks headerHtml/footerHtml are removed)
-  const headerRaw = hasCustomLayout ? "" : (slugData?.customHeaderHtml || "");
-  const footerRaw = hasCustomLayout ? "" : (slugData?.customFooterHtml || "");
+  const headerRaw = hasCustomLayout ? "" : sanitizeBodyFragment(slugData?.customHeaderHtml || "");
+  const footerRaw = hasCustomLayout ? "" : sanitizeBodyFragment(slugData?.customFooterHtml || "");
 
   // Raw HTML injection (no escaping)
   const headerHtml = headerRaw
@@ -1355,7 +1392,7 @@ ${slugData?.signals?.conversionSelector ? `
     if (hasCustomLayout) {
       finalBodyContent = layoutHtml;
     } else {
-      const customBody = slugData?.customBodyHtml || slugData?.custom_html || "";
+      const customBody = sanitizeBodyFragment(slugData?.customBodyHtml || slugData?.custom_html || "");
       finalBodyContent = `
     ${compsHtml.hero}
     ${compsHtml.body}
