@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
-import { renderHub, renderLanding, sanitizeHeadCode, renderThemeTokensCss } from "../functions/_shared/hub-renderer.js";
+import { renderHub, renderLanding, sanitizeHeadCode, sanitizeBodyFragment, renderThemeTokensCss } from "../functions/_shared/hub-renderer.js";
 import { renderAdmin } from "../functions/_shared/admin-renderer.js";
 import { onRequestGet as configGet, onRequestPut as configPut } from "../functions/api/config.js";
 import {
@@ -589,6 +589,106 @@ describe("Document + Head Ownership & 3-Layer Inheritance Tests", () => {
     assert.equal(getRes.status, 200);
     const getData = await getRes.json();
     assert.deepEqual(getData.config.themeTokens, niluferTokens);
+  });
+
+  test("10. Full-document legacy static pages preserve authored styles, scripts, and selectors without duplicate document shell", () => {
+    const fullDocumentHtml = `
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legacy Authoring Title</title>
+<meta name="description" content="Legacy Description">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600&family=Instrument+Serif&display=swap');
+
+:root {
+  --photo: url("/assets/coming-soon/niluferormanli-comingsoon.webp");
+  --ink: #211f1c;
+}
+.page { max-width: 1200px; margin: 0 auto; }
+.photo-pair { display: flex; }
+.main-stage { position: relative; }
+.main-glass { backdrop-filter: blur(10px); }
+.footer-system { margin-top: 40px; }
+.social { display: inline-flex; }
+</style>
+<script>
+  window.__PAGE_LOADED__ = true;
+</script>
+</head>
+<body>
+  <div class="page">
+    <div class="photo-pair" aria-hidden="true">
+      <section class="glass main-glass">
+        <h1 class="main-stage">N I L Ü F E R   O R M A N L I</h1>
+      </section>
+    </div>
+    <footer class="footer-system">
+      <div class="social">Social Links</div>
+    </footer>
+  </div>
+</body>
+</html>
+    `;
+
+    // 1. Verify sanitizeBodyFragment directly
+    const sanitized = sanitizeBodyFragment(fullDocumentHtml);
+    assert.ok(!sanitized.includes("<!doctype html>") && !sanitized.includes("<!DOCTYPE html>"), "Strips doctype");
+    assert.ok(!sanitized.includes("<html") && !sanitized.includes("</html>"), "Strips html tags");
+    assert.ok(!sanitized.includes("<head") && !sanitized.includes("</head>"), "Strips head tags");
+    assert.ok(!sanitized.includes("<body") && !sanitized.includes("</body>"), "Strips body tags");
+    assert.ok(!sanitized.includes("<title>Legacy Authoring Title</title>"), "Strips inner title tag");
+    assert.ok(sanitized.includes(".page { max-width: 1200px; margin: 0 auto; }"), "Preserves .page CSS");
+    assert.ok(sanitized.includes(".photo-pair { display: flex; }"), "Preserves .photo-pair CSS");
+    assert.ok(sanitized.includes(".main-stage { position: relative; }"), "Preserves .main-stage CSS");
+    assert.ok(sanitized.includes(".main-glass { backdrop-filter: blur(10px); }"), "Preserves .main-glass CSS");
+    assert.ok(sanitized.includes(".footer-system { margin-top: 40px; }"), "Preserves .footer-system CSS");
+    assert.ok(sanitized.includes(".social { display: inline-flex; }"), "Preserves .social CSS");
+    assert.ok(sanitized.includes("window.__PAGE_LOADED__ = true;"), "Preserves script tag");
+    assert.ok(sanitized.includes('<div class="page">'), "Preserves inner DOM markup");
+
+    // 2. Full renderLanding verification with layout[0].content
+    const rendered = renderLanding({
+      contextType: "static",
+      slug: "coming-soon",
+      slugData: {
+        id: "coming-soon-v1",
+        title: "Nilüfer Ormanlı",
+        layout: [
+          { type: "custom_html", content: fullDocumentHtml }
+        ]
+      },
+      requestPath: "/",
+      rootDomain: "niluferormanli.com"
+    });
+
+    // Verify document shell ownership rules: exactly ONE real document shell
+    assert.equal(countOccurrences(rendered, "<!DOCTYPE html>"), 1, "Exactly one <!DOCTYPE html>");
+    assert.equal(countOccurrences(rendered, "<html"), 1, "Exactly one <html opening tag");
+    assert.equal(countOccurrences(rendered, "</html>"), 1, "Exactly one </html> closing tag");
+    assert.equal(countOccurrences(rendered, "<head>"), 1, "Exactly one <head> opening tag");
+    assert.equal(countOccurrences(rendered, "</head>"), 1, "Exactly one </head> closing tag");
+    assert.equal(countOccurrences(rendered, "<body"), 1, "Exactly one <body opening tag");
+    assert.equal(countOccurrences(rendered, "</body>"), 1, "Exactly one </body> closing tag");
+
+    // Verify authoritative title in head and no duplicate title in body
+    assert.ok(rendered.includes("<title>Nilüfer Ormanlı</title>"), "Authoritative title is in head");
+    assert.ok(!rendered.includes("<title>Legacy Authoring Title</title>"), "Redundant title from body fragment is stripped");
+
+    // Verify all Coming Soon CSS rules reach the rendered document
+    assert.ok(rendered.includes(".page {"), "Rendered document includes .page style rule");
+    assert.ok(rendered.includes(".photo-pair {"), "Rendered document includes .photo-pair style rule");
+    assert.ok(rendered.includes(".main-stage {"), "Rendered document includes .main-stage style rule");
+    assert.ok(rendered.includes(".main-glass {"), "Rendered document includes .main-glass style rule");
+    assert.ok(rendered.includes(".footer-system {"), "Rendered document includes .footer-system style rule");
+    assert.ok(rendered.includes(".social {"), "Rendered document includes .social style rule");
+
+    // Verify scripts and asset references remain intact
+    assert.ok(rendered.includes("window.__PAGE_LOADED__ = true;"), "Rendered document includes scripts");
+    assert.ok(rendered.includes("/assets/coming-soon/niluferormanli-comingsoon.webp"), "Rendered document includes asset references");
   });
 
 });

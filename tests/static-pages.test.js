@@ -580,7 +580,74 @@ const runTests = async () => {
     console.log("✅ PASS: 11. Admin UI uses canonical esc helper exclusively, prevents library button width expansion, and renders delete protection elements");
   }
 
-  console.log("\nAll Static Pages & Homepage Routing Tests Passed! (11/11)");
+  // Test 12: Legacy full-document static page homepage rendering preserves authored styles and selectors
+  {
+    const env = createMockEnv();
+    const pageId = "sp_main_coming_soon";
+    const verId = "spv_main_coming_soon_v1";
+
+    const fullDoc = `<!doctype html>
+<html>
+<head>
+<style>
+.page{margin:0}
+.photo-pair{display:flex}
+.main-stage{color:#fff}
+.main-glass{backdrop-filter:blur(10px)}
+.footer-system{display:grid}
+.social{gap:10px}
+</style>
+</head>
+<body>
+<div class="page"><div class="photo-pair"><div class="main-glass"><h1 class="main-stage">Coming Soon</h1></div></div><footer class="footer-system"><div class="social"></div></footer></div>
+</body>
+</html>`;
+
+    await env.APP_CONFIG.put(`static_page:${pageId}`, JSON.stringify({
+      page_id: pageId,
+      name: "Main Coming Soon",
+      slug: "coming-soon",
+      status: "published",
+      live_version_id: verId
+    }));
+    await env.APP_CONFIG.put(`static_page_ver:${pageId}:${verId}`, JSON.stringify({
+      version_id: verId,
+      page_id: pageId,
+      title: "Nilüfer Ormanlı",
+      status: "published",
+      layout: [{ type: "custom_html", content: fullDoc }]
+    }));
+    await env.APP_CONFIG.put("site:routing", JSON.stringify({
+      homepagePageId: pageId
+    }));
+
+    const req = createMockRequest("https://niluferormanli.com/");
+    const res = await catchAllHandler(createMockContext(req, env, { path: [] }));
+    assert.equal(res.status, 200);
+    const html = await res.text();
+
+    // Verify document shell ownership
+    const countOccurrences = (str, substr) => str.split(substr).length - 1;
+    assert.equal(countOccurrences(html, "<!DOCTYPE html>"), 1, "Exactly one <!DOCTYPE html>");
+    assert.equal(countOccurrences(html, "<html"), 1, "Exactly one <html");
+    assert.equal(countOccurrences(html, "</html>"), 1, "Exactly one </html>");
+    assert.equal(countOccurrences(html, "<head>"), 1, "Exactly one <head>");
+    assert.equal(countOccurrences(html, "</head>"), 1, "Exactly one </head>");
+    assert.equal(countOccurrences(html, "<body"), 1, "Exactly one <body");
+    assert.equal(countOccurrences(html, "</body>"), 1, "Exactly one </body>");
+
+    // Verify all Coming Soon CSS rules are preserved and present in rendered output
+    assert.ok(html.includes(".page{margin:0}"), "Contains .page style rule");
+    assert.ok(html.includes(".photo-pair{display:flex}"), "Contains .photo-pair style rule");
+    assert.ok(html.includes(".main-stage{color:#fff}"), "Contains .main-stage style rule");
+    assert.ok(html.includes(".main-glass{backdrop-filter:blur(10px)}"), "Contains .main-glass style rule");
+    assert.ok(html.includes(".footer-system{display:grid}"), "Contains .footer-system style rule");
+    assert.ok(html.includes(".social{gap:10px}"), "Contains .social style rule");
+
+    console.log("✅ PASS: 12. Legacy full-document static page homepage rendering preserves authored styles and selectors");
+  }
+
+  console.log("\nAll Static Pages & Homepage Routing Tests Passed! (12/12)");
 };
 
 runTests().catch((err) => {
