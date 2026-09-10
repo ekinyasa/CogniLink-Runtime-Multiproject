@@ -4,15 +4,19 @@
 
 ### Active feature / milestone
 
-**Small Follow-up — Canonical Request URL + Shared Site Theme Tokens** is currently **completed**.
-- Automatic canonical derivation normalized to represent public request URL (`GET /` -> `https://niluferormanli.com/`, `GET /coming-soon` -> `https://niluferormanli.com/coming-soon`).
-- Site-wide OS light/dark semantic theme contract (`--site-bg`, `--site-surface`, `--site-text`, `--site-text-muted`, `--site-border`, `--site-link`, `--site-accent`) rendered into `<style id="site-theme-tokens">` via `@media (prefers-color-scheme: dark)` without JS engine or localStorage.
-- Nilüfer values stored in KV `hub_config.themeTokens` and supported by `PUT /api/config`.
-- Shared footer components (`.editorial-footer`, `.hub-footer`, `.comp-placement-footer`) updated to consume `--site-*` tokens.
+**Intent Landing Version Editing Parity with Static Page Authoring** is currently **completed**.
+- Intent Landing Versions in `#studio-builder-panel` support full Page Metadata & Head controls: SEO Title, Canonical URL (explicit override vs auto-derivation), Meta Description, Language, Robots Directives, Open Graph Tags (OG Title, OG Description, OG Image), and Additional Head Code.
+- Implementer handoff guidance note integrated into Studio Builder explaining body fragment rules, documentation marker semantics, and head resource placement.
+- Strict single document shell enforcement via `sanitizeBodyFragment()` ensures custom HTML blocks cannot duplicate `<!DOCTYPE html>`, `<html>`, `<head>`, or `<body>`.
+- Additional head code sanitized on save (`POST /api/admin/intent-routing`) and runtime rendering (`hub-renderer.js`), strictly stripping executable `<script>` tags while preserving safe `<link>`, `<meta>`, `<style>`, and `<noscript>` elements.
+- Shared component attachment and ordered block composition parity maintained.
+- Shared site theme contract (`--site-*` CSS variables) preserved.
+- Full backward compatibility and 100% preservation of Intent routing, scoring, signal logic, score bands, versioning, aliases, and redirect overrides.
 
 ## Production baseline
 
-- Last health-verified active production commit: `eca197de1c6286c911234d064fdba11a8fdc8788` (`eca197d`)
+- Last health-verified active production commit: `fd03b31dcbbe898cb0f53fcb50994ee4e168d1a4` (`fd03b31`)
+- Intent Authoring Parity implementation commit: `fd03b31dcbbe898cb0f53fcb50994ee4e168d1a4`
 - Document + Head Ownership implementation commit: `ce609c3c52bd41995b78c773ec0ab9b66db60d39`
 - Canonical URL & Shared Theme Tokens implementation commit: `eca197de1c6286c911234d064fdba11a8fdc8788`
 - Health: router, KV, and Analytics Engine healthy

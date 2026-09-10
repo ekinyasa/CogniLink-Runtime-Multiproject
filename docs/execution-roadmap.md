@@ -41,6 +41,12 @@ Execution rules, state ledger, and the production verification workflow are esta
 
 V2 receives immutable request/user-state inputs compatible with legacy evaluation; matched renders and engine-override conversion accounting have regression coverage. Public decision authority remains legacy.
 
+### Intent Landing Version Editing Parity with Static Page Authoring — complete
+
+- **Goal:** Bring Intent Landing Version editing in Studio to feature parity with the Static Page reference model, without altering Intent routing/scoring behavior.
+- **Scope:** Page Metadata & Head controls (SEO Title, Canonical URL, Meta Description, Language, Robots Directives, OG tags, sanitized Additional Head Code); implementer handoff guidance note; strict single document shell enforcement (`sanitizeBodyFragment()`); shared component block attachment in layout; shared site theme contract (`--site-*` CSS variables); backward compatibility and 100% preservation of Intent-specific controls.
+- **Evidence:** 14 automated parity tests covering all 12 specified requirements (A-N); 65/65 full test suite passing; production `/api/admin/health` verified at commit `fd03b31`. Implementation commit: `fd03b31`.
+
 ## Executable milestones
 
 ### M2A — Rule source and evidence design — manual gate
