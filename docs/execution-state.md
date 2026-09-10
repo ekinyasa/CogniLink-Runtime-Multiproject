@@ -4,18 +4,17 @@
 
 ### Active feature / milestone
 
-**Intent Landing Version Editing Parity with Static Page Authoring** is currently **completed**.
-- Intent Landing Versions in `#studio-builder-panel` support full Page Metadata & Head controls: SEO Title, Canonical URL (explicit override vs auto-derivation), Meta Description, Language, Robots Directives, Open Graph Tags (OG Title, OG Description, OG Image), and Additional Head Code.
-- Implementer handoff guidance note integrated into Studio Builder explaining body fragment rules, documentation marker semantics, and head resource placement.
-- Strict single document shell enforcement via `sanitizeBodyFragment()` ensures custom HTML blocks cannot duplicate `<!DOCTYPE html>`, `<html>`, `<head>`, or `<body>`.
-- Additional head code sanitized on save (`POST /api/admin/intent-routing`) and runtime rendering (`hub-renderer.js`), strictly stripping executable `<script>` tags while preserving safe `<link>`, `<meta>`, `<style>`, and `<noscript>` elements.
-- Shared component attachment and ordered block composition parity maintained.
-- Shared site theme contract (`--site-*` CSS variables) preserved.
-- Full backward compatibility and 100% preservation of Intent routing, scoring, signal logic, score bands, versioning, aliases, and redirect overrides.
+**Preserve Authored Styles in Full-Document Body Fragments (Production Regression Fix)** is currently **completed**.
+- Root Cause: In commit `fd03b31`, `sanitizeBodyFragment()` stripped `<head[^>]*>[\s\S]*?<\/head>`, which unintentionally erased the `<style>` block contained in legacy full-document static page records (specifically Coming Soon `static_page_ver:sp_main_coming_soon:spv_main_coming_soon_v1`).
+- Fix: Updated `sanitizeBodyFragment()` to strip only outer document shell boundaries (`<!DOCTYPE...>`, `<html>`, `</html>`, `<head>`, `</head>`, `<body>`, `</body>`) and inner `<title>...</title>` tags, preserving 100% of authored `<style>`, `<link>`, `<script>`, and inner DOM elements.
+- Single Document Shell Architecture: Preserved strictly (exactly one `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>` in rendered output).
+- Tests: Added regression test 10 in `tests/document-head-ownership.test.js` and test 12 in `tests/static-pages.test.js` covering full-document legacy static pages and verifying all Coming Soon CSS selectors (`.page`, `.photo-pair`, `.main-stage`, `.main-glass`, `.footer-system`, `.social`). All 20 test suites (66 tests) pass.
+- Production Verification: Confirmed live on `https://niluferormanli.com/` (HTTP 200, 1 shell, all styles and selectors restored, assets and Turnstile script intact).
 
 ## Production baseline
 
-- Last health-verified active production commit: `fd03b31dcbbe898cb0f53fcb50994ee4e168d1a4` (`fd03b31`)
+- Last health-verified active production commit: `b1d2b3e73b47b39d9daa02f06af29ff5dca46b65` (`b1d2b3e`)
+- Renderer Regression Fix implementation commit: `b1d2b3e73b47b39d9daa02f06af29ff5dca46b65` (`b1d2b3e`)
 - Intent Authoring Parity implementation commit: `fd03b31dcbbe898cb0f53fcb50994ee4e168d1a4`
 - Document + Head Ownership implementation commit: `ce609c3c52bd41995b78c773ec0ab9b66db60d39`
 - Canonical URL & Shared Theme Tokens implementation commit: `eca197de1c6286c911234d064fdba11a8fdc8788`
