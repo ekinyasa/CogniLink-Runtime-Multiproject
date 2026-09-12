@@ -4,17 +4,18 @@
 
 ### Active feature / milestone
 
-**Preserve Authored Styles in Full-Document Body Fragments (Production Regression Fix)** is currently **completed**.
-- Root Cause: In commit `fd03b31`, `sanitizeBodyFragment()` stripped `<head[^>]*>[\s\S]*?<\/head>`, which unintentionally erased the `<style>` block contained in legacy full-document static page records (specifically Coming Soon `static_page_ver:sp_main_coming_soon:spv_main_coming_soon_v1`).
-- Fix: Updated `sanitizeBodyFragment()` to strip only outer document shell boundaries (`<!DOCTYPE...>`, `<html>`, `</html>`, `<head>`, `</head>`, `<body>`, `</body>`) and inner `<title>...</title>` tags, preserving 100% of authored `<style>`, `<link>`, `<script>`, and inner DOM elements.
-- Single Document Shell Architecture: Preserved strictly (exactly one `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>` in rendered output).
-- Tests: Added regression test 10 in `tests/document-head-ownership.test.js` and test 12 in `tests/static-pages.test.js` covering full-document legacy static pages and verifying all Coming Soon CSS selectors (`.page`, `.photo-pair`, `.main-stage`, `.main-glass`, `.footer-system`, `.social`). All 20 test suites (66 tests) pass.
-- Production Verification: Confirmed live on `https://niluferormanli.com/` (HTTP 200, 1 shell, all styles and selectors restored, assets and Turnstile script intact).
+**HÂL Intent Runtime Fixes (Semantic `<header>`, `/c/{alias}` 301 Redirect, Canonical URL)** is currently **completed**.
+- Bug 1 (Semantic `<header>` Preservation): Fixed `sanitizeBodyFragment()` by adding word boundary `\b` (`/<\/?(?:html|head|body)\b[^>]*>/gi`). Semantic `<header>`, `<footer>`, `<main>`, `<nav>`, `<section>`, `<article>`, `<aside>` elements inside Custom HTML survive rendering intact while outer document shell tags (`<!DOCTYPE...>`, `<html>`, `</html>`, `<head>`, `</head>`, `<body>`, `</body>`) are stripped cleanly.
+- Bug 2 (`/c/{alias}` 301 Redirect): Added published Intent landing alias check in `functions/c/[slug].js`. Accessing `/c/{alias}` returns HTTP 301 redirecting to canonical public alias `/{alias}`, preserving all query parameters, scheme, and public host without duplicate rendering.
+- Bug 3 (HÂL Canonical & OG URL): Corrected `campaign:hal-derin-dinleme`'s `landings[0].head.canonicalUrl` in remote KV to `https://hal.niluferormanli.com/derin-dinleme`, matching the live public Intent URL.
+- Test Coverage: Added Test 11 in `tests/document-head-ownership.test.js` covering semantic `<header>` preservation and document shell ownership; added tests in `tests/campaign-runtime.test.js` verifying `/c/{alias}` 301 redirect and query param preservation. All 20 test suites (67 tests) pass.
+- Production Verification: Confirmed live on `https://hal.niluferormanli.com/derin-dinleme` (HTTP 200, `.hal-page`, semantic `<header>`, single document shell, canonical = `https://hal.niluferormanli.com/derin-dinleme`), `/c/derin-dinleme` (HTTP 301 to `/derin-dinleme` with params), and all existing pages (Coming Soon, Thank You, Privacy, Terms) and health OK.
 
 ## Production baseline
 
-- Last health-verified active production commit: `b1d2b3e73b47b39d9daa02f06af29ff5dca46b65` (`b1d2b3e`)
-- Renderer Regression Fix implementation commit: `b1d2b3e73b47b39d9daa02f06af29ff5dca46b65` (`b1d2b3e`)
+- Last health-verified active production commit: `57fd0f6601cda25e6b71b355e1825fa7ba029325` (`57fd0f6`)
+- HÂL Intent Runtime Fixes implementation commit: `57fd0f6601cda25e6b71b355e1825fa7ba029325` (`57fd0f6`)
+- Renderer Regression Fix implementation commit: `b1d2b3e73b47b39d9daa02f06af29ff5dca46b65`
 - Intent Authoring Parity implementation commit: `fd03b31dcbbe898cb0f53fcb50994ee4e168d1a4`
 - Document + Head Ownership implementation commit: `ce609c3c52bd41995b78c773ec0ab9b66db60d39`
 - Canonical URL & Shared Theme Tokens implementation commit: `eca197de1c6286c911234d064fdba11a8fdc8788`
