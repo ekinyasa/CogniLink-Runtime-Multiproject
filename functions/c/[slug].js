@@ -27,9 +27,57 @@ const CONFIG_KEY = "hub_config";
 
 export async function onRequestGet(context) {
   const { request, env, params } = context;
-  const slug = params.slug || "";
+  const slug = (params.slug || "").replace(/\/+$/, "");
 
   context.waitUntil(incrementCounter(env));
+
+  // ── Published Intent Landing Alias Redirect ──────────────────────────────
+  // If /c/{alias} is accessed for a published Intent landing alias,
+  // 301 redirect to the canonical public alias: /{alias} (preserving query params).
+  // Do not duplicate-render the landing at both URLs.
+  if (slug) {
+    let isPublishedIntentAlias = false;
+
+    if (env.ROUTE_ALIAS) {
+      try {
+        const aliasTarget = await env.ROUTE_ALIAS.get(`route:${slug}`, { type: "text" });
+        if (aliasTarget && typeof aliasTarget === "string" && aliasTarget.startsWith("/l/")) {
+          isPublishedIntentAlias = true;
+        }
+      } catch (_) {}
+    }
+
+    if (!isPublishedIntentAlias && env.APP_CONFIG) {
+      try {
+        const checkIntent = async (campKey) => {
+          const camp = await env.APP_CONFIG.get(campKey, { type: "json" });
+          if (camp && Array.isArray(camp.landings)) {
+            return camp.landings.some(
+              l => (l.alias === slug || (Array.isArray(l.aliases) && l.aliases.includes(slug))) &&
+                   (l.status || "").toLowerCase() === "published"
+            );
+          }
+          return false;
+        };
+
+        const urlObj = new URL(request.url);
+        const origHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || urlObj.hostname;
+        const pSub = extractProductSubdomain(request.url, origHost);
+        if (pSub) {
+          isPublishedIntentAlias = await checkIntent(`campaign:${pSub}-${slug}`);
+        }
+        if (!isPublishedIntentAlias) {
+          isPublishedIntentAlias = await checkIntent(`campaign:${slug}`);
+        }
+      } catch (_) {}
+    }
+
+    if (isPublishedIntentAlias) {
+      const destUrl = new URL(request.url);
+      destUrl.pathname = `/${slug}`;
+      return Response.redirect(destUrl.toString(), 301);
+    }
+  }
 
   let campaignData = null;
   let notFound     = false;

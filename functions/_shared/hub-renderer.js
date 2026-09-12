@@ -132,7 +132,7 @@ export function sanitizeBodyFragment(rawHtml) {
   return rawHtml
     .replace(/<!DOCTYPE[^>]*>/gi, "")
     .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, "")
-    .replace(/<\/?(?:html|head|body)[^>]*>/gi, "")
+    .replace(/<\/?(?:html|head|body)\b[^>]*>/gi, "")
     .trim();
 }
 

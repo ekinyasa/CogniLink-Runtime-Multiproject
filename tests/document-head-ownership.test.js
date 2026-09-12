@@ -691,4 +691,82 @@ describe("Document + Head Ownership & 3-Layer Inheritance Tests", () => {
     assert.ok(rendered.includes("/assets/coming-soon/niluferormanli-comingsoon.webp"), "Rendered document includes asset references");
   });
 
+  test("11. Semantic body elements (<header>, <footer>, <main>, etc.) survive sanitizeBodyFragment without breaking document shell ownership", () => {
+    // Exact requirement from user prompt:
+    // stored:
+    // <div><header><h2>Title</h2></header><p>Body</p></div>
+    // rendered:
+    // contains exactly that semantic <header>.
+    const storedFragment = '<div><header><h2>Title</h2></header><p>Body</p></div>';
+    const sanitized = sanitizeBodyFragment(storedFragment);
+    assert.equal(sanitized, storedFragment, "Semantic <header> inside custom HTML survives sanitization exactly");
+
+    // Comprehensive semantic elements test
+    const richFragment = `
+      <!DOCTYPE html>
+      <html lang="tr">
+      <head><title>Drop Title</title></head>
+      <body>
+        <div class="hal-content__grid">
+          <header class="hal-header">
+            <h2>HÂL Title</h2>
+          </header>
+          <main class="hal-main">
+            <section class="hal-section">
+              <article class="hal-article">
+                <nav class="hal-nav"><a href="#offer">Offers</a></nav>
+                <aside class="hal-aside">Sidebar</aside>
+              </article>
+            </section>
+          </main>
+          <footer class="hal-footer">
+            <p>Footer Content</p>
+          </footer>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const cleanRich = sanitizeBodyFragment(richFragment);
+    assert.ok(cleanRich.includes('<header class="hal-header">'), "Semantic <header> preserved");
+    assert.ok(cleanRich.includes('</header>'), "Closing </header> preserved");
+    assert.ok(cleanRich.includes('<main class="hal-main">'), "Semantic <main> preserved");
+    assert.ok(cleanRich.includes('<section class="hal-section">'), "Semantic <section> preserved");
+    assert.ok(cleanRich.includes('<article class="hal-article">'), "Semantic <article> preserved");
+    assert.ok(cleanRich.includes('<nav class="hal-nav">'), "Semantic <nav> preserved");
+    assert.ok(cleanRich.includes('<aside class="hal-aside">'), "Semantic <aside> preserved");
+    assert.ok(cleanRich.includes('<footer class="hal-footer">'), "Semantic <footer> preserved");
+    // Outer shell stripped
+    assert.ok(!cleanRich.includes('<!DOCTYPE'), "DocType stripped");
+    assert.ok(!/<html\b/i.test(cleanRich), "<html> stripped");
+    assert.ok(!/<head\b/i.test(cleanRich), "<head> stripped");
+    assert.ok(!/<\/head>/i.test(cleanRich), "</head> stripped");
+    assert.ok(!/<body\b/i.test(cleanRich), "<body> stripped");
+    assert.ok(!/<\/body>/i.test(cleanRich), "</body> stripped");
+    assert.ok(!cleanRich.includes('<title>'), "<title> stripped");
+
+    // Full renderLanding test
+    const rendered = renderLanding({
+      contextType: "landing",
+      slug: "derin-dinleme",
+      slugData: {
+        id: "version-1789080299436",
+        title: "HÂL | Derin Dinleme",
+        layout: [
+          { type: "custom_html", content: storedFragment }
+        ]
+      },
+      rootDomain: "niluferormanli.com"
+    });
+
+    assert.equal(countOccurrences(rendered, "<!DOCTYPE html>"), 1, "Exactly one <!DOCTYPE html>");
+    assert.equal(countOccurrences(rendered, "<html"), 1, "Exactly one <html opening tag");
+    assert.equal(countOccurrences(rendered, "</html>"), 1, "Exactly one </html> closing tag");
+    assert.equal(countOccurrences(rendered, "<head>"), 1, "Exactly one <head> opening tag");
+    assert.equal(countOccurrences(rendered, "</head>"), 1, "Exactly one </head> closing tag");
+    assert.equal(countOccurrences(rendered, "<body"), 1, "Exactly one <body opening tag");
+    assert.equal(countOccurrences(rendered, "</body>"), 1, "Exactly one </body> closing tag");
+    assert.ok(rendered.includes("<header><h2>Title</h2></header>"), "Rendered output contains exactly the semantic <header>");
+  });
+
 });
