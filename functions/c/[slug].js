@@ -73,8 +73,10 @@ export async function onRequestGet(context) {
     }
 
     if (isPublishedIntentAlias) {
-      const destUrl = new URL(request.url);
-      destUrl.pathname = `/${slug}`;
+      const urlObj = new URL(request.url);
+      const origHost = request.headers.get("x-forwarded-host") || request.headers.get("x-original-host") || urlObj.hostname;
+      const proto = request.headers.get("x-forwarded-proto") || urlObj.protocol.replace(":", "") || "https";
+      const destUrl = new URL(`${proto}://${origHost}/${slug}${urlObj.search}`);
       return Response.redirect(destUrl.toString(), 301);
     }
   }
