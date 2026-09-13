@@ -688,7 +688,7 @@ ${CONSENT_CSS}</style>
               <div id="studio-alias-preview" style="font-size: 0.7rem; font-family: monospace; color: var(--accent); margin-top: 0.1rem; overflow-wrap: anywhere;">No alias set</div>
             </label>
             <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--text-m);">
-              Landing Preview URL
+              <span id="studio-url-label">Landing Preview URL</span>
               <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <input type="text" id="studio-version-url" readonly style="flex: 1; font-family: monospace; opacity: 0.7; cursor: not-allowed; font-size: 0.75rem;" />
                 <button id="btn-studio-copy-url" class="btn-ghost btn-sm" type="button" style="border: 1px solid var(--border);">Copy</button>
@@ -7711,15 +7711,23 @@ window.openNewIntentModal = function(e) {
     var cleanAlias = aliasVal ? normalizeSlug(aliasVal) : "";
     
     var prod = typeof studioCampaignConfig !== "undefined" && studioCampaignConfig ? studioCampaignConfig.product : null;
+    var isThanks = window.studioLayoutMode === "thanks";
+    var thanksSuffix = isThanks ? "/thanks" : "";
 
     var slugPreview = document.getElementById("studio-slug-preview");
     if (slugPreview) {
-      slugPreview.textContent = cleanSlug ? buildLandingCanonicalUrl(cleanSlug, prod) : "No slug set";
+      slugPreview.textContent = cleanSlug ? (buildLandingCanonicalUrl(cleanSlug, prod) + thanksSuffix) : "No slug set";
     }
 
     var aliasPreview = document.getElementById("studio-alias-preview");
     if (aliasPreview) {
-      aliasPreview.textContent = cleanAlias ? buildLandingAliasUrl(cleanAlias, prod) : "No alias set";
+      aliasPreview.textContent = cleanAlias ? (buildLandingAliasUrl(cleanAlias, prod) + thanksSuffix) : "No alias set";
+    }
+
+    // Update the label to reflect which page type is previewed
+    var urlLabel = document.getElementById("studio-url-label");
+    if (urlLabel) {
+      urlLabel.textContent = isThanks ? "Thank You Preview URL" : "Landing Preview URL";
     }
 
     var isMain = studioCampaignConfig.mainLandingId === studioCurrentEditingLanding.id;
@@ -7734,13 +7742,21 @@ window.openNewIntentModal = function(e) {
        if (slugForUrl.startsWith(prefix)) slugForUrl = slugForUrl.substring(prefix.length);
        if (cleanSlug.startsWith(prefix)) cleanSlug = cleanSlug.substring(prefix.length);
     }
-    
-    var previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
+
+    // Thanks route (/l/{slug}/thanks) does not support preview_version; use public URL.
+    // Main landing preview goes through /c/{campaignSlug} which also doesn't need preview_version.
+    var previewUrlPath;
+    if (isThanks) {
+      previewUrlPath = "/l/" + encodeURIComponent(cleanSlug) + "/thanks";
+    } else {
+      previewUrlPath = isMain ? ("/c/" + encodeURIComponent(slugForUrl)) : ("/l/" + encodeURIComponent(cleanSlug) + "?preview_version=" + encodeURIComponent(studioCurrentEditingLanding.id));
+    }
     var urlInput = document.getElementById("studio-version-url");
     if (urlInput) {
       urlInput.value = resolveProductBaseUrl(studioCurrentEditingLanding ? (studioCurrentEditingLanding.product || (typeof studioCampaignConfig !== "undefined" && studioCampaignConfig && studioCampaignConfig.product)) : null) + previewUrlPath;
     }
   }
+
 
   function renderStudioVersionsList() {
     var container = document.getElementById("studio-version-list");
@@ -8019,6 +8035,7 @@ window.openNewIntentModal = function(e) {
       btnThanks.style.border = "1px solid var(--border)";
     }
     renderStudioLayoutManager();
+    updateStudioUrlPreviews();
   };
 
   function renderStudioLayoutManager() {

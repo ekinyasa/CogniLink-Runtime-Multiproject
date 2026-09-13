@@ -765,4 +765,41 @@ describe("Intent Landing Version Authoring Parity Tests", () => {
     assert.ok(html.includes("--site-bg: #0d1117;"), "Dark tokens rendered in dark mode");
     assert.ok(!html.includes("localStorage.setItem('theme'"), "No custom JS theme engine injected");
   });
+  // ──────────────────────────────────────────────────────────────────────────
+  // O. Admin UI: Thank You Page URL previews (slug/alias/preview-url update on tab switch)
+  // ──────────────────────────────────────────────────────────────────────────
+  test("O. Admin UI: Studio Builder panel contains Thank You layout switcher and URL label that updates per mode", () => {
+    const adminHtml = renderAdmin({
+      username: "admin",
+      token: "secret_admin",
+      config: {},
+      landingConfig: {},
+      campaigns: []
+    });
+
+    // Layout mode toggle buttons
+    assert.ok(adminHtml.includes('id="btn-studio-layout-main"'), "Landing Page tab button present");
+    assert.ok(adminHtml.includes('id="btn-studio-layout-thanks"'), "Thank You Page tab button present");
+    assert.ok(adminHtml.includes("setStudioLayoutMode('thanks')"), "Thank You button calls setStudioLayoutMode('thanks')");
+    assert.ok(adminHtml.includes("setStudioLayoutMode('main')"), "Landing button calls setStudioLayoutMode('main')");
+
+    // URL label must have an id so JS can update it from "Landing Preview URL" to "Thank You Preview URL"
+    assert.ok(adminHtml.includes('id="studio-url-label"'), "studio-url-label span present for dynamic label updates");
+
+    // Preview URL input (updated by updateStudioUrlPreviews on mode switch)
+    assert.ok(adminHtml.includes('id="studio-version-url"'), "studio-version-url input present");
+
+    // Slug and alias preview text nodes (updated with /thanks suffix in thanks mode)
+    assert.ok(adminHtml.includes('id="studio-slug-preview"'), "studio-slug-preview present");
+    assert.ok(adminHtml.includes('id="studio-alias-preview"'), "studio-alias-preview present");
+
+    // updateStudioUrlPreviews must be called inside setStudioLayoutMode
+    // Verify both references appear in the emitted script
+    assert.ok(adminHtml.includes("updateStudioUrlPreviews"), "updateStudioUrlPreviews function referenced in admin output");
+    const setModeIdx = adminHtml.indexOf("window.setStudioLayoutMode");
+    assert.ok(setModeIdx !== -1, "setStudioLayoutMode defined in admin output");
+    // The call to updateStudioUrlPreviews must appear after setStudioLayoutMode's opening
+    const updateIdx = adminHtml.indexOf("updateStudioUrlPreviews", setModeIdx);
+    assert.ok(updateIdx !== -1, "updateStudioUrlPreviews called within or after setStudioLayoutMode definition");
+  });
 });
