@@ -7,7 +7,7 @@
  */
 
 import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
-import { DEFAULT_CONSENT_CONFIG, resolveConsentConfig } from "../../_shared/hub-renderer.js";
+import { DEFAULT_CONSENT_CONFIG, DEFAULT_TR_CONSENT_CONTENT, resolveConsentConfig } from "../../_shared/hub-renderer.js";
 
 const CONFIG_KEY = "hub_config";
 const APP_CONSENT_KEY = "site:consent";
@@ -21,6 +21,29 @@ function sanitizeString(val, fallback, maxLen = 1000) {
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .replace(/\bon\w+\s*=/gi, "");
   return clean.slice(0, maxLen);
+}
+
+function sanitizeContentBlock(input = {}, defaults = {}) {
+  return {
+    bannerTitle: sanitizeString(input.bannerTitle, defaults.bannerTitle, 200),
+    bannerBody: sanitizeString(input.bannerBody, defaults.bannerBody, 2000),
+    btnAcceptAll: sanitizeString(input.btnAcceptAll, defaults.btnAcceptAll, 100),
+    btnRejectNonEssential: sanitizeString(input.btnRejectNonEssential, defaults.btnRejectNonEssential, 100),
+    btnManagePreferences: sanitizeString(input.btnManagePreferences, defaults.btnManagePreferences, 100),
+    modalTitle: sanitizeString(input.modalTitle, defaults.modalTitle, 200),
+    modalDescription: sanitizeString(input.modalDescription, defaults.modalDescription, 2000),
+    necessaryTitle: sanitizeString(input.necessaryTitle, defaults.necessaryTitle, 150),
+    necessaryDescription: sanitizeString(input.necessaryDescription, defaults.necessaryDescription, 1000),
+    necessaryBadge: sanitizeString(input.necessaryBadge, defaults.necessaryBadge, 80),
+    analyticsTitle: sanitizeString(input.analyticsTitle, defaults.analyticsTitle, 150),
+    analyticsDescription: sanitizeString(input.analyticsDescription, defaults.analyticsDescription, 1000),
+    marketingTitle: sanitizeString(input.marketingTitle, defaults.marketingTitle, 150),
+    marketingDescription: sanitizeString(input.marketingDescription, defaults.marketingDescription, 1000),
+    btnSavePreferences: sanitizeString(input.btnSavePreferences, defaults.btnSavePreferences, 100),
+    privacyPolicyLabel: sanitizeString(input.privacyPolicyLabel, defaults.privacyPolicyLabel, 100),
+    privacyPolicyUrl: sanitizeString(input.privacyPolicyUrl, defaults.privacyPolicyUrl, 500),
+    fallbackTriggerLabel: sanitizeString(input.fallbackTriggerLabel, defaults.fallbackTriggerLabel, 100)
+  };
 }
 
 function sanitizeColorOrStyle(val, fallback, maxLen = 150) {
@@ -97,7 +120,11 @@ export async function onRequestGet(context) {
     JSON.stringify({
       ok: true,
       consent: resolved,
-      defaults: DEFAULT_CONSENT_CONFIG
+      raw: storedConsent || {},
+      tr: storedConsent?.tr || DEFAULT_TR_CONSENT_CONTENT,
+      en: storedConsent?.en || storedConsent?.content || DEFAULT_CONSENT_CONFIG.content,
+      defaults: DEFAULT_CONSENT_CONFIG,
+      trDefaults: DEFAULT_TR_CONSENT_CONTENT
     }),
     { status: 200, headers: jsonHeaders() }
   );
@@ -126,33 +153,20 @@ async function handleSave(context) {
   }
 
   const inputContent = body?.content || {};
+  const inputEN = body?.en || inputContent;
+  const inputTR = body?.tr || {};
   const inputVisual = body?.visual || {};
+
   const dC = DEFAULT_CONSENT_CONFIG.content;
+  const dTR = DEFAULT_TR_CONSENT_CONTENT;
   const dV = DEFAULT_CONSENT_CONFIG.visual;
 
   // Strict whitelist sanitization: ONLY presentation and content tokens allowed.
   // Security/engine fields (categories, gating, IDs, cookie name/TTL) cannot be modified.
   const sanitized = {
-    content: {
-      bannerTitle: sanitizeString(inputContent.bannerTitle, dC.bannerTitle, 200),
-      bannerBody: sanitizeString(inputContent.bannerBody, dC.bannerBody, 2000),
-      btnAcceptAll: sanitizeString(inputContent.btnAcceptAll, dC.btnAcceptAll, 100),
-      btnRejectNonEssential: sanitizeString(inputContent.btnRejectNonEssential, dC.btnRejectNonEssential, 100),
-      btnManagePreferences: sanitizeString(inputContent.btnManagePreferences, dC.btnManagePreferences, 100),
-      modalTitle: sanitizeString(inputContent.modalTitle, dC.modalTitle, 200),
-      modalDescription: sanitizeString(inputContent.modalDescription, dC.modalDescription, 2000),
-      necessaryTitle: sanitizeString(inputContent.necessaryTitle, dC.necessaryTitle, 150),
-      necessaryDescription: sanitizeString(inputContent.necessaryDescription, dC.necessaryDescription, 1000),
-      necessaryBadge: sanitizeString(inputContent.necessaryBadge, dC.necessaryBadge, 80),
-      analyticsTitle: sanitizeString(inputContent.analyticsTitle, dC.analyticsTitle, 150),
-      analyticsDescription: sanitizeString(inputContent.analyticsDescription, dC.analyticsDescription, 1000),
-      marketingTitle: sanitizeString(inputContent.marketingTitle, dC.marketingTitle, 150),
-      marketingDescription: sanitizeString(inputContent.marketingDescription, dC.marketingDescription, 1000),
-      btnSavePreferences: sanitizeString(inputContent.btnSavePreferences, dC.btnSavePreferences, 100),
-      privacyPolicyLabel: sanitizeString(inputContent.privacyPolicyLabel, dC.privacyPolicyLabel, 100),
-      privacyPolicyUrl: sanitizeString(inputContent.privacyPolicyUrl, dC.privacyPolicyUrl, 500),
-      fallbackTriggerLabel: sanitizeString(inputContent.fallbackTriggerLabel, dC.fallbackTriggerLabel, 100)
-    },
+    content: sanitizeContentBlock(inputContent, dC),
+    en: sanitizeContentBlock(inputEN, dC),
+    tr: sanitizeContentBlock(inputTR, dTR),
     visual: {
       bannerBg: sanitizeColorOrStyle(inputVisual.bannerBg, dV.bannerBg),
       textColor: sanitizeColorOrStyle(inputVisual.textColor, dV.textColor),

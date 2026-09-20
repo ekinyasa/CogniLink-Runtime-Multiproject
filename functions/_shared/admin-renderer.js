@@ -1549,93 +1549,194 @@ ${CONSENT_CSS}</style>
     </div>
 
     <!-- Subpane: Content -->
-    <div id="subpane-consent-content" class="landings-grid" style="margin:0 1.25rem 1.5rem 1.25rem;">
-      <!-- Card A: Banner Copy -->
-      <div class="card">
-        <p class="card-title">Notice Banner Copy</p>
-        <p class="hint">The initial consent notice presented to new visitors.</p>
+    <div id="subpane-consent-content" style="margin:0 1.25rem 1.5rem 1.25rem;">
+      <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;background:var(--bg);padding:4px;border-radius:6px;border:1px solid var(--border);width:fit-content;">
+        <button type="button" id="consent-lang-btn-en" class="btn-primary btn-sm" onclick="setConsentLangSubtab('en')" style="border:none;">English</button>
+        <button type="button" id="consent-lang-btn-tr" class="btn-ghost btn-sm" onclick="setConsentLangSubtab('tr')" style="border:none;">Türkçe</button>
+      </div>
 
-        <label for="consent-banner-title">Banner Title</label>
-        <input id="consent-banner-title" type="text" placeholder="Cookie Preferences" />
+      <!-- Subpane: English Copy -->
+      <div id="subpane-consent-lang-en" class="landings-grid">
+        <!-- Card A: Banner Copy (English) -->
+        <div class="card">
+          <p class="card-title">Notice Banner Copy (English)</p>
+          <p class="hint">The initial consent notice presented to visitors on English pages.</p>
 
-        <label for="consent-banner-body">Banner Body Message</label>
-        <textarea id="consent-banner-body" rows="4" placeholder="We use necessary cookies to ensure our site works properly..."></textarea>
+          <label for="consent-banner-title">Banner Title</label>
+          <input id="consent-banner-title" type="text" placeholder="Cookie Preferences" />
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-          <div>
-            <label for="consent-privacy-label">Privacy Policy Link Text</label>
-            <input id="consent-privacy-label" type="text" placeholder="Privacy Policy" />
+          <label for="consent-banner-body">Banner Body Message</label>
+          <textarea id="consent-banner-body" rows="4" placeholder="We use necessary cookies to ensure our site works properly..."></textarea>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div>
+              <label for="consent-privacy-label">Privacy Policy Link Text</label>
+              <input id="consent-privacy-label" type="text" placeholder="Privacy Policy" />
+            </div>
+            <div>
+              <label for="consent-privacy-url">Privacy Policy Target URL</label>
+              <input id="consent-privacy-url" type="text" placeholder="https://app.kartra.com/..." />
+            </div>
           </div>
-          <div>
-            <label for="consent-privacy-url">Privacy Policy Target URL</label>
-            <input id="consent-privacy-url" type="text" placeholder="https://app.kartra.com/..." />
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+            <div>
+              <label for="consent-btn-accept">Accept All Button</label>
+              <input id="consent-btn-accept" type="text" placeholder="Accept all" />
+            </div>
+            <div>
+              <label for="consent-btn-reject">Reject Button</label>
+              <input id="consent-btn-reject" type="text" placeholder="Reject non-essential" />
+            </div>
+            <div>
+              <label for="consent-btn-manage">Manage Button</label>
+              <input id="consent-btn-manage" type="text" placeholder="Manage preferences" />
+            </div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
-          <div>
-            <label for="consent-btn-accept">Accept All Button</label>
-            <input id="consent-btn-accept" type="text" placeholder="Accept all" />
+        <!-- Card B: Modal Copy (English) -->
+        <div class="card">
+          <p class="card-title">Preferences Modal Copy (English)</p>
+          <p class="hint">Granular consent toggles and explanatory text for English pages.</p>
+
+          <label for="consent-modal-title">Modal Title</label>
+          <input id="consent-modal-title" type="text" placeholder="Cookie Preferences" />
+
+          <label for="consent-modal-desc">Modal Intro Description</label>
+          <textarea id="consent-modal-desc" rows="2" placeholder="When you visit our website..."></textarea>
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;">
+              <div>
+                <label for="consent-nec-title">Necessary Category Title</label>
+                <input id="consent-nec-title" type="text" placeholder="Necessary" />
+              </div>
+              <div>
+                <label for="consent-nec-badge">Badge Text</label>
+                <input id="consent-nec-badge" type="text" placeholder="Always Active" />
+              </div>
+            </div>
+            <label for="consent-nec-desc" style="margin-top:0.35rem;">Necessary Category Description</label>
+            <input id="consent-nec-desc" type="text" placeholder="Required for basic site functionality..." />
           </div>
-          <div>
-            <label for="consent-btn-reject">Reject Button</label>
-            <input id="consent-btn-reject" type="text" placeholder="Reject non-essential" />
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+            <label for="consent-ana-title">Analytics Category Title</label>
+            <input id="consent-ana-title" type="text" placeholder="Analytics" />
+            <label for="consent-ana-desc" style="margin-top:0.35rem;">Analytics Category Description</label>
+            <input id="consent-ana-desc" type="text" placeholder="Helps us understand how visitors interact..." />
           </div>
-          <div>
-            <label for="consent-btn-manage">Manage Button</label>
-            <input id="consent-btn-manage" type="text" placeholder="Manage preferences" />
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+            <label for="consent-mkt-title">Marketing Category Title</label>
+            <input id="consent-mkt-title" type="text" placeholder="Marketing" />
+            <label for="consent-mkt-desc" style="margin-top:0.35rem;">Marketing Category Description</label>
+            <input id="consent-mkt-desc" type="text" placeholder="Used to deliver tailored content..." />
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div>
+              <label for="consent-btn-save">Save Button Text</label>
+              <input id="consent-btn-save" type="text" placeholder="Save preferences" />
+            </div>
+            <div>
+              <label for="consent-fallback-label">Fallback Trigger Label</label>
+              <input id="consent-fallback-label" type="text" placeholder="Cookie Preferences" />
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Card B: Modal Copy -->
-      <div class="card">
-        <p class="card-title">Preferences Modal Copy</p>
-        <p class="hint">Granular consent toggles and explanatory text.</p>
+      <!-- Subpane: Türkçe Copy -->
+      <div id="subpane-consent-lang-tr" class="landings-grid hidden">
+        <!-- Card A: Banner Copy (Türkçe) -->
+        <div class="card">
+          <p class="card-title">Notice Banner Copy (Türkçe)</p>
+          <p class="hint">Türkçe sayfaları (Language = tr) ziyaret eden kullanıcılara gösterilecek çerez bildirimi metinleri.</p>
 
-        <label for="consent-modal-title">Modal Title</label>
-        <input id="consent-modal-title" type="text" placeholder="Cookie Preferences" />
+          <label for="consent-tr-banner-title">Banner Title</label>
+          <input id="consent-tr-banner-title" type="text" placeholder="Çerez Tercihleri" />
 
-        <label for="consent-modal-desc">Modal Intro Description</label>
-        <textarea id="consent-modal-desc" rows="2" placeholder="When you visit our website..."></textarea>
+          <label for="consent-tr-banner-body">Banner Body Message</label>
+          <textarea id="consent-tr-banner-body" rows="4" placeholder="Sitemizin doğru çalışması için gerekli çerezleri kullanıyoruz..."></textarea>
 
-        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
-          <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
             <div>
-              <label for="consent-nec-title">Necessary Category Title</label>
-              <input id="consent-nec-title" type="text" placeholder="Necessary" />
+              <label for="consent-tr-privacy-label">Privacy Policy Link Text</label>
+              <input id="consent-tr-privacy-label" type="text" placeholder="Gizlilik Politikası" />
             </div>
             <div>
-              <label for="consent-nec-badge">Badge Text</label>
-              <input id="consent-nec-badge" type="text" placeholder="Always Active" />
+              <label for="consent-tr-privacy-url">Privacy Policy Target URL</label>
+              <input id="consent-tr-privacy-url" type="text" placeholder="https://app.kartra.com/..." />
             </div>
           </div>
-          <label for="consent-nec-desc" style="margin-top:0.35rem;">Necessary Category Description</label>
-          <input id="consent-nec-desc" type="text" placeholder="Required for basic site functionality..." />
-        </div>
 
-        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
-          <label for="consent-ana-title">Analytics Category Title</label>
-          <input id="consent-ana-title" type="text" placeholder="Analytics" />
-          <label for="consent-ana-desc" style="margin-top:0.35rem;">Analytics Category Description</label>
-          <input id="consent-ana-desc" type="text" placeholder="Helps us understand how visitors interact..." />
-        </div>
-
-        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
-          <label for="consent-mkt-title">Marketing Category Title</label>
-          <input id="consent-mkt-title" type="text" placeholder="Marketing" />
-          <label for="consent-mkt-desc" style="margin-top:0.35rem;">Marketing Category Description</label>
-          <input id="consent-mkt-desc" type="text" placeholder="Used to deliver tailored content..." />
-        </div>
-
-        <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-          <div>
-            <label for="consent-btn-save">Save Button Text</label>
-            <input id="consent-btn-save" type="text" placeholder="Save preferences" />
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem;">
+            <div>
+              <label for="consent-tr-btn-accept">Accept All Button</label>
+              <input id="consent-tr-btn-accept" type="text" placeholder="Tümünü kabul et" />
+            </div>
+            <div>
+              <label for="consent-tr-btn-reject">Reject Button</label>
+              <input id="consent-tr-btn-reject" type="text" placeholder="Gerekli olmayanları reddet" />
+            </div>
+            <div>
+              <label for="consent-tr-btn-manage">Manage Button</label>
+              <input id="consent-tr-btn-manage" type="text" placeholder="Tercihleri yönet" />
+            </div>
           </div>
-          <div>
-            <label for="consent-fallback-label">Fallback Trigger Label</label>
-            <input id="consent-fallback-label" type="text" placeholder="Cookie Preferences" />
+        </div>
+
+        <!-- Card B: Modal Copy (Türkçe) -->
+        <div class="card">
+          <p class="card-title">Preferences Modal Copy (Türkçe)</p>
+          <p class="hint">Türkçe sayfalarda çerez tercihleri penceresindeki seçenekler ve açıklamalar.</p>
+
+          <label for="consent-tr-modal-title">Modal Title</label>
+          <input id="consent-tr-modal-title" type="text" placeholder="Çerez Tercihleri" />
+
+          <label for="consent-tr-modal-desc">Modal Intro Description</label>
+          <textarea id="consent-tr-modal-desc" rows="2" placeholder="Web sitemizi ziyaret ettiğinizde cihazınızda çerezler saklanabilir..."></textarea>
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;">
+              <div>
+                <label for="consent-tr-nec-title">Necessary Category Title</label>
+                <input id="consent-tr-nec-title" type="text" placeholder="Zorunlu Çerezler" />
+              </div>
+              <div>
+                <label for="consent-tr-nec-badge">Badge Text</label>
+                <input id="consent-tr-nec-badge" type="text" placeholder="Her Zaman Etkin" />
+              </div>
+            </div>
+            <label for="consent-tr-nec-desc" style="margin-top:0.35rem;">Necessary Category Description</label>
+            <input id="consent-tr-nec-desc" type="text" placeholder="Temel site işlevselliği, güvenlik ve oturum yönlendirmesi için gereklidir..." />
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+            <label for="consent-tr-ana-title">Analytics Category Title</label>
+            <input id="consent-tr-ana-title" type="text" placeholder="Analitik Çerezler" />
+            <label for="consent-tr-ana-desc" style="margin-top:0.35rem;">Analytics Category Description</label>
+            <input id="consent-tr-ana-desc" type="text" placeholder="Performansı ve kullanıcı deneyimini geliştirmek amacıyla..." />
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;">
+            <label for="consent-tr-mkt-title">Marketing Category Title</label>
+            <input id="consent-tr-mkt-title" type="text" placeholder="Pazarlama Çerezleri" />
+            <label for="consent-tr-mkt-desc" style="margin-top:0.35rem;">Marketing Category Description</label>
+            <input id="consent-tr-mkt-desc" type="text" placeholder="Kişiselleştirilmiş içerik sunmak ve tanıtım kampanyalarının etkinliğini ölçmek..." />
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.75rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div>
+              <label for="consent-tr-btn-save">Save Button Text</label>
+              <input id="consent-tr-btn-save" type="text" placeholder="Tercihleri kaydet" />
+            </div>
+            <div>
+              <label for="consent-tr-fallback-label">Fallback Trigger Label</label>
+              <input id="consent-tr-fallback-label" type="text" placeholder="Çerez Tercihleri" />
+            </div>
           </div>
         </div>
       </div>
@@ -5344,6 +5445,25 @@ window.openNewIntentModal = function(e) {
     updateConsentPreview();
   };
 
+  window.setConsentLangSubtab = function(lang) {
+    var btnEN = $("consent-lang-btn-en");
+    var btnTR = $("consent-lang-btn-tr");
+    var paneEN = $("subpane-consent-lang-en");
+    var paneTR = $("subpane-consent-lang-tr");
+
+    if (lang === "tr") {
+      if (btnEN) { btnEN.className = "btn-ghost btn-sm"; btnEN.style.border = "none"; }
+      if (btnTR) { btnTR.className = "btn-primary btn-sm"; btnTR.style.border = "none"; }
+      if (paneEN) paneEN.classList.add("hidden");
+      if (paneTR) paneTR.classList.remove("hidden");
+    } else {
+      if (btnEN) { btnEN.className = "btn-primary btn-sm"; btnEN.style.border = "none"; }
+      if (btnTR) { btnTR.className = "btn-ghost btn-sm"; btnTR.style.border = "none"; }
+      if (paneEN) paneEN.classList.remove("hidden");
+      if (paneTR) paneTR.classList.add("hidden");
+    }
+  };
+
   function getConsentInputValue(id, fallback) {
     var el = $(id);
     if (!el) return fallback || "";
@@ -5358,10 +5478,11 @@ window.openNewIntentModal = function(e) {
 
   function populateConsentForm(data) {
     if (!data) return;
-    var c = data.content || {};
+    var c = data.en || data.content || (data.defaults ? data.defaults.content : {});
+    var tr = data.tr || (data.raw ? data.raw.tr : null) || data.trDefaults || {};
     var v = data.visual || {};
 
-    // Content fields
+    // English Content fields
     setConsentInputValue("consent-banner-title", c.bannerTitle);
     setConsentInputValue("consent-banner-body", c.bannerBody);
     setConsentInputValue("consent-privacy-label", c.privacyPolicyLabel);
@@ -5380,6 +5501,26 @@ window.openNewIntentModal = function(e) {
     setConsentInputValue("consent-mkt-desc", c.marketingDescription);
     setConsentInputValue("consent-btn-save", c.btnSavePreferences);
     setConsentInputValue("consent-fallback-label", c.fallbackTriggerLabel);
+
+    // Turkish Content fields
+    setConsentInputValue("consent-tr-banner-title", tr.bannerTitle);
+    setConsentInputValue("consent-tr-banner-body", tr.bannerBody);
+    setConsentInputValue("consent-tr-privacy-label", tr.privacyPolicyLabel);
+    setConsentInputValue("consent-tr-privacy-url", tr.privacyPolicyUrl || c.privacyPolicyUrl);
+    setConsentInputValue("consent-tr-btn-accept", tr.btnAcceptAll);
+    setConsentInputValue("consent-tr-btn-reject", tr.btnRejectNonEssential);
+    setConsentInputValue("consent-tr-btn-manage", tr.btnManagePreferences);
+    setConsentInputValue("consent-tr-modal-title", tr.modalTitle);
+    setConsentInputValue("consent-tr-modal-desc", tr.modalDescription);
+    setConsentInputValue("consent-tr-nec-title", tr.necessaryTitle);
+    setConsentInputValue("consent-tr-nec-badge", tr.necessaryBadge);
+    setConsentInputValue("consent-tr-nec-desc", tr.necessaryDescription);
+    setConsentInputValue("consent-tr-ana-title", tr.analyticsTitle);
+    setConsentInputValue("consent-tr-ana-desc", tr.analyticsDescription);
+    setConsentInputValue("consent-tr-mkt-title", tr.marketingTitle);
+    setConsentInputValue("consent-tr-mkt-desc", tr.marketingDescription);
+    setConsentInputValue("consent-tr-btn-save", tr.btnSavePreferences);
+    setConsentInputValue("consent-tr-fallback-label", tr.fallbackTriggerLabel);
 
     // Visual fields
     setConsentInputValue("consent-vis-bannerBg", v.bannerBg);
@@ -5436,27 +5577,52 @@ window.openNewIntentModal = function(e) {
   }
 
   function collectConsentFormData() {
+    var enContent = {
+      bannerTitle: getConsentInputValue("consent-banner-title"),
+      bannerBody: getConsentInputValue("consent-banner-body"),
+      privacyPolicyLabel: getConsentInputValue("consent-privacy-label"),
+      privacyPolicyUrl: getConsentInputValue("consent-privacy-url"),
+      btnAcceptAll: getConsentInputValue("consent-btn-accept"),
+      btnRejectNonEssential: getConsentInputValue("consent-btn-reject"),
+      btnManagePreferences: getConsentInputValue("consent-btn-manage"),
+      modalTitle: getConsentInputValue("consent-modal-title"),
+      modalDescription: getConsentInputValue("consent-modal-desc"),
+      necessaryTitle: getConsentInputValue("consent-nec-title"),
+      necessaryBadge: getConsentInputValue("consent-nec-badge"),
+      necessaryDescription: getConsentInputValue("consent-nec-desc"),
+      analyticsTitle: getConsentInputValue("consent-ana-title"),
+      analyticsDescription: getConsentInputValue("consent-ana-desc"),
+      marketingTitle: getConsentInputValue("consent-mkt-title"),
+      marketingDescription: getConsentInputValue("consent-mkt-desc"),
+      btnSavePreferences: getConsentInputValue("consent-btn-save"),
+      fallbackTriggerLabel: getConsentInputValue("consent-fallback-label")
+    };
+
+    var trContent = {
+      bannerTitle: getConsentInputValue("consent-tr-banner-title"),
+      bannerBody: getConsentInputValue("consent-tr-banner-body"),
+      privacyPolicyLabel: getConsentInputValue("consent-tr-privacy-label"),
+      privacyPolicyUrl: getConsentInputValue("consent-tr-privacy-url"),
+      btnAcceptAll: getConsentInputValue("consent-tr-btn-accept"),
+      btnRejectNonEssential: getConsentInputValue("consent-tr-btn-reject"),
+      btnManagePreferences: getConsentInputValue("consent-tr-btn-manage"),
+      modalTitle: getConsentInputValue("consent-tr-modal-title"),
+      modalDescription: getConsentInputValue("consent-tr-modal-desc"),
+      necessaryTitle: getConsentInputValue("consent-tr-nec-title"),
+      necessaryBadge: getConsentInputValue("consent-tr-nec-badge"),
+      necessaryDescription: getConsentInputValue("consent-tr-nec-desc"),
+      analyticsTitle: getConsentInputValue("consent-tr-ana-title"),
+      analyticsDescription: getConsentInputValue("consent-tr-ana-desc"),
+      marketingTitle: getConsentInputValue("consent-tr-mkt-title"),
+      marketingDescription: getConsentInputValue("consent-tr-mkt-desc"),
+      btnSavePreferences: getConsentInputValue("consent-tr-btn-save"),
+      fallbackTriggerLabel: getConsentInputValue("consent-tr-fallback-label")
+    };
+
     return {
-      content: {
-        bannerTitle: getConsentInputValue("consent-banner-title"),
-        bannerBody: getConsentInputValue("consent-banner-body"),
-        privacyPolicyLabel: getConsentInputValue("consent-privacy-label"),
-        privacyPolicyUrl: getConsentInputValue("consent-privacy-url"),
-        btnAcceptAll: getConsentInputValue("consent-btn-accept"),
-        btnRejectNonEssential: getConsentInputValue("consent-btn-reject"),
-        btnManagePreferences: getConsentInputValue("consent-btn-manage"),
-        modalTitle: getConsentInputValue("consent-modal-title"),
-        modalDescription: getConsentInputValue("consent-modal-desc"),
-        necessaryTitle: getConsentInputValue("consent-nec-title"),
-        necessaryBadge: getConsentInputValue("consent-nec-badge"),
-        necessaryDescription: getConsentInputValue("consent-nec-desc"),
-        analyticsTitle: getConsentInputValue("consent-ana-title"),
-        analyticsDescription: getConsentInputValue("consent-ana-desc"),
-        marketingTitle: getConsentInputValue("consent-mkt-title"),
-        marketingDescription: getConsentInputValue("consent-mkt-desc"),
-        btnSavePreferences: getConsentInputValue("consent-btn-save"),
-        fallbackTriggerLabel: getConsentInputValue("consent-fallback-label")
-      },
+      content: enContent,
+      en: enContent,
+      tr: trContent,
       visual: {
         bannerBg: getConsentInputValue("consent-vis-bannerBg"),
         borderColor: getConsentInputValue("consent-vis-borderColor"),

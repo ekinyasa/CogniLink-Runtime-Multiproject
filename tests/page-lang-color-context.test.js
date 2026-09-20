@@ -302,4 +302,96 @@ test("Page Language-Aware Shared UI & Page Color Context Test Suite", async (t) 
     assert.match(genericHtml, /--page-surface:\s*#123456;/);
   });
 
+  await t.test("21. Admin API POST and GET round-trip preserves custom Turkish and English consent copy", async () => {
+    const { onRequestGet: getConsent, onRequestPost: postConsent } = await import("../functions/api/admin/consent.js");
+
+    class MockKV {
+      constructor() { this.store = new Map(); }
+      async get(key, opts) {
+        const v = this.store.get(key);
+        if (!v) return null;
+        return opts?.type === "json" ? JSON.parse(v) : v;
+      }
+      async put(key, val) { this.store.set(key, val); }
+    }
+
+    const mockKv = new MockKV();
+    const env = { APP_CONFIG: mockKv, ADMIN_TOKEN: "test-token" };
+
+    const payload = {
+      en: {
+        bannerTitle: "Custom EN Banner",
+        btnAcceptAll: "Allow All"
+      },
+      tr: {
+        bannerTitle: "Özel TR Çerez Bildirimi",
+        btnAcceptAll: "Hepsini Kabul Et",
+        modalTitle: "Özel TR Tercih Modalı"
+      },
+      visual: { bannerBg: "#111111" }
+    };
+
+    const postReq = new Request("https://example.com/api/admin/consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer test-token" },
+      body: JSON.stringify(payload)
+    });
+
+    const postRes = await postConsent({ request: postReq, env });
+    assert.equal(postRes.status, 200);
+
+    const postData = await postRes.json();
+    assert.equal(postData.ok, true);
+    assert.equal(postData.consent.tr.bannerTitle, "Özel TR Çerez Bildirimi");
+    assert.equal(postData.consent.tr.btnAcceptAll, "Hepsini Kabul Et");
+
+    const getReq = new Request("https://example.com/api/admin/consent", {
+      headers: { "Authorization": "Bearer test-token" }
+    });
+
+    const getRes = await getConsent({ request: getReq, env });
+    assert.equal(getRes.status, 200);
+
+    const getData = await getRes.json();
+    assert.equal(getData.tr.bannerTitle, "Özel TR Çerez Bildirimi");
+    assert.equal(getData.tr.btnAcceptAll, "Hepsini Kabul Et");
+    assert.equal(getData.tr.modalTitle, "Özel TR Tercih Modalı");
+  });
+
+  await t.test("22. Custom saved Turkish copy is rendered when page language is tr", () => {
+    const rawConsentConfig = {
+      content: { bannerTitle: "Global Banner" },
+      en: { bannerTitle: "English Banner" },
+      tr: {
+        bannerTitle: "Özel Türkçe Çerez Bildirimi",
+        btnAcceptAll: "Tümünü Onayla"
+      }
+    };
+
+    const htmlTR = renderHub({
+      slug: "tr-custom-copy-page",
+      config: { consent: rawConsentConfig },
+      slugData: {
+        title: "TR Page",
+        head: { language: "tr-TR" }
+      }
+    });
+
+    assert.match(htmlTR, /Özel Türkçe Çerez Bildirimi/);
+    assert.match(htmlTR, /Tümünü Onayla/);
+    assert.doesNotMatch(htmlTR, /Global Banner/);
+
+    const htmlEN = renderHub({
+      slug: "en-custom-copy-page",
+      config: { consent: rawConsentConfig },
+      slugData: {
+        title: "EN Page",
+        head: { language: "en-US" }
+      }
+    });
+
+    assert.match(htmlEN, /English Banner/);
+    assert.doesNotMatch(htmlEN, /Özel Türkçe Çerez Bildirimi/);
+  });
+
 });
