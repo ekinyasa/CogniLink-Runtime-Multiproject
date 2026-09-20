@@ -12,26 +12,29 @@ export async function onRequestGet(context) {
   if (!(await verifyToken(request, env))) return unauthorized();
 
   let homepagePageId = "";
+  let notFoundPageId = "";
 
   if (env.APP_CONFIG) {
     try {
       const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
-      if (routing && routing.homepagePageId) {
-        homepagePageId = routing.homepagePageId;
+      if (routing) {
+        if (routing.homepagePageId) homepagePageId = routing.homepagePageId;
+        if (routing.notFoundPageId) notFoundPageId = routing.notFoundPageId;
       }
     } catch (_) {}
   }
 
-  if (!homepagePageId && env.LANDING_CONFIG) {
+  if ((!homepagePageId || !notFoundPageId) && env.LANDING_CONFIG) {
     try {
       const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
-      if (cfg && cfg.homepageStaticPageId) {
-        homepagePageId = cfg.homepageStaticPageId;
+      if (cfg) {
+        if (!homepagePageId && cfg.homepageStaticPageId) homepagePageId = cfg.homepageStaticPageId;
+        if (!notFoundPageId && cfg.notFoundStaticPageId) notFoundPageId = cfg.notFoundStaticPageId;
       }
     } catch (_) {}
   }
 
-  return new Response(JSON.stringify({ homepagePageId }), {
+  return new Response(JSON.stringify({ homepagePageId, notFoundPageId }), {
     status: 200,
     headers: jsonHeaders(),
   });
@@ -43,19 +46,27 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const homepagePageId = (body.homepagePageId || "").trim();
+    const homepagePageId = body.homepagePageId !== undefined ? (body.homepagePageId || "").trim() : "";
+    const notFoundPageId = body.notFoundPageId !== undefined ? (body.notFoundPageId || "").trim() : "";
 
     if (env.APP_CONFIG) {
-      await env.APP_CONFIG.put("site:routing", JSON.stringify({ homepagePageId }));
+      let routing = {};
+      try {
+        routing = (await env.APP_CONFIG.get("site:routing", { type: "json" })) || {};
+      } catch (_) {}
+      routing.homepagePageId = homepagePageId;
+      routing.notFoundPageId = notFoundPageId;
+      await env.APP_CONFIG.put("site:routing", JSON.stringify(routing));
     }
 
     if (env.LANDING_CONFIG) {
       const cfg = (await env.LANDING_CONFIG.get("hub_config", { type: "json" })) || {};
       cfg.homepageStaticPageId = homepagePageId;
+      cfg.notFoundStaticPageId = notFoundPageId;
       await env.LANDING_CONFIG.put("hub_config", JSON.stringify(cfg));
     }
 
-    return new Response(JSON.stringify({ success: true, homepagePageId }), {
+    return new Response(JSON.stringify({ success: true, homepagePageId, notFoundPageId }), {
       status: 200,
       headers: jsonHeaders(),
     });

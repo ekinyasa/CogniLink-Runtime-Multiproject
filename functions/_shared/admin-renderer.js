@@ -1167,6 +1167,14 @@ ${CONSENT_CSS}</style>
           <option value="">-- No static page assigned (fallback to /home) --</option>
         </select>
         <p class="hint" style="margin-top:0.35rem;">Visitors to canonical root <code>/</code> will see the selected Published Static Page.</p>
+
+        <div style="margin-top: 1rem;">
+          <label for="cfg-404-page-id">404 Page <span class="hint-inline">(rendered on unknown routes)</span></label>
+          <select id="cfg-404-page-id" style="width: 100%; margin-top: 0.25rem;">
+            <option value="">-- No static page assigned (default 404 response) --</option>
+          </select>
+          <p class="hint" style="margin-top:0.35rem;">Unresolved public routes will render the selected Published Static Page with HTTP 404 status.</p>
+        </div>
       </div>
 
       <!-- Card B: General Settings -->
@@ -5130,22 +5138,42 @@ window.openNewIntentModal = function(e) {
       $("cfg-custom-js").value   = cfg.customScript || "";
       $("cfg-turnstile-site-key").value = cfg.turnstileSiteKey || "";
 
-      // Populate homepage static pages dropdown
+      // Populate site routing dropdowns (homepage & 404 page)
       try {
         var spRes = await apiFetch("/api/admin/static-pages");
         var spData = await spRes.json();
+        var routingRes = await apiFetch("/api/admin/site-routing");
+        var routingData = routingRes && routingRes.ok ? await routingRes.json() : {};
+
+        var currentHpVal = routingData.homepagePageId || cfg.homepageStaticPageId || "";
+        var current404Val = routingData.notFoundPageId || cfg.notFoundStaticPageId || "";
+        activeHomepageStaticPageId = currentHpVal;
+        activeNotFoundStaticPageId = current404Val;
+
         var spSelect = $("cfg-homepage-page-id");
         if (spSelect) {
-          var currentVal = cfg.homepageStaticPageId || "";
-          activeHomepageStaticPageId = currentVal;
           spSelect.innerHTML = '<option value="">-- No static page assigned (fallback to /home) --</option>';
           (spData.pages || []).forEach(function(p) {
             if (p.status === "published" || p.live_version_id) {
               var opt = document.createElement("option");
               opt.value = p.page_id;
               opt.textContent = p.name + " (/" + p.slug + ")";
-              if (p.page_id === currentVal) opt.selected = true;
+              if (p.page_id === currentHpVal) opt.selected = true;
               spSelect.appendChild(opt);
+            }
+          });
+        }
+
+        var sp404Select = $("cfg-404-page-id");
+        if (sp404Select) {
+          sp404Select.innerHTML = '<option value="">-- No static page assigned (default 404 response) --</option>';
+          (spData.pages || []).forEach(function(p) {
+            if (p.status === "published" || p.live_version_id) {
+              var opt = document.createElement("option");
+              opt.value = p.page_id;
+              opt.textContent = p.name + " (/" + p.slug + ")";
+              if (p.page_id === current404Val) opt.selected = true;
+              sp404Select.appendChild(opt);
             }
           });
         }
@@ -5160,9 +5188,18 @@ window.openNewIntentModal = function(e) {
     hideErr(elConfigError);
     hide(elConfigSuccess);
     elBtnSaveConfig.disabled    = true;
-     elBtnSaveConfig.textContent = "Saving…";
+    elBtnSaveConfig.textContent = "Saving…";
     try {
       var hpId = $("cfg-homepage-page-id") ? $("cfg-homepage-page-id").value.trim() : null;
+      var nfId = $("cfg-404-page-id") ? $("cfg-404-page-id").value.trim() : null;
+
+      try {
+        await apiFetch("/api/admin/site-routing", {
+          method: "POST",
+          body: JSON.stringify({ homepagePageId: hpId || "", notFoundPageId: nfId || "" })
+        });
+      } catch (_) {}
+
       var payload = {
         pageTitle:      $("cfg-page-title").value.trim()   || null,
         language:       $("cfg-language") ? $("cfg-language").value.trim() || null : null,
@@ -5178,11 +5215,13 @@ window.openNewIntentModal = function(e) {
         customScript:   $("cfg-custom-js").value.trim()    || null,
         turnstileSiteKey: $("cfg-turnstile-site-key").value.trim() || null,
         homepageStaticPageId: hpId || null,
+        notFoundStaticPageId: nfId || null,
       };
       var res  = await apiFetch("/api/config", { method: "PUT", body: JSON.stringify(payload) });
       var data = await res.json();
       if (!res.ok) { showErr(elConfigError, data.error || "Save failed."); return; }
       activeHomepageStaticPageId = hpId || "";
+      activeNotFoundStaticPageId = nfId || "";
       elConfigSuccess.textContent = "Saved.";
       show(elConfigSuccess);
       setTimeout(function () { hide(elConfigSuccess); }, 3000);
@@ -5745,6 +5784,7 @@ window.openNewIntentModal = function(e) {
   var currentEditingStaticVersion = null;
   var staticPageLayoutItems = [];
   var activeHomepageStaticPageId = "";
+  var activeNotFoundStaticPageId = "";
 
   window.loadStaticPages = async function() {
     try {
@@ -5761,6 +5801,7 @@ window.openNewIntentModal = function(e) {
         try {
           var rData = await routingRes.json();
           activeHomepageStaticPageId = rData.homepagePageId || "";
+          activeNotFoundStaticPageId = rData.notFoundPageId || "";
         } catch (_) {}
       }
       staticPages = data.pages || [];
@@ -5879,16 +5920,27 @@ window.openNewIntentModal = function(e) {
       vSelect.innerHTML = optHtml;
     }
 
-    // Active Homepage Delete Protection: disable/hide Delete Page for active homepage
+    // Active Homepage & 404 Page Delete Protection: disable/hide Delete Page for active homepage or 404 page
     var isHomepage = Boolean(activeHomepageStaticPageId && activeHomepageStaticPageId === p.page_id);
+    var isNotFound = Boolean(activeNotFoundStaticPageId && activeNotFoundStaticPageId === p.page_id);
+    var isProtected = isHomepage || isNotFound;
+
     var btnDel = $("sp-btn-delete-page");
     var noticeDel = $("sp-homepage-notice");
     if (btnDel) {
-      btnDel.disabled = isHomepage;
-      btnDel.style.display = isHomepage ? "none" : "inline-block";
+      btnDel.disabled = isProtected;
+      btnDel.style.display = isProtected ? "none" : "inline-block";
     }
     if (noticeDel) {
-      noticeDel.style.display = isHomepage ? "block" : "none";
+      if (isHomepage) {
+        noticeDel.textContent = "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before deleting it.";
+        noticeDel.style.display = "block";
+      } else if (isNotFound) {
+        noticeDel.textContent = "This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before deleting it.";
+        noticeDel.style.display = "block";
+      } else {
+        noticeDel.style.display = "none";
+      }
     }
 
     // Preview URL
@@ -6181,6 +6233,10 @@ window.openNewIntentModal = function(e) {
     if (!currentEditingStaticPage) return;
     if (activeHomepageStaticPageId && activeHomepageStaticPageId === currentEditingStaticPage.page_id) {
       alert("This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before deleting it.");
+      return;
+    }
+    if (activeNotFoundStaticPageId && activeNotFoundStaticPageId === currentEditingStaticPage.page_id) {
+      alert("This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before deleting it.");
       return;
     }
     var name = currentEditingStaticPage.name;

@@ -76,7 +76,65 @@ const SEC_HEADERS = {
 
 // ── Response helpers ──────────────────────────────────────────────────────────
 
-function html404() {
+async function html404(env, request, originalHost, rawPath) {
+  if (env && env.APP_CONFIG) {
+    try {
+      let notFoundPageId = "";
+      const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
+      if (routing && routing.notFoundPageId) {
+        notFoundPageId = routing.notFoundPageId;
+      }
+      if (!notFoundPageId && env.LANDING_CONFIG) {
+        const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+        if (cfg && cfg.notFoundStaticPageId) {
+          notFoundPageId = cfg.notFoundStaticPageId;
+        }
+      }
+
+      if (notFoundPageId) {
+        const page = await env.APP_CONFIG.get(`static_page:${notFoundPageId}`, { type: "json" });
+        if (page && page.status === "published" && page.live_version_id) {
+          const version = await env.APP_CONFIG.get(`static_page_ver:${notFoundPageId}:${page.live_version_id}`, { type: "json" });
+          if (version) {
+            const [configResult, liveComponentsResult] = await Promise.allSettled([
+              env.LANDING_CONFIG ? env.LANDING_CONFIG.get("hub_config", { type: "json" }) : Promise.resolve(null),
+              env.APP_CONFIG ? env.APP_CONFIG.get("comp_live", { type: "json" }) : Promise.resolve([])
+            ]);
+            const config = configResult.status === "fulfilled" ? (configResult.value || {}) : {};
+            const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];
+            const rootDomain = (env && env.ROOT_DOMAIN) || "";
+
+            const html = renderLanding({
+              contextType: "static",
+              contextId: page.slug || "404",
+              slug: page.slug || "404",
+              slugData: version,
+              components: liveComponents,
+              config,
+              ga4Id: env.GA4_ID || "",
+              metaPixelId: env.META_PIXEL_ID || "",
+              isPreview: false,
+              rootDomain: rootDomain,
+              requestHost: originalHost || "",
+              requestPath: rawPath || "/",
+              is404Response: true
+            });
+
+            return new Response(html, {
+              status: 404,
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                ...SEC_HEADERS
+              }
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[catch-all] Failed to render custom 404 static page:", err);
+    }
+  }
+
   return new Response("Not Found", {
     status:  404,
     headers: { "Content-Type": "text/plain;charset=UTF-8", ...SEC_HEADERS },
@@ -281,7 +339,7 @@ export async function onRequestGet(context) {
       "dashboard", "my", "app", "test", "demo", "portal"
     ];
     if (sub !== adminSubdomain && RESERVED_SUBDOMAINS.includes(sub)) {
-      return html404();
+      return html404(env, request, originalHost, rawPath);
     }
   }
 
@@ -518,7 +576,7 @@ export async function onRequestGet(context) {
 
   // ── Steps 1–2: Parse + validate path ────────────────────────────────────
   const parsed = parsePath(finalRawPath);
-  if (parsed.error) return html404();
+  if (parsed.error) return html404(env, request, originalHost, rawPath);
 
   const { alias, modifier } = parsed;
 
@@ -538,10 +596,10 @@ export async function onRequestGet(context) {
   } catch (err) {
     // Unexpected throw — never expose 500 on public surface
     console.error("[catch-all] resolveAlias threw:", err?.message ?? String(err));
-    return html404();
+    return html404(env, request, originalHost, rawPath);
   }
 
-  if (!resolution.ok) return html404();
+  if (!resolution.ok) return html404(env, request, originalHost, rawPath);
 
   // ── BOUNDARY: alias + modifier are dropped here ──────────────────────────
   // From this point only canonicalSlug (and finalSlug after A/B) flows into
@@ -700,7 +758,7 @@ export async function onRequestGet(context) {
 
   // Enforce subdomain match to prevent conflicts
   if (productSubdomain && hubConfigVal && !validateProductSubdomainMatch(productSubdomain, hubConfigVal.product)) {
-    return html404();
+    return html404(env, request, originalHost, rawPath);
   }
   const globalConfig = globalConfigResult.status === "fulfilled" ? (globalConfigResult.value || {}) : {};
   const liveComponents = liveComponentsResult.status === "fulfilled" ? (liveComponentsResult.value || []) : [];

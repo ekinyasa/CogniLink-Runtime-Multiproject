@@ -28,6 +28,31 @@ async function listAllKeys(env, prefix) {
   return keys;
 }
 
+async function getAssignedRoutingPageIds(env) {
+  let currentHomepageId = "";
+  let currentNotFoundId = "";
+  if (env.APP_CONFIG) {
+    try {
+      const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
+      if (routing) {
+        if (routing.homepagePageId) currentHomepageId = routing.homepagePageId;
+        if (routing.notFoundPageId) currentNotFoundId = routing.notFoundPageId;
+      }
+    } catch (_) {}
+  }
+  if ((!currentHomepageId || !currentNotFoundId) && env.LANDING_CONFIG) {
+    try {
+      const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+      if (cfg) {
+        if (!currentHomepageId && cfg.homepageStaticPageId) currentHomepageId = cfg.homepageStaticPageId;
+        if (!currentNotFoundId && cfg.notFoundStaticPageId) currentNotFoundId = cfg.notFoundStaticPageId;
+      }
+    } catch (_) {}
+  }
+  return { currentHomepageId, currentNotFoundId };
+}
+
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   if (!(await verifyToken(request, env))) return unauthorized();
@@ -203,6 +228,22 @@ export async function onRequestPost(context) {
       const existing = await env.APP_CONFIG.get(`static_page:${page_id}`, { type: "json" });
       if (!existing) throw new Error("Page not found");
 
+      if (status !== undefined && status !== "published" && existing.status === "published") {
+        const { currentHomepageId, currentNotFoundId } = await getAssignedRoutingPageIds(env);
+        if (currentHomepageId && currentHomepageId === page_id) {
+          return new Response(
+            JSON.stringify({ success: false, error: "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before unpublishing or archiving it." }),
+            { status: 400, headers: jsonHeaders() }
+          );
+        }
+        if (currentNotFoundId && currentNotFoundId === page_id) {
+          return new Response(
+            JSON.stringify({ success: false, error: "This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before unpublishing or archiving it." }),
+            { status: 400, headers: jsonHeaders() }
+          );
+        }
+      }
+
       const oldSlug = existing.slug;
       const newSlug = slug ? slug.trim().toLowerCase().replace(/^\/+|\/+$/g, "") : oldSlug;
 
@@ -349,6 +390,23 @@ export async function onRequestPost(context) {
       const { page_id, version_id } = body;
       if (!page_id || !version_id) throw new Error("Missing page_id or version_id");
 
+      const page = await env.APP_CONFIG.get(`static_page:${page_id}`, { type: "json" });
+      if (page && page.live_version_id === version_id) {
+        const { currentHomepageId, currentNotFoundId } = await getAssignedRoutingPageIds(env);
+        if (currentHomepageId && currentHomepageId === page_id) {
+          return new Response(
+            JSON.stringify({ success: false, error: "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before archiving its live version." }),
+            { status: 400, headers: jsonHeaders() }
+          );
+        }
+        if (currentNotFoundId && currentNotFoundId === page_id) {
+          return new Response(
+            JSON.stringify({ success: false, error: "This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before archiving its live version." }),
+            { status: 400, headers: jsonHeaders() }
+          );
+        }
+      }
+
       const verKey = `static_page_ver:${page_id}:${version_id}`;
       const version = await env.APP_CONFIG.get(verKey, { type: "json" });
       if (!version) throw new Error("Version not found");
@@ -361,7 +419,6 @@ export async function onRequestPost(context) {
       await env.APP_CONFIG.put(verKey, JSON.stringify(updatedVersion));
 
       // If this was the live version, clear page's live_version_id and slug lookup
-      const page = await env.APP_CONFIG.get(`static_page:${page_id}`, { type: "json" });
       if (page && page.live_version_id === version_id) {
         page.live_version_id = null;
         page.status = "draft";
@@ -379,6 +436,20 @@ export async function onRequestPost(context) {
     if (action === "archive_page") {
       const { page_id } = body;
       if (!page_id) throw new Error("Missing page_id");
+
+      const { currentHomepageId, currentNotFoundId } = await getAssignedRoutingPageIds(env);
+      if (currentHomepageId && currentHomepageId === page_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before archiving it." }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
+      if (currentNotFoundId && currentNotFoundId === page_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: "This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before archiving it." }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
 
       const page = await env.APP_CONFIG.get(`static_page:${page_id}`, { type: "json" });
       if (!page) throw new Error("Page not found");
@@ -419,10 +490,26 @@ export async function onRequestDelete(context) {
   const versionId = url.searchParams.get("version_id");
 
   try {
+    const { currentHomepageId, currentNotFoundId } = await getAssignedRoutingPageIds(env);
+
     if (pageId && versionId) {
+      const page = await env.APP_CONFIG.get(`static_page:${pageId}`, { type: "json" });
+      if (page && page.live_version_id === versionId) {
+        if (currentHomepageId && currentHomepageId === pageId) {
+          return new Response(
+            JSON.stringify({ success: false, error: "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before deleting its live version." }),
+            { status: 400, headers: jsonHeaders() }
+          );
+        }
+        if (currentNotFoundId && currentNotFoundId === pageId) {
+          return new Response(
+            JSON.stringify({ success: false, error: "This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before deleting its live version." }),
+            { status: 400, headers: jsonHeaders() }
+          );
+        }
+      }
       // Delete specific version
       await env.APP_CONFIG.delete(`static_page_ver:${pageId}:${versionId}`);
-      const page = await env.APP_CONFIG.get(`static_page:${pageId}`, { type: "json" });
       if (page && page.live_version_id === versionId) {
         page.live_version_id = null;
         page.status = "draft";
@@ -433,26 +520,20 @@ export async function onRequestDelete(context) {
     }
 
     if (pageId) {
-      // Active Homepage Delete Protection: Homepage must not be deletable
-      let currentHomepageId = "";
-      if (env.APP_CONFIG) {
-        try {
-          const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
-          if (routing && routing.homepagePageId) currentHomepageId = routing.homepagePageId;
-        } catch (_) {}
-      }
-      if (!currentHomepageId && env.LANDING_CONFIG) {
-        try {
-          const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
-          if (cfg && cfg.homepageStaticPageId) currentHomepageId = cfg.homepageStaticPageId;
-        } catch (_) {}
-      }
-
       if (currentHomepageId && currentHomepageId === pageId) {
         return new Response(
           JSON.stringify({
             success: false,
             error: "This page is currently assigned as the Homepage. Select another Homepage in Settings > Site Routing before deleting it."
+          }),
+          { status: 400, headers: jsonHeaders() }
+        );
+      }
+      if (currentNotFoundId && currentNotFoundId === pageId) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "This page is currently assigned as the 404 Page. Select another 404 Page in Settings > Site Routing before deleting it."
           }),
           { status: 400, headers: jsonHeaders() }
         );

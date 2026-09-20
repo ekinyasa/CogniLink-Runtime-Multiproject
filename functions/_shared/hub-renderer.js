@@ -484,6 +484,7 @@ export function renderHub({
   ga4Id = "",
   metaPixelId = "",
   notFound = false,
+  is404Response = false,
   config = {},          // LANDING_CONFIG
   slug = "",          // slug name for CSS scoping
   slugData = null, // full slug KV record
@@ -665,7 +666,7 @@ export function renderHub({
 
   // 3. Robots policy: 404, preview, or draft forced to noindex, nofollow; otherwise Page -> Config -> "index, follow"
   let finalRobots = "index, follow";
-  if (notFound || isPreview || (slugData && slugData.status === "draft")) {
+  if (notFound || is404Response || isPreview || (slugData && slugData.status === "draft")) {
     finalRobots = "noindex, nofollow";
   } else if (head.robots && String(head.robots).trim()) {
     finalRobots = String(head.robots).trim();
@@ -674,7 +675,7 @@ export function renderHub({
   }
 
   // 4. Canonical URL resolution: Page Canonical URL -> Derived URL (cUrl) -> empty if 404
-  const finalCanonicalUrl = (head.canonicalUrl && String(head.canonicalUrl).trim()) || (notFound ? "" : cUrl);
+  const finalCanonicalUrl = (notFound || is404Response) ? "" : ((head.canonicalUrl && String(head.canonicalUrl).trim()) || cUrl);
 
   // 5. Meta Description resolution: Page Meta Description -> Config Meta Description -> empty
   const finalMetaDesc = (head.metaDescription && String(head.metaDescription).trim()) ||

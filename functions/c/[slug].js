@@ -1,5 +1,62 @@
 import { resolveLinks } from "../_shared/links.js";
-import { renderHub }    from "../_shared/hub-renderer.js";
+import { renderHub, renderLanding }    from "../_shared/hub-renderer.js";
+
+async function renderCustom404(env, request, originalHost, requestPath, config) {
+  if (env && env.APP_CONFIG) {
+    try {
+      let notFoundPageId = "";
+      const routing = await env.APP_CONFIG.get("site:routing", { type: "json" });
+      if (routing && routing.notFoundPageId) notFoundPageId = routing.notFoundPageId;
+      if (!notFoundPageId && env.LANDING_CONFIG) {
+        const cfg = await env.LANDING_CONFIG.get("hub_config", { type: "json" });
+        if (cfg && cfg.notFoundStaticPageId) notFoundPageId = cfg.notFoundStaticPageId;
+      }
+      if (notFoundPageId) {
+        const page = await env.APP_CONFIG.get(`static_page:${notFoundPageId}`, { type: "json" });
+        if (page && page.status === "published" && page.live_version_id) {
+          const version = await env.APP_CONFIG.get(`static_page_ver:${notFoundPageId}:${page.live_version_id}`, { type: "json" });
+          if (version) {
+            const liveComponents = (await env.APP_CONFIG.get("comp_live", { type: "json" })) || [];
+            const html = renderLanding({
+              contextType: "static",
+              contextId: page.slug || "404",
+              slug: page.slug || "404",
+              slugData: version,
+              components: liveComponents,
+              config: config || {},
+              ga4Id: env.GA4_ID || "",
+              metaPixelId: env.META_PIXEL_ID || "",
+              isPreview: false,
+              rootDomain: env.ROOT_DOMAIN || "",
+              requestHost: originalHost || "",
+              requestPath: requestPath || "/",
+              is404Response: true
+            });
+            return new Response(html, {
+              status: 404,
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                "X-Robots-Tag": "noindex,nofollow",
+                "X-Content-Type-Options": "nosniff"
+              }
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }
+  const html = renderHub({ notFound: true, config });
+  return new Response(html, {
+    status: 404,
+    headers: {
+      "Content-Type":           "text/html;charset=UTF-8",
+      "Cache-Control":          "no-store",
+      "X-Robots-Tag":           "noindex,nofollow",
+      "X-Content-Type-Options": "nosniff",
+    }
+  });
+}
 import { incrementCounter }         from "../_shared/counter.js";
 import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch } from "../_shared/slug-utils.js";
 import { handleDecision }          from "../lib/decision-controller.js";
@@ -176,24 +233,11 @@ export async function onRequestGet(context) {
   // Enforce subdomain match to prevent conflicts
   const activeData = intentData || campaignDataVal;
   if (productSubdomain && activeData && !validateProductSubdomainMatch(productSubdomain, activeData.product)) {
-    const html = renderHub({ notFound: true, config });
-    return new Response(html, {
-      status: 404,
-      headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" }
-    });
+    return renderCustom404(env, request, originalHost, url.pathname, config);
   }
   const hasRuntimeContext = !!(shadowData?.rawLegacy || shadowData?.rawV2);
   if (!campaignDataVal && !hasIntentData && !hasRuntimeContext && !verifyAdminDebug(request, env)) {
-    const html = renderHub({ notFound: true, config });
-    return new Response(html, {
-      status: 404,
-      headers: {
-        "Content-Type":           "text/html;charset=UTF-8",
-        "Cache-Control":          "no-store",
-        "X-Robots-Tag":           "noindex,nofollow",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    return renderCustom404(env, request, originalHost, url.pathname, config);
   }
 
   const decisionInputState = parseUserState(readCookie(request, "cos_state"));
@@ -459,16 +503,7 @@ export async function onRequestGet(context) {
   }
 
   if (notFound) {
-    const html = renderHub({ notFound: true, config });
-    return new Response(html, {
-      status: 404,
-      headers: {
-        "Content-Type":           "text/html;charset=UTF-8",
-        "Cache-Control":          "no-store",
-        "X-Robots-Tag":           "noindex,nofollow",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    return renderCustom404(env, request, originalHost, url.pathname, config);
   }
 
   // Resolve link hrefs (BASE_LINKS with global config + per-slug overrides + custom links)

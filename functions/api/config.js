@@ -10,6 +10,7 @@ const ALLOWED_STRING_KEYS = [
   "pageTitle",
   "customScript",
   "homepageStaticPageId",
+  "notFoundStaticPageId",
   "metaDescription",
   "language",
   "robots",
@@ -182,8 +183,14 @@ export async function onRequestPut(context) {
     if (env.LANDING_CONFIG) {
       await env.LANDING_CONFIG.put(CONFIG_KEY, JSON.stringify(updated));
     }
-    if (env.APP_CONFIG && ("homepageStaticPageId" in updated)) {
-      await env.APP_CONFIG.put("site:routing", JSON.stringify({ homepagePageId: updated.homepageStaticPageId || "" }));
+    if (env.APP_CONFIG && (("homepageStaticPageId" in updated) || ("notFoundStaticPageId" in updated))) {
+      let routing = {};
+      try {
+        routing = (await env.APP_CONFIG.get("site:routing", { type: "json" })) || {};
+      } catch (_) {}
+      if ("homepageStaticPageId" in updated) routing.homepagePageId = updated.homepageStaticPageId || "";
+      if ("notFoundStaticPageId" in updated) routing.notFoundPageId = updated.notFoundStaticPageId || "";
+      await env.APP_CONFIG.put("site:routing", JSON.stringify(routing));
     }
     return new Response(JSON.stringify({ ok: true, config: updated }), { headers: jsonHeaders() });
   } catch (e) {
