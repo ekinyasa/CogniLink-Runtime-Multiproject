@@ -215,56 +215,134 @@ export function formatOverlayBg(color, opacity) {
   return `rgba(0, 0, 0, ${op})`;
 }
 
-export function resolveConsentConfig(raw) {
-  const c = raw?.content || {};
+export const DEFAULT_TR_CONSENT_CONTENT = {
+  bannerTitle: "Çerez Tercihleri",
+  bannerBody: "Sitemizin doğru çalışması için gerekli çerezleri kullanıyoruz. Onayınızla, deneyiminizi iyileştirmek ve etkileşimi ölçmek için isteğe bağlı analitik ve pazarlama çerezleri de kullanıyoruz. Tercihlerinizi istediğiniz zaman değiştirebilirsiniz.",
+  btnAcceptAll: "Tümünü kabul et",
+  btnRejectNonEssential: "Gerekli olmayanları reddet",
+  btnManagePreferences: "Tercihleri yönet",
+  modalTitle: "Çerez Tercihleri",
+  modalDescription: "Web sitemizi ziyaret ettiğinizde cihazınızda çerezler saklanabilir. İzin verdiğiniz çerez kategorilerini aşağıdan özelleştirebilirsiniz.",
+  necessaryTitle: "Zorunlu Çerezler",
+  necessaryDescription: "Temel site işlevselliği, güvenlik ve oturum yönlendirmesi için gereklidir. Devre dışı bırakılamaz.",
+  necessaryBadge: "Her Zaman Etkin",
+  analyticsTitle: "Analitik Çerezler",
+  analyticsDescription: "Performansı ve kullanıcı deneyimini geliştirmek amacıyla ziyaretçilerin siteyle nasıl etkileşime girdiğini anlamamıza yardımcı olur (örn. Google Analytics 4).",
+  marketingTitle: "Pazarlama Çerezleri",
+  marketingDescription: "Kişiselleştirilmiş içerik sunmak ve tanıtım kampanyalarının etkinliğini ölçmek için kullanılır (örn. Meta Pixel).",
+  btnSavePreferences: "Tercihleri kaydet",
+  privacyPolicyLabel: "Gizlilik Politikası",
+  privacyPolicyUrl: "https://app.kartra.com/redirect_to/?asset=page&id=ZHstCpwEU3rK",
+  fallbackTriggerLabel: "Çerez Tercihleri"
+};
+
+export function resolvePrimaryLanguage(lang) {
+  if (!lang || typeof lang !== "string") return "";
+  return lang.trim().toLowerCase().split(/[-_]/)[0] || "";
+}
+
+export function renderColorContextCss(colorContext) {
+  if (!colorContext || typeof colorContext !== "object") return "";
+  const cc = colorContext;
+  const lines = [];
+
+  const sanitizeVal = (v) => {
+    if (!v || typeof v !== "string") return "";
+    return v.replace(/[^\w#(),.%\s-]/g, "").trim();
+  };
+
+  const s = sanitizeVal(cc.surface);
+  const fg = sanitizeVal(cc.foreground);
+  const mt = sanitizeVal(cc.mutedText);
+  const b = sanitizeVal(cc.border);
+  const a = sanitizeVal(cc.accent);
+  const os = sanitizeVal(cc.overlaySurface);
+  const ofg = sanitizeVal(cc.overlayForeground);
+
+  if (s) lines.push(`  --page-surface: ${s};`);
+  if (fg) lines.push(`  --page-foreground: ${fg};`);
+  if (mt) lines.push(`  --page-muted-text: ${mt};`);
+  if (b) lines.push(`  --page-border: ${b};`);
+  if (a) lines.push(`  --page-accent: ${a};`);
+  if (os) lines.push(`  --page-overlay-surface: ${os};`);
+  if (ofg) lines.push(`  --page-overlay-foreground: ${ofg};`);
+
+  if (lines.length === 0) return "";
+
+  if (s) lines.push(`  --site-bg: var(--page-surface); --site-surface: var(--page-surface);`);
+  if (fg) lines.push(`  --site-text: var(--page-foreground);`);
+  if (mt) lines.push(`  --site-text-muted: var(--page-muted-text);`);
+  if (b) lines.push(`  --site-border: var(--page-border);`);
+  if (a) lines.push(`  --site-accent: var(--page-accent); --site-link: var(--page-accent);`);
+
+  return `<style id="page-color-context">\n:root {\n${lines.join("\n")}\n}\n</style>`;
+}
+
+export function resolveConsentConfig(raw, pageLang = "", colorContext = null) {
+  const primaryLang = resolvePrimaryLanguage(pageLang);
+  const dEN = DEFAULT_CONSENT_CONFIG.content;
+  const dTR = DEFAULT_TR_CONSENT_CONTENT;
+
+  let baseDefaults = dEN;
+  let customContent = raw?.content || {};
+
+  if (primaryLang === "tr") {
+    baseDefaults = dTR;
+    customContent = raw?.tr || raw?.locales?.tr || {};
+  } else if (primaryLang === "en") {
+    baseDefaults = dEN;
+    customContent = raw?.en || raw?.locales?.en || raw?.content || {};
+  }
+
+  const c = customContent;
   const v = raw?.visual || {};
-  const dC = DEFAULT_CONSENT_CONFIG.content;
   const dV = DEFAULT_CONSENT_CONFIG.visual;
+  const cc = colorContext || {};
 
   return {
     content: {
-      bannerTitle: (c.bannerTitle != null && c.bannerTitle !== "") ? String(c.bannerTitle) : dC.bannerTitle,
-      bannerBody: (c.bannerBody != null && c.bannerBody !== "") ? String(c.bannerBody) : dC.bannerBody,
-      btnAcceptAll: (c.btnAcceptAll != null && c.btnAcceptAll !== "") ? String(c.btnAcceptAll) : dC.btnAcceptAll,
-      btnRejectNonEssential: (c.btnRejectNonEssential != null && c.btnRejectNonEssential !== "") ? String(c.btnRejectNonEssential) : dC.btnRejectNonEssential,
-      btnManagePreferences: (c.btnManagePreferences != null && c.btnManagePreferences !== "") ? String(c.btnManagePreferences) : dC.btnManagePreferences,
-      modalTitle: (c.modalTitle != null && c.modalTitle !== "") ? String(c.modalTitle) : dC.modalTitle,
-      modalDescription: (c.modalDescription != null && c.modalDescription !== "") ? String(c.modalDescription) : dC.modalDescription,
-      necessaryTitle: (c.necessaryTitle != null && c.necessaryTitle !== "") ? String(c.necessaryTitle) : dC.necessaryTitle,
-      necessaryDescription: (c.necessaryDescription != null && c.necessaryDescription !== "") ? String(c.necessaryDescription) : dC.necessaryDescription,
-      necessaryBadge: (c.necessaryBadge != null && c.necessaryBadge !== "") ? String(c.necessaryBadge) : dC.necessaryBadge,
-      analyticsTitle: (c.analyticsTitle != null && c.analyticsTitle !== "") ? String(c.analyticsTitle) : dC.analyticsTitle,
-      analyticsDescription: (c.analyticsDescription != null && c.analyticsDescription !== "") ? String(c.analyticsDescription) : dC.analyticsDescription,
-      marketingTitle: (c.marketingTitle != null && c.marketingTitle !== "") ? String(c.marketingTitle) : dC.marketingTitle,
-      marketingDescription: (c.marketingDescription != null && c.marketingDescription !== "") ? String(c.marketingDescription) : dC.marketingDescription,
-      btnSavePreferences: (c.btnSavePreferences != null && c.btnSavePreferences !== "") ? String(c.btnSavePreferences) : dC.btnSavePreferences,
-      privacyPolicyLabel: (c.privacyPolicyLabel != null && c.privacyPolicyLabel !== "") ? String(c.privacyPolicyLabel) : dC.privacyPolicyLabel,
-      privacyPolicyUrl: (c.privacyPolicyUrl != null && c.privacyPolicyUrl !== "") ? String(c.privacyPolicyUrl) : (raw?.privacyPolicyUrl || dC.privacyPolicyUrl),
-      fallbackTriggerLabel: (c.fallbackTriggerLabel != null && c.fallbackTriggerLabel !== "") ? String(c.fallbackTriggerLabel) : dC.fallbackTriggerLabel
+      bannerTitle: (c.bannerTitle != null && c.bannerTitle !== "") ? String(c.bannerTitle) : baseDefaults.bannerTitle,
+      bannerBody: (c.bannerBody != null && c.bannerBody !== "") ? String(c.bannerBody) : baseDefaults.bannerBody,
+      btnAcceptAll: (c.btnAcceptAll != null && c.btnAcceptAll !== "") ? String(c.btnAcceptAll) : baseDefaults.btnAcceptAll,
+      btnRejectNonEssential: (c.btnRejectNonEssential != null && c.btnRejectNonEssential !== "") ? String(c.btnRejectNonEssential) : baseDefaults.btnRejectNonEssential,
+      btnManagePreferences: (c.btnManagePreferences != null && c.btnManagePreferences !== "") ? String(c.btnManagePreferences) : baseDefaults.btnManagePreferences,
+      modalTitle: (c.modalTitle != null && c.modalTitle !== "") ? String(c.modalTitle) : baseDefaults.modalTitle,
+      modalDescription: (c.modalDescription != null && c.modalDescription !== "") ? String(c.modalDescription) : baseDefaults.modalDescription,
+      necessaryTitle: (c.necessaryTitle != null && c.necessaryTitle !== "") ? String(c.necessaryTitle) : baseDefaults.necessaryTitle,
+      necessaryDescription: (c.necessaryDescription != null && c.necessaryDescription !== "") ? String(c.necessaryDescription) : baseDefaults.necessaryDescription,
+      necessaryBadge: (c.necessaryBadge != null && c.necessaryBadge !== "") ? String(c.necessaryBadge) : baseDefaults.necessaryBadge,
+      analyticsTitle: (c.analyticsTitle != null && c.analyticsTitle !== "") ? String(c.analyticsTitle) : baseDefaults.analyticsTitle,
+      analyticsDescription: (c.analyticsDescription != null && c.analyticsDescription !== "") ? String(c.analyticsDescription) : baseDefaults.analyticsDescription,
+      marketingTitle: (c.marketingTitle != null && c.marketingTitle !== "") ? String(c.marketingTitle) : baseDefaults.marketingTitle,
+      marketingDescription: (c.marketingDescription != null && c.marketingDescription !== "") ? String(c.marketingDescription) : baseDefaults.marketingDescription,
+      btnSavePreferences: (c.btnSavePreferences != null && c.btnSavePreferences !== "") ? String(c.btnSavePreferences) : baseDefaults.btnSavePreferences,
+      privacyPolicyLabel: (c.privacyPolicyLabel != null && c.privacyPolicyLabel !== "") ? String(c.privacyPolicyLabel) : baseDefaults.privacyPolicyLabel,
+      privacyPolicyUrl: (c.privacyPolicyUrl != null && c.privacyPolicyUrl !== "") ? String(c.privacyPolicyUrl) : (raw?.privacyPolicyUrl || baseDefaults.privacyPolicyUrl),
+      fallbackTriggerLabel: (c.fallbackTriggerLabel != null && c.fallbackTriggerLabel !== "") ? String(c.fallbackTriggerLabel) : baseDefaults.fallbackTriggerLabel
     },
     visual: {
-      bannerBg: v.bannerBg || dV.bannerBg,
-      textColor: v.textColor || dV.textColor,
-      secondaryTextColor: v.secondaryTextColor || dV.secondaryTextColor,
-      borderColor: v.borderColor || dV.borderColor,
+      bannerBg: v.bannerBg || cc.surface || dV.bannerBg,
+      textColor: v.textColor || cc.foreground || dV.textColor,
+      secondaryTextColor: v.secondaryTextColor || cc.mutedText || dV.secondaryTextColor,
+      borderColor: v.borderColor || cc.border || dV.borderColor,
       backdropBlur: v.backdropBlur || dV.backdropBlur,
       bannerRadius: v.bannerRadius || dV.bannerRadius,
       paddingY: v.paddingY || dV.paddingY,
       paddingX: v.paddingX || dV.paddingX,
       maxWidth: v.maxWidth || dV.maxWidth,
       buttonRadius: v.buttonRadius || dV.buttonRadius,
-      btnPrimaryBg: v.btnPrimaryBg || dV.btnPrimaryBg,
+      btnPrimaryBg: v.btnPrimaryBg || cc.accent || dV.btnPrimaryBg,
       btnPrimaryText: v.btnPrimaryText || dV.btnPrimaryText,
-      btnPrimaryBorder: v.btnPrimaryBorder || dV.btnPrimaryBorder,
+      btnPrimaryBorder: v.btnPrimaryBorder || cc.accent || dV.btnPrimaryBorder,
       btnSecondaryBg: v.btnSecondaryBg || dV.btnSecondaryBg,
-      btnSecondaryText: v.btnSecondaryText || dV.btnSecondaryText,
-      btnSecondaryBorder: v.btnSecondaryBorder || dV.btnSecondaryBorder,
-      linkColor: v.linkColor || dV.linkColor,
-      modalBg: v.modalBg || dV.modalBg,
-      modalBorder: v.modalBorder || dV.modalBorder,
+      btnSecondaryText: v.btnSecondaryText || cc.foreground || dV.btnSecondaryText,
+      btnSecondaryBorder: v.btnSecondaryBorder || cc.border || dV.btnSecondaryBorder,
+      linkColor: v.linkColor || cc.accent || dV.linkColor,
+      modalBg: v.modalBg || cc.surface || dV.modalBg,
+      modalBorder: v.modalBorder || cc.border || dV.modalBorder,
       modalRadius: v.modalRadius || dV.modalRadius,
       overlayOpacity: (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity,
-      accentColor: v.accentColor || dV.accentColor,
+      accentColor: v.accentColor || cc.accent || dV.accentColor,
       fontFamily: v.fontFamily || dV.fontFamily,
       mobilePaddingY: v.mobilePaddingY || dV.mobilePaddingY,
       mobilePaddingX: v.mobilePaddingX || dV.mobilePaddingX,
@@ -285,13 +363,13 @@ export function resolveConsentConfig(raw) {
       modalBodyPadding: v.modalBodyPadding || dV.modalBodyPadding,
       modalFooterPadding: v.modalFooterPadding || dV.modalFooterPadding,
       cardBg: v.cardBg || dV.cardBg,
-      cardBorderColor: v.cardBorderColor || dV.cardBorderColor,
+      cardBorderColor: v.cardBorderColor || cc.border || dV.cardBorderColor,
       cardBorderWidth: v.cardBorderWidth || dV.cardBorderWidth,
       cardRadius: v.cardRadius || dV.cardRadius,
       cardGap: v.cardGap || dV.cardGap,
       cardPadding: v.cardPadding || dV.cardPadding,
-      overlayColor: v.overlayColor || dV.overlayColor,
-      closeColor: v.closeColor || dV.closeColor,
+      overlayColor: v.overlayColor || cc.overlaySurface || dV.overlayColor,
+      closeColor: v.closeColor || cc.mutedText || dV.closeColor,
       closeSize: v.closeSize || dV.closeSize,
       checkboxSize: v.checkboxSize || dV.checkboxSize,
       mobileMaxWidth: v.mobileMaxWidth || dV.mobileMaxWidth
@@ -299,44 +377,45 @@ export function resolveConsentConfig(raw) {
   };
 }
 
-export function getConsentCssVariables(visual = {}) {
+export function getConsentCssVariables(visual = {}, colorContext = null) {
   const v = visual;
   const dV = DEFAULT_CONSENT_CONFIG.visual;
+  const cc = colorContext || {};
 
   const bannerAlignment = (v.bannerAlignment === "center") ? "center" : "left";
   const desktopActionLayout = (v.desktopActionLayout === "stacked") ? "column" : "row";
   const desktopActionAlign = (v.desktopActionLayout === "stacked") ? "stretch" : "center";
   const mobileActionLayout = (v.mobileActionLayout === "horizontal") ? "row" : "column";
   const mobileActionAlign = (v.mobileActionLayout === "horizontal") ? "center" : "stretch";
-  const overlayColor = v.overlayColor || dV.overlayColor;
+  const overlayColor = v.overlayColor || cc.overlaySurface || dV.overlayColor;
   const overlayOpacity = (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity;
   const overlayBg = formatOverlayBg(overlayColor, overlayOpacity);
 
   return `
-  --cl-consent-banner-bg: ${v.bannerBg || dV.bannerBg};
-  --cl-consent-text-color: ${v.textColor || dV.textColor};
-  --cl-consent-secondary-text: ${v.secondaryTextColor || dV.secondaryTextColor};
-  --cl-consent-border-color: ${v.borderColor || dV.borderColor};
+  --cl-consent-banner-bg: ${v.bannerBg || cc.surface || dV.bannerBg};
+  --cl-consent-text-color: ${v.textColor || cc.foreground || dV.textColor};
+  --cl-consent-secondary-text: ${v.secondaryTextColor || cc.mutedText || dV.secondaryTextColor};
+  --cl-consent-border-color: ${v.borderColor || cc.border || dV.borderColor};
   --cl-consent-backdrop-blur: ${v.backdropBlur || dV.backdropBlur};
   --cl-consent-banner-radius: ${v.bannerRadius || dV.bannerRadius};
   --cl-consent-padding-y: ${v.paddingY || dV.paddingY};
   --cl-consent-padding-x: ${v.paddingX || dV.paddingX};
   --cl-consent-max-width: ${v.maxWidth || dV.maxWidth};
   --cl-consent-button-radius: ${v.buttonRadius || dV.buttonRadius};
-  --cl-consent-btn-primary-bg: ${v.btnPrimaryBg || dV.btnPrimaryBg};
+  --cl-consent-btn-primary-bg: ${v.btnPrimaryBg || cc.accent || dV.btnPrimaryBg};
   --cl-consent-btn-primary-text: ${v.btnPrimaryText || dV.btnPrimaryText};
-  --cl-consent-btn-primary-border: ${v.btnPrimaryBorder || dV.btnPrimaryBorder};
+  --cl-consent-btn-primary-border: ${v.btnPrimaryBorder || cc.accent || dV.btnPrimaryBorder};
   --cl-consent-btn-secondary-bg: ${v.btnSecondaryBg || dV.btnSecondaryBg};
-  --cl-consent-btn-secondary-text: ${v.btnSecondaryText || dV.btnSecondaryText};
-  --cl-consent-btn-secondary-border: ${v.btnSecondaryBorder || dV.btnSecondaryBorder};
-  --cl-consent-link-color: ${v.linkColor || dV.linkColor};
-  --cl-consent-modal-bg: ${v.modalBg || dV.modalBg};
-  --cl-consent-modal-border: ${v.modalBorder || dV.modalBorder};
+  --cl-consent-btn-secondary-text: ${v.btnSecondaryText || cc.foreground || dV.btnSecondaryText};
+  --cl-consent-btn-secondary-border: ${v.btnSecondaryBorder || cc.border || dV.btnSecondaryBorder};
+  --cl-consent-link-color: ${v.linkColor || cc.accent || dV.linkColor};
+  --cl-consent-modal-bg: ${v.modalBg || cc.surface || dV.modalBg};
+  --cl-consent-modal-border: ${v.modalBorder || cc.border || dV.modalBorder};
   --cl-consent-modal-radius: ${v.modalRadius || dV.modalRadius};
   --cl-consent-overlay-opacity: ${overlayOpacity};
   --cl-consent-overlay-color: ${overlayColor};
   --cl-consent-overlay-bg: ${overlayBg};
-  --cl-consent-accent-color: ${v.accentColor || dV.accentColor};
+  --cl-consent-accent-color: ${v.accentColor || cc.accent || dV.accentColor};
   --cl-consent-font-family: ${v.fontFamily || dV.fontFamily};
   --cl-consent-mobile-padding-y: ${v.mobilePaddingY || dV.mobilePaddingY};
   --cl-consent-mobile-padding-x: ${v.mobilePaddingX || dV.mobilePaddingX};
@@ -359,20 +438,20 @@ export function getConsentCssVariables(visual = {}) {
   --cl-consent-modal-body-padding: ${v.modalBodyPadding || dV.modalBodyPadding};
   --cl-consent-modal-footer-padding: ${v.modalFooterPadding || dV.modalFooterPadding};
   --cl-consent-card-bg: ${v.cardBg || dV.cardBg};
-  --cl-consent-card-border-color: ${v.cardBorderColor || dV.cardBorderColor};
+  --cl-consent-card-border-color: ${v.cardBorderColor || cc.border || dV.cardBorderColor};
   --cl-consent-card-border-width: ${v.cardBorderWidth || dV.cardBorderWidth};
   --cl-consent-card-radius: ${v.cardRadius || dV.cardRadius};
   --cl-consent-card-gap: ${v.cardGap || dV.cardGap};
   --cl-consent-card-padding: ${v.cardPadding || dV.cardPadding};
-  --cl-consent-close-color: ${v.closeColor || dV.closeColor};
+  --cl-consent-close-color: ${v.closeColor || cc.mutedText || dV.closeColor};
   --cl-consent-close-size: ${v.closeSize || dV.closeSize};
   --cl-consent-checkbox-size: ${v.checkboxSize || dV.checkboxSize};
   --cl-consent-mobile-max-width: ${v.mobileMaxWidth || dV.mobileMaxWidth};
   `;
 }
 
-export function renderConsentSnippet(rawConsent = {}, { isPreview = false } = {}) {
-  const resolved = resolveConsentConfig(rawConsent);
+export function renderConsentSnippet(rawConsent = {}, { isPreview = false, pageLang = "", colorContext = null } = {}) {
+  const resolved = resolveConsentConfig(rawConsent, pageLang, colorContext);
   const c = resolved.content;
   const privacyPolicyUrl = c.privacyPolicyUrl || "/privacy-policy";
 
@@ -749,10 +828,13 @@ export function renderHub({
     pageCssBlock = `\n<style>\n${pageCssRaw}\n</style>`;
   }
 
-  // Load old HUB_CSS conditionally (only when rendering link buttons)
-  const consentResolved = resolveConsentConfig(cfg?.consent);
-  const consentCssVars = `:root {\n${getConsentCssVariables(consentResolved.visual)}\n}`;
-  const baseCssBlock = `<style>${BASE_CSS}\n${consentCssVars}</style>`;
+  // Load consent config & page color context CSS
+  const pageLang = slugData?.head?.language || slugData?.language || "";
+  const colorContext = slugData?.colorContext || slugData?.color_context || null;
+  const consentResolved = resolveConsentConfig(cfg?.consent, pageLang, colorContext);
+  const consentCssVars = `:root {\n${getConsentCssVariables(consentResolved.visual, colorContext)}\n}`;
+  const pageColorCss = renderColorContextCss(colorContext);
+  const baseCssBlock = `<style>${BASE_CSS}\n${consentCssVars}</style>${pageColorCss ? '\n' + pageColorCss : ''}`;
 
   // Body tag: add id for CSS scoping on campaign pages
   const bodyTag = slugId ? `<body id="slug-${escAttr(slugId)}">` : "<body>";

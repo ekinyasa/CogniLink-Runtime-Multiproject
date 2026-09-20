@@ -218,6 +218,10 @@ async function handleSave(context) {
     }
   };
 
+  if (body.tr && typeof body.tr === "object") sanitized.tr = body.tr;
+  if (body.en && typeof body.en === "object") sanitized.en = body.en;
+  if (body.locales && typeof body.locales === "object") sanitized.locales = body.locales;
+
   try {
     // 1. Write to LANDING_CONFIG hub_config
     if (env.LANDING_CONFIG) {

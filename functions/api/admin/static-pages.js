@@ -199,6 +199,7 @@ export async function onRequestPost(context) {
         customHeaderHtml: body.customHeaderHtml || "",
         customFooterHtml: body.customFooterHtml || "",
         notes: body.notes || "Initial version",
+        colorContext: body.colorContext || body.color_context || null,
         created_at: now,
         updated_at: now,
       };
@@ -298,6 +299,7 @@ export async function onRequestPost(context) {
         customHeaderHtml: body.customHeaderHtml !== undefined ? body.customHeaderHtml : existing.customHeaderHtml,
         customFooterHtml: body.customFooterHtml !== undefined ? body.customFooterHtml : existing.customFooterHtml,
         notes: body.notes !== undefined ? body.notes : existing.notes,
+        colorContext: body.colorContext !== undefined ? body.colorContext : (body.color_context !== undefined ? body.color_context : (existing.colorContext || existing.color_context || null)),
         updated_at: now,
       };
 

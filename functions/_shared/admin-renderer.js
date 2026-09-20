@@ -766,6 +766,21 @@ ${CONSENT_CSS}</style>
                 <textarea id="studio-version-head-code" rows="3" style="font-family: monospace; font-size: 12px;" placeholder="&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;"></textarea>
                 <span class="hint" style="font-size: 0.7rem;">Only &lt;link&gt;, &lt;meta&gt;, &lt;style&gt;, and &lt;noscript&gt; permitted. Executable &lt;script&gt; tags are strictly stripped.</span>
               </label>
+
+              <!-- Page Color Context -->
+              <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-m);">Page Color Context <span class="hint-inline">(Optional semantic tokens for Banner, Modal, Footer)</span></span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                  <input type="text" id="studio-version-color-surface" placeholder="Surface (#0a0a0c / rgba(...))" style="font-size: 0.8rem;" />
+                  <input type="text" id="studio-version-color-foreground" placeholder="Foreground (#f8f9fa)" style="font-size: 0.8rem;" />
+                  <input type="text" id="studio-version-color-muted-text" placeholder="Muted Text (#a1a1aa)" style="font-size: 0.8rem;" />
+                  <input type="text" id="studio-version-color-border" placeholder="Border (#27272a)" style="font-size: 0.8rem;" />
+                  <input type="text" id="studio-version-color-accent" placeholder="Accent (#3b82f6)" style="font-size: 0.8rem;" />
+                  <input type="text" id="studio-version-color-overlay-surface" placeholder="Overlay Surface (#000000)" style="font-size: 0.8rem;" />
+                </div>
+                <input type="text" id="studio-version-color-overlay-foreground" placeholder="Overlay Foreground (#ffffff)" style="font-size: 0.8rem;" />
+                <span class="hint" style="font-size: 0.7rem;">Optional semantic colors used by shared runtime components. Leave blank to inherit site theme.</span>
+              </div>
             </div>
 
             <!-- Implementer Handoff Notice -->
@@ -8041,6 +8056,15 @@ window.openNewIntentModal = function(e) {
     if (document.getElementById("studio-version-og-desc")) document.getElementById("studio-version-og-desc").value = h.ogDescription || "";
     if (document.getElementById("studio-version-head-code")) document.getElementById("studio-version-head-code").value = h.additionalHeadHtml || "";
 
+    var cc = studioCurrentEditingLanding.colorContext || studioCurrentEditingLanding.color_context || {};
+    if (document.getElementById("studio-version-color-surface")) document.getElementById("studio-version-color-surface").value = cc.surface || "";
+    if (document.getElementById("studio-version-color-foreground")) document.getElementById("studio-version-color-foreground").value = cc.foreground || "";
+    if (document.getElementById("studio-version-color-muted-text")) document.getElementById("studio-version-color-muted-text").value = cc.mutedText || "";
+    if (document.getElementById("studio-version-color-border")) document.getElementById("studio-version-color-border").value = cc.border || "";
+    if (document.getElementById("studio-version-color-accent")) document.getElementById("studio-version-color-accent").value = cc.accent || "";
+    if (document.getElementById("studio-version-color-overlay-surface")) document.getElementById("studio-version-color-overlay-surface").value = cc.overlaySurface || "";
+    if (document.getElementById("studio-version-color-overlay-foreground")) document.getElementById("studio-version-color-overlay-foreground").value = cc.overlayForeground || "";
+
     document.getElementById("studio-version-css").value = studioCurrentEditingLanding.customStyleCss || "";
     document.getElementById("studio-version-js").value = studioCurrentEditingLanding.customScript || "";
 
@@ -8576,6 +8600,21 @@ window.openNewIntentModal = function(e) {
             if (document.getElementById("studio-version-og-image")) studioCurrentEditingLanding.head.ogImage = document.getElementById("studio-version-og-image").value.trim();
             if (document.getElementById("studio-version-og-desc")) studioCurrentEditingLanding.head.ogDescription = document.getElementById("studio-version-og-desc").value.trim();
             if (document.getElementById("studio-version-head-code")) studioCurrentEditingLanding.head.additionalHeadHtml = document.getElementById("studio-version-head-code").value;
+
+            var sSurf = document.getElementById("studio-version-color-surface") ? document.getElementById("studio-version-color-surface").value.trim() : "";
+            var sFg = document.getElementById("studio-version-color-foreground") ? document.getElementById("studio-version-color-foreground").value.trim() : "";
+            var sMt = document.getElementById("studio-version-color-muted-text") ? document.getElementById("studio-version-color-muted-text").value.trim() : "";
+            var sB = document.getElementById("studio-version-color-border") ? document.getElementById("studio-version-color-border").value.trim() : "";
+            var sA = document.getElementById("studio-version-color-accent") ? document.getElementById("studio-version-color-accent").value.trim() : "";
+            var sOs = document.getElementById("studio-version-color-overlay-surface") ? document.getElementById("studio-version-color-overlay-surface").value.trim() : "";
+            var sOfg = document.getElementById("studio-version-color-overlay-foreground") ? document.getElementById("studio-version-color-overlay-foreground").value.trim() : "";
+
+            if (sSurf || sFg || sMt || sB || sA || sOs || sOfg) {
+              studioCurrentEditingLanding.colorContext = { surface: sSurf, foreground: sFg, mutedText: sMt, border: sB, accent: sA, overlaySurface: sOs, overlayForeground: sOfg };
+            } else {
+              delete studioCurrentEditingLanding.colorContext;
+              delete studioCurrentEditingLanding.color_context;
+            }
           }
 
           var v2Res = await apiFetch("/api/admin/intent-routing", {
@@ -8626,6 +8665,21 @@ window.openNewIntentModal = function(e) {
             if (document.getElementById("studio-version-og-image")) studioCurrentEditingLanding.head.ogImage = document.getElementById("studio-version-og-image").value.trim();
             if (document.getElementById("studio-version-og-desc")) studioCurrentEditingLanding.head.ogDescription = document.getElementById("studio-version-og-desc").value.trim();
             if (document.getElementById("studio-version-head-code")) studioCurrentEditingLanding.head.additionalHeadHtml = document.getElementById("studio-version-head-code").value;
+
+            var sSurf = document.getElementById("studio-version-color-surface") ? document.getElementById("studio-version-color-surface").value.trim() : "";
+            var sFg = document.getElementById("studio-version-color-foreground") ? document.getElementById("studio-version-color-foreground").value.trim() : "";
+            var sMt = document.getElementById("studio-version-color-muted-text") ? document.getElementById("studio-version-color-muted-text").value.trim() : "";
+            var sB = document.getElementById("studio-version-color-border") ? document.getElementById("studio-version-color-border").value.trim() : "";
+            var sA = document.getElementById("studio-version-color-accent") ? document.getElementById("studio-version-color-accent").value.trim() : "";
+            var sOs = document.getElementById("studio-version-color-overlay-surface") ? document.getElementById("studio-version-color-overlay-surface").value.trim() : "";
+            var sOfg = document.getElementById("studio-version-color-overlay-foreground") ? document.getElementById("studio-version-color-overlay-foreground").value.trim() : "";
+
+            if (sSurf || sFg || sMt || sB || sA || sOs || sOfg) {
+              studioCurrentEditingLanding.colorContext = { surface: sSurf, foreground: sFg, mutedText: sMt, border: sB, accent: sA, overlaySurface: sOs, overlayForeground: sOfg };
+            } else {
+              delete studioCurrentEditingLanding.colorContext;
+              delete studioCurrentEditingLanding.color_context;
+            }
           }
 
           // Save V2 Configuration (Landings layout updates)
