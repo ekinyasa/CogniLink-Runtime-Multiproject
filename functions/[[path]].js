@@ -47,7 +47,7 @@ import { createLegacyCompatibleView }              from "./_shared/runtime-compa
 import { verifyAdminDebug }                        from "./_shared/runtime-debug-auth.js";
 import { compareDecisions }                        from "./_shared/decision-comparator.js";
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
-import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch } from "./_shared/slug-utils.js";
+import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch, slugify } from "./_shared/slug-utils.js";
 import { renderAdmin } from "./_shared/admin-renderer.js";
 import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
 import { loadABConfig }                            from "./_shared/ab-router.js";
@@ -285,8 +285,110 @@ export async function onRequestGet(context) {
     }
   }
 
+  // ── Intent Subdomain Homepage Resolution ─────────────────────────────────
+  // When a request arrives at {intent}.domain/ resolve the campaign assigned
+  // to that product subdomain and render its homepageLandingId landing version
+  // in place — no redirect, URL stays at /.
+  // Falls through to normal routing if no homepage is configured for this intent.
+  if ((rawPath === "/" || !rawPath) && productSubdomain) {
+    try {
+      let intentCampaign = null;
+      let intentHomepageLanding = null;
+      if (env && env.APP_CONFIG) {
+        let cursor;
+        do {
+          const campPage = await env.APP_CONFIG.list({ prefix: "campaign:", cursor });
+          for (const key of campPage.keys) {
+            try {
+              const camp = await env.APP_CONFIG.get(key.name, { type: "json" });
+              if (
+                camp &&
+                camp.homepageLandingId &&
+                camp.product &&
+                slugify(camp.product) === productSubdomain
+              ) {
+                const landing = (camp.landings || []).find(
+                  (l) => l.id === camp.homepageLandingId
+                );
+                if (
+                  landing &&
+                  ((landing.status || "draft").toLowerCase() === "published" ||
+                    isAdminPreview)
+                ) {
+                  intentCampaign = camp;
+                  intentHomepageLanding = landing;
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+          if (intentCampaign) break;
+          cursor = campPage.list_complete ? undefined : campPage.cursor;
+        } while (cursor);
+      }
+
+      if (intentCampaign && intentHomepageLanding) {
+        const [intentGlobalCfgResult, intentComponentsResult] = await Promise.allSettled([
+          env.LANDING_CONFIG
+            ? env.LANDING_CONFIG.get("hub_config", { type: "json" })
+            : Promise.resolve({}),
+          env.APP_CONFIG
+            ? env.APP_CONFIG.get("comp_live", { type: "json" })
+            : Promise.resolve([]),
+        ]);
+        const intentGlobalConfig =
+          intentGlobalCfgResult.status === "fulfilled"
+            ? intentGlobalCfgResult.value || {}
+            : {};
+        const intentComponents =
+          intentComponentsResult.status === "fulfilled"
+            ? intentComponentsResult.value || []
+            : [];
+        const intentLinks = resolveLinks(intentCampaign, intentGlobalConfig);
+        const intentLandingConfigData = {
+          ...intentCampaign,
+          ...intentHomepageLanding,
+          landings: [intentHomepageLanding],
+          mainLandingId: intentHomepageLanding.id,
+        };
+        const intentHtml = renderHub({
+          contextType:      "landing",
+          contextId:        intentHomepageLanding.slug || intentHomepageLanding.id,
+          requestUrl:       request.url,
+          requestHost:      originalHost,
+          requestPath:      "/",
+          rootDomain:       rootDomain,
+          productSubdomain: productSubdomain,
+          campaign:         intentCampaign.slug || intentCampaign.name || "",
+          defaultUtms:      {},
+          links:            intentLinks,
+          ga4Id:            env.GA4_ID       || "",
+          metaPixelId:      env.META_PIXEL_ID || "",
+          config:           intentGlobalConfig,
+          slug:             intentHomepageLanding.slug || intentHomepageLanding.id,
+          slugData:         intentLandingConfigData,
+          components:       intentComponents,
+          isPreview:        isAdminPreview,
+          intentConfig:     intentLandingConfigData,
+        });
+        return new Response(intentHtml, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html;charset=UTF-8",
+            ...SEC_HEADERS,
+            "Cache-Control": "public, max-age=60, s-maxage=0",
+          },
+        });
+      }
+    } catch (intentErr) {
+      console.error("[catch-all] Intent subdomain homepage resolution failed:", intentErr);
+    }
+    // No intent homepage configured — fall through to normal alias routing
+  }
+
   // ── Static Pages & Homepage Resolution ──────────────────────────────────
-  if (rawPath === "/" || !rawPath) {
+  // Only applies to the root domain (no product subdomain).
+  if ((rawPath === "/" || !rawPath) && !productSubdomain) {
     // 1. Root / -> Check Homepage Static Page
     let homepagePageId = "";
     if (env && env.APP_CONFIG) {

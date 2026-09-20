@@ -7791,6 +7791,7 @@ window.openNewIntentModal = function(e) {
       if (!l.updatedAt) l.updatedAt = new Date().toISOString();
 
       var isMain = studioCampaignConfig.mainLandingId === l.id;
+      var isHomepage = (studioCampaignConfig.homepageLandingId || "") === l.id && l.id !== "";
       var createdFmt = l.updatedAt ? new Date(l.updatedAt).toLocaleString() : "—";
       var div = document.createElement("div");
       div.className = "version-item";
@@ -7811,9 +7812,22 @@ window.openNewIntentModal = function(e) {
       // Main badge styling - accessible blue/indigo (independent of status)
       var mainBadgeHtml = isMain ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #4f46e5; color: #ffffff; font-weight: 600; line-height: 1.2;">Main</span>' : '';
 
+      // Homepage badge styling - teal (independent of status)
+      var homepageBadgeHtml = isHomepage ? '<span class="badge" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #0d9488; color: #ffffff; font-weight: 600; line-height: 1.2;">🏠 Homepage</span>' : '';
+
       // URL rows (Section 4)
       var canonicalUrl = buildLandingCanonicalUrl(l.slug || l.id, l.product || studioCampaignConfig.product);
       var aliasUrl = l.alias ? buildLandingAliasUrl(l.alias, l.product || studioCampaignConfig.product) : "";
+
+      // Homepage URL row (shown only when this version is the Intent Homepage)
+      var homepageUrlRowHtml = "";
+      if (isHomepage && studioCampaignConfig.product) {
+        var intentProduct = normalizeSlug(studioCampaignConfig.product);
+        var rootDomainVal = getRootDomain();
+        var intentRootUrl = "https://" + intentProduct + "." + rootDomainVal + "/";
+        homepageUrlRowHtml = '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">' +
+          'Homepage URL: <a href="' + esc(intentRootUrl) + '" target="_blank" rel="noopener noreferrer" style="color: #0d9488; font-family: monospace; text-decoration: none;">' + esc(intentRootUrl) + '</a></div>';
+      }
 
       var canonicalRowHtml = "";
       var aliasRowHtml = "";
@@ -7843,15 +7857,18 @@ window.openNewIntentModal = function(e) {
             '<span style="font-weight: bold; font-size: 0.95rem; color: var(--text);">' + esc(l.displayName) + '</span>' +
             statusBadgeHtml +
             mainBadgeHtml +
+            homepageBadgeHtml +
           '</div>' +
           canonicalRowHtml +
           aliasRowHtml +
+          homepageUrlRowHtml +
           '<div style="font-size: 0.7rem; color: var(--text-m); margin-top: 0.25rem;">Last updated: ' + esc(createdFmt) + '</div>' +
         '</div>' +
         '<div class="version-actions" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.25rem;">' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="editStudioLanding(\\x27' + esc(l.id) + '\\x27)">Edit</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="previewStudioLanding(\\x27' + esc(l.id) + '\\x27)">Preview</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="setStudioMainLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled' : '') + '>Set as Main</button>' +
+          '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="' + (isHomepage ? 'clearStudioIntentHomepage()' : 'setStudioIntentHomepage(\\x27' + esc(l.id) + '\\x27)') + '">' + (isHomepage ? 'Remove Homepage' : 'Set as Homepage') + '</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="duplicateStudioLanding(\\x27' + esc(l.id) + '\\x27)">Duplicate</button>' +
           '<button class="btn-ghost btn-xs" style="border: 1px solid var(--border);" onclick="toggleArchiveStudioLanding(\\x27' + esc(l.id) + '\\x27)">' + (l.status === "archived" ? "Restore" : "Archive") + '</button>' +
           '<button class="btn-danger btn-xs" onclick="deleteStudioLanding(\\x27' + esc(l.id) + '\\x27)" ' + (isMain ? 'disabled title="Cannot delete main landing version"' : '') + '>Delete</button>' +
@@ -7868,6 +7885,32 @@ window.openNewIntentModal = function(e) {
       return;
     }
     studioCampaignConfig.mainLandingId = id;
+    renderStudioVersionsList();
+  };
+
+  /**
+   * Designate a landing version as the Intent Homepage.
+   * The version must be Published; the assignment is stored in studioCampaignConfig
+   * and persisted the next time the Intent is saved.
+   */
+  window.setStudioIntentHomepage = function(id) {
+    var target = studioCampaignConfig.landings.find(function (l) { return l.id === id; });
+    if (!target) return;
+    if ((target.status || "draft").toLowerCase() !== "published") {
+      alert("The Intent Homepage must be a Published landing version. Please publish this version first.");
+      return;
+    }
+    studioCampaignConfig.homepageLandingId = id;
+    renderStudioVersionsList();
+  };
+
+  /**
+   * Remove the Intent Homepage assignment for the current campaign.
+   * After clearing, {intent}.domain/ will fall through to normal alias routing.
+   */
+  window.clearStudioIntentHomepage = function() {
+    if (!confirm("Remove the Intent Homepage assignment? Visitors to " + normalizeSlug(studioCampaignConfig.product || studioCampaignConfig.slug) + "." + getRootDomain() + "/ will fall back to default routing until a new Homepage is set.")) return;
+    studioCampaignConfig.homepageLandingId = "";
     renderStudioVersionsList();
   };
 
@@ -7985,6 +8028,11 @@ window.openNewIntentModal = function(e) {
       alert("Cannot archive the Main landing version. Set another version as Main first.");
       return;
     }
+    var isHp = (studioCampaignConfig.homepageLandingId || "") === id && id !== "";
+    if (isHp && landing.status !== "archived") {
+      alert("Cannot archive the Intent Homepage landing version. Remove the Homepage assignment first.");
+      return;
+    }
     landing.status = landing.status === "archived" ? "draft" : "archived";
     renderStudioVersionsList();
     if (studioCurrentEditingLanding?.id === id) {
@@ -7996,6 +8044,11 @@ window.openNewIntentModal = function(e) {
     var isMain = studioCampaignConfig.mainLandingId === id;
     if (isMain) {
       alert("Cannot delete the Main landing version. Set another version as Main first.");
+      return;
+    }
+    var isHp = (studioCampaignConfig.homepageLandingId || "") === id && id !== "";
+    if (isHp) {
+      alert("Cannot delete the Intent Homepage landing version. Remove the Homepage assignment first.");
       return;
     }
     if (!confirm("Are you sure you want to delete this version?")) return;
