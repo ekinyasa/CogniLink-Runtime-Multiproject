@@ -298,6 +298,9 @@ export function resolveConsentConfig(raw, pageLang = "", colorContext = null) {
   const v = raw?.visual || {};
   const dV = DEFAULT_CONSENT_CONFIG.visual;
   const cc = colorContext || {};
+  const hasCC = Boolean(colorContext && typeof colorContext === "object" && Object.keys(colorContext).length > 0);
+  const ccOverlaySurf = cc.overlaySurface || cc.surface;
+  const ccOverlayFg = cc.overlayForeground || cc.foreground;
 
   return {
     content: {
@@ -321,28 +324,28 @@ export function resolveConsentConfig(raw, pageLang = "", colorContext = null) {
       fallbackTriggerLabel: (c.fallbackTriggerLabel != null && c.fallbackTriggerLabel !== "") ? String(c.fallbackTriggerLabel) : baseDefaults.fallbackTriggerLabel
     },
     visual: {
-      bannerBg: v.bannerBg || cc.surface || dV.bannerBg,
-      textColor: v.textColor || cc.foreground || dV.textColor,
-      secondaryTextColor: v.secondaryTextColor || cc.mutedText || dV.secondaryTextColor,
-      borderColor: v.borderColor || cc.border || dV.borderColor,
+      bannerBg: (hasCC && ccOverlaySurf) ? ccOverlaySurf : (v.bannerBg || dV.bannerBg),
+      textColor: (hasCC && ccOverlayFg) ? ccOverlayFg : (v.textColor || dV.textColor),
+      secondaryTextColor: (hasCC && cc.mutedText) ? cc.mutedText : (v.secondaryTextColor || dV.secondaryTextColor),
+      borderColor: (hasCC && cc.border) ? cc.border : (v.borderColor || dV.borderColor),
       backdropBlur: v.backdropBlur || dV.backdropBlur,
       bannerRadius: v.bannerRadius || dV.bannerRadius,
       paddingY: v.paddingY || dV.paddingY,
       paddingX: v.paddingX || dV.paddingX,
       maxWidth: v.maxWidth || dV.maxWidth,
       buttonRadius: v.buttonRadius || dV.buttonRadius,
-      btnPrimaryBg: v.btnPrimaryBg || cc.accent || dV.btnPrimaryBg,
+      btnPrimaryBg: (hasCC && cc.accent) ? cc.accent : (v.btnPrimaryBg || dV.btnPrimaryBg),
       btnPrimaryText: v.btnPrimaryText || dV.btnPrimaryText,
-      btnPrimaryBorder: v.btnPrimaryBorder || cc.accent || dV.btnPrimaryBorder,
+      btnPrimaryBorder: (hasCC && cc.accent) ? cc.accent : (v.btnPrimaryBorder || dV.btnPrimaryBorder),
       btnSecondaryBg: v.btnSecondaryBg || dV.btnSecondaryBg,
-      btnSecondaryText: v.btnSecondaryText || cc.foreground || dV.btnSecondaryText,
-      btnSecondaryBorder: v.btnSecondaryBorder || cc.border || dV.btnSecondaryBorder,
-      linkColor: v.linkColor || cc.accent || dV.linkColor,
-      modalBg: v.modalBg || cc.surface || dV.modalBg,
-      modalBorder: v.modalBorder || cc.border || dV.modalBorder,
+      btnSecondaryText: (hasCC && ccOverlayFg) ? ccOverlayFg : (v.btnSecondaryText || dV.btnSecondaryText),
+      btnSecondaryBorder: (hasCC && cc.border) ? cc.border : (v.btnSecondaryBorder || dV.btnSecondaryBorder),
+      linkColor: (hasCC && cc.accent) ? cc.accent : (v.linkColor || dV.linkColor),
+      modalBg: (hasCC && ccOverlaySurf) ? ccOverlaySurf : (v.modalBg || dV.modalBg),
+      modalBorder: (hasCC && cc.border) ? cc.border : (v.modalBorder || dV.modalBorder),
       modalRadius: v.modalRadius || dV.modalRadius,
       overlayOpacity: (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity,
-      accentColor: v.accentColor || cc.accent || dV.accentColor,
+      accentColor: (hasCC && cc.accent) ? cc.accent : (v.accentColor || dV.accentColor),
       fontFamily: v.fontFamily || dV.fontFamily,
       mobilePaddingY: v.mobilePaddingY || dV.mobilePaddingY,
       mobilePaddingX: v.mobilePaddingX || dV.mobilePaddingX,
@@ -362,14 +365,14 @@ export function resolveConsentConfig(raw, pageLang = "", colorContext = null) {
       modalHeaderPadding: v.modalHeaderPadding || dV.modalHeaderPadding,
       modalBodyPadding: v.modalBodyPadding || dV.modalBodyPadding,
       modalFooterPadding: v.modalFooterPadding || dV.modalFooterPadding,
-      cardBg: v.cardBg || dV.cardBg,
-      cardBorderColor: v.cardBorderColor || cc.border || dV.cardBorderColor,
+      cardBg: (hasCC && ccOverlaySurf) ? "rgba(255, 255, 255, 0.03)" : (v.cardBg || dV.cardBg),
+      cardBorderColor: (hasCC && cc.border) ? cc.border : (v.cardBorderColor || dV.cardBorderColor),
       cardBorderWidth: v.cardBorderWidth || dV.cardBorderWidth,
       cardRadius: v.cardRadius || dV.cardRadius,
       cardGap: v.cardGap || dV.cardGap,
       cardPadding: v.cardPadding || dV.cardPadding,
-      overlayColor: v.overlayColor || cc.overlaySurface || dV.overlayColor,
-      closeColor: v.closeColor || cc.mutedText || dV.closeColor,
+      overlayColor: (hasCC && ccOverlaySurf) ? ccOverlaySurf : (v.overlayColor || dV.overlayColor),
+      closeColor: (hasCC && cc.mutedText) ? cc.mutedText : (v.closeColor || dV.closeColor),
       closeSize: v.closeSize || dV.closeSize,
       checkboxSize: v.checkboxSize || dV.checkboxSize,
       mobileMaxWidth: v.mobileMaxWidth || dV.mobileMaxWidth
@@ -378,75 +381,125 @@ export function resolveConsentConfig(raw, pageLang = "", colorContext = null) {
 }
 
 export function getConsentCssVariables(visual = {}, colorContext = null) {
-  const v = visual;
+  const v = visual || {};
   const dV = DEFAULT_CONSENT_CONFIG.visual;
   const cc = colorContext || {};
+  const hasCC = Boolean(colorContext && typeof colorContext === "object" && Object.keys(colorContext).length > 0);
+  const ccOverlaySurf = cc.overlaySurface || cc.surface;
+  const ccOverlayFg = cc.overlayForeground || cc.foreground;
 
+  const bannerBg = (hasCC && ccOverlaySurf) ? ccOverlaySurf : (v.bannerBg || dV.bannerBg);
+  const textColor = (hasCC && ccOverlayFg) ? ccOverlayFg : (v.textColor || dV.textColor);
+  const secondaryTextColor = (hasCC && cc.mutedText) ? cc.mutedText : (v.secondaryTextColor || dV.secondaryTextColor);
+  const borderColor = (hasCC && cc.border) ? cc.border : (v.borderColor || dV.borderColor);
+  const backdropBlur = v.backdropBlur || dV.backdropBlur;
+  const bannerRadius = v.bannerRadius || dV.bannerRadius;
+  const paddingY = v.paddingY || dV.paddingY;
+  const paddingX = v.paddingX || dV.paddingX;
+  const maxWidth = v.maxWidth || dV.maxWidth;
+  const buttonRadius = v.buttonRadius || dV.buttonRadius;
+  const btnPrimaryBg = (hasCC && cc.accent) ? cc.accent : (v.btnPrimaryBg || dV.btnPrimaryBg);
+  const btnPrimaryText = v.btnPrimaryText || dV.btnPrimaryText;
+  const btnPrimaryBorder = (hasCC && cc.accent) ? cc.accent : (v.btnPrimaryBorder || dV.btnPrimaryBorder);
+  const btnSecondaryBg = v.btnSecondaryBg || dV.btnSecondaryBg;
+  const btnSecondaryText = (hasCC && ccOverlayFg) ? ccOverlayFg : (v.btnSecondaryText || dV.btnSecondaryText);
+  const btnSecondaryBorder = (hasCC && cc.border) ? cc.border : (v.btnSecondaryBorder || dV.btnSecondaryBorder);
+  const linkColor = (hasCC && cc.accent) ? cc.accent : (v.linkColor || dV.linkColor);
+  const modalBg = (hasCC && ccOverlaySurf) ? ccOverlaySurf : (v.modalBg || dV.modalBg);
+  const modalBorder = (hasCC && cc.border) ? cc.border : (v.modalBorder || dV.modalBorder);
+  const modalRadius = v.modalRadius || dV.modalRadius;
+  const overlayColor = (hasCC && ccOverlaySurf) ? ccOverlaySurf : (v.overlayColor || dV.overlayColor);
+  const overlayOpacity = (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity;
+  const overlayBg = formatOverlayBg(overlayColor, overlayOpacity);
+  const accentColor = (hasCC && cc.accent) ? cc.accent : (v.accentColor || dV.accentColor);
+  const fontFamily = v.fontFamily || dV.fontFamily;
+  const mobilePaddingY = v.mobilePaddingY || dV.mobilePaddingY;
+  const mobilePaddingX = v.mobilePaddingX || dV.mobilePaddingX;
+
+  const bannerBottom = v.bannerBottom || dV.bannerBottom;
+  const bannerBorderWidth = v.bannerBorderWidth || dV.bannerBorderWidth;
   const bannerAlignment = (v.bannerAlignment === "center") ? "center" : "left";
   const desktopActionLayout = (v.desktopActionLayout === "stacked") ? "column" : "row";
   const desktopActionAlign = (v.desktopActionLayout === "stacked") ? "stretch" : "center";
   const mobileActionLayout = (v.mobileActionLayout === "horizontal") ? "row" : "column";
   const mobileActionAlign = (v.mobileActionLayout === "horizontal") ? "center" : "stretch";
-  const overlayColor = v.overlayColor || cc.overlaySurface || dV.overlayColor;
-  const overlayOpacity = (v.overlayOpacity != null && v.overlayOpacity !== "") ? v.overlayOpacity : dV.overlayOpacity;
-  const overlayBg = formatOverlayBg(overlayColor, overlayOpacity);
+  const titleBodyGap = v.titleBodyGap || dV.titleBodyGap;
+  const bodyActionsGap = v.bodyActionsGap || dV.bodyActionsGap;
+  const actionGap = v.actionGap || dV.actionGap;
+  const btnPaddingX = v.btnPaddingX || dV.btnPaddingX;
+  const btnPaddingY = v.btnPaddingY || dV.btnPaddingY;
+  const btnMinHeight = v.btnMinHeight || dV.btnMinHeight;
+  const modalMaxWidth = v.modalMaxWidth || dV.modalMaxWidth;
+  const modalHeaderPadding = v.modalHeaderPadding || dV.modalHeaderPadding;
+  const modalBodyPadding = v.modalBodyPadding || dV.modalBodyPadding;
+  const modalFooterPadding = v.modalFooterPadding || dV.modalFooterPadding;
+  const cardBg = (hasCC && ccOverlaySurf) ? "rgba(255, 255, 255, 0.03)" : (v.cardBg || dV.cardBg);
+  const cardBorderColor = (hasCC && cc.border) ? cc.border : (v.cardBorderColor || dV.cardBorderColor);
+  const cardBorderWidth = v.cardBorderWidth || dV.cardBorderWidth;
+  const cardRadius = v.cardRadius || dV.cardRadius;
+  const cardGap = v.cardGap || dV.cardGap;
+  const cardPadding = v.cardPadding || dV.cardPadding;
+  const closeColor = (hasCC && cc.mutedText) ? cc.mutedText : (v.closeColor || dV.closeColor);
+  const closeSize = v.closeSize || dV.closeSize;
+  const checkboxSize = v.checkboxSize || dV.checkboxSize;
+  const mobileMaxWidth = v.mobileMaxWidth || dV.mobileMaxWidth;
 
   return `
-  --cl-consent-banner-bg: ${v.bannerBg || cc.surface || dV.bannerBg};
-  --cl-consent-text-color: ${v.textColor || cc.foreground || dV.textColor};
-  --cl-consent-secondary-text: ${v.secondaryTextColor || cc.mutedText || dV.secondaryTextColor};
-  --cl-consent-border-color: ${v.borderColor || cc.border || dV.borderColor};
-  --cl-consent-backdrop-blur: ${v.backdropBlur || dV.backdropBlur};
-  --cl-consent-banner-radius: ${v.bannerRadius || dV.bannerRadius};
-  --cl-consent-padding-y: ${v.paddingY || dV.paddingY};
-  --cl-consent-padding-x: ${v.paddingX || dV.paddingX};
-  --cl-consent-max-width: ${v.maxWidth || dV.maxWidth};
-  --cl-consent-button-radius: ${v.buttonRadius || dV.buttonRadius};
-  --cl-consent-btn-primary-bg: ${v.btnPrimaryBg || cc.accent || dV.btnPrimaryBg};
-  --cl-consent-btn-primary-text: ${v.btnPrimaryText || dV.btnPrimaryText};
-  --cl-consent-btn-primary-border: ${v.btnPrimaryBorder || cc.accent || dV.btnPrimaryBorder};
-  --cl-consent-btn-secondary-bg: ${v.btnSecondaryBg || dV.btnSecondaryBg};
-  --cl-consent-btn-secondary-text: ${v.btnSecondaryText || cc.foreground || dV.btnSecondaryText};
-  --cl-consent-btn-secondary-border: ${v.btnSecondaryBorder || cc.border || dV.btnSecondaryBorder};
-  --cl-consent-link-color: ${v.linkColor || cc.accent || dV.linkColor};
-  --cl-consent-modal-bg: ${v.modalBg || cc.surface || dV.modalBg};
-  --cl-consent-modal-border: ${v.modalBorder || cc.border || dV.modalBorder};
-  --cl-consent-modal-radius: ${v.modalRadius || dV.modalRadius};
+  --cl-consent-banner-bg: ${bannerBg};
+  --cl-consent-text-color: ${textColor};
+  --cl-consent-secondary-text: ${secondaryTextColor};
+  --cl-consent-border-color: ${borderColor};
+  --cl-consent-backdrop-blur: ${backdropBlur};
+  --cl-consent-banner-radius: ${bannerRadius};
+  --cl-consent-padding-y: ${paddingY};
+  --cl-consent-padding-x: ${paddingX};
+  --cl-consent-max-width: ${maxWidth};
+  --cl-consent-button-radius: ${buttonRadius};
+  --cl-consent-btn-primary-bg: ${btnPrimaryBg};
+  --cl-consent-btn-primary-text: ${btnPrimaryText};
+  --cl-consent-btn-primary-border: ${btnPrimaryBorder};
+  --cl-consent-btn-secondary-bg: ${btnSecondaryBg};
+  --cl-consent-btn-secondary-text: ${btnSecondaryText};
+  --cl-consent-btn-secondary-border: ${btnSecondaryBorder};
+  --cl-consent-link-color: ${linkColor};
+  --cl-consent-modal-bg: ${modalBg};
+  --cl-consent-modal-border: ${modalBorder};
+  --cl-consent-modal-radius: ${modalRadius};
   --cl-consent-overlay-opacity: ${overlayOpacity};
   --cl-consent-overlay-color: ${overlayColor};
   --cl-consent-overlay-bg: ${overlayBg};
-  --cl-consent-accent-color: ${v.accentColor || cc.accent || dV.accentColor};
-  --cl-consent-font-family: ${v.fontFamily || dV.fontFamily};
-  --cl-consent-mobile-padding-y: ${v.mobilePaddingY || dV.mobilePaddingY};
-  --cl-consent-mobile-padding-x: ${v.mobilePaddingX || dV.mobilePaddingX};
+  --cl-consent-accent-color: ${accentColor};
+  --cl-consent-font-family: ${fontFamily};
+  --cl-consent-mobile-padding-y: ${mobilePaddingY};
+  --cl-consent-mobile-padding-x: ${mobilePaddingX};
 
-  --cl-consent-banner-bottom: ${v.bannerBottom || dV.bannerBottom};
-  --cl-consent-banner-border-width: ${v.bannerBorderWidth || dV.bannerBorderWidth};
+  --cl-consent-banner-bottom: ${bannerBottom};
+  --cl-consent-banner-border-width: ${bannerBorderWidth};
   --cl-consent-content-align: ${bannerAlignment};
   --cl-consent-desktop-action-direction: ${desktopActionLayout};
   --cl-consent-desktop-action-align: ${desktopActionAlign};
   --cl-consent-mobile-action-direction: ${mobileActionLayout};
   --cl-consent-mobile-action-align: ${mobileActionAlign};
-  --cl-consent-title-body-gap: ${v.titleBodyGap || dV.titleBodyGap};
-  --cl-consent-body-actions-gap: ${v.bodyActionsGap || dV.bodyActionsGap};
-  --cl-consent-action-gap: ${v.actionGap || dV.actionGap};
-  --cl-consent-btn-padding-x: ${v.btnPaddingX || dV.btnPaddingX};
-  --cl-consent-btn-padding-y: ${v.btnPaddingY || dV.btnPaddingY};
-  --cl-consent-btn-min-height: ${v.btnMinHeight || dV.btnMinHeight};
-  --cl-consent-modal-max-width: ${v.modalMaxWidth || dV.modalMaxWidth};
-  --cl-consent-modal-header-padding: ${v.modalHeaderPadding || dV.modalHeaderPadding};
-  --cl-consent-modal-body-padding: ${v.modalBodyPadding || dV.modalBodyPadding};
-  --cl-consent-modal-footer-padding: ${v.modalFooterPadding || dV.modalFooterPadding};
-  --cl-consent-card-bg: ${v.cardBg || dV.cardBg};
-  --cl-consent-card-border-color: ${v.cardBorderColor || cc.border || dV.cardBorderColor};
-  --cl-consent-card-border-width: ${v.cardBorderWidth || dV.cardBorderWidth};
-  --cl-consent-card-radius: ${v.cardRadius || dV.cardRadius};
-  --cl-consent-card-gap: ${v.cardGap || dV.cardGap};
-  --cl-consent-card-padding: ${v.cardPadding || dV.cardPadding};
-  --cl-consent-close-color: ${v.closeColor || cc.mutedText || dV.closeColor};
-  --cl-consent-close-size: ${v.closeSize || dV.closeSize};
-  --cl-consent-checkbox-size: ${v.checkboxSize || dV.checkboxSize};
-  --cl-consent-mobile-max-width: ${v.mobileMaxWidth || dV.mobileMaxWidth};
+  --cl-consent-title-body-gap: ${titleBodyGap};
+  --cl-consent-body-actions-gap: ${bodyActionsGap};
+  --cl-consent-action-gap: ${actionGap};
+  --cl-consent-btn-padding-x: ${btnPaddingX};
+  --cl-consent-btn-padding-y: ${btnPaddingY};
+  --cl-consent-btn-min-height: ${btnMinHeight};
+  --cl-consent-modal-max-width: ${modalMaxWidth};
+  --cl-consent-modal-header-padding: ${modalHeaderPadding};
+  --cl-consent-modal-body-padding: ${modalBodyPadding};
+  --cl-consent-modal-footer-padding: ${modalFooterPadding};
+  --cl-consent-card-bg: ${cardBg};
+  --cl-consent-card-border-color: ${cardBorderColor};
+  --cl-consent-card-border-width: ${cardBorderWidth};
+  --cl-consent-card-radius: ${cardRadius};
+  --cl-consent-card-gap: ${cardGap};
+  --cl-consent-card-padding: ${cardPadding};
+  --cl-consent-close-color: ${closeColor};
+  --cl-consent-close-size: ${closeSize};
+  --cl-consent-checkbox-size: ${checkboxSize};
+  --cl-consent-mobile-max-width: ${mobileMaxWidth};
   `;
 }
 

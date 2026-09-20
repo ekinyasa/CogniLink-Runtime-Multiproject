@@ -155,7 +155,7 @@ test("Page Language-Aware Shared UI & Page Color Context Test Suite", async (t) 
       overlaySurface: "#000000"
     };
     const vars = getConsentCssVariables({}, colorContext);
-    assert.match(vars, /--cl-consent-modal-bg:\s*#1f2833/);
+    assert.match(vars, /--cl-consent-modal-bg:\s*#000000/);
     assert.match(vars, /--cl-consent-modal-border:\s*#45a29e/);
     assert.match(vars, /--cl-consent-overlay-color:\s*#000000/);
   });
@@ -172,17 +172,27 @@ test("Page Language-Aware Shared UI & Page Color Context Test Suite", async (t) 
     assert.match(css, /--site-link:\s*var\(--page-accent\);/);
   });
 
-  await t.test("12. Explicit consent visual settings override colorContext values", () => {
+  await t.test("12. Page Color Context overrides explicit global Appearance, but global Appearance wins when Page Color Context is absent", () => {
     const rawConsent = {
       visual: {
-        bannerBg: "#ff0000"
+        bannerBg: "rgba(43,31,24,.88)",
+        modalBg: "rgba(43,31,24,.88)"
       }
     };
     const colorContext = {
-      surface: "#0000ff"
+      surface: "#22211F",
+      overlaySurface: "#22211F"
     };
-    const resolved = resolveConsentConfig(rawConsent, "en", colorContext);
-    assert.equal(resolved.visual.bannerBg, "#ff0000");
+
+    // 1. With Page Color Context present: Page Color Context wins
+    const resolvedWithCC = resolveConsentConfig(rawConsent, "en", colorContext);
+    assert.equal(resolvedWithCC.visual.bannerBg, "#22211F");
+    assert.equal(resolvedWithCC.visual.modalBg, "#22211F");
+
+    // 2. With Page Color Context absent: Global Appearance wins
+    const resolvedWithoutCC = resolveConsentConfig(rawConsent, "en", null);
+    assert.equal(resolvedWithoutCC.visual.bannerBg, "rgba(43,31,24,.88)");
+    assert.equal(resolvedWithoutCC.visual.modalBg, "rgba(43,31,24,.88)");
   });
 
   await t.test("13. Undefined colorContext does not emit dummy --page-* variables or mutate theme", () => {
@@ -392,6 +402,67 @@ test("Page Language-Aware Shared UI & Page Color Context Test Suite", async (t) 
 
     assert.match(htmlEN, /English Banner/);
     assert.doesNotMatch(htmlEN, /Özel Türkçe Çerez Bildirimi/);
+  });
+
+  await t.test("23. Regression Test: Page Color Context overrides explicit global Appearance for Cookie Banner, Cookie Modal, and Editorial Footer", () => {
+    const globalConsentConfig = {
+      visual: {
+        bannerBg: "rgba(43,31,24,.88)",
+        modalBg: "rgba(43,31,24,.88)",
+        textColor: "rgb(241, 233, 223)",
+        secondaryTextColor: "rgb(200, 188, 175)",
+        borderColor: "rgba(255, 232, 205, 0.24)",
+        btnPrimaryBg: "rgba(255, 221, 174, 0.3)"
+      }
+    };
+
+    const halColorContext = {
+      surface: "#22211F",
+      foreground: "#DCD8CE",
+      mutedText: "#8D8980",
+      border: "rgba(220,216,207,.10)",
+      accent: "#A2846F",
+      overlaySurface: "#22211F",
+      overlayForeground: "#DCD8CE"
+    };
+
+    // 1. With Page Color Context present on page
+    const htmlWithCC = renderHub({
+      slug: "hal-derin-dinleme",
+      config: { consent: globalConsentConfig },
+      slugData: {
+        title: "HÂL | Derin Dinleme",
+        head: { language: "tr" },
+        colorContext: halColorContext
+      }
+    });
+
+    // Cookie Banner & Modal: must use #22211F, NOT rgba(43,31,24,.88)
+    assert.match(htmlWithCC, /--cl-consent-banner-bg:\s*#22211F;/);
+    assert.match(htmlWithCC, /--cl-consent-modal-bg:\s*#22211F;/);
+    assert.match(htmlWithCC, /--cl-consent-text-color:\s*#DCD8CE;/);
+    assert.match(htmlWithCC, /--cl-consent-secondary-text:\s*#8D8980;/);
+    assert.match(htmlWithCC, /--cl-consent-border-color:\s*rgba\(220,216,207,\.10\);/);
+    assert.match(htmlWithCC, /--cl-consent-btn-primary-bg:\s*#A2846F;/);
+
+    // Editorial Footer: page-color-context block overrides site variables
+    assert.match(htmlWithCC, /id="page-color-context"/);
+    assert.match(htmlWithCC, /--page-surface:\s*#22211F;/);
+    assert.match(htmlWithCC, /--site-surface:\s*var\(--page-surface\);/);
+
+    // 2. With Page Color Context absent (null): global Appearance wins exactly as before
+    const htmlWithoutCC = renderHub({
+      slug: "plain-page",
+      config: { consent: globalConsentConfig },
+      slugData: {
+        title: "Plain Page",
+        head: { language: "tr" }
+      }
+    });
+
+    assert.match(htmlWithoutCC, /--cl-consent-banner-bg:\s*rgba\(43,31,24,\.88\);/);
+    assert.match(htmlWithoutCC, /--cl-consent-modal-bg:\s*rgba\(43,31,24,\.88\);/);
+    assert.doesNotMatch(htmlWithoutCC, /id="page-color-context"/);
   });
 
 });
