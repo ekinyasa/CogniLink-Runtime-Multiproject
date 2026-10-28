@@ -61,6 +61,7 @@
 
 import { getExpState }                from "../_shared/ab-router.js";
 import { cacheDelete }                from "../_shared/kv-cache.js";
+import { getAnalyticsDatasets }        from "../_shared/analytics.js";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -284,10 +285,14 @@ export async function rebalanceExperiment(env, alias) {
   const apiToken  = env.CF_AE_API_TOKEN;
   if (!accountId || !apiToken) return { ok: false, reason: "analytics_api_not_configured" };
 
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const datasetOps = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
-  const datasetEvt = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
+  let datasetOps, datasetEvt;
+  try {
+    const ds = getAnalyticsDatasets(env);
+    datasetOps = ds.datasetOps;
+    datasetEvt = ds.datasetEvt;
+  } catch (err) {
+    return { ok: false, reason: "configuration_error", hint: err.message };
+  }
 
   const aliasEscaped = alias.replace(/'/g, "''");
   

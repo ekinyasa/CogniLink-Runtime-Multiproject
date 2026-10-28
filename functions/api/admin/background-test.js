@@ -44,6 +44,7 @@
 import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
 import { createFixture, archiveFixture }          from "../../_shared/fixture.js";
 import { retryWithBackoff }                       from "../../_shared/retry.js";
+import { getAnalyticsDataset }                    from "../../_shared/analytics.js";
 
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const DATASET     = "linkhub_ops_events";
@@ -83,9 +84,7 @@ async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaig
   // toUnixTimestamp() accepts the AE timestamp column directly and is always unambiguous.
   const since = Math.floor((testStartMs - 5_000) / 1000); // Unix seconds, 5s clock-drift buffer
 
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  const dataset = getAnalyticsDataset(env, "traffic");
 
   const [totalJson, modJson] = await Promise.all([
     aePost(accountId, apiToken,

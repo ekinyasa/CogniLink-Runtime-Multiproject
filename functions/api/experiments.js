@@ -48,6 +48,7 @@
 import { verifyToken, unauthorized, jsonHeaders }  from "../_shared/auth.js";
 import { validateAlias }              from "../_shared/validators.js";
 import { loadABConfig, getExpState }  from "../_shared/ab-router.js";
+import { getAnalyticsDatasets }        from "../_shared/analytics.js";
 
 const MIN_EXPOSURE     = 30;   // minimum exposures per variant to attempt winner detection
 const WINNER_THRESHOLD = 0.10; // minimum absolute conversion_rate advantage over baseline (10 pp)
@@ -166,10 +167,14 @@ export async function onRequestGet(context) {
       return json({ error: "ae_credentials_missing", hint: "Set CF_ACCOUNT_ID and CF_AE_API_TOKEN" }, 503);
     }
 
-    const envName = (env.ENV_NAME || "dev").toLowerCase();
-    const isProd = envName === "production";
-    const datasetOps = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
-    const datasetEvt = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
+    let datasetOps, datasetEvt;
+    try {
+      const ds = getAnalyticsDatasets(env);
+      datasetOps = ds.datasetOps;
+      datasetEvt = ds.datasetEvt;
+    } catch (err) {
+      return json({ error: "configuration_error", hint: err.message }, 500);
+    }
 
     // Load A/B config to get the ordered variant list (uses in-memory cache)
     const abConfig = await loadABConfig(alias, env);

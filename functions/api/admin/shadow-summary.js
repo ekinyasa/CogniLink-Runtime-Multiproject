@@ -14,6 +14,7 @@
  */
 
 import { verifyToken, unauthorized } from "../../_shared/auth.js";
+import { getAnalyticsDataset } from "../../_shared/analytics.js";
 
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
 
@@ -75,9 +76,16 @@ export async function onRequestGet(context) {
     }), { status: 503, headers });
   }
 
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  let dataset;
+  try {
+    dataset = getAnalyticsDataset(env, "traffic");
+  } catch (err) {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: "configuration_error",
+      hint: err.message
+    }), { status: 500, headers });
+  }
 
   const intervalStr = `INTERVAL '${windowDef.interval}' ${windowDef.unit}`;
 

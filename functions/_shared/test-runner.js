@@ -30,6 +30,7 @@
  */
 
 import { retryWithBackoff } from "./retry.js";
+import { getAnalyticsDataset } from "./analytics.js";
 
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const DATASET     = "linkhub_ops_events";
@@ -106,9 +107,12 @@ async function kvHealthCheck(env) {
  * Returns { ok, events, error? } — never throws.
  */
 async function queryRecentEvents(accountId, apiToken, env) {
-  const envName = (env?.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  let dataset;
+  try {
+    dataset = getAnalyticsDataset(env, "traffic");
+  } catch (err) {
+    return { ok: false, events: [], error: err.message };
+  }
 
   const sql = [
     `SELECT timestamp, blob1 AS alias, blob4 AS campaign`,

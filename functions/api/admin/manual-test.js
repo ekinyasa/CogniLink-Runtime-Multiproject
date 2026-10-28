@@ -41,6 +41,7 @@ import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
 import { checkHubLinks }                          from "../../_shared/test-runner.js";
 import { retryWithBackoff }                       from "../../_shared/retry.js";
 import { createFixture, archiveFixture }          from "../../_shared/fixture.js";
+import { getAnalyticsDataset }                    from "../../_shared/analytics.js";
 
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const DATASET     = "linkhub_ops_events";
@@ -91,9 +92,7 @@ async function queryEventsSince(accountId, apiToken, testStartMs, alias, campaig
   // Subtract 5 seconds to guard against clock drift (PART 3)
   const since = fmtTs(testStartMs - 5_000);
 
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const dataset = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  const dataset = getAnalyticsDataset(env, "traffic");
 
   const [totalJson, modJson] = await Promise.all([
     aePost(accountId, apiToken,

@@ -3356,6 +3356,8 @@ window.openNewIntentModal = function(e) {
     elAnalyticsStatus.textContent = "Loading analytics…";
     elAnalyticsStatus.className   = "hint";
     show(elAnalyticsStatus);
+    var elFrInit = $("analytics-freshness-text");
+    if (elFrInit) { elFrInit.innerHTML = ""; hide(elFrInit); }
     hide($("stat-conv-rate-wrap"));
     hide($("analytics-content-b"));
     hide($("analytics-content-c"));
@@ -3380,6 +3382,8 @@ window.openNewIntentModal = function(e) {
           ? "Analytics not configured. Set CF_ACCOUNT_ID and CF_AE_API_TOKEN in Pages dashboard."
           : "Failed to load analytics: " + hint;
         elAnalyticsStatus.className = "hint";
+        var elFrFail = $("analytics-freshness-text");
+        if (elFrFail) { elFrFail.innerHTML = ""; hide(elFrFail); }
         return;
       }
 
@@ -3399,9 +3403,17 @@ window.openNewIntentModal = function(e) {
       renderDashboardSummary();
 
       var elFr = $("analytics-freshness-text");
-      if (data.is_mock && elFr) {
-        show(elFr);
-        elFr.innerHTML = '<span class="badge badge-warning" style="font-size:0.65rem">MOCK DATA (Local)</span>';
+      if (elFr) {
+        if (data.is_mock) {
+          show(elFr);
+          elFr.innerHTML = '<span class="badge badge-warning" style="font-size:0.65rem">MOCK DATA (Local)</span>';
+        } else if (data.errors && data.errors.length > 0) {
+          show(elFr);
+          elFr.innerHTML = '<span class="badge badge-warning" style="font-size:0.65rem">PARTIAL DATA (' + data.errors.length + ' query errors)</span>';
+        } else {
+          elFr.innerHTML = "";
+          hide(elFr);
+        }
       }
 
       if (data.generated_at) {
@@ -3422,6 +3434,8 @@ window.openNewIntentModal = function(e) {
         elAnalyticsStatus.textContent = "Failed to load analytics: " + err.message;
         elAnalyticsStatus.className = "hint";
       }
+      var elFrErr = $("analytics-freshness-text");
+      if (elFrErr) { elFrErr.innerHTML = ""; hide(elFrErr); }
     }
   }
 

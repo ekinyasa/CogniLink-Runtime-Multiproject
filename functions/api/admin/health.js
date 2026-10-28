@@ -24,8 +24,9 @@
  * Callers should alert when ok is false.
  */
 
+import { getAnalyticsDataset } from "../../_shared/analytics.js";
+
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
-const DATASET     = "linkhub_ops_events";
 const PROBE_ALIAS = "yenile";   // known production alias used for router health check
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -70,12 +71,12 @@ async function checkAnalytics(env) {
   const apiToken  = env.CF_AE_API_TOKEN || "";
   if (!accountId || !apiToken) return "error";
 
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const defaultProdDataset = (env.PROJECT_ID === "nilufer" || env.ROOT_DOMAIN?.includes("niluferormanli"))
-    ? "cognilink_nilufer_traffic_prod"
-    : "cognilink_runtime_traffic_prod";
-  const dataset = isProd ? (env.AE_TRAFFIC_DATASET || defaultProdDataset) : `ae_traffic_${envName}`;
+  let dataset;
+  try {
+    dataset = getAnalyticsDataset(env, "traffic");
+  } catch {
+    return "error";
+  }
 
   try {
     const res = await fetch(

@@ -1,5 +1,6 @@
 import { verifyToken, unauthorized, jsonHeaders } from "../../_shared/auth.js";
 import { getExpState } from "../../_shared/ab-router.js";
+import { getAnalyticsDatasets } from "../../_shared/analytics.js";
 
 const AE_SQL_BASE = "https://api.cloudflare.com/client/v4/accounts";
 
@@ -72,10 +73,7 @@ async function fetchActiveExperiments(env, accountId, apiToken, interval, unit, 
   
   if (activeConfigs.length === 0) return [];
 
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const datasetEvt = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
-  const datasetOps = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
+  const { datasetOps, datasetEvt } = getAnalyticsDatasets(env);
 
   const aliases = activeConfigs.map(c => `'${c.alias.replace(/'/g, "''")}'`).join(",");
   
@@ -100,8 +98,8 @@ async function fetchActiveExperiments(env, accountId, apiToken, interval, unit, 
   `;
 
   const [resExp, resEvt] = await Promise.all([
-    aeQuery(accountId, apiToken, sqlExp).catch(() => ({ data: [] })),
-    aeQuery(accountId, apiToken, sqlEvt).catch(() => ({ data: [] })),
+    aeQuery(accountId, apiToken, sqlExp),
+    aeQuery(accountId, apiToken, sqlEvt),
   ]);
 
   const statsMap = {};
@@ -191,10 +189,38 @@ async function handleGet(context) {
   const endParam    = (url.searchParams.get("end") || "").trim();
   const showTest    = url.searchParams.get("test") === "true";
 
+  const envName = (env.ENV_NAME || "dev").toLowerCase();
+  const isProd = envName === "production" || envName === "prod";
+
   // MOCK MODE for local testing if credentials are missing
   if (!accountId || !apiToken) {
+    if (isProd) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: "not_configured",
+        hint: "Analytics credentials (CF_ACCOUNT_ID, CF_AE_API_TOKEN) not configured in production.",
+        is_mock: false
+      }), {
+        status: 503, headers: jsonHeaders()
+      });
+    }
     return new Response(JSON.stringify(getMockData(windowParam, showTest)), {
       status: 200, headers: jsonHeaders()
+    });
+  }
+
+  let DATASET_OPS, DATASET_EVT;
+  try {
+    const ds = getAnalyticsDatasets(env);
+    DATASET_OPS = ds.datasetOps;
+    DATASET_EVT = ds.datasetEvt;
+  } catch (err) {
+    return new Response(JSON.stringify({
+      ok: false,
+      error: "configuration_error",
+      hint: err.message
+    }), {
+      status: 500, headers: jsonHeaders()
     });
   }
 
@@ -218,10 +244,6 @@ async function handleGet(context) {
   const t0 = Date.now();
 
   const clickEvents = "'traffic_memory'";
-  const envName = (env.ENV_NAME || "dev").toLowerCase();
-  const isProd = envName === "production";
-  const DATASET_OPS = isProd ? "cognilink_runtime_traffic_prod" : `ae_traffic_${envName}`;
-  const DATASET_EVT = isProd ? "cognilink_runtime_conversion_prod" : `ae_conversion_${envName}`;
 
   try {
     const [
@@ -278,17 +300,47 @@ async function handleGet(context) {
     ]);
 
     // Diagnostic logging
-    const errors = [];
-    const results = [
-      campRes, aliasRes, slugRes, trafficRecentRes, eventsRecentRes, convRes, expSummary,
-      seriesClicksRes, seriesConvsRes, sourceClicksRes, sourceConvsRes
+    const aeQueryResults = [
+      { name: "campaigns", res: campRes },
+      { name: "aliases", res: aliasRes },
+      { name: "slugs", res: slugRes },
+      { name: "traffic_recent", res: trafficRecentRes },
+      { name: "events_recent", res: eventsRecentRes },
+      { name: "conversions", res: convRes },
+      { name: "series_clicks", res: seriesClicksRes },
+      { name: "series_conversions", res: seriesConvsRes },
+      { name: "source_clicks", res: sourceClicksRes },
+      { name: "source_conversions", res: sourceConvsRes },
     ];
-    results.forEach((r, idx) => {
-      if (r.status === "rejected") {
-        console.error(`[Analytics API] Query ${idx} failed:`, r.reason);
-        errors.push({ query: idx, error: String(r.reason) });
+
+    const errors = [];
+    let mainFailedCount = 0;
+    aeQueryResults.forEach(({ name, res }) => {
+      if (res.status === "rejected") {
+        mainFailedCount++;
+        console.error(`[Analytics API] Query ${name} failed:`, res.reason);
+        errors.push({ query: name, error: String(res.reason?.message || res.reason) });
       }
     });
+
+    if (expSummary.status === "rejected") {
+      console.error(`[Analytics API] Experiment summary failed:`, expSummary.reason);
+      errors.push({ query: "experiments", error: String(expSummary.reason?.message || expSummary.reason) });
+    }
+
+    // Only return 502 if ALL main AE queries failed.
+    // If at least one main query succeeded, preserve the partial successful data.
+    if (mainFailedCount === aeQueryResults.length) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: "query_failed",
+        hint: errors[0]?.error || "All analytics queries failed.",
+        errors
+      }), {
+        status: 502,
+        headers: jsonHeaders()
+      });
+    }
 
     const getRows = (res) => (res.status === "fulfilled" ? rows(res.value) : []);
     const isTest = (s) => typeof s === "string" && s.startsWith("test-");
@@ -349,6 +401,7 @@ async function handleGet(context) {
 
     return new Response(JSON.stringify({
       ok: true,
+      partial_error: errors.length > 0 ? true : false,
       campaigns: fCampaigns,
       aliases:   filterData(getRows(aliasRes).map(r => ({ ...r, clicks: Number(r.clicks) })), "alias"),
       slugs:     filterData(getRows(slugRes).map(r => ({ ...r, clicks: Number(r.clicks) })), "slug"),
