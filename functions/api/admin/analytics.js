@@ -33,6 +33,52 @@ function rows(aeResponse) {
 }
 
 /**
+ * Validates that a string is a strictly valid YYYY-MM-DD calendar date.
+ */
+function isValidCalendarDate(str) {
+  if (typeof str !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return false;
+  }
+  const [y, m, d] = str.split("-").map(Number);
+  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 2000 || y > 2100) {
+    return false;
+  }
+  const daysInMonth = [0, 31, (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return d <= daysInMonth[m];
+}
+
+/**
+ * Calculates the next calendar day string (YYYY-MM-DD) in UTC.
+ */
+function getNextDayStr(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const nextDate = new Date(Date.UTC(y, m - 1, d + 1));
+  const ny = nextDate.getUTCFullYear();
+  const nm = String(nextDate.getUTCMonth() + 1).padStart(2, "0");
+  const nd = String(nextDate.getUTCDate()).padStart(2, "0");
+  return `${ny}-${nm}-${nd}`;
+}
+
+/**
+ * Normalizes an interval bucket string returned by AE (or mock)
+ * into an unambiguous ISO-8601 string with Europe/Istanbul offset (+03:00).
+ */
+function normalizeIstanbulBucket(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (/(?:[zZ]|[+-](?:0[0-9]|1[0-4]):?[0-5][0-9])$/.test(s)) {
+    return s.includes(" ") ? s.replace(" ", "T") : s;
+  }
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) {
+    return s.replace(" ", "T") + "+03:00";
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return `${s}T00:00:00+03:00`;
+  }
+  return s;
+}
+
+/**
  * Fetch a summary of active/decided A/B experiments and their performance.
  */
 async function fetchActiveExperiments(env, accountId, apiToken, interval, unit, cutoff) {
@@ -230,15 +276,46 @@ async function handleGet(context) {
   if (windowParam === "7d")  { intervalVal = 7;  unit = "DAY";  }
   if (windowParam === "30d") { intervalVal = 30; unit = "DAY";  }
 
-  let timeFilter = `timestamp > now() - INTERVAL '${intervalVal}' ${unit}`;
-  if (startParam !== "") {
-    timeFilter = `timestamp >= toDateTime('${startParam} 00:00:00')`;
-    if (endParam !== "") {
-      timeFilter += ` AND timestamp <= toDateTime('${endParam} 23:59:59')`;
+  const hasStart = startParam !== "";
+  const hasEnd   = endParam !== "";
+
+  if (hasStart || hasEnd) {
+    if ((hasStart && !isValidCalendarDate(startParam)) || (hasEnd && !isValidCalendarDate(endParam))) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: "invalid_date_range",
+        hint: "Invalid calendar date format. Expected valid YYYY-MM-DD."
+      }), {
+        status: 400,
+        headers: jsonHeaders()
+      });
+    }
+    if (hasStart && hasEnd && startParam > endParam) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: "invalid_date_range",
+        hint: "Start date cannot be after end date."
+      }), {
+        status: 400,
+        headers: jsonHeaders()
+      });
     }
   }
 
-  const isLargeWindow = windowParam === "7d" || windowParam === "30d" || (startParam !== "" && endParam !== "");
+  let timeFilter = `timestamp > now() - INTERVAL '${intervalVal}' ${unit}`;
+  if (hasStart || hasEnd) {
+    const filters = [];
+    if (hasStart) {
+      filters.push(`timestamp >= toDateTime('${startParam} 00:00:00', 'Europe/Istanbul')`);
+    }
+    if (hasEnd) {
+      const nextDay = getNextDayStr(endParam);
+      filters.push(`timestamp < toDateTime('${nextDay} 00:00:00', 'Europe/Istanbul')`);
+    }
+    timeFilter = filters.join(" AND ");
+  }
+
+  const isLargeWindow = windowParam === "7d" || windowParam === "30d" || (hasStart && hasEnd);
   const chartInterval = isLargeWindow ? "'1' DAY" : "'1' HOUR";
 
   const opsTestFilter = showTest
@@ -287,12 +364,12 @@ async function handleGet(context) {
       fetchActiveExperiments(env, accountId, apiToken, intervalVal, unit, null),
       // Time-series: Clicks
       aeQuery(accountId, apiToken,
-        `SELECT toStartOfInterval(timestamp, INTERVAL ${chartInterval}) AS t, SUM(_sample_interval) AS clicks
+        `SELECT toStartOfInterval(timestamp, INTERVAL ${chartInterval}, 'Europe/Istanbul') AS t, SUM(_sample_interval) AS clicks
          FROM ${DATASET_OPS} WHERE index1 IN (${clickEvents}) AND ${timeFilter} AND ${opsTestFilter}
          GROUP BY t ORDER BY t ASC`),
       // Time-series: Conversions
       aeQuery(accountId, apiToken,
-        `SELECT toStartOfInterval(timestamp, INTERVAL ${chartInterval}) AS t, SUM(_sample_interval) AS conversions
+        `SELECT toStartOfInterval(timestamp, INTERVAL ${chartInterval}, 'Europe/Istanbul') AS t, SUM(_sample_interval) AS conversions
          FROM ${DATASET_EVT} WHERE index1 = 'conversion' AND ${timeFilter} AND ${evtTestFilter}
          GROUP BY t ORDER BY t ASC`),
       // Sources: Clicks
@@ -364,14 +441,16 @@ async function handleGet(context) {
       .filter(r => showTest ? isTest(r.campaign) : !isTest(r.campaign))
       .reduce((sum, r) => sum + Number(r.conversions), 0);
 
-    // Merge Time-Series Data
+    // Merge Time-Series Data (normalized to explicit Europe/Istanbul ISO-8601 with +03:00)
     const chartMap = {};
     getRows(seriesClicksRes).forEach(r => {
-      chartMap[r.t] = { t: r.t, clicks: Number(r.clicks), conversions: 0 };
+      const bucket = normalizeIstanbulBucket(r.t);
+      chartMap[bucket] = { t: bucket, clicks: Number(r.clicks), conversions: 0 };
     });
     getRows(seriesConvsRes).forEach(r => {
-      if (!chartMap[r.t]) chartMap[r.t] = { t: r.t, clicks: 0, conversions: 0 };
-      chartMap[r.t].conversions += Number(r.conversions);
+      const bucket = normalizeIstanbulBucket(r.t);
+      if (!chartMap[bucket]) chartMap[bucket] = { t: bucket, clicks: 0, conversions: 0 };
+      chartMap[bucket].conversions += Number(r.conversions);
     });
     const chart = Object.values(chartMap).sort((a, b) => a.t.localeCompare(b.t));
 
@@ -446,9 +525,27 @@ function getMockData(windowParam, showTest) {
   const numPoints = isLarge ? 7 : 24;
   const labels = [];
   const start = new Date();
+  const dtf = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  });
   for (let i = 0; i < numPoints; i++) {
     const d = new Date(start.getTime() - (numPoints - i) * (isLarge ? 86400000 : 3600000));
-    labels.push(d.getFullYear() + "-" + (d.getMonth() + 1).toString().padStart(2, '0') + "-" + d.getDate().toString().padStart(2, '0') + (isLarge ? "" : " " + d.getHours().toString().padStart(2, '0') + ":00"));
+    if (isLarge) {
+      const parts = dtf.formatToParts(d);
+      const y = parts.find(p => p.type === "year").value;
+      const m = parts.find(p => p.type === "month").value;
+      const day = parts.find(p => p.type === "day").value;
+      labels.push(`${y}-${m}-${day}T00:00:00+03:00`);
+    } else {
+      labels.push(dtf.format(d).replace(", ", "T") + "+03:00");
+    }
   }
 
   const chart = labels.map(t => ({ 

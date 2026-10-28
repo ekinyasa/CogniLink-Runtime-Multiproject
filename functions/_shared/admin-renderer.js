@@ -2284,17 +2284,77 @@ window.openNewIntentModal = function(e) {
       }
     }
   });
+  var istanbulDtf = null;
+  try {
+    istanbulDtf = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Istanbul",
+      day: "numeric",
+      month: "short",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    });
+  } catch (e) {
+    console.warn("[Admin] Intl.DateTimeFormat Europe/Istanbul init failed:", e);
+  }
+
+  function getIstanbulTodayDateStr() {
+    try {
+      var dtf = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Istanbul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+      return dtf.format(new Date());
+    } catch (e) {
+      var trtDate = new Date(Date.now() + 3 * 3600 * 1000);
+      return trtDate.toISOString().split("T")[0];
+    }
+  }
+
+  function parseToDate(raw) {
+    if (!raw) return null;
+    if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw;
+    var s = String(raw).trim();
+    if (!s) return null;
+
+    // Check for explicit timezone indicator only at the end of the string:
+    // Z / z or ±HH:mm or ±HHmm (HH: 00..14, mm: 00..59)
+    var hasTzTrailer = /(?:[zZ]|[+-](?:0[0-9]|1[0-4]):?[0-5][0-9])$/.test(s);
+
+    if (hasTzTrailer) {
+      if (s.includes(" ") && !s.includes("T")) s = s.replace(" ", "T");
+    } else {
+      // Contract: Any timestamp without explicit timezone (space-separated, ISO without tz, or date-only)
+      // is explicitly treated as UTC.
+      if (s.includes(" ") && !s.includes("T")) {
+        s = s.replace(" ", "T") + "Z";
+      } else if (s.includes("T")) {
+        s = s + "Z";
+      } else if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s)) {
+        s = s + "T00:00:00Z";
+      }
+    }
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
   function formatLocalTime(raw) {
-    if (!raw) return "—";
-    var iso = String(raw).replace(" ", "T");
-    if (!iso.includes("Z")) iso += "Z";
-    var d = new Date(iso);
+    var d = parseToDate(raw);
+    if (!d) return "—";
+    if (istanbulDtf) {
+      return istanbulDtf.format(d);
+    }
+    var utc = d.getTime();
+    var trtDate = new Date(utc + 3 * 3600 * 1000);
     var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    var day = d.getDate();
-    var month = months[d.getMonth()];
-    var year = String(d.getFullYear()).slice(-2);
-    var hr = String(d.getHours()).padStart(2, "0");
-    var min = String(d.getMinutes()).padStart(2, "0");
+    var day = trtDate.getUTCDate();
+    var month = months[trtDate.getUTCMonth()];
+    var year = String(trtDate.getUTCFullYear()).slice(-2);
+    var hr = String(trtDate.getUTCHours()).padStart(2, "0");
+    var min = String(trtDate.getUTCMinutes()).padStart(2, "0");
     return day + " " + month + " " + year + ", " + hr + ":" + min;
   }
   var token                 = "";      // session Bearer token
@@ -2336,8 +2396,8 @@ window.openNewIntentModal = function(e) {
   var analyticsStartDate    = localStorage.getItem("analyticsStartDate") || "";
   var analyticsEndDate      = localStorage.getItem("analyticsEndDate") || "";
 
-  // Dynamic "Today" persistence (Prompt 124)
-  var todayStr = new Date().toISOString().split("T")[0];
+  // Dynamic "Today" persistence in Europe/Istanbul
+  var todayStr = getIstanbulTodayDateStr();
   if (analyticsEndDate && analyticsEndDate >= (localStorage.getItem("analyticsEndDateSavedAs") || "9999-12-31")) {
     analyticsEndDate = todayStr;
   }
@@ -3624,6 +3684,92 @@ window.openNewIntentModal = function(e) {
     pag.querySelector(".next").onclick = function() { if (currentPage < totalPages) onPageChange(currentPage + 1); };
   }
 
+  var istanbulHourDtf = null;
+  var istanbulDateDtf = null;
+  var istanbulTooltipHourDtf = null;
+  var istanbulTooltipDateDtf = null;
+  try {
+    istanbulHourDtf = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Istanbul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    });
+    istanbulDateDtf = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Istanbul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    istanbulTooltipHourDtf = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Istanbul",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    });
+    istanbulTooltipDateDtf = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Istanbul",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  } catch (e) {
+    console.warn("[Admin] Intl.DateTimeFormat chart formatters init failed:", e);
+  }
+
+  function formatChartLabel(raw) {
+    var d = parseToDate(raw);
+    if (!d) return String(raw || "");
+    if (istanbulHourDtf && istanbulDateDtf) {
+      var timeStr = istanbulHourDtf.format(d);
+      return timeStr === "00:00" ? istanbulDateDtf.format(d) : timeStr;
+    }
+    var trtDate = new Date(d.getTime() + 3 * 3600 * 1000);
+    var hr = String(trtDate.getUTCHours()).padStart(2, "0");
+    var min = String(trtDate.getUTCMinutes()).padStart(2, "0");
+    if (hr === "00" && min === "00") {
+      var yr = trtDate.getUTCFullYear();
+      var mo = String(trtDate.getUTCMonth() + 1).padStart(2, "0");
+      var da = String(trtDate.getUTCDate()).padStart(2, "0");
+      return yr + "-" + mo + "-" + da;
+    }
+    return hr + ":" + min;
+  }
+
+  function formatChartTooltip(raw) {
+    var d = parseToDate(raw);
+    if (!d) return String(raw || "");
+    if (istanbulHourDtf && istanbulTooltipDateDtf && istanbulTooltipHourDtf) {
+      var timeStr = istanbulHourDtf.format(d);
+      return timeStr === "00:00"
+        ? istanbulTooltipDateDtf.format(d)
+        : (istanbulTooltipHourDtf.format(d) + " (TRT)");
+    }
+    var trtDate = new Date(d.getTime() + 3 * 3600 * 1000);
+    var hr = String(trtDate.getUTCHours()).padStart(2, "0");
+    var min = String(trtDate.getUTCMinutes()).padStart(2, "0");
+    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var da = trtDate.getUTCDate();
+    var mo = months[trtDate.getUTCMonth()];
+    var yr = trtDate.getUTCFullYear();
+    if (hr === "00" && min === "00") {
+      return da + " " + mo + " " + yr;
+    }
+    return da + " " + mo + " " + yr + ", " + hr + ":" + min + " (TRT)";
+  }
+
+  if (typeof window !== "undefined") {
+    window.__pulseTime = {
+      formatLocalTime: formatLocalTime,
+      formatChartLabel: formatChartLabel,
+      formatChartTooltip: formatChartTooltip,
+      getIstanbulTodayDateStr: getIstanbulTodayDateStr
+    };
+  }
+
   function renderDashboardChart(series) {
     if (!series || typeof Chart === "undefined") {
       if (typeof Chart === "undefined") {
@@ -3642,13 +3788,7 @@ window.openNewIntentModal = function(e) {
       type: "line",
       data: {
         labels: series.map(function(d) {
-          var s = String(d.t);
-          if (s.includes(" ")) {
-            var parts = s.split(" ");
-            // If it's midnight exactly, show the date. Otherwise show the time.
-            return parts[1] === "00:00:00" ? parts[0] : parts[1].slice(0, 5);
-          }
-          return s;
+          return formatChartLabel(d.t);
         }),
         datasets: [
           {
@@ -3676,7 +3816,21 @@ window.openNewIntentModal = function(e) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { mode: "index", intersect: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              title: function(items) {
+                if (!items || !items.length) return "";
+                var idx = items[0].dataIndex;
+                var raw = series[idx] && series[idx].t;
+                return formatChartTooltip(raw);
+              }
+            }
+          }
+        },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 10 } } },
           y: { beginAtZero: true, grid: { color: "rgba(0,0,0,0.05)" }, ticks: { font: { size: 10 } } }
@@ -3800,7 +3954,7 @@ window.openNewIntentModal = function(e) {
     var onDateChange = function () {
       analyticsStartDate = elStartDate.value;
       analyticsEndDate   = elEndDate.value;
-      var today = new Date().toISOString().split("T")[0];
+      var today = getIstanbulTodayDateStr();
 
       localStorage.setItem("analyticsStartDate", analyticsStartDate);
       localStorage.setItem("analyticsEndDate",   analyticsEndDate);
