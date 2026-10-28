@@ -241,6 +241,14 @@ async function handleGet(context) {
   const isLargeWindow = windowParam === "7d" || windowParam === "30d" || (startParam !== "" && endParam !== "");
   const chartInterval = isLargeWindow ? "'1' DAY" : "'1' HOUR";
 
+  const opsTestFilter = showTest
+    ? "(blob4 LIKE 'test-%' OR blob1 LIKE 'test-%' OR blob2 LIKE 'test-%')"
+    : "(blob4 NOT LIKE 'test-%' AND blob1 NOT LIKE 'test-%' AND blob2 NOT LIKE 'test-%')";
+
+  const evtTestFilter = showTest
+    ? "(blob1 LIKE 'test-%' OR blob2 LIKE 'test-%')"
+    : "(blob1 NOT LIKE 'test-%' AND blob2 NOT LIKE 'test-%')";
+
   const t0 = Date.now();
 
   const clickEvents = "'traffic_memory'";
@@ -252,50 +260,50 @@ async function handleGet(context) {
     ] = await Promise.allSettled([
       aeQuery(accountId, apiToken,
         `SELECT blob4 AS campaign, SUM(_sample_interval) AS clicks FROM ${DATASET_OPS}
-         WHERE index1 IN (${clickEvents}) AND ${timeFilter}
+         WHERE index1 IN (${clickEvents}) AND ${timeFilter} AND ${opsTestFilter}
          GROUP BY campaign ORDER BY clicks DESC LIMIT 50`),
       aeQuery(accountId, apiToken,
         `SELECT blob1 AS alias, SUM(_sample_interval) AS clicks FROM ${DATASET_OPS}
-         WHERE index1 IN (${clickEvents}) AND ${timeFilter}
+         WHERE index1 IN (${clickEvents}) AND ${timeFilter} AND ${opsTestFilter}
          GROUP BY alias ORDER BY clicks DESC LIMIT 50`),
       aeQuery(accountId, apiToken,
         `SELECT blob2 AS slug, SUM(_sample_interval) AS clicks FROM ${DATASET_OPS}
-         WHERE index1 IN (${clickEvents}) AND ${timeFilter}
+         WHERE index1 IN (${clickEvents}) AND ${timeFilter} AND ${opsTestFilter}
          GROUP BY slug ORDER BY clicks DESC LIMIT 50`),
       aeQuery(accountId, apiToken,
-        `SELECT timestamp, blob1 AS alias, blob2 AS slug, blob4 AS campaign, blob5 AS source, 'traffic' AS event_type 
+        `SELECT timestamp, blob1 AS alias, blob2 AS slug, blob4 AS campaign, blob5 AS source, index1 AS event_type
          FROM ${DATASET_OPS}
-         WHERE index1 IN (${clickEvents}) AND ${timeFilter}
+         WHERE index1 IN ('traffic_memory', 'route_redirect') AND ${timeFilter} AND ${opsTestFilter}
          ORDER BY timestamp DESC LIMIT 50`),
       aeQuery(accountId, apiToken,
         `SELECT timestamp, blob1 AS alias, blob2 AS slug, blob3 AS source, index1 AS event_type 
          FROM ${DATASET_EVT}
-         WHERE index1 IN ('click', 'conversion') AND ${timeFilter}
+         WHERE index1 IN ('click', 'conversion', 'signal') AND ${timeFilter} AND ${evtTestFilter}
          ORDER BY timestamp DESC LIMIT 50`),
       aeQuery(accountId, apiToken,
         `SELECT blob1 AS campaign, blob5 AS event_name, SUM(_sample_interval) AS conversions FROM ${DATASET_EVT}
-         WHERE index1 = 'conversion' AND ${timeFilter}
+         WHERE index1 = 'conversion' AND ${timeFilter} AND ${evtTestFilter}
          GROUP BY campaign, event_name`),
       fetchActiveExperiments(env, accountId, apiToken, intervalVal, unit, null),
       // Time-series: Clicks
       aeQuery(accountId, apiToken,
         `SELECT toStartOfInterval(timestamp, INTERVAL ${chartInterval}) AS t, SUM(_sample_interval) AS clicks
-         FROM ${DATASET_OPS} WHERE index1 IN (${clickEvents}) AND ${timeFilter}
+         FROM ${DATASET_OPS} WHERE index1 IN (${clickEvents}) AND ${timeFilter} AND ${opsTestFilter}
          GROUP BY t ORDER BY t ASC`),
       // Time-series: Conversions
       aeQuery(accountId, apiToken,
         `SELECT toStartOfInterval(timestamp, INTERVAL ${chartInterval}) AS t, SUM(_sample_interval) AS conversions
-         FROM ${DATASET_EVT} WHERE index1 = 'conversion' AND ${timeFilter}
+         FROM ${DATASET_EVT} WHERE index1 = 'conversion' AND ${timeFilter} AND ${evtTestFilter}
          GROUP BY t ORDER BY t ASC`),
       // Sources: Clicks
       aeQuery(accountId, apiToken,
         `SELECT blob5 AS source, SUM(_sample_interval) AS clicks
-         FROM ${DATASET_OPS} WHERE index1 IN (${clickEvents}) AND ${timeFilter}
+         FROM ${DATASET_OPS} WHERE index1 IN (${clickEvents}) AND ${timeFilter} AND ${opsTestFilter}
          GROUP BY source ORDER BY clicks DESC LIMIT 50`),
       // Sources: Conversions
       aeQuery(accountId, apiToken,
         `SELECT blob3 AS source, SUM(_sample_interval) AS conversions
-         FROM ${DATASET_EVT} WHERE index1 = 'conversion' AND ${timeFilter}
+         FROM ${DATASET_EVT} WHERE index1 = 'conversion' AND ${timeFilter} AND ${evtTestFilter}
          GROUP BY source ORDER BY conversions DESC LIMIT 50`)
     ]);
 
@@ -390,10 +398,18 @@ async function handleGet(context) {
      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
      .slice(0, 100)
      .map(r => {
-        const type = r.event_type || "click";
+        let type = r.event_type || "view";
+        if (r.event_type === "traffic_memory" || r.event_type === "traffic") {
+          type = "view";
+        } else if (r.event_type === "route_redirect") {
+          type = "redirect";
+        } else if (r.event_type === "signal" || r.slug === "engagement" || r.slug === "time_signal" || r.slug === "scroll" || r.slug === "form_submit") {
+          type = "signal";
+        }
         const source = r.source || "";
         return {
           ...r,
+          event_type: type,
           campaign: r.campaign || r.alias || "—",
           modifier: source ? `${type} · ${source}` : type
         };
@@ -409,6 +425,7 @@ async function handleGet(context) {
       summary: {
         conversions: fConversions,
         total_clicks: fCampaigns.reduce((s, c) => s + c.clicks, 0),
+        total_views: fCampaigns.reduce((s, c) => s + c.clicks, 0),
         active_experiments: expSummary.status === "fulfilled" ? expSummary.value : [],
         chart,
         sources
@@ -464,6 +481,7 @@ function getMockData(windowParam, showTest) {
     summary: {
       conversions: 222,
       total_clicks: campaigns.reduce((s, c) => s + c.clicks, 0),
+      total_views: campaigns.reduce((s, c) => s + c.clicks, 0),
       active_experiments: [],
       chart,
       sources: [

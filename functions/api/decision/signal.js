@@ -316,14 +316,13 @@ export async function onRequestPost(context) {
     }
 
     // --- Analytics Engine Bridge (Pulse Dashboard Restoration) ---
+    // Note: Page views are authoritatively emitted via SSR to guarantee single-point accounting
+    // and eliminate client-side adblock / double-counting issues.
+    // Client-side page_view updates decision state (visitor warmth/visit count) above,
+    // but does NOT emit to AE_TRAFFIC here.
+    // Behavioral signals (clicks, engagement, time_signal) flow to AE_CONVERSION.
     try {
-      if (type === "page_view") {
-        writePageViewEvent(context.env, {
-          utm_campaign: body.meta?.campaign || body.meta?.alias || "",
-          utm_source: body.meta?.source || "",
-          page_type: body.meta?.page_type || ""
-        });
-      } else {
+      if (type !== "page_view") {
         writeLandingSignalEvent(context.env, {
           type,
           meta: body.meta

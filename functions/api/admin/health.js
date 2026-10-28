@@ -43,7 +43,13 @@ async function checkRouter(baseUrl, env) {
   const isNilufer = env?.PROJECT_ID === "nilufer" || env?.ROOT_DOMAIN?.includes("niluferormanli");
   const probePath = isNilufer ? "coming-soon" : PROBE_ALIAS;
   try {
-    const res = await fetch(`${baseUrl}/${probePath}`, { redirect: "follow" });
+    const res = await fetch(`${baseUrl}/${probePath}`, {
+      redirect: "follow",
+      headers: {
+        "x-cognilink-probe": "health",
+        "User-Agent": "CogniLink-HealthCheck/1.0",
+      },
+    });
     return res.status === 200 || res.status === 302 ? "ok" : "error";
   } catch {
     return "error";

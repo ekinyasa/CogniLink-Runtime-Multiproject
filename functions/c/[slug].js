@@ -482,16 +482,17 @@ export async function onRequestGet(context) {
         redirectResHeaders["Set-Cookie"] = decision.cookies;
       }
 
-      // ── Log Instant Redirect to AE Traffic Memory ────────────────────────────
+      // ── Log Instant Redirect to AE Traffic (Route Redirect) ─────────────────
       try {
-        emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+        emitOps(env, OPS_EVENTS.ROUTE_REDIRECT, {
           alias: slug, modifier: "", canonical_slug: slug,
           campaign: utmCampaign,
-        productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
+          productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : null,
           request_id: request.headers.get("cf-ray") || "",
           utm_source: utmSource || "",
           utm_medium: utmMedium || "",
-          decision_v1: decision.decisionId || "default"
+          decision_v1: decision.decisionId || "default",
+          detail: { target: redirectUrl.toString() }
         });
       } catch(e) {}
 

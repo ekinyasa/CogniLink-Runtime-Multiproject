@@ -7,6 +7,7 @@ import { buildRedirectResponse } from "../_shared/redirect-runtime.js";
 import { extractProductSubdomain, validateProductSubdomainMatch } from "../_shared/slug-utils.js";
 import { resolveDestinationUrl, normalizeSlug } from "../_shared/url-resolver.js";
 import { readCookie } from "../_shared/cookie-utils.js";
+import { emitOps, OPS_EVENTS, isSyntheticOrProbeRequest } from "../_shared/ops-telemetry.js";
 
 async function hashToken(token) {
   if (!token) return "";
@@ -287,6 +288,27 @@ export async function onRequestGet(context) {
   });
 
   decision.cookies.forEach((c) => resHeaders.append("Set-Cookie", c));
+
+  // ── Authoritative Traffic Telemetry (SSR Single Emission Point) ───────────
+  if (!isAdminPreview && !previewVersion && statusLower === "published" && !isSyntheticOrProbeRequest(request)) {
+    const aliasHeader = request.headers.get("x-cognilink-alias");
+    const modifierHeader = request.headers.get("x-cognilink-modifier");
+    const alias = aliasHeader || landing.alias || "";
+    const modifier = modifierHeader || "";
+    const canonical_slug = landing.slug || slug;
+    const campaignName = utmCampaign;
+    const requestId = request.headers.get("cf-ray") || crypto.randomUUID?.() || "";
+
+    emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+      alias,
+      canonical_slug,
+      modifier,
+      campaign: campaignName,
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      request_id: requestId,
+    });
+  }
 
   return new Response(html, { headers: resHeaders });
 }

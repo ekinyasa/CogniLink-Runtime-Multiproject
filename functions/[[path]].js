@@ -49,7 +49,7 @@ import { compareDecisions }                        from "./_shared/decision-comp
 import { cacheGet, cacheSet, getTtlMs }            from "./_shared/kv-cache.js";
 import { deriveCampaignFromSlug, extractProductSubdomain, validateProductSubdomainMatch, slugify } from "./_shared/slug-utils.js";
 import { renderAdmin } from "./_shared/admin-renderer.js";
-import { emitOps, OPS_EVENTS }                     from "./_shared/ops-telemetry.js";
+import { emitOps, OPS_EVENTS, isSyntheticOrProbeRequest } from "./_shared/ops-telemetry.js";
 import { loadABConfig }                            from "./_shared/ab-router.js";
 import { resolveExperimentVariant }                from "./lib/experiment-router.js";
 import { resolveJourneyDestination }              from "./lib/journey-router.js";
@@ -307,6 +307,9 @@ export async function onRequestGet(context) {
     ? "/" + params.path.join("/")
     : "/" + String(params.path || "");
 
+  // Stable tracing ID (cf-ray is available in prod; fallback for local dev)
+  const requestId = request.headers.get("cf-ray") || crypto.randomUUID?.() || "";
+
   // ── Reserved Subdomains & Admin Subdomain Handling ────────────────────────
   const rootDomain = (env && env.ROOT_DOMAIN) || "";
   const adminSubdomain = (env && env.ADMIN_SUBDOMAIN) || "login";
@@ -429,6 +432,18 @@ export async function onRequestGet(context) {
           isPreview:        isAdminPreview,
           intentConfig:     intentLandingConfigData,
         });
+
+        if (!isAdminPreview && !previewVersion && (intentHomepageLanding.status || "draft").toLowerCase() === "published" && !isSyntheticOrProbeRequest(request)) {
+          emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+            alias: intentHomepageLanding.alias || "",
+            canonical_slug: intentHomepageLanding.slug || intentHomepageLanding.id,
+            campaign: url.searchParams.get("utm_campaign") || intentCampaign.slug || intentCampaign.name || "",
+            utm_source: url.searchParams.get("utm_source") || "",
+            utm_medium: url.searchParams.get("utm_medium") || "",
+            request_id: requestId,
+          });
+        }
+
         return new Response(intentHtml, {
           status: 200,
           headers: {
@@ -491,6 +506,17 @@ export async function onRequestGet(context) {
                 requestHost: originalHost,
                 requestPath: "/"
               });
+
+              if (!isAdminPreview && !previewVersion && page.status === "published" && !isSyntheticOrProbeRequest(request)) {
+                emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+                  alias: page.slug || "home",
+                  canonical_slug: page.slug || "home",
+                  campaign: url.searchParams.get("utm_campaign") || page.slug || "home",
+                  utm_source: url.searchParams.get("utm_source") || "",
+                  utm_medium: url.searchParams.get("utm_medium") || "",
+                  request_id: requestId,
+                });
+              }
 
               return new Response(html, {
                 status: 200,
@@ -555,6 +581,17 @@ export async function onRequestGet(context) {
               requestPath: "/" + candidateStaticSlug
             });
 
+            if (!isAdminPreview && !previewVersion && page.status === "published" && !isSyntheticOrProbeRequest(request)) {
+              emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+                alias: candidateStaticSlug,
+                canonical_slug: page.slug || candidateStaticSlug,
+                campaign: url.searchParams.get("utm_campaign") || candidateStaticSlug,
+                utm_source: url.searchParams.get("utm_source") || "",
+                utm_medium: url.searchParams.get("utm_medium") || "",
+                request_id: requestId,
+              });
+            }
+
             return new Response(html, {
               status: 200,
               headers: {
@@ -584,8 +621,7 @@ export async function onRequestGet(context) {
   // Removed old query-param logic per security requirements.
   // Inspector auth is now securely handled via headers.
 
-  // Stable tracing ID (cf-ray is available in prod; fallback for local dev)
-  const requestId = request.headers.get("cf-ray") || crypto.randomUUID?.() || "";
+  // Stable tracing ID (requestId is defined at the handler scope)
   const ttlMs     = getTtlMs(env);
 
   // ── Step 3: Route key construction (happens inside resolveAlias) ─────────
@@ -622,8 +658,12 @@ export async function onRequestGet(context) {
     const internalUrl = new URL(request.url);
     internalUrl.pathname = targetPath;
 
-    // Fetch internally
+    // Fetch internally with alias header forwarded for single authoritative SSR visit counting
     const rewriteReq = new Request(internalUrl.toString(), request);
+    rewriteReq.headers.set("x-cognilink-alias", alias);
+    if (modifier) {
+      rewriteReq.headers.set("x-cognilink-modifier", modifier);
+    }
     return fetch(rewriteReq);
   }
 
@@ -993,16 +1033,19 @@ export async function onRequestGet(context) {
     });
     decision.cookies.forEach((c) => redirectResHeaders.append("Set-Cookie", c));
 
-    // ── Log Instant Redirect to AE Traffic Memory ────────────────────────────
-    emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
-      alias, modifier: modifier ?? "", canonical_slug: finalSlug,
-      campaign: utmCampaign,
+    // ── Log Instant Redirect to AE Traffic (Route Redirect) ─────────────────
+    if (!isAdminPreview && !previewVersion && !isSyntheticOrProbeRequest(request)) {
+      emitOps(env, OPS_EVENTS.ROUTE_REDIRECT, {
+        alias, modifier: modifier ?? "", canonical_slug: finalSlug,
+        campaign: utmCampaign,
         productSubdomain: typeof productSubdomain !== "undefined" ? productSubdomain : (typeof finalSlug !== "undefined" ? finalSlug.split("-")[0] : null),
-      request_id: requestId,
-      utm_source: utmSource || "",
-      utm_medium: utmMedium || "",
-      decision_v1: decision.decisionId || "default"
-    });
+        request_id: requestId,
+        utm_source: utmSource || "",
+        utm_medium: utmMedium || "",
+        decision_v1: decision.decisionId || "default",
+        detail: { target: redirectUrl.toString() }
+      });
+    }
 
     return new Response(null, {
       status: 302,
@@ -1021,19 +1064,21 @@ export async function onRequestGet(context) {
   const defaultUtms = Object.assign({}, slugUtms, storedUtms);
 
   // LOG TRAFFIC_MEMORY AFTER defaultUtms is safely defined
-  emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
-    alias, modifier: modifier ?? "", canonical_slug: finalSlug,
-    campaign: (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug),
-    request_id: requestId,
-    utm_source: defaultUtms.utm_source || "",
-    utm_medium: defaultUtms.utm_medium || "",
-    ...(abActive || cacheHit ? {
-      detail: {
-        ...(abActive ? { ab_base: canonicalSlug, experiment: alias, variant: finalSlug } : {}),
-        ...(cacheHit ? { cache_hit: true } : { cache_hit: false })
-      }
-    } : {}),
-  });
+  if (!isAdminPreview && !previewVersion && !isSyntheticOrProbeRequest(request)) {
+    emitOps(env, OPS_EVENTS.TRAFFIC_MEMORY, {
+      alias, modifier: modifier ?? "", canonical_slug: finalSlug,
+      campaign: (runtimeContext?.campaignContext?.name && String(runtimeContext.campaignContext.name).trim()) || (hubConfig?.campaign && String(hubConfig.campaign).trim()) || deriveCampaignFromSlug(finalSlug),
+      request_id: requestId,
+      utm_source: defaultUtms.utm_source || "",
+      utm_medium: defaultUtms.utm_medium || "",
+      ...(abActive || cacheHit ? {
+        detail: {
+          ...(abActive ? { ab_base: canonicalSlug, experiment: alias, variant: finalSlug } : {}),
+          ...(cacheHit ? { cache_hit: true } : { cache_hit: false })
+        }
+      } : {}),
+    });
+  }
   // Section 1 — utm_experiment + utm_variant: append when A/B routing is active
   if (utmExperiment) defaultUtms.utm_experiment = utmExperiment;
   if (utmVariant)    defaultUtms.utm_variant    = utmVariant;

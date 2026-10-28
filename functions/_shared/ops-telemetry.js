@@ -34,6 +34,7 @@ export const OPS_EVENTS = Object.freeze({
   // Routing outcomes
   ROUTE_SUCCESS:                    "route_success",
   ROUTE_RESOLVED:                   "route_resolved",
+  ROUTE_REDIRECT:                   "route_redirect",
   ROUTE_FAIL_UNKNOWN_ALIAS:         "route_fail_unknown_alias",
   ROUTE_FAIL_UNKNOWN_MODIFIER:      "route_fail_unknown_modifier",
   ROUTE_FAIL_REGISTRY_INCONSISTENT: "route_fail_registry_inconsistent",
@@ -152,4 +153,56 @@ export function emitOps(env, event, fields = {}) {
     // Telemetry errors must never affect routing — log for Logpush visibility (SECTION 4)
     console.error("[ops] writeDataPoint failed:", _e?.message);
   }
+}
+
+/**
+ * Detects synthetic requests: health checks, uptime monitors, browser prefetch, and common automated crawlers.
+ * Used by SSR view counting to prevent inflating operational view metrics.
+ */
+export function isSyntheticOrProbeRequest(request) {
+  if (!request || !request.headers) return false;
+
+  // 1. Explicit internal probe headers
+  if (
+    request.headers.get("x-cognilink-probe") === "health" ||
+    request.headers.get("x-health-check") ||
+    request.headers.get("x-purpose") === "health"
+  ) {
+    return true;
+  }
+
+  // 2. Browser prefetch / prerender
+  const secPurpose = (request.headers.get("sec-purpose") || "").toLowerCase();
+  const purpose = (request.headers.get("purpose") || "").toLowerCase();
+  const moz = (request.headers.get("x-moz") || "").toLowerCase();
+  if (
+    secPurpose.includes("prefetch") ||
+    purpose.includes("prefetch") ||
+    moz.includes("prefetch") ||
+    secPurpose.includes("prerender")
+  ) {
+    return true;
+  }
+
+  // 3. User-Agent checks: health checks, uptime monitors, synthetic scrapers, known automated bots
+  const ua = (request.headers.get("user-agent") || "").toLowerCase();
+  if (
+    ua && (
+      ua.includes("healthcheck") ||
+      ua.includes("uptime") ||
+      ua.includes("pingdom") ||
+      ua.includes("uptimerobot") ||
+      ua.includes("googlebot") ||
+      ua.includes("bingbot") ||
+      ua.includes("yandexbot") ||
+      ua.includes("baiduspider") ||
+      ua.includes("duckduckbot") ||
+      ua.includes("headlesschrome") ||
+      ua.includes("cloudflare-traffic-manager")
+    )
+  ) {
+    return true;
+  }
+
+  return false;
 }

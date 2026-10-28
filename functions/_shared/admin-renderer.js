@@ -122,7 +122,7 @@ ${CONSENT_CSS}</style>
 
         <div id="stat-conv-rate-wrap" class="dash-grid hidden" style="margin-top:1rem">
           <div class="dash-card">
-            <span class="dash-card-label">Total Clicks</span>
+            <span class="dash-card-label">Total Views</span>
             <span class="dash-card-value" id="stat-clicks">0</span>
           </div>
           <div class="dash-card">
@@ -167,7 +167,7 @@ ${CONSENT_CSS}</style>
               <div id="pag-campaigns" class="mini-pagination"></div>
             </div>
             <table class="analytics-table" id="tbl-by-campaign">
-              <thead><tr><th>Campaign</th><th>Clicks</th></tr></thead>
+              <thead><tr><th>Campaign</th><th>Views</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -177,7 +177,7 @@ ${CONSENT_CSS}</style>
               <div id="pag-aliases" class="mini-pagination"></div>
             </div>
             <table class="analytics-table" id="tbl-by-alias">
-              <thead><tr><th>Alias</th><th>Clicks</th></tr></thead>
+              <thead><tr><th>Alias</th><th>Views</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -3505,10 +3505,11 @@ window.openNewIntentModal = function(e) {
     if (!rawAnalyticsSummary) return;
     var s = rawAnalyticsSummary;
 
-    if ($("stat-clicks"))      $("stat-clicks").textContent      = s.total_clicks.toLocaleString();
-    if ($("stat-conversions")) $("stat-conversions").textContent = s.conversions.toLocaleString();
+    var totalViews = s.total_views != null ? s.total_views : (s.total_clicks || 0);
+    if ($("stat-clicks"))      $("stat-clicks").textContent      = totalViews.toLocaleString();
+    if ($("stat-conversions")) $("stat-conversions").textContent = (s.conversions || 0).toLocaleString();
 
-    var cr = s.total_clicks > 0 ? (s.conversions / s.total_clicks * 100).toFixed(1) + "%" : "0%";
+    var cr = totalViews > 0 ? (s.conversions / totalViews * 100).toFixed(1) + "%" : "0%";
     if ($("stat-conv-rate"))   $("stat-conv-rate").textContent   = cr;
 
     // Active Experiments
@@ -3651,7 +3652,7 @@ window.openNewIntentModal = function(e) {
         }),
         datasets: [
           {
-            label: "Clicks",
+            label: "Views",
             data: series.map(function(d) { return d.clicks; }),
             borderColor: "#3b82f6",
             backgroundColor: "rgba(59, 130, 246, 0.1)",
@@ -3698,7 +3699,7 @@ window.openNewIntentModal = function(e) {
         labels: s.map(function(d) { return d.source; }),
         datasets: [
           {
-            label: "Clicks",
+            label: "Views",
             data: s.map(function(d) { return d.clicks; }),
             backgroundColor: "#3b82f6",
             borderRadius: 4

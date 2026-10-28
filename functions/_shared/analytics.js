@@ -35,18 +35,24 @@ export function writeClickEvent(env, data) {
 export function writePageViewEvent(env, data) {
   try {
     if (!env?.AE_TRAFFIC) return;
-    const campaignOrAlias = data.utm_campaign || data.slug || "";
-    const source = data.utm_source || "";
-    const pageType = data.page_type || "";
+    const alias = data.alias || data.utm_campaign || data.slug || "";
+    const slug = data.slug || data.canonical_slug || data.page_type || "";
+    const modifier = data.modifier || "";
+    const campaign = data.campaign || data.utm_campaign || data.slug || "";
+    const source = data.utm_source || data.source || "";
+    const medium = data.utm_medium || data.medium || "";
+    const requestId = data.request_id || "";
 
     env.AE_TRAFFIC.writeDataPoint({
       indexes: ["traffic_memory"],
       blobs: [
-        String(campaignOrAlias).slice(0, 200),
-        String(pageType).slice(0, 200),
-        "",
-        String(campaignOrAlias).slice(0, 200),
-        String(source).slice(0, 200)
+        String(alias).slice(0, 200),          // blob1: alias
+        String(slug).slice(0, 200),           // blob2: canonical_slug
+        String(modifier).slice(0, 200),       // blob3: modifier
+        String(campaign).slice(0, 200),       // blob4: campaign
+        String(source).slice(0, 200),         // blob5: utm_source
+        String(medium).slice(0, 200),         // blob6: utm_medium
+        String(requestId).slice(0, 200)       // blob7: request_id
       ]
     });
   } catch (_e) {
@@ -60,16 +66,23 @@ export function writeLandingSignalEvent(env, data) {
     const type = data.type || "signal";
     const campaignAlias = String(data.meta?.campaign || data.meta?.alias || "");
     const sourceData = String(data.meta?.source || "");
-    const pageType = String(data.meta?.page_type || "");
+    const pageType = String(data.meta?.page_type || data.meta?.form_id || "");
 
     if (type === "conversion") {
       env.AE_CONVERSION.writeDataPoint({
         indexes: ["conversion"],
         blobs: [campaignAlias, pageType, sourceData, "", ""]
       });
-    } else {
+    } else if (type === "click" || type.startsWith("click")) {
       env.AE_CONVERSION.writeDataPoint({
         indexes: ["click"],
+        blobs: [campaignAlias, pageType || type, sourceData, "", ""]
+      });
+    } else {
+      // Behavioral signals: "engagement", "time_signal", "scroll", "form_submit", etc.
+      // Must NOT be stored with index1 = "click" or index1 = "conversion".
+      env.AE_CONVERSION.writeDataPoint({
+        indexes: ["signal"],
         blobs: [campaignAlias, type, sourceData, "", ""]
       });
     }
